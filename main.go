@@ -32,6 +32,7 @@ import (
 	"text/template"
 
 	"golang.org/x/mod/modfile"
+	"golang.org/x/mod/module"
 	"golang.org/x/tools/cover"
 )
 
@@ -40,6 +41,7 @@ var content embed.FS
 
 var (
 	styleCSS       = "style.css"
+	indexHTML      = "index.html"
 	treeHTML       = "tree.html"
 	ancillaryFiles = []string{
 		"favicon.ico",
@@ -80,21 +82,26 @@ func main() {
 
 	printCoverage(cov, totalStatements, totalCovered)
 
-	maxWidth := 0
-
-	if maxWidth, err = writeTreeHTML(outRoot, treeHTML, cov); err != nil {
-		fmt.Fprintf(os.Stderr, "cannot write tree.html: %v\n", err)
+	if err := writeAncillaryFiles(outRoot, content, ancillaryFiles); err != nil {
+		fmt.Fprintf(os.Stderr, "cannot write ancillary files: %v\n", err)
 		os.Exit(5)
 	}
 
-	if err := writeAncillaryFiles(outRoot, content, ancillaryFiles); err != nil {
-		fmt.Fprintf(os.Stderr, "cannot write image files: %v\n", err)
+	if err := writeIndexHTML(outRoot, content, indexHTML, modName); err != nil {
+		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", indexHTML, err)
 		os.Exit(6)
+	}
+
+	maxWidth := 0
+
+	if maxWidth, err = writeTreeHTML(outRoot, treeHTML, cov); err != nil {
+		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", treeHTML, err)
+		os.Exit(7)
 	}
 
 	if err := writeStyleCSS(outRoot, content, maxWidth); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write %s: %v\n", styleCSS, err)
-		os.Exit(7)
+		os.Exit(8)
 	}
 }
 
@@ -257,16 +264,33 @@ func writeAncillaryFiles(outRoot string, fsys fs.FS, files []string) error {
 	return nil
 }
 
+// writeIndexHTML writes the index HTML file
+func writeIndexHTML(outRoot string, fsys fs.FS, indexHTML, modName string) error {
+	repoURL, _, ok := module.SplitPathVersion(modName)
+	if !ok { repoURL = modName }
+	outFile := filepath.Clean(filepath.Join(outRoot, indexHTML))
+	tmpl, err := template.ParseFS(fsys, indexHTML)
+	if err != nil { return fmt.Errorf("cannot parse %q: %w", indexHTML, err) }
+	f, err := os.Create(outFile)
+	if err != nil { return fmt.Errorf("cannot create %q: %v", outFile, err) }
+	tmpl.Execute(f, struct{
+		ModName, ModURL string
+	}{
+		ModName: modName,
+		ModURL:  "https://" + repoURL,
+	})
+	return f.Close()
+}
+
 // writeStyleCSS writes the style.css file, which contains a single "MaxWidth" template parameter
 func writeStyleCSS(outRoot string, fsys fs.FS, maxWidth int) error {
-	outFile := filepath.Clean(filepath.Join(outRoot, styleCSS))
+	outFile   := filepath.Clean(filepath.Join(outRoot, styleCSS))
 	tmpl, err := template.ParseFS(fsys, styleCSS)
-	if err != nil                   { return fmt.Errorf("cannot parse flags: %w", err) }
+	if err != nil { return fmt.Errorf("cannot parse %q: %w", styleCSS, err) }
 	f, err := os.Create(outFile)
-	if err != nil                   { return fmt.Errorf("cannot create %q: %v", outFile, err) }
+	if err != nil { return fmt.Errorf("cannot create %q: %v", outFile, err) }
 	tmpl.Execute(f, struct{ MaxWidth int }{ MaxWidth: maxWidth })
-	if err := f.Close(); err != nil { return fmt.Errorf("cannot render template: %w", err) }
-	return nil
+	return f.Close()
 }
 
 // filterArgs discards any flags up to and including "--", particularly useful for testing.
