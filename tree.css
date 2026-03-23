@@ -1,0 +1,161 @@
+/* TODO(jeff): refactor, consolidate, and better encapsulate all CSS that's
+ *             currently strewn about among different files (this file,
+ *             main.go, and index.html)
+ */
+
+/* TODO(jeff): remove what appears to be one extra monospace character's width
+ *             of whitespace to the right of each row's coverage percentage
+ */
+
+/* TODO(jeff): reorder these blocks in terms of their respectively-applicable scope */
+
+.tree,
+.tree ul,
+.tree li {
+  list-style: none;
+  margin:     0;
+  padding:    0;
+}
+.tree ul { /* toggle logic */
+  height:       0;
+  opacity:      0;
+  overflow:     hidden;
+  transition:   all 0.1s ease;
+  margin-left:  1ch;
+  padding-left: 1ch;
+}
+
+.tree input:checked ~ ul {
+  height:  auto;
+  opacity: 1;
+}
+
+.tree input[type="checkbox"] {
+  display: none;
+}
+
+.tree li { /* layout for every row (folder or file) */
+  white-space: nowrap;
+  position:    relative;
+}
+
+.tree-node {
+  position: relative;
+}
+
+.tree li li { /* vertical branch line */
+  position:     relative;
+  padding-left: 2px;
+}
+
+.tree li li::before {
+  content:     "";
+  position:    absolute;
+  left:        -1ch;
+  top:         0;
+  height:      100%;
+  border-left: 1px solid;
+}
+
+.tree li li:last-child::before {
+  height: 0.75em;
+}
+
+.tree li li::after { /* horizontal branch line */
+  content:    "";
+  position:   absolute;
+  left:       -1ch;
+  top:        0.75em;
+  width:      1ch;
+  border-top: 1px solid;
+}
+
+:root {
+  --bg-color:   beige;
+  --text-color: darkslategrey;
+  --hover-bg:   wheat;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color:   black;
+    --text-color: lightyellow;
+    --hover-bg:   dimgrey;
+  }
+}
+
+[theme="light"] {
+  --bg-color:   beige;
+  --text-color: darkslategrey;
+}
+
+[theme="dark"] {
+  --bg-color:   black;
+  --text-color: lightyellow;
+  --hover-bg:   dimgrey;
+}
+
+body {
+  font-family:      monospace;
+  font-weight:      bold;
+  background-color: var(--bg-color);
+  color:            var(--text-color);
+  width:            100%;
+  position:         relative;
+  box-sizing:       border-box;
+  white-space:      nowrap;
+  margin:           0;
+  padding:          10px;
+}
+
+.tree label { /* folder emojis & labels */
+  cursor:         pointer;
+  user-select:    none;
+  display:        inline-block;
+  vertical-align: middle;
+  margin-right:   10ch;
+}
+
+.tree     a:hover,
+.tree label:hover {
+  background-color: var(--hover-bg);
+}
+
+.tree label::before {
+  content:        "\1F4C1"; /* closed folder */
+  display:        inline-block;
+  vertical-align: middle;
+  width:          2ch;
+  font-weight:    normal;
+}
+
+.tree input:checked ~ .tree-node label::before {
+  content: "\1F4C2"; /* open folder */
+}
+
+a {
+  color:           var(--text-color);
+  text-decoration: none;
+  margin:          0;
+  padding:         0;
+}
+
+span.src {
+  display:        inline-block;
+  vertical-align: middle;
+  white-space:    nowrap;
+  margin-right:   8ch; /* TODO(jeff): eliminate (or at least document) magic numbers */
+}
+
+span.cov {
+  position:    absolute;
+  right:       10px;
+  width:       8ch;
+  font-family: Menlo, monospace;
+  font-weight: normal;
+  font-size:   small;
+  font-style:  italic;
+  text-align:  right;
+  top:         50%;
+  transform:   translateY(-50%);
+}

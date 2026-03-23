@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" type="image/vnd.microsoft.icon" href="favicon.ico">
+<title>Go test coverage</title>
+<style>
+  :root {
+    --bg-color:   beige;
+    --bg-header:  papayawhip;
+    --text-color: darkslategrey;
+    color-scheme: light dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-color:   black;
+      --bg-header:  black;
+      --text-color: lightyellow;
+    }
+  }
+
+  [theme="light"] {
+    --bg-color:   beige;
+    --bg-header:  papayawhip;
+    --text-color: darkslategrey;
+  }
+
+  [theme="dark"] {
+    --bg-color:   black;
+    --bg-header:  black;
+    --text-color: lightyellow;
+  }
+
+  body {
+    margin:                0;
+    display:               grid;
+    grid-template-rows:    50px 1fr;
+    grid-template-columns: calc({{.MaxWidth}}ch + 10px) 1fr;
+    height:                100vh;
+    background:            var(--bg-color);
+    color:                 var(--text-color);
+    font-family:           monospace;
+  }
+
+  header {
+    z-index:         10;
+    grid-column:     1 / 3;
+    background:      var(--bg-header);
+    display:         flex;
+    align-items:     center;
+    justify-content: space-between;
+    padding:         0 20px 0 10px;
+    font-family:     system-ui, Arial, Helvetica, sans-serif;
+  }
+
+  iframe {
+    width:  100%;
+    height: 100%;
+    border: 1px solid #444444;
+  }
+
+  #tree {
+    background:   var(--bg-color);
+    border-right: 1px solid #444444;
+  }
+
+  #code {
+    background: var(--bg-color);
+  }
+</style>
+</head>
+<body>
+<header>
+<div><strong><img height="12" src="go-blue-gradient.svg"/> test coverage</strong></div>
+<div id="buttons" style="display: none; gap: 10px;">
+  <button id="expand">expand</button>
+  <button id="theme">theme</button>
+</div>
+</header>
+<iframe id="tree" src="tree.html"></iframe>
+<iframe id="code" name="code"></iframe>
+<script>
+  console.log('Protocol check:', window.location.protocol);
+  const doc          = document.documentElement;
+  const themeButton  = document.getElementById('theme');
+  const expandButton = document.getElementById('expand');
+  const buttons      = document.getElementById('buttons');
+
+  if (window.location.protocol !== 'file:') {
+    buttons.style.display = 'flex';
+  }
+
+  const applyTheme = (theme) => {
+    doc.setAttribute('theme', theme);
+    try {
+      localStorage.setItem('user-theme', theme);
+    } catch (e) {}
+    document.querySelectorAll('iframe').forEach(frame => {
+      frame.contentWindow.postMessage({ type: 'SET_THEME', theme: theme }, '*');
+    });
+  };
+
+  try {
+    const saved = localStorage.getItem('user-theme');
+    if (saved) applyTheme(saved);
+  } catch (e) {}
+
+  themeButton.addEventListener('click', () => {
+    const currentTheme = doc.getAttribute('theme');
+    const isDark       = currentTheme === 'dark' || (!currentTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    applyTheme(isDark ? 'light' : 'dark');
+  });
+
+  let expanded = false;
+  expandButton.addEventListener('click', () => {
+    expanded = !expanded;
+    expandButton.textContent = expanded ? 'collapse' : 'expand';
+    document.getElementById('tree').contentWindow.postMessage({ type: 'EXPAND_OR_COLLAPSE', expanded: expanded }, '*');
+  });
+</script>
+</body>
+</html>
