@@ -113,6 +113,8 @@ a:hover {
 .centered {
   display:         flex;
   justify-content: center;
+  font-size:       large;
+  font-weight:     bold;
 }
 
 .hit  { color: var(--cov-hit);  }
