@@ -167,7 +167,7 @@ try {
 
 window.addEventListener('message', (event) => {
   if (!event.data) return;
-  if (event.data.type === 'SET_THEME'         ) document.documentElement.setAttribute('theme', event.data.theme);
+  if (event.data.type === 'SET_THEME') document.documentElement.setAttribute('theme', event.data.theme);
   if (event.data.type === 'EXPAND_OR_COLLAPSE') document.querySelectorAll('.tree input[type="checkbox"]').forEach(cb => cb.checked = event.data.expanded);
 });
 </script>

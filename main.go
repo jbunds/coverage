@@ -163,10 +163,10 @@ func writeCovHTMLFile(profile *cover.Profile, outRoot, localPath string) error {
 <head>
 <meta charset="utf-8">
 <link rel="stylesheet" href="%s" type="text/css">
-<title>Go test coverage</title>
+<title>%s</title>
 </head>
 <body id="code">
-<pre>`, cssRelPath)
+<pre>`, cssRelPath, localPath)
 
 	pos := 0
 	for _, b := range profile.Boundaries(src) {
@@ -190,7 +190,7 @@ try {
   const parentTheme = window.parent.document.documentElement.getAttribute('theme');
   if (parentTheme) document.documentElement.setAttribute('theme', parentTheme);
 } catch (e) {
-	console.warn('direct parent access blocked by browser; waiting for postMessage');
+  console.warn('direct parent access blocked by browser; waiting for postMessage');
 }
 
 window.addEventListener('message', (event) => {

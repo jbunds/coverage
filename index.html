@@ -18,18 +18,12 @@
 <iframe id="tree" src="tree.html"></iframe>
 <iframe id="code" name="code"></iframe>
 <script>
-  console.log('Protocol check:', window.location.protocol);
-  const doc          = document.documentElement;
-  const themeButton  = document.getElementById('theme');
-  const expandButton = document.getElementById('expand');
-  const buttons      = document.getElementById('buttons');
-
   if (window.location.protocol !== 'file:') {
-    buttons.style.display = 'flex';
+    document.getElementById('buttons').style.display = 'flex';
   }
 
   const applyTheme = (theme) => {
-    doc.setAttribute('theme', theme);
+    document.documentElement.setAttribute('theme', theme);
     try {
       localStorage.setItem('user-theme', theme);
     } catch (e) {}
@@ -43,16 +37,16 @@
     if (saved) applyTheme(saved);
   } catch (e) {}
 
-  themeButton.addEventListener('click', () => {
-    const currentTheme = doc.getAttribute('theme');
+  document.getElementById('theme').addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('theme');
     const isDark       = currentTheme === 'dark' || (!currentTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
     applyTheme(isDark ? 'light' : 'dark');
   });
 
   let expanded = false;
-  expandButton.addEventListener('click', () => {
+  document.getElementById('expand').addEventListener('click', () => {
     expanded = !expanded;
-    expandButton.textContent = expanded ? 'collapse' : 'expand';
+    document.getElementById('expand').textContent = expanded ? 'collapse' : 'expand';
     document.getElementById('tree').contentWindow.postMessage({ type: 'EXPAND_OR_COLLAPSE', expanded: expanded }, '*');
   });
 </script>
