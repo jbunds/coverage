@@ -1,4 +1,6 @@
 [simple-tree]: https://github.com/psnet/simple-tree
+[light theme]: ./light_theme.jpg
+[dark theme]:  ./dark_theme.jpg
 
 #### Simple Web UI for Go Test Coverage
 
@@ -10,6 +12,16 @@ The main program then creates a `tree.html` file which mirrors the directory str
 
 - toggle between ***light*** and ***dark*** themes
 - toggle between a fully-collapsed and fully-expanded directory tree
+
+#### Screenshots
+
+***light*** theme:
+
+![light theme][light theme]
+
+***dark*** theme:
+
+![dark theme][dark theme]
 
 #### But Why?
 
