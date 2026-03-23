@@ -27,7 +27,7 @@ The main program then creates a `tree.html` file which mirrors the directory str
 
 The motivation for the `coverage` Go module was to create a relatively minimal alternative to the default HTML interface produced by `go tool cover -html <coverage profile> -o <html file>`, with a simple and intuitive UI, and with minimal JavaScript (59 lines total as of this writing, used to implement the functionality of the toggle buttons).
 
-The CSS code was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it _clearly_ still needs to be polished. But I am definitly _not_ a CSS expert, and it fulfills the required behavior as-is.
+The CSS code was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it _clearly_ still needs to be polished. But I am definitely _not_ a CSS expert, and it fulfills the required behavior as-is.
 
 The `coverage` module may someday provide relatively lightweight GitHub Actions CI artifacts, as its output is highly-compressible plaintext (the roughly 7.2 kB of bundled image files notwithstanding).
 
