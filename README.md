@@ -4,7 +4,7 @@
 
 The `coverage` Go module renders an HTML file for each `*.go` source file listed in a given Go test coverage profile file.
 
-The generated HTML files are marked up to identify which lines are covered by tests (<span style="color: seagreen;">green</span>), and which lines are not (<span style="color: red;">red</span>). Each HTML file is written to the specified path following the same directory structure as the source code which was tested to generate the Go test coverage profile file.
+The generated HTML files are marked up to identify which lines are covered by tests ($\color{seagreen}{\text{green}}$), and which lines are not ($\color{red}{\text{red}}$). Each HTML file is written to the specified path following the same directory structure as the source code which was tested to generate the Go test coverage profile file.
 
 The main program then creates a `tree.html` file which mirrors the directory structure of the tested source code, and which is rendered in a very simple Web UI accessible via the `index.html` file. Both HTML files can be inspected in a browser, either directly via the `file://` scheme, or via an HTTP server using the `http://` scheme. When served via HTTP, buttons are available to:
 
