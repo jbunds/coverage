@@ -72,7 +72,7 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 	srcPath  := filepath.ToSlash(filepath.Join(parentPath, src))
 	htmlPath := filepath.ToSlash(filepath.Join(parentPath, entry.Name()))
 
-	width    := indent * 2 + len(src)
+	width    := indent + len(src)
 
 	if isDir {
 		width += 2 // account for the folder icon emoji
