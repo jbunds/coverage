@@ -15,7 +15,7 @@ func flags(fs *flag.FlagSet, args []string) (coverProfile, path string, err erro
 		fs.PrintDefaults()
 		fmt.Println()
 	}
-	fs.StringVar(&coverProfile, "coverprofile", "", "Go test coverprofile file")
+	fs.StringVar(&coverProfile, "coverprofile", "", "Go test coverage profile file")
 	fs.StringVar(&path,         "path",         "", "path where HTML files will be written")
 	if err := fs.Parse(args); err != nil {
 		return "", "", err
