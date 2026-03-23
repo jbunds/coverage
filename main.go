@@ -14,7 +14,6 @@
 //   $ python3 -m http.server 8000
 //
 // and then load http://localhost:8000/ in a browser.
-
 package main
 
 import (
@@ -272,13 +271,13 @@ func writeIndexHTML(outRoot string, fsys fs.FS, indexHTML, modName string) error
 	tmpl, err := template.ParseFS(fsys, indexHTML)
 	if err != nil { return fmt.Errorf("cannot parse %q: %w", indexHTML, err) }
 	f, err := os.Create(outFile)
-	if err != nil { return fmt.Errorf("cannot create %q: %v", outFile, err) }
-	tmpl.Execute(f, struct{
+	if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
+	if err := tmpl.Execute(f, struct{
 		ModName, ModURL string
 	}{
 		ModName: modName,
 		ModURL:  "https://" + repoURL,
-	})
+	}); err != nil { return fmt.Errorf("cannot render template: %w", err) }
 	return f.Close()
 }
 
@@ -288,8 +287,12 @@ func writeStyleCSS(outRoot string, fsys fs.FS, maxWidth int) error {
 	tmpl, err := template.ParseFS(fsys, styleCSS)
 	if err != nil { return fmt.Errorf("cannot parse %q: %w", styleCSS, err) }
 	f, err := os.Create(outFile)
-	if err != nil { return fmt.Errorf("cannot create %q: %v", outFile, err) }
-	tmpl.Execute(f, struct{ MaxWidth int }{ MaxWidth: maxWidth })
+	if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
+	if err := tmpl.Execute(f, struct{
+		MaxWidth int
+	}{
+		MaxWidth: maxWidth,
+	}); err != nil { return fmt.Errorf("cannot render template: %w", err) }
 	return f.Close()
 }
 
