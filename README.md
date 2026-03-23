@@ -34,9 +34,9 @@ The `coverage` module may someday provide relatively lightweight GitHub Actions 
 #### Usage
 
 ```
-$ go build
+$ go get github.com/jbunds/coverage
 
-$ ./coverage -h
+$ go run github.com/jbunds/coverage
 coverage usage:
 
   -coverprofile string
