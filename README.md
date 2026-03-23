@@ -13,7 +13,7 @@ The main program then creates a `tree.html` file which mirrors the directory str
 
 #### But Why?
 
-The motivation for the `coverage` Go module was to produce a relatively minimal alternative to the default HTML interface produced by `go tool cover -html <coverage profile> -o <html file>`, with a simple and intuitive UI, and with minimal JavaScript (59 lines total as of this writing, used to implement the functionality of the toggle buttons).
+The motivation for the `coverage` Go module was to create a relatively minimal alternative to the default HTML interface produced by `go tool cover -html <coverage profile> -o <html file>`, with a simple and intuitive UI, and with minimal JavaScript (59 lines total as of this writing, used to implement the functionality of the toggle buttons).
 
 The CSS code was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it _clearly_ still needs to be polished, but I am not a CSS expert, and it fulfills the required behavior as-is.
 
