@@ -12,6 +12,7 @@
   margin:     0;
   padding:    0;
 }
+
 .tree ul { /* toggle logic */
   height:       0;
   opacity:      0;
@@ -74,6 +75,13 @@
   margin-right:   10ch;
 }
 
+a {
+  color:           var(--text-color);
+  text-decoration: none;
+  margin:          0;
+  padding:         0;
+}
+
 .tree     a:hover,
 .tree label:hover {
   background-color: var(--hover-bg);
@@ -89,13 +97,6 @@
 
 .tree input:checked ~ .tree-node label::before {
   content: "\1F4C2"; /* open folder */
-}
-
-a {
-  color:           var(--text-color);
-  text-decoration: none;
-  margin:          0;
-  padding:         0;
 }
 
 span.src {
