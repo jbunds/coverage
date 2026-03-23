@@ -1,6 +1,6 @@
 [simple-tree]: https://github.com/psnet/simple-tree
-[light theme]: ./light_theme.jpg
-[dark theme]:  ./dark_theme.jpg
+[light theme]: ./light_theme.jpg "light theme"
+[dark theme]:  ./dark_theme.jpg "dark theme"
 
 #### Simple Web UI for Go Test Coverage
 
