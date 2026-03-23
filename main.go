@@ -23,27 +23,28 @@ import (
 	"flag"
 	"fmt"
 	"html"
-	"html/template"
 	"io/fs"
 	"maps"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"text/template"
 
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/cover"
 )
 
-//go:embed favicon.ico go-blue-gradient.svg index.html tree.css
+//go:embed favicon.ico go-blue-gradient.svg index.html style.css tree.css
 var content embed.FS
 
 var (
-	indexHTML      = "index.html"
+	styleCSS       = "style.css"
 	treeHTML       = "tree.html"
 	ancillaryFiles = []string{
 		"favicon.ico",
 		"go-blue-gradient.svg",
+		"style.css",
 		"tree.css"}
 )
 
@@ -91,8 +92,8 @@ func main() {
 		os.Exit(6)
 	}
 
-	if err := writeIndexHTML(outRoot, content, maxWidth); err != nil {
-		fmt.Fprintf(os.Stderr, "cannot write %s: %v\n", indexHTML, err)
+	if err := writeStyleCSS(outRoot, content, maxWidth); err != nil {
+		fmt.Fprintf(os.Stderr, "cannot write %s: %v\n", styleCSS, err)
 		os.Exit(7)
 	}
 }
@@ -142,51 +143,23 @@ func writeCovHTMLFile(profile *cover.Profile, outRoot, localPath string) error {
 	src, err := os.ReadFile(filepath.Clean(localPath))
 	if err != nil { return fmt.Errorf("cannot read source: %w", err) }
 
-	// TODO(jeff): refactor, consolidate, and better encapsulate all CSS that's currently strewn about among different files
-	// TODO(jeff): clean up these very long multi-line strings
+	depth      := strings.Count(localPath, "/")
+	cssRelPath := "style.css"
+	if depth > 0 {
+		cssRelPath = strings.Repeat("../", depth) + cssRelPath
+	}
+
+	// TODO(jeff): clean up these multi-line strings
 	var builder strings.Builder
-	builder.WriteString(`<html>
+	fmt.Fprintf(&builder, `<!DOCTYPE html>
+<html lang="en">
 <head>
-<style>
-:root {
-  --bg-color:   beige;
-  --text-color: darkslategrey;
-  --cov-hit:    seagreen;
-  --cov-miss:   red;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-color:   black;
-    --text-color: lightyellow;
-    --cov-hit:    seagreen;
-    --cov-miss:   red;
-  }
-}
-[theme="light"] {
-  --bg-color:   beige;
-  --text-color: darkslategrey;
-  --cov-hit:    seagreen;
-  --cov-miss:   red;
-}
-[theme="dark"] {
-  --bg-color:   black;
-  --text-color: lightyellow;
-  --cov-hit:    seagreen;
-  --cov-miss:   red;
-}
-body {
-  tab-size:         4;
-  background-color: var(--bg-color);
-  color:            var(--text-color);
-  font-family:      monospace;
-  font-weight:      bold;
-}
-.hit  { color: var(--cov-hit);  }
-.miss { color: var(--cov-miss); }
-</style>
+<meta charset="utf-8">
+<link rel="stylesheet" href="%s" type="text/css">
+<title>Go test coverage</title>
 </head>
-<body>
-<pre>`)
+<body id="code">
+<pre>`, cssRelPath)
 
 	pos := 0
 	for _, b := range profile.Boundaries(src) {
@@ -282,11 +255,11 @@ func writeAncillaryFiles(outRoot string, fsys fs.FS, files []string) error {
 	return nil
 }
 
-// writeIndexHTML writes the indexHTML file, which contains a single "MaxWidth" HTML template parameter within its inline CSS
-func writeIndexHTML(outRoot string, fsys fs.FS, maxWidth int) error {
-	tmpl, err := template.ParseFS(fsys, indexHTML)
+// writeStyleCSS writes the style.css file, which contains a single "MaxWidth" template parameter
+func writeStyleCSS(outRoot string, fsys fs.FS, maxWidth int) error {
+	tmpl, err := template.ParseFS(fsys, styleCSS)
 	if err != nil { return err }
-	f, err := os.Create(filepath.Clean(filepath.Join(outRoot, indexHTML)))
+	f, err := os.Create(filepath.Clean(filepath.Join(outRoot, styleCSS)))
 	if err != nil { return err }
 	tmpl.Execute(f, struct { MaxWidth int }{ MaxWidth: maxWidth })
 	if err := f.Close(); err != nil { return err }

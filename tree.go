@@ -145,11 +145,12 @@ func preamble(f *os.File) error {
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<link rel="stylesheet" href="tree.css">
+<link rel="stylesheet" href="style.css" type="text/css">
+<link rel="stylesheet" href="tree.css"  type="text/css">
 <title>Go source tree</title>
 <base target="code"/>
 </head>
-<body>`); err != nil { return err }
+<body id="tree-body">`); err != nil { return err }
 	return nil
 }
 

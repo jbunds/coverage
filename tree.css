@@ -3,10 +3,6 @@
  *             main.go, and index.html)
  */
 
-/* TODO(jeff): remove what appears to be one extra monospace character's width
- *             of whitespace to the right of each row's coverage percentage
- */
-
 /* TODO(jeff): reorder these blocks in terms of their respectively-applicable scope */
 
 .tree,
@@ -68,44 +64,6 @@
   top:        0.75em;
   width:      1ch;
   border-top: 1px solid;
-}
-
-:root {
-  --bg-color:   beige;
-  --text-color: darkslategrey;
-  --hover-bg:   wheat;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-color:   black;
-    --text-color: lightyellow;
-    --hover-bg:   dimgrey;
-  }
-}
-
-[theme="light"] {
-  --bg-color:   beige;
-  --text-color: darkslategrey;
-}
-
-[theme="dark"] {
-  --bg-color:   black;
-  --text-color: lightyellow;
-  --hover-bg:   dimgrey;
-}
-
-body {
-  font-family:      monospace;
-  font-weight:      bold;
-  background-color: var(--bg-color);
-  color:            var(--text-color);
-  width:            100%;
-  position:         relative;
-  box-sizing:       border-box;
-  white-space:      nowrap;
-  margin:           0;
-  padding:          10px;
 }
 
 .tree label { /* folder emojis & labels */
