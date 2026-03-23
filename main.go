@@ -132,7 +132,7 @@ func writeCovHTMLFiles(modName, outRoot string, profiles []*cover.Profile) (map[
 		}
 
 		if err := writeCovHTMLFile(profile, outRoot, localPath); err != nil {
-			return cov, totalStatements, totalCovered, fmt.Errorf("error generating HTML for %s: %w", localPath, err)
+			return cov, totalStatements, totalCovered, fmt.Errorf("cannot write HTML file for %s: %w", localPath, err)
 		}
 	}
 	return cov, totalStatements, totalCovered, nil
@@ -140,8 +140,9 @@ func writeCovHTMLFiles(modName, outRoot string, profiles []*cover.Profile) (map[
 
 // writeCovHTMLFile writes a single *.go.html file with green (covered) and red (uncovered) lines to illustrate test coverage
 func writeCovHTMLFile(profile *cover.Profile, outRoot, localPath string) error {
-	src, err := os.ReadFile(filepath.Clean(localPath))
-	if err != nil { return fmt.Errorf("cannot read source: %w", err) }
+	srcFile  := filepath.Clean(localPath)
+	src, err := os.ReadFile(srcFile)
+	if err != nil { return fmt.Errorf("cannot read source file %q: %w", srcFile, err) }
 
 	depth      := strings.Count(localPath, "/")
 	cssRelPath := "style.css"
@@ -195,7 +196,7 @@ window.addEventListener('message', (event) => {
 
 	outPath := filepath.Join(outRoot, localPath + ".html")
 	if err := os.MkdirAll(filepath.Dir(filepath.Clean(outPath)), 0700); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
+		return fmt.Errorf("cannot create directory: %w", err)
 	}
 	return os.WriteFile(filepath.Clean(outPath), []byte(builder.String()), 0600)
 }
@@ -245,24 +246,26 @@ func printCoverage(cov map[string]coverage, totalStatements, totalCovered int) {
 // writeAncillaryFiles writes the supporting files defined per the ancillaryFiles global variable to the user-specified path
 func writeAncillaryFiles(outRoot string, fsys fs.FS, files []string) error {
 	for _, file := range files {
-		f, err    := os.Create(filepath.Clean(filepath.Join(outRoot, file)))
-		if                                        err != nil { return err }
+		outFile   := filepath.Clean(filepath.Join(outRoot, file))
+		f, err    := os.Create(outFile)
+		if                                        err != nil { return fmt.Errorf("cannot create %q: %w",     outFile, err) }
 		data, err := fs.ReadFile(fsys, file)
-		if                                        err != nil { return err }
-		if _, err := fmt.Fprint(f, string(data)); err != nil { return err }
-		if    err := f.Close();                   err != nil { return err }
+		if                                        err != nil { return fmt.Errorf("cannot read %q: %w",          file, err) }
+		if _, err := fmt.Fprint(f, string(data)); err != nil { return fmt.Errorf("cannot write file %q: %w", outFile, err) }
+		if    err := f.Close();                   err != nil { return fmt.Errorf("cannot close file %q: %w", outFile, err) }
 	}
 	return nil
 }
 
 // writeStyleCSS writes the style.css file, which contains a single "MaxWidth" template parameter
 func writeStyleCSS(outRoot string, fsys fs.FS, maxWidth int) error {
+	outFile := filepath.Clean(filepath.Join(outRoot, styleCSS))
 	tmpl, err := template.ParseFS(fsys, styleCSS)
-	if err != nil { return err }
-	f, err := os.Create(filepath.Clean(filepath.Join(outRoot, styleCSS)))
-	if err != nil { return err }
-	tmpl.Execute(f, struct { MaxWidth int }{ MaxWidth: maxWidth })
-	if err := f.Close(); err != nil { return err }
+	if err != nil                   { return fmt.Errorf("cannot parse flags: %w", err) }
+	f, err := os.Create(outFile)
+	if err != nil                   { return fmt.Errorf("cannot create %q: %v", outFile, err) }
+	tmpl.Execute(f, struct{ MaxWidth int }{ MaxWidth: maxWidth })
+	if err := f.Close(); err != nil { return fmt.Errorf("cannot render template: %w", err) }
 	return nil
 }
 
