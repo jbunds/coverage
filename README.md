@@ -17,7 +17,7 @@ The motivation for the `coverage` Go module was to create a relatively minimal a
 
 The CSS code was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it _clearly_ still needs to be polished. But I am definitly _not_ a CSS expert, and it fulfills the required behavior as-is.
 
-The `coverage` module may someday provide relatively lightweight GitHub Actions CI artifacts, as its output is highly-compressible plaintext (the roughly 7.4 kB of bundled image files notwithstanding).
+The `coverage` module may someday provide relatively lightweight GitHub Actions CI artifacts, as its output is highly-compressible plaintext (the roughly 7.2 kB of bundled image files notwithstanding).
 
 #### Usage
 
