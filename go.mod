@@ -1,4 +1,4 @@
-module coverage
+module github.com/jbunds/coverage
 
 go 1.26.1
 
