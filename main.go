@@ -112,7 +112,7 @@ func main() {
 }
 
 // getModName tries to read the go.mod file to determine the name of the Go module,
-// falling back to inspecting the contents of the coverage profile file if that fails
+// falling back to inspecting the coverage profiles if that fails
 func getModName(profiles []*cover.Profile) (string, error) {
 	goMod, err := os.ReadFile("go.mod")
 	if err == nil {
@@ -120,10 +120,11 @@ func getModName(profiles []*cover.Profile) (string, error) {
 		if err != nil { return "", fmt.Errorf("cannot parse go.mod: %w", err) }
 		return modFile.Module.Mod.Path, nil
 	}
-	return findCommonRoot(profiles) // fallback to inspecting the coverage profile file
+	return findCommonRoot(profiles) // fallback to inspecting the coverage profiles
 }
 
 // findCommonRoot finds the longest path common to all files listed in the Go test coverage profile file
+// downstream code assumes this longest common prefix specifies the Go module name
 func findCommonRoot(profiles []*cover.Profile) (string, error) {
 	if len(profiles) < 1 { return "", nil }
 	common := strings.Split(profiles[0].FileName, "/")
@@ -145,16 +146,14 @@ func findCommonRoot(profiles []*cover.Profile) (string, error) {
 
 // getSrcRoot returns the root of the Go source files comprising the module
 func getSrcRoot(modName, profilePath string, profiles []*cover.Profile) (string, error) {
-	srcRoot := ""
 	switch {
 	case fileExists(strings.TrimPrefix(profiles[0].FileName, modName + "/")):
-		srcRoot = "."
+		return ".", nil
 	case fileExists(filepath.Join(filepath.Dir(profilePath), strings.TrimPrefix(profiles[0].FileName, modName))):
-		srcRoot = filepath.Dir(profilePath)
+		return filepath.Dir(profilePath), nil
 	default:
 		return "", fmt.Errorf("cannot locate source root")
 	}
-	return srcRoot, nil
 }
 
 // fileExists returns a boolean indicating whether or not a given file exists
@@ -163,7 +162,7 @@ func fileExists(path string) bool {
 	return !errors.Is(err, os.ErrNotExist)
 }
 
-// writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the user-specified coverage profile file
+// writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the coverage profile file
 func writeCovHTMLFiles(modName, srcRoot, outRoot string, profiles []*cover.Profile) (map[string]coverage, int, int, error) {
 	var totalStatements, totalCovered int
 
@@ -194,7 +193,7 @@ func writeCovHTMLFiles(modName, srcRoot, outRoot string, profiles []*cover.Profi
 	return cov, totalStatements, totalCovered, nil
 }
 
-// writeCovHTMLFile writes a single *.go.html file with green (covered) and red (uncovered) lines to illustrate test coverage
+// writeCovHTMLFile writes a single *.go.html file with green (covered) and red (uncovered) lines to indicate test coverage
 func writeCovHTMLFile(profile *cover.Profile, srcRoot, outRoot, localPath string) error {
 	srcFile  := filepath.Clean(filepath.Join(srcRoot, localPath))
 	src, err := os.ReadFile(srcFile)
@@ -313,7 +312,7 @@ func writeAncillaryFiles(outRoot string, fsys fs.FS, files []string) error {
 	return nil
 }
 
-// writeIndexHTML writes the index HTML file
+// writeIndexHTML writes the index HTML file which hosts the two iframes
 func writeIndexHTML(outRoot string, fsys fs.FS, indexHTML, modName string) error {
 	repoURL, _, ok := module.SplitPathVersion(modName)
 	if !ok { repoURL = modName }
