@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// treeBuilder stores the state during recursion
+// treeBuilder stores state during processEntry recursion
 type treeBuilder struct {
 	fs       fs.FS
 	cov      map[string]coverage
@@ -92,7 +92,7 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 		var dirCovered, dirStatements int
 
 		for _, subEntry := range subEntries {
-			res, err := tb.processEntry(htmlPath, subEntry, indent + 2)
+			res, err := tb.processEntry(htmlPath, subEntry, indent + 2) // recurse into each directory entry
 			if err != nil { return entryResult{}, err }
 			subSB.WriteString(res.html)
 			dirCovered    += res.covered
@@ -133,6 +133,7 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 	srcSpan  := fmt.Sprintf("<span class=\"src\"><a href=\"%s\">%s</a></span>", htmlPath, src)
 	covSpan  := fmt.Sprintf("<span class=\"cov\">%.1f%%</span>", percent)
 	html     := strings.Repeat("  ", indent) + fmt.Sprintf("<li><div class=\"tree-node\">%s %s</div></li>\n", srcSpan, covSpan)
+
 	return entryResult{
 		html:    html,
 		covered: cov.covered,
