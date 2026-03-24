@@ -73,6 +73,8 @@
   display:        inline-block;
   vertical-align: middle;
   margin-right:   10ch;
+  padding:        2px 4px;
+  border-radius:  4px;
 }
 
 .tree     a:hover,
