@@ -1,7 +1,7 @@
 /* TODO(jeff): refactor, consolidate, and better encapsulate all CSS that's *
  *             currently strewn about among different files. try cssnano.   */
 
-.tree input[type=checkbox] { display: none }
+.tree input[type="checkbox"] { display: none }
 
 .tree,
 .tree ul,

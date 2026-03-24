@@ -20,7 +20,7 @@
   }
 }
 
-[theme=light] {
+[theme="light"] {
   --bg-color:   beige;
   --bg-header:  papayawhip;
   --text-color: darkslategrey;
@@ -29,7 +29,7 @@
   --cov-miss:   red;
 }
 
-[theme=dark] {
+[theme="dark"] {
   --bg-color:   black;
   --bg-header:  black;
   --text-color: lightyellow;
