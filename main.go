@@ -205,7 +205,6 @@ func writeCovHTMLFile(profile *cover.Profile, srcRoot, outRoot, localPath string
 		cssRelPath = strings.Repeat("../", depth) + cssRelPath
 	}
 
-	// TODO(jeff): clean up these multi-line strings
 	var builder strings.Builder
 	fmt.Fprintf(&builder, `<!DOCTYPE html>
 <html lang="en">
@@ -303,11 +302,11 @@ func writeAncillaryFiles(outRoot string, fsys fs.FS, files []string) error {
 	for _, file := range files {
 		outFile   := filepath.Clean(filepath.Join(outRoot, file))
 		f, err    := os.Create(outFile)
-		if                                        err != nil { return fmt.Errorf("cannot create %q: %w",     outFile, err) }
+		if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
 		data, err := fs.ReadFile(fsys, file)
-		if                                        err != nil { return fmt.Errorf("cannot read %q: %w",          file, err) }
+		if err != nil { return fmt.Errorf("cannot read %q: %w", file, err) }
 		if _, err := fmt.Fprint(f, string(data)); err != nil { return fmt.Errorf("cannot write file %q: %w", outFile, err) }
-		if    err := f.Close();                   err != nil { return fmt.Errorf("cannot close file %q: %w", outFile, err) }
+		if err := f.Close(); err != nil { return fmt.Errorf("cannot close file %q: %w", outFile, err) }
 	}
 	return nil
 }
