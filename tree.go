@@ -95,8 +95,8 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 			res, err := tb.processEntry(htmlPath, subEntry, indent + 2)
 			if err != nil { return entryResult{}, err }
 			subSB.WriteString(res.html)
-			dirCovered += res.covered
-			dirStatements   += res.total
+			dirCovered    += res.covered
+			dirStatements += res.total
 		}
 
 		percent := 0.0
