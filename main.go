@@ -19,6 +19,7 @@ package main
 import (
 	"cmp"
 	"embed"
+	"errors"
 	"flag"
 	"fmt"
 	"html"
@@ -61,60 +62,115 @@ func main() {
 		os.Exit(1)
 	}
 
-	modName, err := getModName()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "cannot determine module name: %v\n", err)
-		os.Exit(2)
-	}
-
 	profiles, err := cover.ParseProfiles(profilePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cannot parse coverage profile file: %v\n", err)
+		os.Exit(2)
+	}
+
+	modName, err := getModName(profiles)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot determine module name or source root: %v\n", err)
 		os.Exit(3)
 	}
 
-	cov, totalStatements, totalCovered, err := writeCovHTMLFiles(modName, outRoot, profiles)
+	srcRoot, err := getSrcRoot(modName, profilePath, profiles)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot determine source root: %v\n", err)
+		os.Exit(4)
+	}
+
+	cov, totalStatements, totalCovered, err := writeCovHTMLFiles(modName, srcRoot, outRoot, profiles)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write HTML coverage files: %v\n", err)
-		os.Exit(4)
+		os.Exit(5)
 	}
 
 	printCoverage(cov, totalStatements, totalCovered)
 
 	if err := writeAncillaryFiles(outRoot, content, ancillaryFiles); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write ancillary files: %v\n", err)
-		os.Exit(5)
+		os.Exit(6)
 	}
 
 	if err := writeIndexHTML(outRoot, content, indexHTML, modName); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", indexHTML, err)
-		os.Exit(6)
+		os.Exit(7)
 	}
 
 	maxWidth := 0
 
 	if maxWidth, err = writeTreeHTML(outRoot, treeHTML, cov); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", treeHTML, err)
-		os.Exit(7)
+		os.Exit(8)
 	}
 
 	if err := writeStyleCSS(outRoot, content, maxWidth); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write %s: %v\n", styleCSS, err)
-		os.Exit(8)
+		os.Exit(9)
 	}
 }
 
-// getModName reads the go.mod file to determine the name of the local Go module
-func getModName() (string, error) {
+// getModName tries to read the go.mod file to determine the name of the Go module,
+// falling back to inspecting the contents of the coverage profile file if that fails
+func getModName(profiles []*cover.Profile) (string, error) {
+	modName    := ""
 	goMod, err := os.ReadFile("go.mod")
-	if err != nil { return "", fmt.Errorf("cannot read go.mod: %w", err) }
-	f, err := modfile.Parse("go.mod", goMod, nil)
-	if err != nil { return "", fmt.Errorf("cannot parse go.mod: %w", err) }
-	return f.Module.Mod.Path, nil
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot read go.mod: %v\nrecovering...\n", err)
+		modName, err = findCommonRoot(profiles)
+		if err != nil { return "", err }
+	} else {
+		f, err := modfile.Parse("go.mod", goMod, nil)
+		if err != nil { return "", fmt.Errorf("cannot parse go.mod: %w", err) }
+		modName = f.Module.Mod.Path
+	}
+	return modName, nil
+}
+
+// getSrcRoot returns the root of the Go source files comprising the module
+func getSrcRoot(modName, profilePath string, profiles []*cover.Profile) (string, error) {
+	srcRoot := ""
+	switch {
+	case fileExists(strings.TrimPrefix(profiles[0].FileName, modName + "/")):
+		srcRoot = "."
+	case fileExists(filepath.Join(filepath.Dir(profilePath), strings.TrimPrefix(profiles[0].FileName, modName))):
+		srcRoot = filepath.Dir(profilePath)
+	}
+	if srcRoot == "" {
+		return srcRoot, fmt.Errorf("cannot locate source root")
+	}
+	return srcRoot, nil
+}
+
+// fileExists returns a boolean indicating whether or not a given file exists
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !errors.Is(err, os.ErrNotExist)
+}
+
+// findCommonRoot finds the longest common root for all files listed in the Go test coverage profile file
+func findCommonRoot(profiles []*cover.Profile) (string, error) {
+	if len(profiles) < 1 { return "", nil }
+	common := strings.Split(profiles[0].FileName, "/")
+	for _, p := range profiles[1:] {
+		current  := strings.Split(p.FileName, "/")
+		matchLen := 0
+		for i := 0; i < min(len(common), len(current)); i++ {
+			if common[i] == current[i] {
+				matchLen++
+			} else {
+				break
+			}
+		}
+		common = common[:matchLen]
+		if len(common) == 0 { return "", fmt.Errorf("cannot determine common root") }
+	}
+	return strings.Join(common, "/"), nil
 }
 
 // writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the user-specified coverage profile file
-func writeCovHTMLFiles(modName, outRoot string, profiles []*cover.Profile) (map[string]coverage, int, int, error) {
+func writeCovHTMLFiles(modName, srcRoot, outRoot string, profiles []*cover.Profile) (map[string]coverage, int, int, error) {
 	var totalStatements, totalCovered int
 
 	cov := make(map[string]coverage, len(profiles))
@@ -137,7 +193,7 @@ func writeCovHTMLFiles(modName, outRoot string, profiles []*cover.Profile) (map[
 			total:   fileStatements,
 		}
 
-		if err := writeCovHTMLFile(profile, outRoot, localPath); err != nil {
+		if err := writeCovHTMLFile(profile, srcRoot, outRoot, localPath); err != nil {
 			return cov, totalStatements, totalCovered, fmt.Errorf("cannot write HTML file for %s: %w", localPath, err)
 		}
 	}
@@ -145,8 +201,8 @@ func writeCovHTMLFiles(modName, outRoot string, profiles []*cover.Profile) (map[
 }
 
 // writeCovHTMLFile writes a single *.go.html file with green (covered) and red (uncovered) lines to illustrate test coverage
-func writeCovHTMLFile(profile *cover.Profile, outRoot, localPath string) error {
-	srcFile  := filepath.Clean(localPath)
+func writeCovHTMLFile(profile *cover.Profile, srcRoot, outRoot, localPath string) error {
+	srcFile  := filepath.Clean(filepath.Join(srcRoot, localPath))
 	src, err := os.ReadFile(srcFile)
 	if err != nil { return fmt.Errorf("cannot read source file %q: %w", srcFile, err) }
 
