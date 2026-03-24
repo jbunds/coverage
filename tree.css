@@ -1,9 +1,7 @@
-/* TODO(jeff): refactor, consolidate, and better encapsulate all CSS that's
- *             currently strewn about among different files (this file,
- *             main.go, and index.html)
- */
+/* TODO(jeff): refactor, consolidate, and better encapsulate all CSS that's *
+ *             currently strewn about among different files. try cssnano.   */
 
-/* TODO(jeff): reorder these blocks in terms of their respectively-applicable scope */
+.tree input[type=checkbox] { display: none }
 
 .tree,
 .tree ul,
@@ -27,18 +25,13 @@
   opacity: 1;
 }
 
-.tree input[type="checkbox"] {
-  display: none;
-}
 
 .tree li { /* layout for every row (folder or file) */
-  white-space: nowrap;
   position:    relative;
+  white-space: nowrap;
 }
 
-.tree-node {
-  position: relative;
-}
+.tree-node { position: relative }
 
 .tree li li { /* vertical branch line */
   position:     relative;
@@ -46,31 +39,29 @@
 }
 
 .tree li li::before {
-  content:     "";
   position:    absolute;
   left:        -1ch;
   top:         0;
   height:      100%;
   border-left: 1px solid;
+  content:     "";
 }
 
-.tree li li:last-child::before {
-  height: 0.75em;
-}
+.tree li li:last-child::before { height: 0.75em }
 
 .tree li li::after { /* horizontal branch line */
-  content:    "";
   position:   absolute;
   left:       -1ch;
   top:        0.75em;
   width:      1ch;
   border-top: 1px solid;
+  content:    "";
 }
 
 .tree label { /* folder emojis & labels */
-  cursor:         pointer;
-  user-select:    none;
   display:        inline-block;
+  user-select:    none;
+  cursor:         pointer;
   vertical-align: middle;
   margin-right:   10ch;
   padding:        2px 4px;
@@ -78,38 +69,34 @@
 }
 
 .tree     a:hover,
-.tree label:hover {
-  background-color: var(--hover-bg);
-}
+.tree label:hover { background-color: var(--hover-bg) }
 
 .tree label::before {
-  content:        "\1F4C1"; /* closed folder */
   display:        inline-block;
-  vertical-align: middle;
   width:          2ch;
+  content:        "\1F4C1"; /* closed folder */
+  vertical-align: middle;
   font-weight:    normal;
 }
 
-.tree input:checked ~ .tree-node label::before {
-  content: "\1F4C2"; /* open folder */
-}
+.tree input:checked ~ .tree-node label::before { content: "\1F4C2" } /* open folder */
 
 span.src {
   display:        inline-block;
   vertical-align: middle;
-  white-space:    nowrap;
   margin-right:   8ch; /* TODO(jeff): eliminate (or at least document) magic numbers */
+  white-space:    nowrap;
 }
 
 span.cov {
   position:    absolute;
+  top:         50%;
   right:       10px;
   width:       8ch;
   font-family: Menlo, monospace;
-  font-weight: normal;
   font-size:   small;
+  font-weight: normal;
   font-style:  italic;
   text-align:  right;
-  top:         50%;
   transform:   translateY(-50%);
 }
