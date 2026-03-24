@@ -278,11 +278,11 @@ window.addEventListener('message', (event) => {
 </body>
 </html>`)
 
-	outPath := filepath.Join(rg.outRoot, localPath + ".html")
-	if err := os.MkdirAll(filepath.Dir(filepath.Clean(outPath)), 0700); err != nil {
+	outPath := filepath.Clean(filepath.Join(rg.outRoot, localPath + ".html"))
+	if err := os.MkdirAll(filepath.Dir(outPath), 0700); err != nil {
 		return fmt.Errorf("cannot create directory: %w", err)
 	}
-	return os.WriteFile(filepath.Clean(outPath), []byte(builder.String()), 0600)
+	return os.WriteFile(outPath, []byte(builder.String()), 0600)
 }
 
 // printCoverage prints per-file coverage percentages to stdout
