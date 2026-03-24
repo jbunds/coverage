@@ -114,42 +114,16 @@ func main() {
 // getModName tries to read the go.mod file to determine the name of the Go module,
 // falling back to inspecting the contents of the coverage profile file if that fails
 func getModName(profiles []*cover.Profile) (string, error) {
-	modName    := ""
 	goMod, err := os.ReadFile("go.mod")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "cannot read go.mod: %v\nrecovering...\n", err)
-		modName, err = findCommonRoot(profiles)
-		if err != nil { return "", err }
-	} else {
-		f, err := modfile.Parse("go.mod", goMod, nil)
+	if err == nil {
+		modFile, err := modfile.Parse("go.mod", goMod, nil)
 		if err != nil { return "", fmt.Errorf("cannot parse go.mod: %w", err) }
-		modName = f.Module.Mod.Path
+		return modFile.Module.Mod.Path, nil
 	}
-	return modName, nil
+	return findCommonRoot(profiles) // fallback to inspecting the coverage profile file
 }
 
-// getSrcRoot returns the root of the Go source files comprising the module
-func getSrcRoot(modName, profilePath string, profiles []*cover.Profile) (string, error) {
-	srcRoot := ""
-	switch {
-	case fileExists(strings.TrimPrefix(profiles[0].FileName, modName + "/")):
-		srcRoot = "."
-	case fileExists(filepath.Join(filepath.Dir(profilePath), strings.TrimPrefix(profiles[0].FileName, modName))):
-		srcRoot = filepath.Dir(profilePath)
-	}
-	if srcRoot == "" {
-		return srcRoot, fmt.Errorf("cannot locate source root")
-	}
-	return srcRoot, nil
-}
-
-// fileExists returns a boolean indicating whether or not a given file exists
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return !errors.Is(err, os.ErrNotExist)
-}
-
-// findCommonRoot finds the longest common root for all files listed in the Go test coverage profile file
+// findCommonRoot finds the longest path common to all files listed in the Go test coverage profile file
 func findCommonRoot(profiles []*cover.Profile) (string, error) {
 	if len(profiles) < 1 { return "", nil }
 	common := strings.Split(profiles[0].FileName, "/")
@@ -167,6 +141,26 @@ func findCommonRoot(profiles []*cover.Profile) (string, error) {
 		if len(common) == 0 { return "", fmt.Errorf("cannot determine common root") }
 	}
 	return strings.Join(common, "/"), nil
+}
+
+// getSrcRoot returns the root of the Go source files comprising the module
+func getSrcRoot(modName, profilePath string, profiles []*cover.Profile) (string, error) {
+	srcRoot := ""
+	switch {
+	case fileExists(strings.TrimPrefix(profiles[0].FileName, modName + "/")):
+		srcRoot = "."
+	case fileExists(filepath.Join(filepath.Dir(profilePath), strings.TrimPrefix(profiles[0].FileName, modName))):
+		srcRoot = filepath.Dir(profilePath)
+	default:
+		return "", fmt.Errorf("cannot locate source root")
+	}
+	return srcRoot, nil
+}
+
+// fileExists returns a boolean indicating whether or not a given file exists
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !errors.Is(err, os.ErrNotExist)
 }
 
 // writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the user-specified coverage profile file
