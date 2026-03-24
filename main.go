@@ -70,7 +70,7 @@ func main() {
 
 	modName, err := getModName(profiles)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cannot determine module name or source root: %v\n", err)
+		fmt.Fprintf(os.Stderr, "cannot determine module name: %v\n", err)
 		os.Exit(3)
 	}
 
