@@ -23,10 +23,11 @@ type entryResult struct {
 	total   int
 }
 
+// htmlBuilder stores data used to render subdirectories in the tree
 type htmlBuilder struct {
 	indent int
 	itemID string
-	src    string
+	subDir string
 }
 
 // writeTreeHTML writes HTML to the specified treeHTML file
@@ -94,7 +95,7 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 		var dirCovered, dirStatements int
 
 		for _, subEntry := range subDirEntries {
-			res, err := tb.processEntry(htmlPath, subEntry, indent + 2) // recurse into each directory entry, indenting two spaces each time
+			res, err := tb.processEntry(htmlPath, subEntry, indent + 2) // indent by an additional two spaces each time we recurse into a subdirectory
 			if err != nil { return entryResult{}, err }
 			subDirSB.WriteString(res.html)
 			dirCovered    += res.covered
@@ -104,7 +105,7 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 		hb := &htmlBuilder{
 			indent: indent,
 			itemID: itemID,
-			src:    src,
+			subDir: src,
 		}
 
 		return entryResult{
@@ -129,7 +130,7 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 		total:   cov.total}, nil
 }
 
-// buildHTML builds an HTML string for all entries comprising a subdirectory
+// buildHTML builds an HTML string used to render a subdirectory in the tree
 func (hb *htmlBuilder) buildHTML(subDirHTML string, dirCovered, dirStatements int) string {
 	percent := 0.0
 	if dirStatements > 0 {
@@ -142,8 +143,8 @@ func (hb *htmlBuilder) buildHTML(subDirHTML string, dirCovered, dirStatements in
 	sb.WriteString(  indentStr + "<li>\n")
 	fmt.Fprintf(&sb, indentStr + "  <input type=\"checkbox\" id=\"%s\"/>\n", hb.itemID)
 	sb.WriteString(  indentStr + "  <div class=\"tree-node\">\n")
-	fmt.Fprintf(&sb, indentStr + "    <label for=\"%s\">%s</label>\n",  hb.itemID, hb.src)
-	fmt.Fprintf(&sb, indentStr + "    <span class=\"cov\">%.1f%%</span>\n", percent)
+	fmt.Fprintf(&sb, indentStr + "    <label for=\"%s\">%s</label>\n",       hb.itemID, hb.subDir)
+	fmt.Fprintf(&sb, indentStr + "    <span class=\"cov\">%.1f%%</span>\n",  percent)
 	sb.WriteString(  indentStr + "  </div>\n")
 	sb.WriteString(  indentStr + "  <ul>\n")
 	sb.WriteString(  subDirHTML )
