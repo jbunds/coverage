@@ -17,7 +17,6 @@ repos:
       - language: system
         id:       go-test
         name:     go test
-        #types:    [go] # https://pre-commit.com/#filtering-files-with-types https://github.com/pre-commit/identify/blob/main/identify/extensions.py
         entry:    go test -v -race ./...
         pass_filenames: false
         require_serial: true
