@@ -20,12 +20,12 @@ func TestPrintCoverage(t *testing.T) {
 	}
 	want := strings.Join([]string{
 		"File  Coverage",
-    "——————————————",
-    "bar     90.00%",
+		"——————————————",
+		"bar     90.00%",
 		"baz    100.00%",
-    "foo     10.00%",
-    "——————————————",
-    "Total    0.00%" + "\n"}, "\n")
+		"foo     10.00%",
+		"——————————————",
+		"Total    0.00%" + "\n"}, "\n")
 	got  := captureStdout(t, func() { repGen.printCoverage() })
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("printCoverage() mismatch (-want +got):\n%s", diff)
