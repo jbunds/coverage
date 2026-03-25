@@ -16,7 +16,7 @@ type treeBuilder struct {
 	maxWidth int
 }
 
-// entryResult stores the results of processing a directory tree containing *.go.html files generated from a Go test coverage profile
+// entryResult stores the results of processing directory entries containing *.go.html files generated from coverge profiles
 type entryResult struct {
 	html    string
 	covered int
