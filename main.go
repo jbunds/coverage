@@ -292,11 +292,13 @@ func (rg *reportGenerator) printCoverage() {
 		return cmp.Compare(len(a), len(b))
 	}))
 
-	fmtString := fmt.Sprintf("%%-%ds  %%6.2f%%%%\n", maxPathLen)
-	fmtHeader := fmt.Sprintf("%%-%ds %%s\n",         maxPathLen)
+	maxPathLen = max(maxPathLen, 5) // 5 == len("Total")
+
+	fmtHeader := fmt.Sprintf("%%-%ds %%7s\n",        maxPathLen)
+	fmtData   := fmt.Sprintf("%%-%ds  %%6.2f%%%%\n", maxPathLen)
 
 	fmt.Printf(fmtHeader, "File", "Coverage")
-	fmt.Println(strings.Repeat("—", maxPathLen + 9)) // 9 == 3 + len("100.0%")
+	fmt.Println(strings.Repeat("—", maxPathLen + 9)) // 9 == 2 spaces + len("100.00%")
 
 	// TODO(jeff): allow users to chose how the rows rendered in the tree should be sorted;
 	//             default should probably path-depth, then alphanumerically, just like here
@@ -315,7 +317,7 @@ func (rg *reportGenerator) printCoverage() {
 		if cov.total > 0 {
 			percent = float64(cov.covered) / float64(cov.total) * 100
 		}
-		fmt.Printf(fmtString, path, percent)
+		fmt.Printf(fmtData, path, percent)
 	}
 
 	totalPercent := 0.0
@@ -323,8 +325,8 @@ func (rg *reportGenerator) printCoverage() {
 		totalPercent = float64(rg.totalCovered) / float64(rg.totalStatements) * 100
 	}
 
-	fmt.Println(strings.Repeat("—", maxPathLen + 9))
-	fmt.Printf(fmtString, "Total", totalPercent)
+	fmt.Println(strings.Repeat("—", maxPathLen + 9)) // 9 == 2 spaces + len("100.00%")
+	fmt.Printf(fmtData, "Total", totalPercent)
 }
 
 // writeIndexHTML writes the index HTML file, which contains two template parameters
