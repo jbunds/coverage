@@ -49,7 +49,7 @@ jobs:
         message:  ${{ steps.coverage.outputs.coverage-pct-1dp }}%
         color:    ${{ steps.coverage.outputs.meets-threshold == 'true' && 'green' || 'red' }}
 
-    - name: coverage repot
+    - name: coverage report
       run: |
         go run github.com/jbunds/coverage@latest \
           -coverprofile="${{ steps.coverage.outputs.gocov-pathname }}" \
