@@ -23,6 +23,12 @@ type entryResult struct {
 	total   int
 }
 
+type htmlBuilder struct {
+	indent int
+	itemID string
+	src    string
+}
+
 // writeTreeHTML writes HTML to the specified treeHTML file
 func writeTreeHTML(root, treeHTML string, cov map[string]coverage) (int, error) {
 	builder := &treeBuilder{
@@ -74,52 +80,35 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 
 	width    := indent + len(src)
 
-	if isDir {
-		width += 2 // account for the folder icon emoji
-	}
-	if width > tb.maxWidth {
-		tb.maxWidth = width
-	}
+	if isDir { width += 2 } // account for the folder icon emoji
+	if width > tb.maxWidth { tb.maxWidth = width }
 
 	if isDir {
 		tb.counter++
 		itemID := fmt.Sprintf("tree-item-%d", tb.counter)
 
-		subEntries, err := fs.ReadDir(tb.fs, htmlPath)
+		subDirEntries, err := fs.ReadDir(tb.fs, htmlPath)
 		if err != nil { return entryResult{}, err }
 
-		var subSB strings.Builder
+		var subDirSB strings.Builder
 		var dirCovered, dirStatements int
 
-		for _, subEntry := range subEntries {
-			res, err := tb.processEntry(htmlPath, subEntry, indent + 2) // recurse into each directory entry
+		for _, subEntry := range subDirEntries {
+			res, err := tb.processEntry(htmlPath, subEntry, indent + 2) // recurse into each directory entry, indenting two spaces each time
 			if err != nil { return entryResult{}, err }
-			subSB.WriteString(res.html)
+			subDirSB.WriteString(res.html)
 			dirCovered    += res.covered
 			dirStatements += res.total
 		}
 
-		percent := 0.0
-		if dirStatements > 0 {
-			percent = float64(dirCovered) / float64(dirStatements) * 100
+		hb := &htmlBuilder{
+			indent: indent,
+			itemID: itemID,
+			src:    src,
 		}
 
-		indentStr := strings.Repeat("  ", indent)
-		var sb strings.Builder
-
-		sb.WriteString(  indentStr + "<li>\n")
-		fmt.Fprintf(&sb, indentStr + "  <input type=\"checkbox\" id=\"%s\"/>\n", itemID)
-		sb.WriteString(  indentStr + "  <div class=\"tree-node\">\n")
-		fmt.Fprintf(&sb, indentStr + "    <label for=\"%s\">%s</label>\n",  itemID, src)
-		fmt.Fprintf(&sb, indentStr + "    <span class=\"cov\">%.1f%%</span>\n", percent)
-		sb.WriteString(  indentStr + "  </div>\n")
-		sb.WriteString(  indentStr + "  <ul>\n")
-		sb.WriteString(  subSB.String())
-		sb.WriteString(  indentStr + "  </ul>\n")
-		sb.WriteString(  indentStr + "</li>\n")
-
 		return entryResult{
-			html:    sb.String(),
+			html:    hb.buildHTML(subDirSB.String(), dirCovered, dirStatements),
 			covered: dirCovered,
 			total:   dirStatements}, nil
 	}
@@ -138,6 +127,30 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 		html:    html,
 		covered: cov.covered,
 		total:   cov.total}, nil
+}
+
+// buildHTML builds an HTML string for all entries comprising a subdirectory
+func (hb *htmlBuilder) buildHTML(subDirHTML string, dirCovered, dirStatements int) string {
+	percent := 0.0
+	if dirStatements > 0 {
+		percent = float64(dirCovered) / float64(dirStatements) * 100
+	}
+
+	indentStr := strings.Repeat("  ", hb.indent)
+	var sb strings.Builder
+
+	sb.WriteString(  indentStr + "<li>\n")
+	fmt.Fprintf(&sb, indentStr + "  <input type=\"checkbox\" id=\"%s\"/>\n", hb.itemID)
+	sb.WriteString(  indentStr + "  <div class=\"tree-node\">\n")
+	fmt.Fprintf(&sb, indentStr + "    <label for=\"%s\">%s</label>\n",  hb.itemID, hb.src)
+	fmt.Fprintf(&sb, indentStr + "    <span class=\"cov\">%.1f%%</span>\n", percent)
+	sb.WriteString(  indentStr + "  </div>\n")
+	sb.WriteString(  indentStr + "  <ul>\n")
+	sb.WriteString(  subDirHTML )
+	sb.WriteString(  indentStr + "  </ul>\n")
+	sb.WriteString(  indentStr + "</li>\n")
+
+	return sb.String()
 }
 
 // preamble writes the preliminary portion of the tree HTML document
