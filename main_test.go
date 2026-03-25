@@ -10,6 +10,18 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func TestGetModName(t *testing.T) {
+	repGen := &reportGenerator{}
+	want   := "github.com/jbunds/coverage"
+	if err := repGen.getModName(); err != nil {
+		t.Errorf("getModName() failed: %v", err)
+	}
+	got := repGen.modName
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("getModName() mismatch (-want +got):\n%s", diff)
+	}
+}
+
 func TestPrintCoverage(t *testing.T) {
 	repGen := &reportGenerator{
 		cov: map[string]coverage{
