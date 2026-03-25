@@ -15,15 +15,17 @@ permissions: # https://docs.github.com/actions/reference/workflows-and-actions/w
   contents: read
 
 jobs:
-  stylelint:             # TODO: consolidate all linters (golangci-lint and stylelint) into a single GitHub Actions workflow called linters.yml
+  stylelint:              # TODO: consolidate all linters (golangci-lint and stylelint) into a single GitHub Actions workflow called linters.yml
     name:    stylelint
-    runs-on: ubuntu-slim # https://docs.github.com/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for--private-repositories
+    runs-on: macos-latest # https://docs.github.com/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for--private-repositories
+    env:
+      NPM_CONFIG_LOGLEVEL: verbose
     steps:
-
-      - uses: actions/checkout@v6           # http://github.com/actions/checkout
-
-      - name: stylelint                     # https://stylelint.io/user-guide/get-started/
-        uses: actions-hub/stylelint@master  # https://github.com/actions-hub/stylelint (this is a container action, which limited to Linux runners)
-        env:                                # https://github.com/actions-hub/stylelint#indentation (INDENT_SPACES default == 2)
-          CONFIG_PATH: stylelint.config.mjs # https://stylelint.io/user-guide/configure/
-          PATTERN:     '*.css'              # assumes all CSS files are located in the repo's root
+      - name: stylelint             # https://stylelint.io/user-guide/get-started/
+      - uses: actions/checkout@v6   # https://github.com/actions/checkout
+      - uses: actions/setup-node@v6 # https://github.com/actions/setup-node
+        with:
+          node-version: 25
+      - run: npm install stylelint
+      - run: npm add -D stylelint stylelint-config-standard # https://stylelint.io/user-guide/get-started/#manual-setup
+      - run: npx stylelint '*.css'                          # https://stylelint.io/user-guide/get-started/#manual-setup
