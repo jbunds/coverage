@@ -21,7 +21,6 @@ jobs:
     env:
       NPM_CONFIG_LOGLEVEL: verbose
     steps:
-      - name: stylelint             # https://stylelint.io/user-guide/get-started/
       - uses: actions/checkout@v6   # https://github.com/actions/checkout
       - uses: actions/setup-node@v6 # https://github.com/actions/setup-node
         with:
