@@ -13,11 +13,13 @@ import (
 
 func TestUsage(t *testing.T) {
 	tests := []struct{
-		name   string
-		args   []string
-		want   string
-		stdErr string
-		err    string // zero value means no error expected (err113)
+		name             string
+		args             []string
+		wantOut          string
+		wantCoverProfile string
+		wantPath         string
+		stdErr           string
+		err              string // zero value means no error expected (err113)
 	}{
 		{
 			name: "valid",
@@ -25,11 +27,13 @@ func TestUsage(t *testing.T) {
 				"-coverprofile", "foo",
 				"-path",         "bar",
 			},
+			wantCoverProfile:  "foo",
+			wantPath:          "bar",
 		},
 		{
-			name: "missing -coverprofile",
-			err:  "no value specified for -coverprofile",
-			want: strings.Join([]string{
+			name:    "missing -coverprofile",
+			err:     "no value specified for -coverprofile",
+			wantOut: strings.Join([]string{
 				"missing -coverprofile usage:",
 				"",
 				"  -coverprofile string",
@@ -43,8 +47,8 @@ func TestUsage(t *testing.T) {
 			args: []string{
 				"-coverprofile", "baz",
 			},
-			err:  "no value specified for -path",
-			want: strings.Join([]string{
+			err:     "no value specified for -path",
+			wantOut: strings.Join([]string{
 				"missing -path usage:",
 				"",
 				"  -coverprofile string",
@@ -56,17 +60,19 @@ func TestUsage(t *testing.T) {
 		{
 			name: "ignored args",
 			args: []string{
-				"-coverprofile", "foo",
-				"-path",         "bar",
-				"baz",
-				"boo",
+				"-coverprofile", "boo",
+				"-path",         "bug",
+				"qux",
+				"bip",
 			},
-			stdErr: "ignored arguments: baz, boo\n",
+			wantCoverProfile: "boo",
+			wantPath:         "bug",
+			stdErr:           "ignored arguments: qux, bip\n",
 		},
 		{
-			name: "invalid",
-			args: []string{"-invalid"},
-			want: strings.Join([]string{
+			name:    "invalid",
+			args:    []string{"-invalid"},
+			wantOut: strings.Join([]string{
 				"flag provided but not defined: -invalid",
 				"invalid usage:",
 				"",
@@ -84,22 +90,29 @@ func TestUsage(t *testing.T) {
 			fs     := flag.NewFlagSet(tt.name, flag.ContinueOnError)
 			fs.SetOutput(gotOut)
 			var err error
+			var gotCoverProfile, gotPath string
 			gotErr := captureStderr(t, func() {
-				_, _, err = flags(fs, tt.args)
+				gotCoverProfile, gotPath, err = flags(fs, tt.args)
 			})
 			if tt.err != "" {
 				if err == nil {
-					t.Errorf("flags(%v) did not fail", tt.args)
+					t.Errorf("flags(%q) did not fail", tt.name)
 				}
 				if tt.err != err.Error() {
-					t.Errorf("flags(%v) returned %q; expected %q\n", tt.args, err, tt.err)
+					t.Errorf("flags(%q) returned %q; expected %q\n", tt.name, err, tt.err)
 				}
 			}
 			if diff := cmp.Diff(tt.stdErr, gotErr); diff != "" {
-				t.Errorf("flags(%v) stderr mismatch (-want +got):\n%s", tt.args, diff)
+				t.Errorf("flags(%q) stderr mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.want, gotOut.String()); diff != "" {
-				t.Errorf("flags(%v) usage message mismatch (-want +got):\n%s", tt.args, diff)
+			if diff := cmp.Diff(tt.wantOut, gotOut.String()); diff != "" {
+				t.Errorf("flags(%q) usage message mismatch (-want +got):\n%s", tt.name, diff)
+			}
+			if diff := cmp.Diff(tt.wantCoverProfile, gotCoverProfile); diff != "" {
+				t.Errorf("flags(%q) coverProfile mismatch (-want +got):\n%s", tt.name, diff)
+			}
+			if diff := cmp.Diff(tt.wantPath, gotPath); diff != "" {
+				t.Errorf("flags(%q) path mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}
