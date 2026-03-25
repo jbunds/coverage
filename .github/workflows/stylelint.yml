@@ -4,30 +4,26 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - '**.go'
+      - '**.css'
   pull_request:
     branches: [ "main" ]
     paths:
-      - '**.go'
+      - '**.css'
   workflow_dispatch: # allows this workflow to be manually triggered from the UI
 
 permissions: # https://docs.github.com/actions/reference/workflows-and-actions/workflow-syntax#permissions
   contents: read
 
 jobs:
-  golangci:
-    name: stylelint
-    runs-on: macos-latest # https://docs.github.com/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for--private-repositories
+  stylelint:             # TODO: consolidate all linters (golangci-lint and stylelint) into a single GitHub Actions workflow called linters.yml
+    name:    stylelint
+    runs-on: ubuntu-slim # https://docs.github.com/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for--private-repositories
     steps:
 
-      - uses: actions/checkout@v6 # http://github.com/actions/checkout
+      - uses: actions/checkout@v6           # http://github.com/actions/checkout
 
-      - uses: actions/setup-go@v6 # http://github.com/actions/setup-go
-        with:
-          go-version: '1.26.1'    # https://github.com/marketplace/actions/setup-go-environment#supported-version-syntax
-
-      - name: stylelint                    # https://stylelint.io/user-guide/get-started/
-        uses: actions-hub/stylelint@master # https://github.com/actions-hub/stylelint
-        env:
+      - name: stylelint                     # https://stylelint.io/user-guide/get-started/
+        uses: actions-hub/stylelint@master  # https://github.com/actions-hub/stylelint (this is a container action, which limited to Linux runners)
+        env:                                # https://github.com/actions-hub/stylelint#indentation (INDENT_SPACES default == 2)
           CONFIG_PATH: stylelint.config.mjs # https://stylelint.io/user-guide/configure/
           PATTERN:     '*.css'              # assumes all CSS files are located in the repo's root
