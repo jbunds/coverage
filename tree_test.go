@@ -25,7 +25,7 @@ func TestGenerateHTML(t *testing.T) {
 		t.Fatalf("generateHTML failed: %v", err)
 	}
 
-	t.Logf("generated HTML:\n%s", html)
+	//t.Logf("generated HTML:\n%s", html)
 
 	// check top-level indentation for file
 	if !strings.Contains(html, "\n  <li><div class=\"tree-node\"><span class=\"src\"><a href=\"a.go.html\">a.go</a>") {

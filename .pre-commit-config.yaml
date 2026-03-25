@@ -1,0 +1,23 @@
+# https://pre-commit.com
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev:  v6.0.0
+    hooks:
+      - id: check-yaml
+repos:
+  - repo: https://github.com/golangci/golangci-lint
+    rev:  v2.11.4
+    hooks:
+      - id:    golangci-lint
+        entry: golangci-lint run --verbose # or `go run github.com/golangci/golangci-lint/cmd/golangci-lint run`
+repos:
+  - repo: local
+    hooks:
+      - language: system
+        id:       go-test
+        name:     go test
+        #types:    [go] # https://pre-commit.com/#filtering-files-with-types https://github.com/pre-commit/identify/blob/main/identify/extensions.py
+        entry:    go test -v -race ./...
+        pass_filenames: false
+        require_serial: true
