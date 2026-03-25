@@ -1,0 +1,69 @@
+# https://docs.github.com/actions/automating-builds-and-tests/building-and-testing-go
+
+name: tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.go'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.go'
+  workflow_dispatch: # allows this workflow to be manually triggered from the UI
+
+permissions:      # https://docs.github.com/actions/reference/workflows-and-actions/workflow-syntax#permissions
+  contents: write # https://docs.github.com/rest/authentication/permissions-required-for-github-apps?apiVersion=2026-03-10#repository-permissions-for-contents
+
+jobs:
+  test:
+    runs-on: macos-latest # https://docs.github.com/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for--private-repositories
+    steps:
+
+    - uses: actions/checkout@v6 # http://github.com/actions/checkout
+      with:
+        fetch-depth: 10         # https://github.com/gwatts/go-coverage-action#example-workflow
+
+    - uses: actions/setup-go@v6 # http://github.com/actions/setup-go
+      with:
+        go-version: '1.26.1'    # https://github.com/marketplace/actions/setup-go-environment#supported-version-syntax
+
+    - name: test                # https://pkg.go.dev/cmd/go#hdr-Testing_functions
+      id:   test
+      run:  go test -v -race ./...
+
+    - name: coverage
+      uses: gwatts/go-coverage-action@v2 # https://github.com/gwatts/go-coverage-action#usage
+      id:   coverage
+      with:
+        coverage-threshold: 50
+
+    - name: update coverage badge # https://github.com/schneegans/dynamic-badges-action#%EF%B8%8F-configuration
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      with:
+        auth:     ${{ secrets.GIST_SECRET }}
+        gistID:   5a36403860174baeee62844ab96a77d9
+        filename: coverage.json
+        label:    coverage
+        message:  ${{ steps.coverage.outputs.coverage-pct-1dp }}%
+        color:    ${{ steps.coverage.outputs.meets-threshold == 'true' && 'green' || 'red' }}
+
+    - name: coverage repot
+      run: |
+        go run github.com/jbunds/coverage@latest \
+          -coverprofile="${{ steps.coverage.outputs.gocov-pathname }}" \
+          -path=/tmp/coverage
+
+    # https://github.com/fgrosse/go-coverage-report
+    # https://github.com/nikolaydubina/go-recipes#-browse-coverage-with-xgo
+    # https://github.com/xhd2015/xgo
+
+    - name: store artifacts
+      uses: actions/upload-artifact@v7 # https://github.com/actions/upload-artifact
+      with:
+        name: coverage report
+        retention-days: 7
+        path: |
+          /tmp/coverage/
+          ${{ steps.coverage.outputs.report-pathname }}

@@ -1,3 +1,5 @@
+[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/) &nbsp; [![Go Version](https://img.shields.io/badge/go-%20v1.26.1-blue?logo=go)](https://github.com/jbunds/coverage/blob/main/go.mod) &nbsp; [![tests](https://github.com/jbunds/coverage/actions/workflows/ci.yml/badge.svg)](https://github.com/jbunds/coverage/actions/workflows/ci.yml) &nbsp; [![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jbunds/5a36403860174baeee62844ab96a77d9/raw/coverage.json)](https://github.com/jbunds/coverage/actions/workflows/ci.yml) &nbsp; [![lint](https://github.com/jbunds/coverage/actions/workflows/golangci-lint.yml/badge.svg)](https://github.com/jbunds/coverage/actions/workflows/golangci-lint.yml) &nbsp; [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 [simple-tree]: https://github.com/psnet/simple-tree
 [light theme]: ./light_theme.jpg "light theme"
 [dark theme]:  ./dark_theme.jpg "dark theme"
