@@ -27,4 +27,4 @@ jobs:
           node-version: 25
       - run: npm install stylelint
       - run: npm add -D stylelint stylelint-config-standard # https://stylelint.io/user-guide/get-started/#manual-setup
-      - run: npx stylelint '*.css'                          # https://stylelint.io/user-guide/get-started/#manual-setup
+      - run: npx stylelint *.css                            # https://stylelint.io/user-guide/get-started/#manual-setup
