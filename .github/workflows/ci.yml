@@ -61,5 +61,4 @@ jobs:
         name: coverage report
         retention-days: 7
         path: |
-          /tmp/coverage/
-          ${{ steps.coverage.outputs.report-pathname }}
+          /tmp/*/coverage/
