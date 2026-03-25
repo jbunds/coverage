@@ -22,19 +22,46 @@ func TestUsage(t *testing.T) {
 		{
 			name: "valid",
 			args: []string{
-				"-coverprofile", "cov.out",
-				"-path",         "coverage",
+				"-coverprofile", "foo",
+				"-path",         "bar",
 			},
+		},
+		{
+			name: "missing -coverprofile",
+			err:  "no value specified for -coverprofile",
+			want: strings.Join([]string{
+				"missing -coverprofile usage:",
+				"",
+				"  -coverprofile string",
+				"    	path to Go test coverage profile file",
+				"  -path string",
+				"    	path where HTML files will be written",
+				""}, "\n"),
+		},
+		{
+			name: "missing -path",
+			args: []string{
+				"-coverprofile", "baz",
+			},
+			err:  "no value specified for -path",
+			want: strings.Join([]string{
+				"missing -path usage:",
+				"",
+				"  -coverprofile string",
+				"    	path to Go test coverage profile file",
+				"  -path string",
+				"    	path where HTML files will be written",
+				""}, "\n"),
 		},
 		{
 			name: "ignored args",
 			args: []string{
-				"-coverprofile", "cov.out",
-				"-path",         "coverage",
-				"foo",
-				"bar",
+				"-coverprofile", "foo",
+				"-path",         "bar",
+				"baz",
+				"boo",
 			},
-			stdErr: "ignored arguments: foo, bar\n",
+			stdErr: "ignored arguments: baz, boo\n",
 		},
 		{
 			name: "invalid",
