@@ -55,10 +55,6 @@ jobs:
           -coverprofile="${{ steps.coverage.outputs.gocov-pathname }}" \
           -path=/tmp/coverage
 
-    # https://github.com/fgrosse/go-coverage-report
-    # https://github.com/nikolaydubina/go-recipes#-browse-coverage-with-xgo
-    # https://github.com/xhd2015/xgo
-
     - name: store artifacts
       uses: actions/upload-artifact@v7 # https://github.com/actions/upload-artifact
       with:

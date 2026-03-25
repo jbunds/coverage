@@ -27,7 +27,7 @@ jobs:
           go-version: '1.26.1'    # https://github.com/marketplace/actions/setup-go-environment#supported-version-syntax
 
       - name: stylelint                    # https://stylelint.io/user-guide/get-started/
-        uses: actions-hub/stylelint@master # https://github.com/actions-hub/stylelint#usage
+        uses: actions-hub/stylelint@master # https://github.com/actions-hub/stylelint
         env:
           CONFIG_PATH: stylelint.config.mjs # https://stylelint.io/user-guide/configure/
           PATTERN:     '*.css'              # assumes all CSS files are located in the repo's root
