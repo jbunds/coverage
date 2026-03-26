@@ -23,6 +23,7 @@ import (
 	"flag"
 	"fmt"
 	"html"
+	"io"
 	"io/fs"
 	"maps"
 	"os"
@@ -54,8 +55,26 @@ type coverage struct {
 	total   int
 }
 
+// wrappers to make testing easier
+type localFS struct {
+	fs.FS
+}
+
+type writeFS interface {
+	fs.FS
+	Create(string) (io.WriteCloser, error)
+	MkdirAll(string, fs.FileMode) error
+	WriteFile(string, []byte, fs.FileMode) error
+}
+
+func (lfs *localFS) Create   (name string) (io.WriteCloser,               error) { return os.Create(filepath.Clean(name)) }
+func (lfs *localFS) MkdirAll (path string, perm fs.FileMode)              error  { return os.MkdirAll(path, perm) }
+func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error  { return os.WriteFile(name, data, perm) }
+
+// stores state, reduces method signatures, and avoids copying values
 type reportGenerator struct {
-	embeddedFiles   embed.FS
+	fsys            writeFS
+	embeddedFiles   fs.FS
 	modName         string
 	srcRoot         string
 	outRoot         string
@@ -82,6 +101,7 @@ func main() {
 	}
 
 	repGen := &reportGenerator{
+		fsys:           &localFS{os.DirFS(".")},
 		embeddedFiles:  embeddedFiles,
 		outRoot:        outRoot,
 		profilePath:    profilePath,
@@ -130,10 +150,10 @@ func main() {
 // getModName tries to read the go.mod file to determine the name of the Go module,
 // and falls back to inspecting the coverage profiles if that fails
 func (rg *reportGenerator) getModName() error {
-	goMod, err := os.ReadFile("go.mod")
+	goMod, err := fs.ReadFile(rg.fsys, "go.mod")
 	if err == nil {
 		modFile, err := modfile.Parse("go.mod", goMod, nil)
-		if err != nil { return fmt.Errorf("cannot parse go.mod: %w", err) }
+		if err != nil || modFile.Module == nil { return fmt.Errorf("cannot parse go.mod: %w", err) }
 		rg.modName = modFile.Module.Mod.Path
 		return nil
 	}
@@ -175,11 +195,11 @@ func (rg *reportGenerator) getSrcRoot() error {
 	outRootParentDir      := filepath.Dir(rg.outRoot)
 	outRootSrcRelPath     := filepath.Join(outRootParentDir, firstSrcRelPath)
 	switch {
-	case fileExists(firstSrcRelPath):
+	case fileExists(rg.fsys, firstSrcRelPath):
 		rg.srcRoot = "."
-	case fileExists(profilePathSrcRelPath):
+	case fileExists(rg.fsys, profilePathSrcRelPath):
 		rg.srcRoot = profilePathParentDir
-	case fileExists(outRootSrcRelPath):
+	case fileExists(rg.fsys, outRootSrcRelPath):
 		rg.srcRoot = outRootParentDir
 	default:
 		return fmt.Errorf("cannot locate source root")
@@ -188,8 +208,8 @@ func (rg *reportGenerator) getSrcRoot() error {
 }
 
 // fileExists returns a boolean indicating whether or not a given file exists
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
+func fileExists(fsys fs.FS, path string) bool {
+	_, err := fs.Stat(fsys, path)
 	return !errors.Is(err, os.ErrNotExist)
 }
 
@@ -226,7 +246,7 @@ func (rg *reportGenerator) writeCovHTMLFiles() error {
 // writeCovHTMLFile writes a single *.go.html file with green (covered) and red (uncovered) lines to indicate test coverage
 func (rg *reportGenerator) writeCovHTMLFile(profile *cover.Profile, localPath string) error {
 	srcFile  := filepath.Clean(filepath.Join(rg.srcRoot, localPath))
-	src, err := os.ReadFile(srcFile)
+	src, err := fs.ReadFile(rg.fsys, srcFile)
 	if err != nil { return fmt.Errorf("cannot read source file %q: %w", srcFile, err) }
 
 	depth      := strings.Count(localPath, "/")
@@ -236,7 +256,45 @@ func (rg *reportGenerator) writeCovHTMLFile(profile *cover.Profile, localPath st
 	}
 
 	var builder strings.Builder
-	fmt.Fprintf(&builder, `<!DOCTYPE html>
+	if err := writePreamble(&builder, cssRelPath, localPath); err != nil {
+		return fmt.Errorf("cannot write preamble: %w", err)
+	}
+
+	pos := 0
+	for _, b := range profile.Boundaries(src) {
+		if _, err := builder.WriteString(html.EscapeString(string(src[pos:b.Offset]))); err != nil {
+			return fmt.Errorf("cannot write code block HTML: %w", err)
+		}
+		if b.Start {
+			class := "miss"
+			if b.Count > 0 {
+				class = "hit"
+			}
+			if _, err := fmt.Fprintf(&builder, "<span class='%s'>", class); err != nil {
+				return fmt.Errorf("cannot write coverage section %q end: %w", class, err)
+			}
+		} else {
+			if _, err := builder.WriteString("</span>"); err != nil {
+				return fmt.Errorf("cannot write coverage section end: %w", err)
+			}
+		}
+		pos = b.Offset
+	}
+
+	builder.WriteString(html.EscapeString(string(src[pos:])))
+	if err := writePostable(&builder); err != nil {
+		return fmt.Errorf("cannot write postamble: %w", err)
+	}
+
+	outPath := filepath.Clean(filepath.Join(rg.outRoot, localPath + ".html"))
+	if err := rg.fsys.MkdirAll(filepath.Dir(outPath), 0700); err != nil {
+		return fmt.Errorf("cannot create directory: %w", err)
+	}
+	return rg.fsys.WriteFile(outPath, []byte(builder.String()), 0600)
+}
+
+func writePreamble(builder *strings.Builder, cssRelPath, localPath string) error {
+	_, err := fmt.Fprintf(builder, `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -245,24 +303,11 @@ func (rg *reportGenerator) writeCovHTMLFile(profile *cover.Profile, localPath st
 </head>
 <body id="code">
 <pre>`, cssRelPath, localPath)
+	return err
+}
 
-	pos := 0
-	for _, b := range profile.Boundaries(src) {
-		builder.WriteString(html.EscapeString(string(src[pos:b.Offset])))
-		if b.Start {
-			class := "miss"
-			if b.Count > 0 {
-				class = "hit"
-			}
-			fmt.Fprintf(&builder, "<span class='%s'>", class)
-		} else {
-			builder.WriteString("</span>")
-		}
-		pos = b.Offset
-	}
-
-	builder.WriteString(html.EscapeString(string(src[pos:])))
-	builder.WriteString(`</pre>
+func writePostable(builder *strings.Builder) error {
+	_, err := builder.WriteString(`</pre>
 <script>
 try {
   const parentTheme = window.parent.document.documentElement.getAttribute('theme');
@@ -277,12 +322,7 @@ window.addEventListener('message', (event) => {
 </script>
 </body>
 </html>`)
-
-	outPath := filepath.Clean(filepath.Join(rg.outRoot, localPath + ".html"))
-	if err := os.MkdirAll(filepath.Dir(outPath), 0700); err != nil {
-		return fmt.Errorf("cannot create directory: %w", err)
-	}
-	return os.WriteFile(outPath, []byte(builder.String()), 0600)
+	return err
 }
 
 // printCoverage prints per-file coverage percentages to stdout
@@ -337,7 +377,7 @@ func (rg *reportGenerator) writeIndexHTML(indexHTML string) error {
 	outFile := filepath.Clean(filepath.Join(rg.outRoot, indexHTML))
 	tmpl, err := template.ParseFS(rg.embeddedFiles, indexHTML)
 	if err != nil { return fmt.Errorf("cannot parse %q: %w", indexHTML, err) }
-	f, err := os.Create(outFile)
+	f, err := rg.fsys.Create(outFile)
 	if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
 	if err := tmpl.Execute(f, struct{
 		ModName, ModURL string
@@ -353,7 +393,7 @@ func (rg *reportGenerator) writeStyleCSS(styleCSS string) error {
 	outFile   := filepath.Clean(filepath.Join(rg.outRoot, styleCSS))
 	tmpl, err := template.ParseFS(rg.embeddedFiles, styleCSS)
 	if err != nil { return fmt.Errorf("cannot parse %q: %w", styleCSS, err) }
-	f, err := os.Create(outFile)
+	f, err := rg.fsys.Create(outFile)
 	if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
 	if err := tmpl.Execute(f, struct{
 		MaxWidth int
@@ -367,7 +407,7 @@ func (rg *reportGenerator) writeStyleCSS(styleCSS string) error {
 func (rg *reportGenerator) writeAncillaryFiles() error {
 	for _, file := range rg.ancillaryFiles {
 		outFile   := filepath.Clean(filepath.Join(rg.outRoot, file))
-		f, err    := os.Create(outFile)
+		f, err    := rg.fsys.Create(outFile)
 		if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
 		data, err := fs.ReadFile(rg.embeddedFiles, file)
 		if err != nil { return fmt.Errorf("cannot read %q: %w", file, err) }
