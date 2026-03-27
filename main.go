@@ -56,9 +56,7 @@ type coverage struct {
 }
 
 // wrappers to make testing easier
-type localFS struct {
-	fs.FS
-}
+type localFS struct { fs.FS }
 
 func (lfs *localFS) Create   (name string) (io.WriteCloser,               error) { return os.Create(filepath.Clean(name)) }
 func (lfs *localFS) MkdirAll (path string, perm fs.FileMode)              error  { return os.MkdirAll(path, perm) }

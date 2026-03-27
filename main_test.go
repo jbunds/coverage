@@ -14,6 +14,80 @@ import (
 	"golang.org/x/tools/cover"
 )
 
+// fakes and mocks
+
+type badWriter struct{}
+
+func (w *badWriter) Write(_ []byte) (int, error) {
+	return 0, fmt.Errorf("i refuse to write")
+}
+
+type mockFS struct {
+	fs.FS
+	createFails    bool
+	readDirFails   bool
+	closeFails     bool
+	mkdirAllFails  bool
+	writeFileFails bool
+	badWriter      bool
+	data           []byte
+}
+
+func (m *mockFS) Create(_ string) (io.WriteCloser, error) {
+	if m.createFails { return nil, fmt.Errorf("Create failed") }
+	var w io.Writer
+	if m.badWriter {
+		w = &badWriter{}
+	} else {
+		w = &sliceWriter{data: &m.data}
+	}
+	return &mockFile{
+		writer:     w,
+		closeFails: m.closeFails,
+	}, nil
+}
+
+func (m *mockFS) ReadDir(dir string) ([]fs.DirEntry, error) {
+	if m.readDirFails { return nil, fmt.Errorf("ReadDir failed") }
+	return fs.ReadDir(m.FS, dir)
+}
+
+func (m *mockFS) MkdirAll(_ string, _ fs.FileMode) error {
+	if m.mkdirAllFails { return fmt.Errorf("MkdirAll failed") }
+	return nil
+}
+
+func (m *mockFS) WriteFile(_ string, data []byte, _ fs.FileMode) error {
+	if m.writeFileFails { return fmt.Errorf("WriteFile failed") }
+	m.data = data
+	return nil
+}
+
+type sliceWriter struct {
+	data *[]byte
+}
+
+func (w *sliceWriter) Write(p []byte) (int, error) {
+	*w.data = append(*w.data, p...)
+	return len(p), nil
+}
+
+type mockFile struct {
+	closeFails bool
+	writer     io.Writer
+}
+
+func (m *mockFile) Close() error {
+	if m.closeFails { return fmt.Errorf("Close failed") }
+	return nil
+}
+
+func (m *mockFile) Write(p []byte) (n int, err error) {
+	return m.writer.Write(p)
+}
+
+// tests
+
 func TestGetModName(t *testing.T) {
 	tests := []struct{
 		name     string
@@ -153,74 +227,6 @@ func TestGetSrcRoot(t *testing.T) {
 			t.Errorf("getSrcRoot(%q) mismatch (-want +got):\n%s", tt.name, diff)
 		}
 	}
-}
-
-type badWriter struct{}
-
-func (w *badWriter) Write(_ []byte) (int, error) { return 0, fmt.Errorf("i refuse to write") }
-
-type mockFS struct {
-	fs.FS
-	createFails    bool
-	readDirFails   bool
-	closeFails     bool
-	mkdirAllFails  bool
-	writeFileFails bool
-	badWriter      bool
-	data           []byte
-}
-
-func (m *mockFS) Create(_ string) (io.WriteCloser, error) {
-	if m.createFails { return nil, fmt.Errorf("Create failed") }
-	var w io.Writer
-	if m.badWriter {
-		w = &badWriter{}
-	} else {
-		w = &sliceWriter{data: &m.data}
-	}
-	return &mockFile{
-		writer:     w,
-		closeFails: m.closeFails,
-	}, nil
-}
-
-func (m *mockFS) ReadDir(dir string) ([]fs.DirEntry, error) {
-	if m.readDirFails { return nil, fmt.Errorf("ReadDir failed") }
-	return fs.ReadDir(m.FS, dir)
-}
-
-func (m *mockFS) MkdirAll(_ string, _ fs.FileMode) error {
-	if m.mkdirAllFails { return fmt.Errorf("MkdirAll failed") }
-	return nil
-}
-
-func (m *mockFS) WriteFile(_ string, data []byte, _ fs.FileMode) error {
-	if m.writeFileFails { return fmt.Errorf("WriteFile failed") }
-	m.data = data
-	return nil
-}
-
-type sliceWriter struct {
-	data *[]byte
-}
-
-func (w *sliceWriter) Write(p []byte) (int, error) {
-	*w.data = append(*w.data, p...)
-	return len(p), nil
-}
-
-type mockFile struct {
-	closeFails bool
-	writer     io.Writer
-}
-
-func (m *mockFile) Close() error {
-	if m.closeFails { return fmt.Errorf("Close failed") }
-	return nil
-}
-
-func (m *mockFile) Write(p []byte) (n int, err error) {
-	return m.writer.Write(p)
 }
 
 func TestBuildCovHTMLFails(t *testing.T) {
@@ -363,52 +369,44 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 
 func TestWriteIndexHTML(t *testing.T) {
 	tests := []struct{
-		name        string
-		modName     string
-		embeddedFS  fs.FS
-		createFails bool
-		want        string
-		wantErr     bool
+		name          string
+		modName       string
+		embeddedFiles fs.FS
+		createFails   bool
+		want          string
+		wantErr       bool
 	}{
 		{
-			name:       "succeeds",
-			modName:    "foo/bar/baz",
-			embeddedFS: fstest.MapFS{
-				"index.html": &fstest.MapFile{
-					Data: []byte("ModName: {{ .ModName }}, ModURL: {{ .ModURL }}"),
-				},
-			},
-			want: "ModName: foo/bar/baz, ModURL: https://foo/bar/baz",
+			name:          "succeeds",
+			modName:       "foo/bar/baz",
+			embeddedFiles: fstest.MapFS{ "index.html": &fstest.MapFile{ Data: []byte("ModName: {{ .ModName }}, ModURL: {{ .ModURL }}") }},
+			want:          "ModName: foo/bar/baz, ModURL: https://foo/bar/baz",
 		},
 		{
-			name:       "invalid module path",
-			modName:    "foo/bar/v1",
-			embeddedFS: fstest.MapFS{
-				"index.html": &fstest.MapFile{
-					Data: []byte("ModName: {{ .ModName }}, ModURL: {{ .ModURL }}"),
-				},
-			},
-			want: "ModName: foo/bar/v1, ModURL: https://foo/bar/v1",
+			name:          "invalid module path",
+			modName:       "foo/bar/v1",
+			embeddedFiles: fstest.MapFS{ "index.html": &fstest.MapFile{ Data: []byte("ModName: {{ .ModName }}, ModURL: {{ .ModURL }}") }},
+			want:          "ModName: foo/bar/v1, ModURL: https://foo/bar/v1",
 		},
 		{
-			name:       "parse template fails because index does not exist",
-			modName:    "foo/bar/baz",
-			embeddedFS: fstest.MapFS{},
-			wantErr:    true,
+			name:          "template.ParseFS fails because index file does not exist",
+			modName:       "foo/bar/baz",
+			embeddedFiles: fstest.MapFS{},
+			wantErr:       true,
 		},
 		{
-			name:        "Create fails",
-			modName:     "foo",
-			embeddedFS:  fstest.MapFS{ "index.html": &fstest.MapFile{} },
-			createFails: true,
-			wantErr:     true,
+			name:          "Create fails",
+			modName:       "foo",
+			embeddedFiles: fstest.MapFS{ "index.html": &fstest.MapFile{} },
+			createFails:   true,
+			wantErr:       true,
 		},
 	}
 	for _, tt := range tests {
 		mfs    := &mockFS{ createFails: tt.createFails }
 		repGen := &reportGenerator{
 			fsys:          mfs,
-			embeddedFiles: tt.embeddedFS,
+			embeddedFiles: tt.embeddedFiles,
 			modName:       tt.modName,
 		}
 		err := repGen.writeIndexHTML("index.html")
@@ -423,40 +421,36 @@ func TestWriteIndexHTML(t *testing.T) {
 
 func TestWriteStyleCSS(t *testing.T) {
 	tests := []struct{
-		name        string
-		embeddedFS  fs.FS
-		createFails bool
-		maxWidth    int
-		want        string
-		wantErr     bool
+		name          string
+		embeddedFiles fs.FS
+		createFails   bool
+		maxWidth      int
+		want          string
+		wantErr       bool
 	}{
 		{
-			name:       "succeeds",
-			embeddedFS: fstest.MapFS{
-				"style.css": &fstest.MapFile{
-					Data: []byte("MaxWidth: {{ .MaxWidth }}"),
-				},
-			},
-			maxWidth: 13,
-			want:     "MaxWidth: 13",
+			name:          "succeeds",
+			embeddedFiles: fstest.MapFS{ "style.css": &fstest.MapFile{ Data: []byte("MaxWidth: {{ .MaxWidth }}") }},
+			maxWidth:      13,
+			want:          "MaxWidth: 13",
 		},
 		{
-			name:       "parse template fails because CSS file does not exist",
-			embeddedFS: fstest.MapFS{},
-			wantErr:    true,
+			name:          "template.ParseFS fails because CSS file does not exist",
+			embeddedFiles: fstest.MapFS{},
+			wantErr:       true,
 		},
 		{
-			name:        "Create fails",
-			embeddedFS:  fstest.MapFS{ "style.css": &fstest.MapFile{} },
-			createFails: true,
-			wantErr:     true,
+			name:          "Create fails",
+			embeddedFiles: fstest.MapFS{ "style.css": &fstest.MapFile{} },
+			createFails:   true,
+			wantErr:       true,
 		},
 	}
 	for _, tt := range tests {
 		mfs    := &mockFS{ createFails: tt.createFails }
 		repGen := &reportGenerator{
 			fsys:          mfs,
-			embeddedFiles: tt.embeddedFS,
+			embeddedFiles: tt.embeddedFiles,
 			maxWidth:      tt.maxWidth,
 		}
 		err := repGen.writeStyleCSS("style.css")
@@ -471,41 +465,33 @@ func TestWriteStyleCSS(t *testing.T) {
 
 func TestWriteTemplateFile(t *testing.T) {
 	tests := []struct{
-		name       string
-		embeddedFS fs.FS
-		fileName   string
-		tmplData   struct{ VarExists string }
-		want       string
-		wantErr    bool
+		name          string
+		embeddedFiles fs.FS
+		fileName      string
+		tmplData      struct{ VarExists string }
+		want          string
+		wantErr       bool
 	}{
 		{
-			name:       "succeeds",
-			fileName:   "foo",
-			embeddedFS: fstest.MapFS{
-				"foo": &fstest.MapFile{
-					Data: []byte("VarExists: {{ .VarExists }}"),
-				},
-			},
-			tmplData: struct{ VarExists string }{ VarExists: "this var exists" },
-			want:     "VarExists: this var exists",
+			name:          "succeeds",
+			fileName:      "foo",
+			embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("VarExists: {{ .VarExists }}") }},
+			tmplData:      struct{ VarExists string }{ VarExists: "this var exists" },
+			want:          "VarExists: this var exists",
 		},
 		{
-			name:       "tmpl.Execute fails",
-			fileName:   "bar",
-			embeddedFS: fstest.MapFS{
-				"bar": &fstest.MapFile{
-					Data: []byte("NoSuchVar: {{ .NoSuchVar }}"),
-				},
-			},
-			want:    "NoSuchVar: ",
-			wantErr: true,
+			name:          "tmpl.Execute fails",
+			fileName:      "bar",
+			embeddedFiles: fstest.MapFS{ "bar": &fstest.MapFile{ Data: []byte("NoSuchData: {{ .NoSuchData }}") }},
+			want:          "NoSuchData: ",
+			wantErr:       true,
 		},
 	}
 	for _, tt := range tests {
 		mfs    := &mockFS{}
 		repGen := &reportGenerator{
 			fsys:          mfs,
-			embeddedFiles: tt.embeddedFS,
+			embeddedFiles: tt.embeddedFiles,
 		}
 		err := repGen.writeTemplateFile(tt.fileName, tt.tmplData)
 		if (err != nil) != tt.wantErr {
@@ -560,7 +546,7 @@ func TestPrintCoverage(t *testing.T) {
 func TestWriteAncillaryFiles(t *testing.T) {
 	tests := []struct{
 		name           string
-		embeddedFS     fs.FS
+		embeddedFiles  fs.FS
 		ancillaryFiles []string
 		createFails    bool
 		closeFails     bool
@@ -570,33 +556,33 @@ func TestWriteAncillaryFiles(t *testing.T) {
 	}{
 		{
 			name:           "succeeds",
-			embeddedFS:     fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
+			embeddedFiles:  fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
 			ancillaryFiles: []string{"foo"},
 			want:           "bar",
 		},
 		{
 			name:           "Create fails",
-			embeddedFS:     fstest.MapFS{},
+			embeddedFiles:  fstest.MapFS{},
 			ancillaryFiles: []string{"foo"},
 			createFails:    true,
 			wantErr:        true,
 		},
 		{
 			name:           "ReadFile fails",
-			embeddedFS:     fstest.MapFS{},
+			embeddedFiles:  fstest.MapFS{},
 			ancillaryFiles: []string{"foo"},
 			wantErr:        true,
 		},
 		{
 			name:           "Close fails",
-			embeddedFS:     fstest.MapFS{ "foo": &fstest.MapFile{}},
+			embeddedFiles:  fstest.MapFS{ "foo": &fstest.MapFile{}},
 			ancillaryFiles: []string{"foo"},
 			closeFails:     true,
 			wantErr:        true,
 		},
 		{
-			name:           "write file fails",
-			embeddedFS:     fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
+			name:           "fmt.Fprint fails",
+			embeddedFiles:  fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
 			ancillaryFiles: []string{"foo"},
 			badWriter:      true,
 			wantErr:        true,
@@ -610,7 +596,7 @@ func TestWriteAncillaryFiles(t *testing.T) {
 		}
 		repGen := &reportGenerator{
 			fsys:           mfs,
-			embeddedFiles:  tt.embeddedFS,
+			embeddedFiles:  tt.embeddedFiles,
 			ancillaryFiles: tt.ancillaryFiles,
 		}
 		err := repGen.writeAncillaryFiles()
