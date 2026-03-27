@@ -71,7 +71,13 @@ func (lfs *localFS) Create   (name string) (io.WriteCloser,               error)
 func (lfs *localFS) MkdirAll (path string, perm fs.FileMode)              error  { return os.MkdirAll(path, perm) }
 func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error  { return os.WriteFile(name, data, perm) }
 
-// stores state, reduces method signatures, and avoids copying values
+type stringWriter interface {
+	io.Writer
+	Reset()
+	String() string
+}
+
+// stores state, simplifies method signatures, avoids copying values, and makes testing easier
 type reportGenerator struct {
 	fsys            writeFS
 	embeddedFiles   fs.FS
@@ -81,8 +87,8 @@ type reportGenerator struct {
 	profilePath     string
 	profiles        []*cover.Profile
 	cov             map[string]coverage
-	totalStatements int
 	totalCovered    int
+	totalStatements int
 	maxWidth        int
 	ancillaryFiles  []string
 }
@@ -119,7 +125,7 @@ func main() {
 		os.Exit(4)
 	}
 
-	if err := repGen.writeCovHTMLFiles(); err != nil { // sets repGen.cov
+	if err := repGen.writeCovHTMLFiles(&strings.Builder{}); err != nil { // sets repGen.cov
 		fmt.Fprintf(os.Stderr, "cannot write HTML coverage files: %v\n", err)
 		os.Exit(5)
 	}
@@ -215,7 +221,7 @@ func fileExists(fsys fs.FS, path string) bool {
 
 // writeCovHTMLFiles calculates per-file coverage percentages and writes a
 // *.go.html file for each Go source file listed in the coverage profile file
-func (rg *reportGenerator) writeCovHTMLFiles() error {
+func (rg *reportGenerator) writeCovHTMLFiles(w stringWriter) error {
 	rg.cov = make(map[string]coverage, len(rg.profiles))
 
 	for _, profile := range rg.profiles { // calculate per-file coverage
@@ -227,8 +233,8 @@ func (rg *reportGenerator) writeCovHTMLFiles() error {
 			}
 		}
 
-		rg.totalStatements += fileStatements
 		rg.totalCovered    += fileCovered
+		rg.totalStatements += fileStatements
 
 		localPath := strings.TrimPrefix(profile.FileName, rg.modName + "/")
 		rg.cov[localPath] = coverage{
@@ -236,15 +242,24 @@ func (rg *reportGenerator) writeCovHTMLFiles() error {
 			total:   fileStatements,
 		}
 
-		if err := rg.writeCovHTMLFile(profile, localPath); err != nil {
+		w.Reset()
+		if err := rg.buildCovHTML(w, profile, localPath); err != nil {
 			return fmt.Errorf("cannot write HTML file for %s: %w", localPath, err)
+		}
+
+		outPath := filepath.Clean(filepath.Join(rg.outRoot, localPath + ".html"))
+		if err := rg.fsys.MkdirAll(filepath.Dir(outPath), 0700); err != nil {
+			return fmt.Errorf("cannot create directory: %w", err)
+		}
+		if err := rg.fsys.WriteFile(outPath, []byte(w.String()), 0600); err != nil {
+			return fmt.Errorf("cannot write file %q: %w", outPath, err)
 		}
 	}
 	return nil
 }
 
-// writeCovHTMLFile writes a single *.go.html file with green (covered) and red (uncovered) lines to indicate test coverage
-func (rg *reportGenerator) writeCovHTMLFile(profile *cover.Profile, localPath string) error {
+// buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage
+func (rg *reportGenerator) buildCovHTML(w io.Writer, profile *cover.Profile, localPath string) error {
 	srcFile  := filepath.Clean(filepath.Join(rg.srcRoot, localPath))
 	src, err := fs.ReadFile(rg.fsys, srcFile)
 	if err != nil { return fmt.Errorf("cannot read source file %q: %w", srcFile, err) }
@@ -255,14 +270,13 @@ func (rg *reportGenerator) writeCovHTMLFile(profile *cover.Profile, localPath st
 		cssRelPath = strings.Repeat("../", depth) + cssRelPath // ensures both http:// and file:// schemes correctly resolve the path to the CSS file
 	}
 
-	var builder strings.Builder
-	if err := writePreamble(&builder, cssRelPath, localPath); err != nil {
+	if err := writePreamble(w, cssRelPath, localPath); err != nil {
 		return fmt.Errorf("cannot write preamble: %w", err)
 	}
 
 	pos := 0
 	for _, b := range profile.Boundaries(src) {
-		if _, err := builder.WriteString(html.EscapeString(string(src[pos:b.Offset]))); err != nil {
+		if _, err := io.WriteString(w, html.EscapeString(string(src[pos:b.Offset]))); err != nil {
 			return fmt.Errorf("cannot write code block HTML: %w", err)
 		}
 		if b.Start {
@@ -270,31 +284,29 @@ func (rg *reportGenerator) writeCovHTMLFile(profile *cover.Profile, localPath st
 			if b.Count > 0 {
 				class = "hit"
 			}
-			if _, err := fmt.Fprintf(&builder, "<span class='%s'>", class); err != nil {
-				return fmt.Errorf("cannot write coverage section %q end: %w", class, err)
+			if _, err := fmt.Fprintf(w, "<span class='%s'>", class); err != nil {
+				return fmt.Errorf("cannot write coverage section %q start: %w", class, err)
 			}
 		} else {
-			if _, err := builder.WriteString("</span>"); err != nil {
+			if _, err := io.WriteString(w, "</span>"); err != nil {
 				return fmt.Errorf("cannot write coverage section end: %w", err)
 			}
 		}
 		pos = b.Offset
 	}
 
-	builder.WriteString(html.EscapeString(string(src[pos:])))
-	if err := writePostable(&builder); err != nil {
+	if _, err := io.WriteString(w, html.EscapeString(string(src[pos:]))); err != nil {
+		return fmt.Errorf("cannot write code block HTML: %w", err)
+	}
+	if err := writePostamble(w); err != nil {
 		return fmt.Errorf("cannot write postamble: %w", err)
 	}
 
-	outPath := filepath.Clean(filepath.Join(rg.outRoot, localPath + ".html"))
-	if err := rg.fsys.MkdirAll(filepath.Dir(outPath), 0700); err != nil {
-		return fmt.Errorf("cannot create directory: %w", err)
-	}
-	return rg.fsys.WriteFile(outPath, []byte(builder.String()), 0600)
+	return nil
 }
 
-func writePreamble(builder *strings.Builder, cssRelPath, localPath string) error {
-	_, err := fmt.Fprintf(builder, `<!DOCTYPE html>
+func writePreamble(w io.Writer, cssRelPath, localPath string) error {
+	_, err := fmt.Fprintf(w, `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -306,8 +318,8 @@ func writePreamble(builder *strings.Builder, cssRelPath, localPath string) error
 	return err
 }
 
-func writePostable(builder *strings.Builder) error {
-	_, err := builder.WriteString(`</pre>
+func writePostamble(w io.Writer) error {
+	_, err := io.WriteString(w, `</pre>
 <script>
 try {
   const parentTheme = window.parent.document.documentElement.getAttribute('theme');
@@ -374,32 +386,32 @@ func (rg *reportGenerator) printCoverage() {
 func (rg *reportGenerator) writeIndexHTML(indexHTML string) error {
 	repoURL, _, ok := module.SplitPathVersion(rg.modName)
 	if !ok { repoURL = rg.modName }
-	outFile := filepath.Clean(filepath.Join(rg.outRoot, indexHTML))
-	tmpl, err := template.ParseFS(rg.embeddedFiles, indexHTML)
-	if err != nil { return fmt.Errorf("cannot parse %q: %w", indexHTML, err) }
-	f, err := rg.fsys.Create(outFile)
-	if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
-	if err := tmpl.Execute(f, struct{
+	data := struct{
 		ModName, ModURL string
 	}{
 		ModName: rg.modName,
 		ModURL:  "https://" + repoURL,
-	}); err != nil { return fmt.Errorf("cannot render template: %w", err) }
-	return f.Close()
+	}
+	return rg.writeTemplateFile(indexHTML, data)
 }
 
 // writeStyleCSS writes the style.css file, which contains a single "MaxWidth" template parameter
 func (rg *reportGenerator) writeStyleCSS(styleCSS string) error {
-	outFile   := filepath.Clean(filepath.Join(rg.outRoot, styleCSS))
-	tmpl, err := template.ParseFS(rg.embeddedFiles, styleCSS)
-	if err != nil { return fmt.Errorf("cannot parse %q: %w", styleCSS, err) }
-	f, err := rg.fsys.Create(outFile)
-	if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
-	if err := tmpl.Execute(f, struct{
+	data := struct{
 		MaxWidth int
 	}{
 		MaxWidth: rg.maxWidth,
-	}); err != nil { return fmt.Errorf("cannot render template: %w", err) }
+	}
+	return rg.writeTemplateFile(styleCSS, data)
+}
+
+func (rg *reportGenerator) writeTemplateFile(file string, tmplVars any) error {
+	outFile   := filepath.Clean(filepath.Join(rg.outRoot, file))
+	tmpl, err := template.ParseFS(rg.embeddedFiles, file)
+	if err != nil { return fmt.Errorf("cannot parse %q: %w", file, err) }
+	f, err := rg.fsys.Create(outFile)
+	if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
+	if err := tmpl.Execute(f, tmplVars); err != nil { return fmt.Errorf("cannot render template: %w", err) }
 	return f.Close()
 }
 
@@ -417,7 +429,7 @@ func (rg *reportGenerator) writeAncillaryFiles() error {
 	return nil
 }
 
-// filterArgs discards any flags up to and including "--", particularly useful for testing.
+// filterArgs discards any arguments up to and including "--", potentially useful for testing
 func filterArgs(args []string) []string {
 	for i, arg := range args {
 		if arg == "--" {
