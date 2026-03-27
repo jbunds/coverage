@@ -162,6 +162,7 @@ func (w *badWriter) Write(_ []byte) (int, error) { return 0, fmt.Errorf("i refus
 type mockFS struct {
 	fs.FS
 	createFails    bool
+	readDirFails   bool
 	closeFails     bool
 	mkdirAllFails  bool
 	writeFileFails bool
@@ -181,6 +182,11 @@ func (m *mockFS) Create(_ string) (io.WriteCloser, error) {
 		writer:     w,
 		closeFails: m.closeFails,
 	}, nil
+}
+
+func (m *mockFS) ReadDir(dir string) ([]fs.DirEntry, error) {
+	if m.readDirFails { return nil, fmt.Errorf("ReadDir failed") }
+	return fs.ReadDir(m.FS, dir)
 }
 
 func (m *mockFS) MkdirAll(_ string, _ fs.FileMode) error {
@@ -399,9 +405,7 @@ func TestWriteIndexHTML(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		mfs    := &mockFS{
-			createFails: tt.createFails,
-		}
+		mfs    := &mockFS{ createFails: tt.createFails }
 		repGen := &reportGenerator{
 			fsys:          mfs,
 			embeddedFiles: tt.embeddedFS,
@@ -449,9 +453,7 @@ func TestWriteStyleCSS(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		mfs    := &mockFS{
-			createFails: tt.createFails,
-		}
+		mfs    := &mockFS{ createFails: tt.createFails }
 		repGen := &reportGenerator{
 			fsys:          mfs,
 			embeddedFiles: tt.embeddedFS,
@@ -463,6 +465,54 @@ func TestWriteStyleCSS(t *testing.T) {
 		}
 		if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
 			t.Errorf("writeStyleCSS(%q) mismatch (-want +got):\n%s", tt.name, diff)
+		}
+	}
+}
+
+func TestWriteTemplateFile(t *testing.T) {
+	tests := []struct{
+		name       string
+		embeddedFS fs.FS
+		fileName   string
+		tmplData   struct{ VarExists string }
+		want       string
+		wantErr    bool
+	}{
+		{
+			name:       "succeeds",
+			fileName:   "foo",
+			embeddedFS: fstest.MapFS{
+				"foo": &fstest.MapFile{
+					Data: []byte("VarExists: {{ .VarExists }}"),
+				},
+			},
+			tmplData: struct{ VarExists string }{ VarExists: "this var exists" },
+			want:     "VarExists: this var exists",
+		},
+		{
+			name:       "tmpl.Execute fails",
+			fileName:   "bar",
+			embeddedFS: fstest.MapFS{
+				"bar": &fstest.MapFile{
+					Data: []byte("NoSuchVar: {{ .NoSuchVar }}"),
+				},
+			},
+			want:    "NoSuchVar: ",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		mfs    := &mockFS{}
+		repGen := &reportGenerator{
+			fsys:          mfs,
+			embeddedFiles: tt.embeddedFS,
+		}
+		err := repGen.writeTemplateFile(tt.fileName, tt.tmplData)
+		if (err != nil) != tt.wantErr {
+			t.Errorf("writeTemplateFile(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+		}
+		if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
+			t.Errorf("writeTemplateFile(%q) mismatch (-want +got):\n%s", tt.name, diff)
 		}
 	}
 }

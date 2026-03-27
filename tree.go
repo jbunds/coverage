@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -37,7 +38,7 @@ func writeTreeHTML(root, treeHTML string, cov map[string]coverage) (int, error) 
 		cov: cov,
 	}
 
-	html, err := builder.generateHTML(".")
+	html, err := builder.genHTML(".")
 	if err != nil { return 0, err }
 
 	treeFile, err := os.Create(filepath.Clean(filepath.Join(root, treeHTML)))
@@ -48,8 +49,8 @@ func writeTreeHTML(root, treeHTML string, cov map[string]coverage) (int, error) 
 	return builder.maxWidth + 10, treeFile.Close() // TODO(jeff): eliminate (or at least document) magic numbers
 }
 
-// generateHTML reads a given directory to process its contents
-func (tb *treeBuilder) generateHTML(root string) (string, error) {
+// genHTML reads a given directory to process its contents and generate HTML content
+func (tb *treeBuilder) genHTML(root string) (string, error) {
 	entries, err := fs.ReadDir(tb.fs, root)
 	if err != nil { return "", err }
 
@@ -68,7 +69,7 @@ func (tb *treeBuilder) generateHTML(root string) (string, error) {
 	return sb.String(), nil
 }
 
-// processEntry processes a directory's contents to produce an entryResult for each relevant directory entry encountered
+// processEntry recursively processes a directory's contents to produce an entryResult for each relevant directory entry encountered
 func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent int) (entryResult, error) {
 	isDir        := entry.IsDir()
 	isTargetFile := !isDir && strings.HasSuffix(entry.Name(), ".go.html")
@@ -155,8 +156,8 @@ func (hb *htmlBuilder) buildHTML(subDirHTML string, dirCovered, dirStatements in
 }
 
 // preamble writes the preliminary portion of the tree HTML document
-func preamble(f *os.File) error {
-	if _, err := fmt.Fprintln(f, `<!DOCTYPE html>
+func preamble(w io.Writer) error {
+	if _, err := fmt.Fprintln(w, `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -170,8 +171,8 @@ func preamble(f *os.File) error {
 }
 
 // postamble writes the final portion of the tree HTML document
-func postamble(f *os.File) error {
-	if _, err := fmt.Fprint(f, `</body>
+func postamble(w io.Writer) error {
+	if _, err := fmt.Fprint(w, `</body>
 <script>
 try {
   const parentTheme = window.parent.document.documentElement.getAttribute('theme');

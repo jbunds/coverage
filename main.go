@@ -60,16 +60,16 @@ type localFS struct {
 	fs.FS
 }
 
-type writeFS interface {
-	fs.FS
-	Create(string) (io.WriteCloser, error)
-	MkdirAll(string, fs.FileMode) error
-	WriteFile(string, []byte, fs.FileMode) error
-}
-
 func (lfs *localFS) Create   (name string) (io.WriteCloser,               error) { return os.Create(filepath.Clean(name)) }
 func (lfs *localFS) MkdirAll (path string, perm fs.FileMode)              error  { return os.MkdirAll(path, perm) }
 func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error  { return os.WriteFile(name, data, perm) }
+
+type writeFS interface {
+	fs.FS
+	Create   (string)     (io.WriteCloser, error)
+	MkdirAll (string,         fs.FileMode) error
+	WriteFile(string, []byte, fs.FileMode) error
+}
 
 type stringWriter interface {
 	io.Writer
