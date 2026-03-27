@@ -13,7 +13,7 @@ func flags(fs *flag.FlagSet, args []string) (coverProfile, path string, err erro
 	fs.Usage = func() {
 		fmt.Fprintf(fs.Output(), "%s usage:\n\n", filepath.Base(fs.Name())) //nolint:errcheck // such usage is documented in the standard library: https://pkg.go.dev/flag#pkg-variables
 		fs.PrintDefaults()
-		fmt.Println()
+		fmt.Fprintln(fs.Output())
 	}
 	fs.StringVar(&coverProfile, "coverprofile", "", "path to Go test coverage profile file")
 	fs.StringVar(&path,         "path",         "", "path where HTML files will be written")

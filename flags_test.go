@@ -40,7 +40,7 @@ func TestUsage(t *testing.T) {
 				"    	path to Go test coverage profile file",
 				"  -path string",
 				"    	path where HTML files will be written",
-				""}, "\n"),
+				"\n"}, "\n"),
 		},
 		{
 			name: "missing -path",
@@ -55,7 +55,7 @@ func TestUsage(t *testing.T) {
 				"    	path to Go test coverage profile file",
 				"  -path string",
 				"    	path where HTML files will be written",
-				""}, "\n"),
+				"\n"}, "\n"),
 		},
 		{
 			name: "ignored args",
@@ -80,7 +80,7 @@ func TestUsage(t *testing.T) {
 				"    	path to Go test coverage profile file",
 				"  -path string",
 				"    	path where HTML files will be written",
-				""}, "\n"),
+				"\n"}, "\n"),
 			err: "flag provided but not defined: -invalid",
 		},
 	}
