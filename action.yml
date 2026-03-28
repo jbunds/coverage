@@ -1,8 +1,8 @@
-name: go-cov-html-report
-author: jbunds
+name:        Go test coverage HTML report
 description: Go test coverage HTML report generator
+author:      jbunds
 branding:
-  icon: layout
+  icon:  layout
   color: green
 
 runs:
