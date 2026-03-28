@@ -10,6 +10,53 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func TestWriteTreeHTML(t *testing.T) {
+	tests := []struct{
+		name         string
+		fsys         fs.FS
+		createFails  bool
+		readDirFails bool
+		want         int
+		wantErr      bool
+	}{
+		{
+			name: "succeeds",
+			fsys: fstest.MapFS{ "foo.go.html": &fstest.MapFile{}},
+			want: 17, // len("foo.go") == 6 + indent == 1 + 10 == 17
+		},
+		{
+			name:         "genHTML fails",
+			fsys:         fstest.MapFS{},
+			readDirFails: true,
+			wantErr:      true,
+		},
+		{
+			name:        "Create fails",
+			fsys:        fstest.MapFS{},
+			createFails: true,
+			wantErr:     true,
+		},
+	}
+	for _, tt := range tests {
+		mfs := &mockFS{
+			FS:           tt.fsys,
+			readDirFails: tt.readDirFails,
+			createFails:  tt.createFails,
+		}
+		tb := &treeBuilder{
+			fsys:    mfs,
+			outRoot: ".",
+		}
+		got, err := tb.writeTreeHTML()
+		if (err != nil) != tt.wantErr {
+			t.Errorf("writeTreeHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+		}
+		if diff := cmp.Diff(tt.want, got); diff != "" {
+			t.Errorf("writeTreeHTML(%q) mismatch (-want +got):\n%s", tt.name, diff)
+		}
+	}
+}
+
 func TestGenHTML(t *testing.T) {
 	tests := []struct{
 		name         string
@@ -22,9 +69,9 @@ func TestGenHTML(t *testing.T) {
 		{
 			name: "succeeds",
 			fsys: fstest.MapFS{
-				"a.go.html":            &fstest.MapFile{Data: []byte("content")},
-				"dir/b.go.html":        &fstest.MapFile{Data: []byte("content")},
-				"dir/subdir/c.go.html": &fstest.MapFile{Data: []byte("content")},
+				"a.go.html":            &fstest.MapFile{},
+				"dir/b.go.html":        &fstest.MapFile{},
+				"dir/subdir/c.go.html": &fstest.MapFile{},
 			},
 			cov: map[string]coverage{
 				"a.go":            {covered: 10, total: 10},
@@ -69,10 +116,11 @@ func TestGenHTML(t *testing.T) {
 			readDirFails: tt.readDirFails,
 		}
 		tb := &treeBuilder{
-			fs:  mfs,
-			cov: tt.cov,
+			fsys:    mfs,
+			cov:     tt.cov,
+			outRoot: ".",
 		}
-		got, err := tb.genHTML(".")
+		got, err := tb.genHTML()
 		if (err != nil) != tt.wantErr {
 			t.Errorf("genHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}
@@ -115,7 +163,7 @@ func TestProcessEntry(t *testing.T) {
 			FS:           tt.fsys,
 			readDirFails: tt.readDirFails,
 		}
-		tb := &treeBuilder{ fs: mfs }
+		tb        := &treeBuilder{ fsys: mfs }
 		info, err := fs.Stat(mfs, tt.fileName)
 		if err != nil {
 			t.Errorf("fs.Stat failed unexpectedly: %v", err)

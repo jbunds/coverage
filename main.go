@@ -56,10 +56,12 @@ type coverage struct {
 }
 
 // wrappers to make testing easier
-type localFS struct { fs.FS }
 
-func (lfs *localFS) Create   (name string) (io.WriteCloser,               error) { return os.Create(filepath.Clean(name)) }
-func (lfs *localFS) MkdirAll (path string, perm fs.FileMode)              error  { return os.MkdirAll(path, perm) }
+type localFS struct{}
+
+func (lfs *localFS) Open     (name string) (fs.File,                      error) { return os.Open     (filepath.Clean(name)) }
+func (lfs *localFS) Create   (name string) (io.WriteCloser,               error) { return os.Create   (filepath.Clean(name)) }
+func (lfs *localFS) MkdirAll (path string, perm fs.FileMode)              error  { return os.MkdirAll (filepath.Clean(path), perm) }
 func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error  { return os.WriteFile(name, data, perm) }
 
 type writeFS interface {
@@ -69,7 +71,8 @@ type writeFS interface {
 	WriteFile(string, []byte, fs.FileMode) error
 }
 
-type stringWriter interface {
+
+type stringWriter interface { // because io.StringWriter is braindead (at least for my purposes)
 	io.Writer
 	Reset()
 	String() string
@@ -105,7 +108,7 @@ func main() {
 	}
 
 	repGen := &reportGenerator{
-		fsys:           &localFS{os.DirFS(".")},
+		fsys:           &localFS{},
 		embeddedFiles:  embeddedFiles,
 		outRoot:        outRoot,
 		profilePath:    profilePath,
@@ -135,7 +138,13 @@ func main() {
 		os.Exit(6)
 	}
 
-	if repGen.maxWidth, err = writeTreeHTML(outRoot, treeHTML, repGen.cov); err != nil {
+	tb := &treeBuilder{
+		fsys:    &localFS{},
+		outRoot: outRoot,
+		cov:     repGen.cov,
+	}
+
+	if repGen.maxWidth, err = tb.writeTreeHTML(); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", treeHTML, err)
 		os.Exit(7)
 	}

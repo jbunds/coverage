@@ -11,7 +11,8 @@ import (
 
 // treeBuilder stores state during processEntry recursion
 type treeBuilder struct {
-	fs       fs.FS
+	fsys     writeFS
+	outRoot  string
 	cov      map[string]coverage
 	counter  int
 	maxWidth int
@@ -32,34 +33,40 @@ type htmlBuilder struct {
 }
 
 // writeTreeHTML writes HTML to the specified treeHTML file
-func writeTreeHTML(root, treeHTML string, cov map[string]coverage) (int, error) {
-	builder := &treeBuilder{
-		fs:  os.DirFS(root),
-		cov: cov,
-	}
+func (tb *treeBuilder) writeTreeHTML() (int, error) {
+	// TODO(jeff): implement path-handling logic inside processEntry which obviates the need to chdir
+	owd, err := os.Getwd()
+	if err != nil { return 0, err }
+	defer func() {
+		if err := os.Chdir(owd); err != nil {
+			fmt.Fprintf(os.Stderr, "os.Chdir(%q) failed: %v", owd, err)
+		}
+	}()
 
-	html, err := builder.genHTML(".")
+	if err := os.Chdir(tb.outRoot); err != nil { return 0, err }
+
+	html, err := tb.genHTML()
 	if err != nil { return 0, err }
 
-	treeFile, err := os.Create(filepath.Clean(filepath.Join(root, treeHTML)))
+	treeFile, err := tb.fsys.Create(treeHTML)
 	if                                       err != nil { return 0, err }
-	if    err := preamble(treeFile);         err != nil { return 0, err }
+	if    err := preamble(  treeFile);       err != nil { return 0, err }
 	if _, err := fmt.Fprint(treeFile, html); err != nil { return 0, err }
-	if    err := postamble(treeFile);        err != nil { return 0, err }
-	return builder.maxWidth + 10, treeFile.Close() // TODO(jeff): eliminate (or at least document) magic numbers
+	if    err := postamble( treeFile);       err != nil { return 0, err }
+	return tb.maxWidth + 10, treeFile.Close() // TODO(jeff): eliminate (or at least document) magic numbers
 }
 
 // genHTML reads a given directory to process its contents and generate HTML content
-func (tb *treeBuilder) genHTML(root string) (string, error) {
-	entries, err := fs.ReadDir(tb.fs, root)
+func (tb *treeBuilder) genHTML() (string, error) {
+	entries, err := fs.ReadDir(tb.fsys, ".")
 	if err != nil { return "", err }
 
-	var sb strings.Builder
 
+	var sb strings.Builder
 	sb.WriteString("<ul class=\"tree\">\n")
 
 	for _, entry := range entries {
-		res, err := tb.processEntry(root, entry, 1)
+		res, err := tb.processEntry(".", entry, 1)
 		if err != nil { return "", err }
 		sb.WriteString(res.html)
 	}
@@ -77,8 +84,8 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 	if !isDir && !isTargetFile { return entryResult{}, nil }
 
 	src      := strings.TrimSuffix(entry.Name(), ".html")
-	srcPath  := filepath.ToSlash(filepath.Join(parentPath, src))
-	htmlPath := filepath.ToSlash(filepath.Join(parentPath, entry.Name()))
+	srcPath  := filepath.Clean(filepath.Join(parentPath, src))
+	htmlPath := filepath.Clean(filepath.Join(parentPath, entry.Name()))
 
 	width    := indent + len(src)
 
@@ -89,7 +96,7 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 		tb.counter++
 		itemID := fmt.Sprintf("tree-item-%d", tb.counter)
 
-		subDirEntries, err := fs.ReadDir(tb.fs, htmlPath)
+		subDirEntries, err := fs.ReadDir(tb.fsys, htmlPath)
 		if err != nil { return entryResult{}, err }
 
 		var subDirSB strings.Builder
@@ -121,9 +128,9 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 		percent = float64(cov.covered) / float64(cov.total) * 100
 	}
 
-	srcSpan  := fmt.Sprintf("<span class=\"src\"><a href=\"%s\">%s</a></span>", htmlPath, src)
-	covSpan  := fmt.Sprintf("<span class=\"cov\">%.1f%%</span>", percent)
-	html     := strings.Repeat("  ", indent) + fmt.Sprintf("<li><div class=\"tree-node\">%s %s</div></li>\n", srcSpan, covSpan)
+	srcSpan := fmt.Sprintf("<span class=\"src\"><a href=\"%s\">%s</a></span>", htmlPath, src)
+	covSpan := fmt.Sprintf("<span class=\"cov\">%.1f%%</span>", percent)
+	html    := strings.Repeat("  ", indent) + fmt.Sprintf("<li><div class=\"tree-node\">%s %s</div></li>\n", srcSpan, covSpan)
 
 	return entryResult{
 		html:    html,

@@ -118,7 +118,7 @@ func TestGetModName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		repGen := &reportGenerator{
-			fsys:     &localFS{tt.fsys},
+			fsys:     &mockFS{ FS: tt.fsys },
 			profiles: tt.profiles,
 		}
 		err := repGen.getModName()
@@ -213,7 +213,7 @@ func TestGetSrcRoot(t *testing.T) {
 	}
 	for _, tt := range tests {
 		repGen := &reportGenerator{
-			fsys:        &localFS{tt.fsys},
+			fsys:        &mockFS{ FS: tt.fsys },
 			profilePath: tt.profilePath,
 			modName:     tt.modName,
 			outRoot:     tt.outRoot,
