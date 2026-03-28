@@ -39,9 +39,11 @@ The motivation for the `coverage` module was to create a relatively minimal alte
 
 The CSS code was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it clearly still needs to be polished. But I am definitely _not_ a CSS expert, and it fulfills the required behavior as-is.
 
-The `coverage` module may someday provide relatively lightweight GitHub Actions CI artifacts, as its output is highly-compressible plaintext (the roughly 7.2 kB of bundled image files notwithstanding). Of course, its output is directly proportional to its input.
+The generated coverage report can be [stored](https://github.com/actions/upload-artifact) as a GitHub Actions [artifact](https://docs.github.com/actions/using-workflows/storing-workflow-data-as-artifacts), as its output is highly-compressible plaintext (the roughly 7.2 kB of bundled image files notwithstanding). Of course, its output is directly proportional to its input.
 
 For example, `coverage` generated ~44 MB of HTML content for [`k8s.io/kubernetes`](https://github.com/kubernetes/kubernetes), which can be compressed to ~6.5 MB via `tar czf`, or ~9.3 MB via `zip -r`. Smaller code bases can expect smaller output.
+
+See the [CI workflow](/.github/workflows/ci.yml) for a working example.
 
 #### Usage
 
