@@ -1,41 +1,49 @@
 :root {
-  --bg-color:   beige;
-  --bg-header:  papayawhip;
-  --text-color: darkslategrey;
-  --hover-bg:   wheat;
-  --cov-hit:    limegreen;
-  --cov-miss:   red;
+  --bg-color:    beige;
+  --bg-header:   papayawhip;
+  --text-color:  darkslategrey;
+  --hover-bg:    wheat;
+  --cov-hit:     limegreen;
+  --cov-miss:    red;
+  --cov-hit-bg:  darkgreen;
+  --cov-miss-bg: firebrick;
 
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-color:   black;
-    --bg-header:  black;
-    --text-color: lightyellow;
-    --hover-bg:   dimgrey;
-    --cov-hit:    limegreen;
-    --cov-miss:   red;
+    --bg-color:    black;
+    --bg-header:   black;
+    --text-color:  lightyellow;
+    --hover-bg:    dimgrey;
+    --cov-hit:     limegreen;
+    --cov-miss:    red;
+    --cov-hit-bg:  darkgreen;
+    --cov-miss-bg: firebrick;
   }
 }
 
 [theme="light"] {
-  --bg-color:   beige;
-  --bg-header:  papayawhip;
-  --text-color: darkslategrey;
-  --hover-bg:   wheat;
-  --cov-hit:    limegreen;
-  --cov-miss:   red;
+  --bg-color:    beige;
+  --bg-header:   papayawhip;
+  --text-color:  darkslategrey;
+  --hover-bg:    wheat;
+  --cov-hit:     limegreen;
+  --cov-miss:    red;
+  --cov-hit-bg:  darkgreen;
+  --cov-miss-bg: firebrick;
 }
 
 [theme="dark"] {
-  --bg-color:   black;
-  --bg-header:  black;
-  --text-color: lightyellow;
-  --hover-bg:   dimgrey;
-  --cov-hit:    limegreen;
-  --cov-miss:   red;
+  --bg-color:    black;
+  --bg-header:   black;
+  --text-color:  lightyellow;
+  --hover-bg:    dimgrey;
+  --cov-hit:     limegreen;
+  --cov-miss:    red;
+  --cov-hit-bg:  darkgreen;
+  --cov-miss-bg: firebrick;
 }
 
 header {
@@ -116,5 +124,5 @@ a:hover {
   font-weight:     bold;
 }
 
-.hit  { color: var(--cov-hit)  }
-.miss { color: var(--cov-miss) }
+.hit  { color: var(--cov-hit);  background-color: rgb(from var(--cov-hit-bg)  r g b / 0.3) }
+.miss { color: var(--cov-miss); background-color: rgb(from var(--cov-miss-bg) r g b / 0.3) }
