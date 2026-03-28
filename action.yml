@@ -1,0 +1,26 @@
+name: go-cov-html-report
+author: jbunds
+description: Go test coverage HTML report generator
+branding:
+  icon: layout
+  color: green
+
+runs:
+  using: composite
+  steps:
+    - name: coverage profile
+      uses: gwatts/go-coverage-action@v2
+      id:   coverge_profile
+
+    - name: coverage report
+      run: |
+        go run github.com/jbunds/coverage@latest \
+          -coverprofile="${{ steps.coverage_profile.outputs.gocov-pathname }}" \
+          -path=./coverage_report
+
+    - name: store coverage report
+      uses: actions/upload-artifact@v7
+      with:
+        name: coverage report
+        path: |
+          ./coverage_report/
