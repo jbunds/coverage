@@ -289,18 +289,36 @@ func (rg *reportGenerator) buildCovHTML(w io.Writer, profile *cover.Profile, loc
 
 	pos := 0
 	for _, b := range profile.Boundaries(src) {
-		if _, err := io.WriteString(w, html.EscapeString(string(src[pos:b.Offset]))); err != nil {
-			return fmt.Errorf("cannot write code block HTML: %w", err)
-		}
+		s := string(src[pos:b.Offset])
 		if b.Start {
 			class := "miss"
 			if b.Count > 0 {
 				class = "hit"
 			}
-			if _, err := fmt.Fprintf(w, "<span class='%s'>", class); err != nil {
-				return fmt.Errorf("cannot write coverage section %q start: %w", class, err)
+
+			nl := strings.LastIndexByte(s, '\n')
+			if ws := s[nl+1:]; len(ws) > 0 && strings.TrimSpace(ws) == "" {
+				if _, err := io.WriteString(w, html.EscapeString(s[:nl+1])); err != nil {
+					return fmt.Errorf("cannot write code block HTML: %w", err)
+				}
+				if _, err := fmt.Fprintf(w, "<span class='%s'>", class); err != nil {
+					return fmt.Errorf("cannot write coverage section %q start: %w", class, err)
+				}
+				if _, err := io.WriteString(w, html.EscapeString(ws)); err != nil {
+					return fmt.Errorf("cannot write code block HTML: %w", err)
+				}
+			} else {
+				if _, err := io.WriteString(w, html.EscapeString(s)); err != nil {
+					return fmt.Errorf("cannot write code block HTML: %w", err)
+				}
+				if _, err := fmt.Fprintf(w, "<span class='%s'>", class); err != nil {
+					return fmt.Errorf("cannot write coverage section %q start: %w", class, err)
+				}
 			}
 		} else {
+			if _, err := io.WriteString(w, html.EscapeString(s)); err != nil {
+				return fmt.Errorf("cannot write code block HTML: %w", err)
+			}
 			if _, err := io.WriteString(w, "</span>"); err != nil {
 				return fmt.Errorf("cannot write coverage section end: %w", err)
 			}
