@@ -89,7 +89,7 @@
 span.src {
   display:        inline-block;
   vertical-align: middle;
-  margin-right:   8ch; /* TODO(jeff): eliminate (or at least document) magic numbers */
+  margin-right:   8ch; /* 8ch == len("100.0%") + 2ch gap */
   white-space:    nowrap;
 }
 
