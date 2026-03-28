@@ -306,7 +306,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				"",
 				"import &#34;fmt&#34;",
 				"",
-				"func main() <span class='hit'>{",
+				"<span class=\"hit\">func main() {",
 				"  fmt.Println(&#34;hello world&#34;)",
 				"</span>}",
 				"</pre>",

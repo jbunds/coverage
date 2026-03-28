@@ -273,67 +273,52 @@ func (rg *reportGenerator) writeCovHTMLFiles(w stringWriter) error {
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage
 func (rg *reportGenerator) buildCovHTML(w io.Writer, profile *cover.Profile, localPath string) error {
-	srcFile  := filepath.Clean(filepath.Join(rg.srcRoot, localPath))
+	srcFile  := filepath.Join(rg.srcRoot, localPath)
 	src, err := fs.ReadFile(rg.fsys, srcFile)
 	if err != nil { return fmt.Errorf("cannot read source file %q: %w", srcFile, err) }
 
-	depth      := strings.Count(localPath, "/")
 	cssRelPath := styleCSS
-	if depth > 0 {
-		cssRelPath = strings.Repeat("../", depth) + cssRelPath // ensures both http:// and file:// schemes correctly resolve the path to the CSS file
+	if depth := strings.Count(localPath, "/"); depth > 0 {
+		cssRelPath = strings.Repeat("../", depth) + styleCSS
 	}
 
 	if err := writePreamble(w, cssRelPath, localPath); err != nil {
 		return fmt.Errorf("cannot write preamble: %w", err)
 	}
 
+	writeEscaped := func(s string) error {
+		_, err := io.WriteString(w, html.EscapeString(s))
+		return err
+	}
+
+	writeSpan := func(f, s string) error {
+		_, err := fmt.Fprintf(w, f, s)
+		return err
+	}
+
 	pos := 0
 	for _, b := range profile.Boundaries(src) {
-		s := string(src[pos:b.Offset])
+		chunk := string(src[pos:b.Offset])
 		if b.Start {
 			class := "miss"
-			if b.Count > 0 {
-				class = "hit"
-			}
-
-			nl := strings.LastIndexByte(s, '\n')
-			if ws := s[nl+1:]; len(ws) > 0 && strings.TrimSpace(ws) == "" {
-				if _, err := io.WriteString(w, html.EscapeString(s[:nl+1])); err != nil {
-					return fmt.Errorf("cannot write code block HTML: %w", err)
-				}
-				if _, err := fmt.Fprintf(w, "<span class='%s'>", class); err != nil {
-					return fmt.Errorf("cannot write coverage section %q start: %w", class, err)
-				}
-				if _, err := io.WriteString(w, html.EscapeString(ws)); err != nil {
-					return fmt.Errorf("cannot write code block HTML: %w", err)
-				}
+			if b.Count > 0 { class = "hit" }
+			if nl := strings.LastIndexByte(chunk, '\n'); nl != -1 {
+				if err := writeEscaped(chunk[:nl+1]);              err != nil { return err }
+				if err := writeSpan("<span class=\"%s\">", class); err != nil { return err }
+				if err := writeEscaped(chunk[nl+1:]);              err != nil { return err }
 			} else {
-				if _, err := io.WriteString(w, html.EscapeString(s)); err != nil {
-					return fmt.Errorf("cannot write code block HTML: %w", err)
-				}
-				if _, err := fmt.Fprintf(w, "<span class='%s'>", class); err != nil {
-					return fmt.Errorf("cannot write coverage section %q start: %w", class, err)
-				}
+				if err := writeSpan("<span class=\"%s\">", class); err != nil { return err }
+				if err := writeEscaped(chunk);                     err != nil { return err }
 			}
 		} else {
-			if _, err := io.WriteString(w, html.EscapeString(s)); err != nil {
-				return fmt.Errorf("cannot write code block HTML: %w", err)
-			}
-			if _, err := io.WriteString(w, "</span>"); err != nil {
-				return fmt.Errorf("cannot write coverage section end: %w", err)
-			}
+			if    err := writeEscaped(chunk);          err != nil { return err }
+			if _, err := io.WriteString(w, "</span>"); err != nil { return err }
 		}
 		pos = b.Offset
 	}
 
-	if _, err := io.WriteString(w, html.EscapeString(string(src[pos:]))); err != nil {
-		return fmt.Errorf("cannot write code block HTML: %w", err)
-	}
-	if err := writePostamble(w); err != nil {
-		return fmt.Errorf("cannot write postamble: %w", err)
-	}
-
-	return nil
+	if err := writeEscaped(string(src[pos:])); err != nil { return err }
+	return writePostamble(w)
 }
 
 func writePreamble(w io.Writer, cssRelPath, localPath string) error {
