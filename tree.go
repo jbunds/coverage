@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -34,33 +33,24 @@ type htmlBuilder struct {
 
 // writeTreeHTML writes HTML to the specified treeHTML file
 func (tb *treeBuilder) writeTreeHTML() (int, error) {
-	// TODO(jeff): implement path-handling logic inside processEntry which obviates the need to chdir
-	owd, err := os.Getwd()
-	if err != nil { return 0, err }
-	defer func() {
-		if err := os.Chdir(owd); err != nil {
-			fmt.Fprintf(os.Stderr, "os.Chdir(%q) failed: %v", owd, err)
-		}
-	}()
-
-	if err := os.Chdir(tb.outRoot); err != nil { return 0, err }
-
 	html, err := tb.genHTML()
 	if err != nil { return 0, err }
 
-	treeFile, err := tb.fsys.Create(treeHTML)
+	treeFile, err := tb.fsys.Create(filepath.Clean(filepath.Join(tb.outRoot, treeHTML)))
 	if                                       err != nil { return 0, err }
 	if    err := preamble(  treeFile);       err != nil { return 0, err }
 	if _, err := fmt.Fprint(treeFile, html); err != nil { return 0, err }
 	if    err := postamble( treeFile);       err != nil { return 0, err }
-	return tb.maxWidth + 10, treeFile.Close() // TODO(jeff): eliminate (or at least document) magic numbers
+
+	// +10 accounts for the coverage percentage width (8ch) plus a 2ch gap,
+	// to cohere with "margin-right: 10ch;" in tree.css
+	return tb.maxWidth + 10, treeFile.Close()
 }
 
 // genHTML reads a given directory to process its contents and generate HTML content
 func (tb *treeBuilder) genHTML() (string, error) {
-	entries, err := fs.ReadDir(tb.fsys, ".")
+	entries, err := fs.ReadDir(tb.fsys, tb.outRoot)
 	if err != nil { return "", err }
-
 
 	var sb strings.Builder
 	sb.WriteString("<ul class=\"tree\">\n")
@@ -77,15 +67,15 @@ func (tb *treeBuilder) genHTML() (string, error) {
 }
 
 // processEntry recursively processes a directory's contents to produce an entryResult for each relevant directory entry encountered
-func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent int) (entryResult, error) {
+func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, indent int) (entryResult, error) {
 	isDir        := entry.IsDir()
 	isTargetFile := !isDir && strings.HasSuffix(entry.Name(), ".go.html")
 
 	if !isDir && !isTargetFile { return entryResult{}, nil }
 
 	src      := strings.TrimSuffix(entry.Name(), ".html")
-	srcPath  := filepath.Clean(filepath.Join(parentPath, src))
-	htmlPath := filepath.Clean(filepath.Join(parentPath, entry.Name()))
+	srcPath  := filepath.Clean(filepath.Join(relParentPath, src))
+	htmlPath := filepath.Clean(filepath.Join(relParentPath, entry.Name()))
 
 	width    := indent + len(src)
 
@@ -96,7 +86,8 @@ func (tb *treeBuilder) processEntry(parentPath string, entry fs.DirEntry, indent
 		tb.counter++
 		itemID := fmt.Sprintf("tree-item-%d", tb.counter)
 
-		subDirEntries, err := fs.ReadDir(tb.fsys, htmlPath)
+		fullPath           := filepath.Join(tb.outRoot, htmlPath)
+		subDirEntries, err := fs.ReadDir(tb.fsys, fullPath)
 		if err != nil { return entryResult{}, err }
 
 		var subDirSB strings.Builder

@@ -57,13 +57,9 @@ type coverage struct {
 
 // wrappers to make testing easier
 
-type localFS struct{}
-
-func (lfs *localFS) Open     (name string) (fs.File,                      error) { return os.Open     (filepath.Clean(name)) }
-func (lfs *localFS) Create   (name string) (io.WriteCloser,               error) { return os.Create   (filepath.Clean(name)) }
-func (lfs *localFS) MkdirAll (path string, perm fs.FileMode)              error  { return os.MkdirAll (filepath.Clean(path), perm) }
-func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error  { return os.WriteFile(name, data, perm) }
-
+// writeFS defines an interface that extends fs.FS with writing capabilities.
+// This abstraction is necessary to allow for mocking the file system within
+// unit tests, as the standard "os" package cannot be directly mocked.
 type writeFS interface {
 	fs.FS
 	Create   (string)     (io.WriteCloser, error)
@@ -71,6 +67,16 @@ type writeFS interface {
 	WriteFile(string, []byte, fs.FileMode) error
 }
 
+// localFS provides a concrete implementation of the writeFS interface by
+// wrapping the standard "os" package. This allows the program to perform
+// actual system operations in production while remaining easily testable
+// via alternative interface implementations.
+type localFS struct{}
+
+func (lfs *localFS) Open     (name string) (fs.File,                      error) { return os.Open     (filepath.Clean(name)) }
+func (lfs *localFS) Create   (name string) (io.WriteCloser,               error) { return os.Create   (filepath.Clean(name)) }
+func (lfs *localFS) MkdirAll (path string, perm fs.FileMode)              error  { return os.MkdirAll (filepath.Clean(path), perm) }
+func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error  { return os.WriteFile(name,          data,  perm) }
 
 type stringWriter interface { // because io.StringWriter is braindead (at least for my purposes)
 	io.Writer
@@ -110,8 +116,8 @@ func main() {
 	repGen := &reportGenerator{
 		fsys:           &localFS{},
 		embeddedFiles:  embeddedFiles,
-		outRoot:        outRoot,
-		profilePath:    profilePath,
+		outRoot:        filepath.Clean(outRoot),
+		profilePath:    filepath.Clean(profilePath),
 		profiles:       profiles,
 		ancillaryFiles: ancillaryFiles,
 	}
@@ -140,7 +146,7 @@ func main() {
 
 	tb := &treeBuilder{
 		fsys:    &localFS{},
-		outRoot: outRoot,
+		outRoot: filepath.Clean(outRoot),
 		cov:     repGen.cov,
 	}
 
