@@ -81,6 +81,11 @@
 
 .tree input:checked ~ .tree-node label::before { content: "\1F4C2" } /* open folder */
 
+.tree .src:focus-within { /* persists background color highlight after clicking on a link */
+  background-color: var(--hover-bg);
+  border-radius:    4px;
+}
+
 span.src {
   display:        inline-block;
   vertical-align: middle;
