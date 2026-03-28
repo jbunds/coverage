@@ -8,6 +8,16 @@ branding:
 runs:
   using: composite
   steps:
+    - name: checkout
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 10 # https://github.com/gwatts/go-coverage-action#example-workflow
+
+    - name: setup-go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.26.1'
+
     - name: coverage profile
       uses: gwatts/go-coverage-action@v2
       id:   coverge_profile
