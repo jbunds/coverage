@@ -3,9 +3,9 @@
   --bg-header:   papayawhip;
   --text-color:  darkslategrey;
   --hover-bg:    wheat;
-  --cov-hit:     limegreen;
+  --cov-hit:     green;
   --cov-miss:    red;
-  --cov-hit-bg:  darkgreen;
+  --cov-hit-bg:  darkolivegreen;
   --cov-miss-bg: firebrick;
 
   color-scheme: light dark;
@@ -29,9 +29,9 @@
   --bg-header:   papayawhip;
   --text-color:  darkslategrey;
   --hover-bg:    wheat;
-  --cov-hit:     limegreen;
+  --cov-hit:     green;
   --cov-miss:    red;
-  --cov-hit-bg:  darkgreen;
+  --cov-hit-bg:  darkolivegreen;
   --cov-miss-bg: firebrick;
 }
 
