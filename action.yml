@@ -3,7 +3,7 @@ description: Go test coverage HTML report generator
 author:      jbunds
 branding:
   icon:  layout
-  color: green
+  color: blue
 
 runs:
   using: composite
