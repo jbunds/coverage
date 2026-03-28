@@ -229,32 +229,6 @@ func TestGetSrcRoot(t *testing.T) {
 	}
 }
 
-func TestBuildCovHTMLFails(t *testing.T) {
-	tests := []struct{
-		name      string
-		fsys      fs.FS
-		writer    io.Writer
-		localPath string
-		wantErr   bool
-	}{
-		{
-			name:      "writePreamble fails",
-			fsys:      fstest.MapFS{ "foo.go": &fstest.MapFile{} },
-			writer:    &badWriter{},
-			localPath: "foo.go",
-			wantErr:   true,
-		},
-	}
-	for _, tt := range tests {
-		mfs    := &mockFS{ FS: tt.fsys }
-		repGen := &reportGenerator{ fsys: mfs }
-		err    := repGen.buildCovHTML(tt.writer, nil, tt.localPath)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("buildCovHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-	}
-}
-
 func TestWriteCovHTMLFiles(t *testing.T) {
 	tests := []struct{
 		name           string

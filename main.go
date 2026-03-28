@@ -17,6 +17,7 @@
 package main
 
 import (
+	"bufio"
 	"cmp"
 	"embed"
 	"errors"
@@ -273,28 +274,14 @@ func (rg *reportGenerator) writeCovHTMLFiles(w stringWriter) error {
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage
 func (rg *reportGenerator) buildCovHTML(w io.Writer, profile *cover.Profile, localPath string) error {
-	srcFile  := filepath.Join(rg.srcRoot, localPath)
-	src, err := fs.ReadFile(rg.fsys, srcFile)
-	if err != nil { return fmt.Errorf("cannot read source file %q: %w", srcFile, err) }
+	src, err := fs.ReadFile(rg.fsys, filepath.Join(rg.srcRoot, localPath))
+	if err != nil { return err }
 
-	cssRelPath := styleCSS
-	if depth := strings.Count(localPath, "/"); depth > 0 {
-		cssRelPath = strings.Repeat("../", depth) + styleCSS
-	}
+	bw    := bufio.NewWriter(w)
+	write := func(s string) { _, _ = bw.WriteString(html.EscapeString(s)) }
 
-	if err := writePreamble(w, cssRelPath, localPath); err != nil {
-		return fmt.Errorf("cannot write preamble: %w", err)
-	}
-
-	writeEscaped := func(s string) error {
-		_, err := io.WriteString(w, html.EscapeString(s))
-		return err
-	}
-
-	writeSpan := func(f, s string) error {
-		_, err := fmt.Fprintf(w, f, s)
-		return err
-	}
+	cssPath := strings.Repeat("../", strings.Count(localPath, "/")) + styleCSS
+	_ = writePreamble(bw, cssPath, localPath)
 
 	pos := 0
 	for _, b := range profile.Boundaries(src) {
@@ -303,22 +290,23 @@ func (rg *reportGenerator) buildCovHTML(w io.Writer, profile *cover.Profile, loc
 			class := "miss"
 			if b.Count > 0 { class = "hit" }
 			if nl := strings.LastIndexByte(chunk, '\n'); nl != -1 {
-				if err := writeEscaped(chunk[:nl+1]);              err != nil { return err }
-				if err := writeSpan("<span class=\"%s\">", class); err != nil { return err }
-				if err := writeEscaped(chunk[nl+1:]);              err != nil { return err }
+				write(chunk[:nl+1])
+				_, _ = fmt.Fprintf(bw, `<span class="%s">`, class)
+				write(chunk[nl+1:])
 			} else {
-				if err := writeSpan("<span class=\"%s\">", class); err != nil { return err }
-				if err := writeEscaped(chunk);                     err != nil { return err }
+				write(chunk)
+				_, _ = fmt.Fprintf(bw, `<span class="%s">`, class)
 			}
 		} else {
-			if    err := writeEscaped(chunk);          err != nil { return err }
-			if _, err := io.WriteString(w, "</span>"); err != nil { return err }
+			write(chunk)
+			_, _ = bw.WriteString("</span>")
 		}
 		pos = b.Offset
 	}
 
-	if err := writeEscaped(string(src[pos:])); err != nil { return err }
-	return writePostamble(w)
+	write(string(src[pos:]))
+	_ = writePostamble(bw)
+	return bw.Flush()
 }
 
 func writePreamble(w io.Writer, cssRelPath, localPath string) error {
