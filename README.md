@@ -23,6 +23,8 @@ When served via HTTP, buttons are available to:
 - toggle between ***light*** and ***dark*** themes
 - toggle between a fully-collapsed and fully-expanded directory tree
 
+---
+
 #### User Interface
 
 ***light*** theme:
@@ -32,6 +34,8 @@ When served via HTTP, buttons are available to:
 ***dark*** theme:
 
 ![dark theme][dark theme]
+
+---
 
 #### But _Why?_
 
@@ -44,6 +48,8 @@ The generated coverage report can be [stored](https://github.com/actions/upload-
 For example, `coverage` generated ~44 MB of HTML content for [`k8s.io/kubernetes`](https://github.com/kubernetes/kubernetes), which can be compressed to ~6.5 MB via `tar czf`, or ~9.3 MB via `zip -r`. Smaller code bases can expect smaller output.
 
 See the [CI workflow](/.github/workflows/ci.yml) for a working example.
+
+---
 
 #### Usage
 
