@@ -54,7 +54,7 @@ $ go run github.com/jbunds/coverage
 coverage usage:
 
   -coverprofile string
-    	Go test coverage profile file
+    	path to Go test coverage profile file
   -path string
     	path where HTML files will be written
 ```
