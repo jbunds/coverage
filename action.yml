@@ -1,34 +1,51 @@
+# https://docs.github.com/actions/reference/workflows-and-actions/metadata-syntax
+
 name:        Go test coverage HTML report
 description: Go test coverage HTML report generator
 author:      jbunds
 branding:
   icon:  layout
   color: blue
+inputs:
+  coverage-threshold:
+    description: "coverage-threshold" parameter for gwatts/go-coverage-action
+    required:    false
+    default:     0
+outputs:
+  all:           # accessed downstream via ${{ fromJson(steps.coverage_report.outputs.all).report-pathname }} for example
+    description: JSON string containing all outputs from gwatts/go-coverage-action
+    value:       ${{ toJson(steps.coverage_profile.outputs) }}
 
 runs:
   using: composite
   steps:
     - name: checkout
+      id:   checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 10 # https://github.com/gwatts/go-coverage-action#example-workflow
 
     - name: setup-go
+      id:   steup_go
       uses: actions/setup-go@v6
       with:
         go-version: '1.26.1'
 
     - name: coverage profile
+      id:   coverage_profile
       uses: gwatts/go-coverage-action@v2
-      id:   coverge_profile
+      with:
+        coverage-threshold: ${{ inputs.coverage-threshold }}
 
     - name: coverage report
+      id:   coverage_report
       run: |
         go run github.com/jbunds/coverage@latest \
           -coverprofile="${{ steps.coverage_profile.outputs.gocov-pathname }}" \
           -path=./coverage_report
 
     - name: store coverage report
+      id:   store_coverage_report
       uses: actions/upload-artifact@v7
       with:
         name: coverage report
