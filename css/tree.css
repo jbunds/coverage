@@ -76,7 +76,7 @@
 .tree     a:hover,
 .tree label:hover {
   background-color: var(--hover-bg);
-  box-shadow:       2px 2px 2px rgba(0,0,0,0.15);
+  box-shadow:       2px 2px 2px rgb(0, 0, 0, 15%);
 }
 
 .tree label::before {
@@ -92,11 +92,11 @@
 .tree .src:focus-within { /* persists background color highlight after clicking on a link */
   background-color: var(--hover-bg);
   border-radius:    4px;
-  box-shadow:       1px 1px 1px rgba(0,0,0,0.1);
+  box-shadow:       1px 1px 1px rgb(0, 0, 0, 10%);
 }
 
 .tree .src:focus-within:hover {
-  box-shadow:       2px 2px 2px rgba(0,0,0,0.15);
+  box-shadow:       2px 2px 2px rgb(0, 0, 0, 15%);
 }
 
 span.src {
