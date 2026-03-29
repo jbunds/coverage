@@ -54,7 +54,7 @@ jobs:
         coverage-threshold: 50
 ```
 
-All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] action are available downstream via JSON decoding:
+All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding:
 
 ```
 ${{ fromJson(steps.coverage_report.outputs.all).gcov-pathname    }}
