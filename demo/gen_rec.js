@@ -293,7 +293,7 @@ async function scrollDownCompletely(recording, page, iframeSelector, options = {
   await page.waitForFunction(() => {
     const frame = document.querySelector('iframe#code');
     return frame && frame.contentDocument && frame.contentDocument.querySelector('pre');
-  }, { timeout: 30000 });
+  }, { timeout: 5000 });
   await scrollDownCompletely(recording, page, 'iframe#code', { frameIndex: 1 });
 
   // 5. theme button
