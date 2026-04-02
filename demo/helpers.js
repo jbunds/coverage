@@ -8,6 +8,7 @@ export {
   installMouseHelper,
   interactWith,
   scrollDownCompletely,
+  //scrollDownTo,
 };
 
 const URL         = 'http://127.0.0.1:8000';
@@ -115,13 +116,13 @@ async function interactWith(recording, page, selector, options = {}) {
 
   console.log(`interacting with ${selector}${iframeSelector ? ` in ${iframeSelector}` : ''}...`);
 
-  let targetFrame = page;
+  let frame = page;
   if (iframeSelector) {
-    const iframeHandle = await page.waitForSelector(iframeSelector);
-    targetFrame = await iframeHandle.contentFrame();
+    const iframeHandle = await page.locator(iframeSelector).waitHandle();
+    frame = await iframeHandle.contentFrame();
   }
 
-  const element = await targetFrame.waitForSelector(selector);
+  const element = await frame.locator(selector).waitHandle();
 
   if (scrollIntoView) {
     await element.evaluate(el => el.scrollIntoView({ block: 'center', inline: 'center' }));
@@ -130,7 +131,7 @@ async function interactWith(recording, page, selector, options = {}) {
 
   // get coordinates after potential scroll
   const rect = await element.boundingBox();
-  if (!rect) throw new Error(`Bounding box null for ${selector}`);
+  if (!rect) throw new Error(`bounding box null for ${selector}`);
   
   const targetX = clickAtX !== null ? rect.x + clickAtX : rect.x + rect.width  / 2 + paddingX;
   const targetY = clickAtY !== null ? rect.y + clickAtY : rect.y + rect.height / 2 + paddingY;
@@ -169,55 +170,66 @@ async function interactWith(recording, page, selector, options = {}) {
   await new Promise(r => setTimeout(r, waitAfter));
 }
 
-//async function scrollDownTo(recording, page, iframeSelector, elementSelector, options = {}) {
-//  const {
-//    frameIndex    = null,
-//    pixelsPerStep = MOUSE_SPEED,
-//    waitBefore    = 1000,
-//    waitAfter     = 1000
-//  } = options;
-//
-//  console.log(`scrolling down ${iframeSelector} to ${elementSelector}...`);
-//  
-//  const iframeHandle = await page.waitForSelector(iframeSelector);
-//  const frame        = await iframeHandle.contentFrame();
-//  
-//  // entry point for mouse
-//  const rect   = await iframeHandle.boundingBox();
-//  const entryX = rect.x + 200;
-//  const entryY = rect.y + 300;
-//  await moveMouse(page, entryX, entryY, pixelsPerStep);
-//  await new Promise(r => setTimeout(r, waitBefore));
-//
-//  // slow smooth scroll
-//  const scrollHeight = await frame.evaluate(async () => {
-//    const totalHeight    = document.documentElement.scrollHeight;
-//    const viewportHeight = window.innerHeight;
-//    const distance       = 80; // smaller distance for slower scroll
-//    let currentPos = 0;
-//    while(currentPos < (totalHeight - viewportHeight)) {
-//      window.scrollBy(0, distance);
-//      currentPos += distance;
-//      await new Promise(r => setTimeout(r, 100)); // slightly longer delay
-//    }
-//    // ensure we reach the absolute bottom
-//    window.scrollTo(0, totalHeight);
-//    return totalHeight;
-//  });
-//
-//  await new Promise(r => setTimeout(r, waitAfter));
-//
-//  recording.steps.push({
-//    selectors: [[iframeSelector, 'body']],
-//    type:      'scroll',
-//    target:    'main',
-//    x: 0,
-//    y: scrollHeight,
-//    ...(frameIndex !== null ? { frame: [frameIndex] } : {})
-//  });
-//}
+async function scrollDownTo(recording, page, iframeSelector, elementSelector, options = {}) {
+  const {
+    frameIndex    = null,
+    pixelsPerStep = MOUSE_SPEED,
+    waitBefore    = 1000,
+    waitAfter     = 1000
+  } = options;
 
-// generic scroll function
+  console.log(`scrolling down ${iframeSelector} to ${elementSelector}...`);
+  
+  const iframeHandle = await page.locator(iframeSelector).waitHandle();
+  const frame        = await iframeHandle.contentFrame();
+  const element      = await frame.locator(selector).waitHandle();
+  await frame.locator(elementSelector).scroll({
+    scrollLeft: 30, // ????
+    scrollTop: 30, // ???
+  });
+  
+  // entry point for mouse
+  const rect   = await iframeHandle.boundingBox();
+  const entryX = rect.x + 200;
+  const entryY = rect.y + 300;
+  await moveMouse(page, entryX, entryY, pixelsPerStep);
+  await new Promise(r => setTimeout(r, waitBefore));
+
+  //const element = await page.$(elementSelector);
+  //await element.scrollIntoView();
+  //await page.evaluate(() => {
+  //  document.querySelector(elementSelector)?.scrollIntoView();
+  //});
+  await page.locator(elementSelector).scrollIntoView();
+
+  // slow smooth scroll
+  //const scrollHeight = await frame.evaluate(async () => {
+  //  const totalHeight    = document.documentElement.scrollHeight;
+  //  const viewportHeight = window.innerHeight;
+  //  const distance       = 80; // smaller distance for slower scroll
+  //  let currentPos = 0;
+  //  while(currentPos < (totalHeight - viewportHeight)) {
+  //    window.scrollBy(0, distance);
+  //    currentPos += distance;
+  //    await new Promise(r => setTimeout(r, 100)); // slightly longer delay
+  //  }
+  //  // ensure we reach the absolute bottom
+  //  window.scrollTo(0, totalHeight);
+  //  return totalHeight;
+  //});
+
+  await new Promise(r => setTimeout(r, waitAfter));
+
+  recording.steps.push({
+    selectors: [[iframeSelector, 'body']],
+    type:      'scroll',
+    target:    'main',
+    x: 0,
+    y: scrollHeight,
+    ...(frameIndex !== null ? { frame: [frameIndex] } : {})
+  });
+}
+
 async function scrollDownCompletely(recording, page, iframeSelector, options = {}) {
   const {
     frameIndex    = null,
@@ -228,7 +240,7 @@ async function scrollDownCompletely(recording, page, iframeSelector, options = {
 
   console.log(`scrolling down ${iframeSelector} completely...`);
   
-  const iframeHandle = await page.waitForSelector(iframeSelector);
+  const iframeHandle = await page.locator(iframeSelector).waitHandle();
   const frame        = await iframeHandle.contentFrame();
   
   // entry point for mouse
