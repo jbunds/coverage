@@ -1,23 +1,18 @@
 import fs from 'fs';
-import puppeteer from 'puppeteer';
-
 import {
   URL,
   VIEWPORT,
   launchChrome,
   installMouseHelper,
   interactWith,
-  scrollDownCompletely } from './helpers.js';
+  scrollTo,
+  scrollToBottom,
+  typeWithRandomDelays } from './helpers.js';
 
-// main
 (async () => {
   const browser = await launchChrome();
-  const pages   = await browser.pages();
-  const page    = pages[0];
+  const [page]  = await browser.pages();
   
-  //await page.setViewport(VIEWPORT);
-
-  // place mouse pointer in the middle of the viewport
   const initialX = VIEWPORT.width  / 2;
   const initialY = VIEWPORT.height / 2;
   await installMouseHelper(page, initialX, initialY);
@@ -26,24 +21,22 @@ import {
   await page.goto(URL, { waitUntil: 'networkidle0' });
 
   const recording = {
-    title: "coverage demo",
-    steps: [
-      { type:        "setViewport", ...VIEWPORT,
-        isMobile:    false,
-        hasTouch:    false,
-        isLandscape: false },
-      { type:        "navigate", url: URL }
-    ],
+    title: "demo",
+    steps: [{ type: "navigate", url: URL }],
   };
 
   const iframeSelector = 'iframe#tree';
   const targetFile     = 'pkg/kubelet/kubelet_network.go.html';
 
+  await page.waitForSelector(iframeSelector); // iframe#tree
+  
   // find the sequence of labels to expand for the target file
   const labelsToExpand = await page.evaluate((href) => {
-    const treeDoc = document.querySelector('iframe#tree').contentDocument;
-    const link    = treeDoc.querySelector(`a[href="${href}"]`);
+    const treeDoc = document.querySelector('iframe#tree')?.contentDocument;
+    if (!treeDoc) return [];
+    const link = treeDoc.querySelector(`a[href="${href}"]`);
     if (!link) return [];
+    
     const res = [];
     let curr = link.parentElement;
     while (curr) {
@@ -53,7 +46,7 @@ import {
         if (input && label) {
           res.unshift({
             selector: `label[for="${input.id}"]`,
-            text:     label.textContent
+            text:     label.textContent.trim()
           });
         }
       }
@@ -64,73 +57,82 @@ import {
 
   console.log('labels to expand:', labelsToExpand.map(l => l.text).join(' > '));
 
-  // 1. "pkg" subdirectory
+  // expand "pkg"
   if (labelsToExpand.length > 0) {
     await interactWith(recording, page, labelsToExpand[0].selector, {
       iframeSelector,
       frameIndex: 0,
-      clickAtX:   20, // click on the left side (folder icon)
-      waitBefore: 1200,
-      waitAfter:  1200
+      clickAtX:   20, // click on the folder icon
+      waitBefore: 800,
+      waitAfter:  1000
     });
   }
 
-  // 2. move to "pkg/kubelet" subdirectory
-  // TODO(jeff): actually scroll down the tree iframe until "pkg/kubelet" is in the middle of the frame
-  //             but already as-is, this added step arguably (maybe?) makes the recording look a bit more human and natural
-  //const subdirSelector = 'label[for="tree-item-527"]';
-  await interactWith(recording, page, labelsToExpand[0].selector, {
+  // scroll to see more items
+  await scrollTo(
+    recording,
+    page,
     iframeSelector,
-    frameIndex: 0,
-    type:       'none',
-	});
+    'label[for="tree-item-527"]', {
+      frameIndex: 0,
+    });
 
-  // 3. move to "pkg/kubelet" subdirectory and click it
+  // expand "kubelet"
   if (labelsToExpand.length > 1) {
     await interactWith(recording, page, labelsToExpand[1].selector, {
       iframeSelector,
       frameIndex: 0,
-      clickAtX:   20, // click on the left side
-      waitBefore: 1200,
+      clickAtX:   20,
+      waitBefore: 1000,
       waitAfter : 1200
     });
   }
 
-  // 3. "pkg/kubelet/kubelet_network.go.html"
+  // click the target file
   const fileSelector = `a[href="${targetFile}"]`;
   await interactWith(recording, page, fileSelector, {
     iframeSelector,
     frameIndex: 0,
-    clickAtX:   20, // click on the left side
+    clickAtX:   20,
     waitBefore: 1200,
-    waitAfter:  1200
+    waitAfter:  1500
   });
 
-  // 4. scroll "code" iframe
+  // wait for and scroll the "code" iframe
+  console.log('Waiting for code iframe...');
   await page.waitForFunction(() => {
     const frame = document.querySelector('iframe#code');
-    return frame && frame.contentDocument && frame.contentDocument.querySelector('pre');
-  }, { timeout: 5000 });
-  await scrollDownCompletely(recording, page, 'iframe#code', { frameIndex: 1 });
+    return frame?.contentDocument?.querySelector('pre') !== null;
+  }, { timeout: 10000 });
 
-  // 5. theme button
+  await scrollToBottom(recording, page, 'iframe#code', { 
+    frameIndex: 1,
+    waitBefore: 1500,
+    waitAfter:  1500
+  });
+
+  // click theme button
   await interactWith(recording, page, '#theme', {
-    pixelsPerStep: 6.0,
-    waitBefore:    1200,
-    waitAfter:     1200 });
+    pixelsPerStep: 5.0,
+    waitBefore:    1000,
+    waitAfter:     1000 
+  });
 
-  // 6. expand button
+  // click expand button
   await interactWith(recording, page, '#expand', {
     pixelsPerStep: 4.0,
     waitBefore:    1200,
-    waitAfter:     1200 });
+    waitAfter:     1500 
+  });
 
-  console.log('saving recording...');
+  // final pause before saving
+  console.log('final pause...');
+  await new Promise(r => setTimeout(r, 1000));
 
+  console.log('saving recording.json...');
   fs.writeFileSync('recording.json', JSON.stringify(recording, null, 2));
 
-  console.log('done. closing in 2s...');
-
+  console.log('closing browser in 2s...');
   await new Promise(r => setTimeout(r, 2000));
   await browser.close();
 })();

@@ -7,8 +7,11 @@ export {
   launchChrome,
   installMouseHelper,
   interactWith,
-  scrollDownCompletely,
-  //scrollDownTo,
+  scrollTo,
+  scrollToBottom,
+  typeWithRandomDelays,
+  moveMouse,
+  performVisualClick,
 };
 
 const URL         = 'http://127.0.0.1:8000';
@@ -19,14 +22,11 @@ const VIEWPORT    = {
   height:            720 };
 
 // global state; tracks the position of the mouse pointer as it moves
-// initial placement is in the middle of the page
-//let currentPos = { x: 0, y: 0 }
 let currentPos = {
   x: VIEWPORT.width  / 2,
   y: VIEWPORT.height / 2 };
 
 // helpers
-//async function installMouseHelper(page, initialX = 0, initialY = 0) {
 async function installMouseHelper(page, initialX = currentPos.x, initialY = currentPos.y) {
   await page.evaluateOnNewDocument((x, y) => {
     if (window !== window.parent) return;
@@ -44,75 +44,117 @@ async function installMouseHelper(page, initialX = currentPos.x, initialY = curr
       box.style.height        = '25px';
       box.style.left          = (x - 3) + 'px';
       box.style.top           = (y - 3) + 'px';
+      box.style.transition    = 'fill 0.1s ease';
       document.body.appendChild(box);
       window.updatePuppeteerCursor = (newX, newY, clicking = false) => {
         box.style.left = (newX - 3) + 'px';
         box.style.top  = (newY - 3) + 'px';
         const path = box.querySelector('path');
         if (clicking) path.style.fill = 'gray';
-        else path.style.fill = 'black';
+        else          path.style.fill = 'black';
       };
     });
   }, initialX, initialY);
+  await page.evaluate(() => {
+    document.addEventListener('mousemove', (e) => {
+      window.mouseX = e.clientX;
+      window.mouseY = e.clientY;
+    });
+  });
+}
+
+// bezier curve implementation for natural mouse movement
+function getBezierPoint(t, p0, p1, p2) {
+  const x = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * p1.x + t * t * p2.x;
+  const y = (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * p1.y + t * t * p2.y;
+  return { x, y };
 }
 
 async function moveMouse(page, targetX, targetY, pixelsPerStep = MOUSE_SPEED) {
-  const startX   = currentPos.x;
-  const startY   = currentPos.y;
+  const startX = currentPos.x;
+  const startY = currentPos.y;
+
+  // control point for quadratic bezier to make it a curve instead of a line
+  // pick a point somewhat offset from the midpoint
+  const midX = (startX + targetX) / 2;
+  const midY = (startY + targetY) / 2;
+  const cpX  = midX + (Math.random() - 0.5) * Math.abs(targetX - startX) * 0.4;
+  const cpY  = midY + (Math.random() - 0.5) * Math.abs(targetY - startY) * 0.4;
+
   const distance = Math.hypot(targetX - startX, targetY - startY);
-  const steps    = Math.max(1, Math.floor(distance / pixelsPerStep));
-  console.log(`moving to (${targetX.toFixed(1)}, ${targetY.toFixed(1)}) | Steps: ${steps}`);
+  const steps    = Math.max(5, Math.floor(distance / pixelsPerStep));
+  
+  console.log(`moving to (${targetX.toFixed(1)}, ${targetY.toFixed(1)}) | steps: ${steps}`);
+  
   for (let i = 1; i <= steps; i++) {
-    const x = startX + (targetX - startX) * (i / steps);
-    const y = startY + (targetY - startY) * (i / steps);
+    const t = i / steps;
+    // use an easing function for more natural speed (accelerate/decelerate)
+    const easedT = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    const { x, y } = getBezierPoint(easedT, { x: startX, y: startY }, { x: cpX, y: cpY }, { x: targetX, y: targetY });
+    
     await page.mouse.move(x, y);
     await page.evaluate((x, y) => { if (window.updatePuppeteerCursor) window.updatePuppeteerCursor(x, y); }, x, y);
-    if (i % 2 === 0) await new Promise(r => setTimeout(r, 6));
+    
+    // variable delay to mimic human interaction
+    if (i % 3 === 0) await new Promise(r => setTimeout(r, 5 + Math.random() * 5));
   }
+  
   await page.mouse.move(targetX, targetY);
   await page.evaluate((x, y) => { if (window.updatePuppeteerCursor) window.updatePuppeteerCursor(x, y); }, targetX, targetY);
   currentPos = { x: targetX, y: targetY };
-  await new Promise(r => setTimeout(r, 200)); 
+  await new Promise(r => setTimeout(r, 150 + Math.random() * 100)); 
 }
 
 async function performVisualClick(page, x, y) {
   await page.evaluate((x, y) => { if (window.updatePuppeteerCursor) window.updatePuppeteerCursor(x, y, true); }, x, y);
-  await page.mouse.click(x, y);
-  await new Promise(r => setTimeout(r, 250));
+  await page.mouse.down();
+  await new Promise(r => setTimeout(r,  50 + Math.random() *  50));
+  await page.mouse.up();
+  await new Promise(r => setTimeout(r, 100 + Math.random() * 100));
   await page.evaluate((x, y) => { if (window.updatePuppeteerCursor) window.updatePuppeteerCursor(x, y, false); }, x, y);
 }
 
+async function typeWithRandomDelays(page, text, delay = 100) {
+  for (const char of text) {
+    await page.keyboard.type(char, { delay: delay + (Math.random() - 0.5) * delay * 0.5 });
+    if (Math.random() > 0.9) await new Promise(r => setTimeout(r, 200 + Math.random() * 300)); // random pause
+  }
+}
+
 async function launchChrome(url = URL) {
-  return await puppeteer.launch({
+  const options = {
     headless:        false,
     defaultViewport: null,
     executablePath:  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     args: [
       '--window-size=' + VIEWPORT.width + ',' + VIEWPORT.height,
-      '--remote-debugging-port=9222',
       '--disable-web-security',
       '--disable-features=IsolateOrigins,site-per-process',
       '--disable-blink-features=AutomationControlled',
       url,
     ],
-  });
+  };
+  return await puppeteer.launch(options);
 }
 
-// generic function to interact with an element (main page or iframe)
 async function interactWith(recording, page, selector, options = {}) {
+  const defaults = {
+    iframeSelector: null,
+    type:           'click',
+    pixelsPerStep:  MOUSE_SPEED,
+    frameIndex:     null,
+    scrollIntoView: true,
+    paddingX:       0,
+    paddingY:       0,
+    waitBefore:     1000,
+    waitAfter:      1000,
+    clickAtX:       null,
+    clickAtY:       null
+  };
   const {
-    iframeSelector = null,
-    type           = 'click', // 'click', 'hover', or 'none' (just move)
-    pixelsPerStep  = MOUSE_SPEED,
-    frameIndex     = null,
-    scrollIntoView = true,
-    paddingX       = 0,       // offset from center X
-    paddingY       = 0,       // offset from center Y
-    waitBefore     = 1000,
-    waitAfter      = 1000,
-    clickAtX       = null,    // absolute X within element (overrides paddingX)
-    clickAtY       = null     // absolute Y within element (overrides paddingY)
-  } = options;
+    iframeSelector, type, pixelsPerStep, frameIndex, scrollIntoView,
+    paddingX, paddingY, waitBefore, waitAfter, clickAtX, clickAtY
+  } = { ...defaults, ...options };
 
   console.log(`interacting with ${selector}${iframeSelector ? ` in ${iframeSelector}` : ''}...`);
 
@@ -120,29 +162,32 @@ async function interactWith(recording, page, selector, options = {}) {
   if (iframeSelector) {
     const iframeHandle = await page.locator(iframeSelector).waitHandle();
     frame = await iframeHandle.contentFrame();
+    if (!frame) throw new Error(`cannot get contentFrame for ${iframeSelector}`);
   }
 
   const element = await frame.locator(selector).waitHandle();
 
   if (scrollIntoView) {
-    await element.evaluate(el => el.scrollIntoView({ block: 'center', inline: 'center' }));
-    await new Promise(r => setTimeout(r, 500));
+    await element.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+    await new Promise(r => setTimeout(r, 600 + Math.random() * 200));
   }
 
-  // get coordinates after potential scroll
   const rect = await element.boundingBox();
-  if (!rect) throw new Error(`bounding box null for ${selector}`);
+  if (!rect) throw new Error(`null bounding box for ${selector}`);
   
-  const targetX = clickAtX !== null ? rect.x + clickAtX : rect.x + rect.width  / 2 + paddingX;
-  const targetY = clickAtY !== null ? rect.y + clickAtY : rect.y + rect.height / 2 + paddingY;
+  // add some randomness to the click point (within a 5px radius of center or specified point)
+  const jitterX = (Math.random() - 0.5) * 4;
+  const jitterY = (Math.random() - 0.5) * 4;
+  
+  const targetX = (clickAtX !== null ? rect.x + clickAtX : rect.x + rect.width / 2 + paddingX) + jitterX;
+  const targetY = (clickAtY !== null ? rect.y + clickAtY : rect.y + rect.height / 2 + paddingY) + jitterY;
 
-  // move to target
-  console.log(`moving to ${selector}...`);
   await moveMouse(page, targetX, targetY, pixelsPerStep);
   
   const selectors = iframeSelector ? [[iframeSelector, selector]] : [[selector]];
-  
-  // recording hover
+  const waitBeforeFinal = waitBefore + (Math.random() - 0.5) * 200;
+  const waitAfterFinal  = waitAfter  + (Math.random() - 0.5) * 200;
+
   if (type !== 'none') {
     recording.steps.push({
       selectors,
@@ -150,10 +195,9 @@ async function interactWith(recording, page, selector, options = {}) {
       target: 'main',
       ...(frameIndex !== null ? { frame: [frameIndex] } : {})
     });
-    await new Promise(r => setTimeout(r, waitBefore));
+    await new Promise(r => setTimeout(r, waitBeforeFinal));
   }
 
-  // recording click
   if (type === 'click') {
     console.log(`clicking ${selector}...`);
     await performVisualClick(page, targetX, targetY);
@@ -167,70 +211,36 @@ async function interactWith(recording, page, selector, options = {}) {
     });
   }
 
-  await new Promise(r => setTimeout(r, waitAfter));
+  await new Promise(r => setTimeout(r, waitAfterFinal));
 }
 
-async function scrollDownTo(recording, page, iframeSelector, elementSelector, options = {}) {
-  const {
-    frameIndex    = null,
-    pixelsPerStep = MOUSE_SPEED,
-    waitBefore    = 1000,
-    waitAfter     = 1000
-  } = options;
+async function scrollTo(recording, page, iframeSelector, elementSelector, options = {}) {
+  const { frameIndex = null } = options;
+  console.log(`scrolling in ${iframeSelector} to ${elementSelector}...`);
 
-  console.log(`scrolling down ${iframeSelector} to ${elementSelector}...`);
-  
   const iframeHandle = await page.locator(iframeSelector).waitHandle();
   const frame        = await iframeHandle.contentFrame();
-  const element      = await frame.locator(selector).waitHandle();
-  await frame.locator(elementSelector).scroll({
-    scrollLeft: 30, // ????
-    scrollTop: 30, // ???
-  });
+  if (!frame) throw new Error(`cannot get contentFrame for ${iframeSelector}`);
+
+  await frame.evaluate((sel) => {
+    document.querySelector(sel)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, elementSelector);
   
-  // entry point for mouse
-  const rect   = await iframeHandle.boundingBox();
-  const entryX = rect.x + 200;
-  const entryY = rect.y + 300;
-  await moveMouse(page, entryX, entryY, pixelsPerStep);
-  await new Promise(r => setTimeout(r, waitBefore));
+  await new Promise(r => setTimeout(r, 800 + Math.random() * 300));
 
-  //const element = await page.$(elementSelector);
-  //await element.scrollIntoView();
-  //await page.evaluate(() => {
-  //  document.querySelector(elementSelector)?.scrollIntoView();
-  //});
-  await page.locator(elementSelector).scrollIntoView();
-
-  // slow smooth scroll
-  //const scrollHeight = await frame.evaluate(async () => {
-  //  const totalHeight    = document.documentElement.scrollHeight;
-  //  const viewportHeight = window.innerHeight;
-  //  const distance       = 80; // smaller distance for slower scroll
-  //  let currentPos = 0;
-  //  while(currentPos < (totalHeight - viewportHeight)) {
-  //    window.scrollBy(0, distance);
-  //    currentPos += distance;
-  //    await new Promise(r => setTimeout(r, 100)); // slightly longer delay
-  //  }
-  //  // ensure we reach the absolute bottom
-  //  window.scrollTo(0, totalHeight);
-  //  return totalHeight;
-  //});
-
-  await new Promise(r => setTimeout(r, waitAfter));
+  const scrollY = await frame.evaluate(() => window.scrollY);
 
   recording.steps.push({
     selectors: [[iframeSelector, 'body']],
     type:      'scroll',
     target:    'main',
     x: 0,
-    y: scrollHeight,
+    y: scrollY,
     ...(frameIndex !== null ? { frame: [frameIndex] } : {})
   });
 }
 
-async function scrollDownCompletely(recording, page, iframeSelector, options = {}) {
+async function scrollToBottom(recording, page, iframeSelector, options = {}) {
   const {
     frameIndex    = null,
     pixelsPerStep = MOUSE_SPEED,
@@ -242,27 +252,25 @@ async function scrollDownCompletely(recording, page, iframeSelector, options = {
   
   const iframeHandle = await page.locator(iframeSelector).waitHandle();
   const frame        = await iframeHandle.contentFrame();
+  if (!frame) throw new Error(`cannot get contentFrame for ${iframeSelector}`);
   
-  // entry point for mouse
   const rect   = await iframeHandle.boundingBox();
-  const entryX = rect.x + 200;
-  const entryY = rect.y + 300;
+  const entryX = rect.x + 200 + (Math.random() - 0.5) * 100;
+  const entryY = rect.y + 300 + (Math.random() - 0.5) * 100;
   await moveMouse(page, entryX, entryY, pixelsPerStep);
   await new Promise(r => setTimeout(r, waitBefore));
 
-  // slow smooth scroll
   const scrollHeight = await frame.evaluate(async () => {
     const totalHeight    = document.documentElement.scrollHeight;
     const viewportHeight = window.innerHeight;
-    const distance       = 80; // smaller distance for slower scroll
-    let currentPos = 0;
+    let currentPos = window.scrollY;
     while(currentPos < (totalHeight - viewportHeight)) {
-      window.scrollBy(0, distance);
-      currentPos += distance;
-      await new Promise(r => setTimeout(r, 100)); // slightly longer delay
+      const step = 50 + Math.random() * 100;
+      window.scrollBy({ top: step, behavior: 'smooth' });
+      currentPos += step;
+      await new Promise(r => setTimeout(r, 150 + Math.random() * 100));
     }
-    // ensure we reach the absolute bottom
-    window.scrollTo(0, totalHeight);
+    window.scrollTo({ top: totalHeight, behavior: 'smooth' });
     return totalHeight;
   });
 
