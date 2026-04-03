@@ -5,13 +5,15 @@ export {
   MOUSE_SPEED,
   VIEWPORT,
   launchChrome,
-  installMouseHelper,
+  installMouse,
   interactWith,
   scrollTo,
   scrollToBottom,
   typeWithRandomDelays,
   moveMouse,
+  moveMouseNaturally,
   performVisualClick,
+  //performNaturalClick,
 };
 
 const URL         = 'http://127.0.0.1:8000';
@@ -27,7 +29,7 @@ let currentPos = {
   y: VIEWPORT.height / 2 };
 
 // helpers
-async function installMouseHelper(page, initialX = currentPos.x, initialY = currentPos.y) {
+async function installMouse(page, initialX = currentPos.x, initialY = currentPos.y) {
   await page.evaluateOnNewDocument((x, y) => {
     if (window !== window.parent) return;
     window.addEventListener('DOMContentLoaded', () => {
@@ -46,6 +48,7 @@ async function installMouseHelper(page, initialX = currentPos.x, initialY = curr
       box.style.top           = (y - 3) + 'px';
       box.style.transition    = 'fill 0.1s ease';
       document.body.appendChild(box);
+
       window.updatePuppeteerCursor = (newX, newY, clicking = false) => {
         box.style.left = (newX - 3) + 'px';
         box.style.top  = (newY - 3) + 'px';
@@ -53,6 +56,16 @@ async function installMouseHelper(page, initialX = currentPos.x, initialY = curr
         if (clicking) path.style.fill = 'gray';
         else          path.style.fill = 'black';
       };
+    
+      //window.addEventListener('message', (event) => {
+      //  if (event.data.type === 'UPDATE_MOUSE') {
+      //    window.updatePuppeteerCursor(event.data.x, event.data.y);
+      //  } else if (event.data.type === 'MOUSE_DOWN') {
+      //    window.updatePuppeteerCursor(null, null, true);
+      //  } else if (event.data.type === 'MOUSE_UP') {
+      //    window.updatePuppeteerCursor(null, null, false);
+      //  }
+      //});
     });
   }, initialX, initialY);
   await page.evaluate(() => {
@@ -62,6 +75,13 @@ async function installMouseHelper(page, initialX = currentPos.x, initialY = curr
     });
   });
 }
+
+//async function performNaturalClick(page) {
+//  await page.evaluate(() => { window.postMessage({ type: 'MOUSE_DOWN' }, '*') });
+//  await new Promise(r => setTimeout(r,  50 + Math.random() *  50));
+//  await page.evaluate(() => { window.postMessage({ type: 'MOUSE_UP'   }, '*') });
+//  await new Promise(r => setTimeout(r, 100 + Math.random() * 100));
+//}
 
 // bezier curve implementation for natural mouse movement
 function getBezierPoint(t, p0, p1, p2) {
@@ -104,6 +124,42 @@ async function moveMouse(page, targetX, targetY, pixelsPerStep = MOUSE_SPEED) {
   currentPos = { x: targetX, y: targetY };
   await new Promise(r => setTimeout(r, 150 + Math.random() * 100)); 
 }
+
+async function moveMouseNaturally(page, targetX, targetY) {
+  const { mouseX: startX, mouseY: startY } = await page.evaluate(() => ({
+    mouseX: window.mouseX,
+    mouseY: window.mouseY,
+  }));
+
+  const midX = (startX + targetX) / 2;
+  const midY = (startY + targetY) / 2;
+  const cpX  = midX + (Math.random() - 0.5) * Math.abs(targetX - startX) * 0.3;
+  const cpY  = midY + (Math.random() - 0.5) * Math.abs(targetY - startY) * 0.3;
+
+  const distance = Math.hypot(targetX - startX, targetY - startY);
+  const steps    = Math.max(10, Math.floor(distance / 12));
+
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const easedT = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    const { x, y } = getBezierPoint(easedT, { x: startX, y: startY }, { x: cpX, y: cpY }, { x: targetX, y: targetY });
+
+    await page.mouse.move(x, y);
+
+    await page.evaluate((pos) => {
+      window.postMessage({ type: 'UPDATE_MOUSE', x: pos.x, y: pos.y }, '*');
+    }, { x, y });
+
+    if (i % 4 === 0) await new Promise(r => setTimeout(r, 8 + Math.random() * 5));
+  }
+}
+
+//async function performVisualClick(page, x, y) {
+//  await page.evaluate((x, y) => { window.postMessage({ type: 'MOUSE_DOWN', x, y }, '*') }, x, y);
+//  await new Promise(r => setTimeout(r,  50 + Math.random() *  50));
+//  await page.evaluate((x, y) => { window.postMessage({ type: 'MOUSE_UP', x, y }, '*') }, x, y);
+//  await new Promise(r => setTimeout(r, 100 + Math.random() * 100));
+//}
 
 async function performVisualClick(page, x, y) {
   await page.evaluate((x, y) => { if (window.updatePuppeteerCursor) window.updatePuppeteerCursor(x, y, true); }, x, y);
