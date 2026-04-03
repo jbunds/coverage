@@ -13,7 +13,10 @@ const OUTPUT = 'demo.webm';
   await registerListeners(page);
 
   const cursor = new GhostCursor(page, {
-    start: { x: VIEWPORT.width  / 2, y: VIEWPORT.height / 2 },
+    start: {
+      x: VIEWPORT.width  / 2,
+      y: VIEWPORT.height / 2,
+    },
     defaultOptions: {
       paddingPercentage:  100,
       moveDelay:          1000,
