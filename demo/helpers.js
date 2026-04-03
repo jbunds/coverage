@@ -11,8 +11,8 @@ export {
   scrollToBottom,
   typeWithRandomDelays,
   moveMouse,
-  moveMouseNaturally,
-  performVisualClick,
+  //moveMouseNaturally,
+  performClick,
   //performNaturalClick,
 };
 
@@ -154,14 +154,14 @@ async function moveMouseNaturally(page, targetX, targetY) {
   }
 }
 
-//async function performVisualClick(page, x, y) {
+//async function performClick(page, x, y) {
 //  await page.evaluate((x, y) => { window.postMessage({ type: 'MOUSE_DOWN', x, y }, '*') }, x, y);
 //  await new Promise(r => setTimeout(r,  50 + Math.random() *  50));
 //  await page.evaluate((x, y) => { window.postMessage({ type: 'MOUSE_UP', x, y }, '*') }, x, y);
 //  await new Promise(r => setTimeout(r, 100 + Math.random() * 100));
 //}
 
-async function performVisualClick(page, x, y) {
+async function performClick(page, x, y) {
   await page.evaluate((x, y) => { if (window.updatePuppeteerCursor) window.updatePuppeteerCursor(x, y, true); }, x, y);
   await page.mouse.down();
   await new Promise(r => setTimeout(r,  50 + Math.random() *  50));
@@ -256,7 +256,7 @@ async function interactWith(recording, page, selector, options = {}) {
 
   if (type === 'click') {
     console.log(`clicking ${selector}...`);
-    await performVisualClick(page, targetX, targetY);
+    await performClick(page, targetX, targetY);
     recording.steps.push({
       selectors,
       type:   'click',
