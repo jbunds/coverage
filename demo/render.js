@@ -55,17 +55,9 @@ const OUTPUT = 'demo.webm';
     defaultOptions: {
       paddingPercentage:  100,
       moveDelay:          1000,
-      overshootThreshold: 100000,
-      //moveSpeed: 10,
+      overshootThreshold: 10000,
     }
   });
-
-  // hack to workaround GhostCursor's cursor origin defaulting to 0, 0,
-  // despite explicitly telling it to originate in the middle of the viewport directly above
-  //
-  // TODO(jeff): either one of these calls might be redundant; test to determine what's acutally needed
-  //page.mouse.move(  VIEWPORT.width / 2,    VIEWPORT.height / 2);
-  cursor.moveTo({x: VIEWPORT.width / 2, y: VIEWPORT.height / 2});
 
   await page.waitForNetworkIdle();
 
@@ -77,7 +69,7 @@ const OUTPUT = 'demo.webm';
 
   // "pkg" subdir
   const pkgLabel = await treeFrame.waitForSelector('label[for="tree-item-133"]');
-  await cursor.move(pkgLabel)
+  await cursor.move(pkgLabel);
   await cursor.click(pkgLabel);
 
   // "kubelet" subdir
