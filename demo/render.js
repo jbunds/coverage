@@ -38,6 +38,8 @@ const OUTPUT = 'demo.webm';
 
   // click the "pkg" subdir
   const pkgLabel = await treeFrame.waitForSelector('label[for="tree-item-133"]');
+  await cursor.move(pkgLabel);                // move the cursor to the "pkg" subdir label, but don't immediately click the "pkg" subdir label
+  await new Promise(r => setTimeout(r, 400)); // brief pause before clicking the "pkg" subdir label
   await cursor.click(pkgLabel);
 
   // click the "kubelet" subdir
@@ -49,11 +51,12 @@ const OUTPUT = 'demo.webm';
       inline:   'nearest'
     });
   }, kubeletLabel);
-  await new Promise(r => setTimeout(r, 400)); // wait for scroll to finish
-  const { x, y } = cursor.getLocation();      // move cursor to "kubelet" subdir
+  await new Promise(r => setTimeout(r, 600)); // wait for scroll to finish, and pause briefly before moving to and clicking the "kubelet" subdir label
+  await cursor.move(kubeletLabel);            // move the cursor to "kubelet" subdir, but don't immediately click the label
+  const { x, y } = cursor.getLocation();      // move the cursor to "kubelet" subdir
   await cursor.moveTo({ x, y });              // cursor.moveTo(cursor.getLocation()) won't work because the coordinates will be passed by reference
-  // _WHY_ does the cursor _ALWAYS_ move below the bottom of the "tree" frame here??!
-  await new Promise(r => setTimeout(r, 400)); // slow down there, partner
+  // WHY does the cursor ALWAYS move BELOW the bottom of the "tree" frame here ??!
+  await new Promise(r => setTimeout(r, 400)); // brief pause before clicking the "kubelet" subdir label
   await cursor.click(kubeletLabel);
 
   // click the "kubelet_network.go" link
@@ -65,6 +68,7 @@ const OUTPUT = 'demo.webm';
       inline:   'center',
     });
   }, goSrcLink);
+  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "kubelet_network.go" link
   await cursor.click(goSrcLink);
 
   // move to the "code" iframe and scroll down to its lower boundary
@@ -85,23 +89,24 @@ const OUTPUT = 'demo.webm';
   const indexBodyHandle = await page.waitForSelector('body#index');
   await cursor.move(indexBodyHandle);
   const themeButton     = await page.waitForSelector('#theme');
+  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "theme" button
   await cursor.click(themeButton);
 
   // click the "expand" button
-  await new Promise(r => setTimeout(r, 500));
   const expandButton = await page.waitForSelector('#expand');
+  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "expand" button
   await cursor.click(expandButton);
 
   // click the "theme" button again
-  await new Promise(r => setTimeout(r, 500));
+  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "theme" button
   await cursor.click(themeButton);
 
   // click the "expand" button again
-  await new Promise(r => setTimeout(r, 500));
+  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "expand" button again
   await cursor.click(expandButton);
 
   // click the "expand" button yet again
-  await new Promise(r => setTimeout(r, 500));
+  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "expand" button yet again
   await cursor.click(expandButton);
 
   // give the audience a moment to inspect the expanded tree
