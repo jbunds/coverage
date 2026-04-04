@@ -1,6 +1,12 @@
 import puppeteer from 'puppeteer';
 import { GhostCursor } from 'ghost-cursor';
-import { URL, VIEWPORT, launchChrome, createMousePointer, registerListeners } from './helpers.js';
+import {
+  URL,
+  VIEWPORT,
+  launchChrome,
+  createMousePointer,
+  getAbsoluteCoords,
+  registerListeners } from './helpers.js';
 
 const OUTPUT = 'demo.webm';
 
@@ -8,13 +14,13 @@ const OUTPUT = 'demo.webm';
   const browser = await launchChrome(URL);
   const [page]  = await browser.pages();
 
+  page.on('console', msg => console.log('browser log:', msg.text()));
+
   // there is apparently no trivial way to constrain GhostCursor's random
   // movements to ensure the cursor always remains within the viewport
   // page.setViewport({ width: VIEWPORT.width, height: VIEWPORT.height });
 
   await createMousePointer(page);
-
-  await registerListeners(page);
 
   const cursor = new GhostCursor(page, {
     start: {
@@ -31,19 +37,23 @@ const OUTPUT = 'demo.webm';
   await page.waitForNetworkIdle();
 
   const treeFrame = await (await page.waitForSelector('iframe#tree')).contentFrame();
-  const recorder  = await page.screencast({ path: OUTPUT });
+
+  await registerListeners(page);
+
+  const recorder = await page.screencast({ path: OUTPUT });
 
   // GhostCursor can't click on invisible elements like checkboxes,
   // so click on the visible labels applied to those checkboxes
 
   // click the "pkg" subdir
-  const pkgLabel = await treeFrame.waitForSelector('label[for="tree-item-133"]');
-  await cursor.move(pkgLabel);                // move the cursor to the "pkg" subdir label, but don't immediately click the "pkg" subdir label
-  await new Promise(r => setTimeout(r, 400)); // brief pause before clicking the "pkg" subdir label
-  await cursor.click(pkgLabel);
+  const pkgLabel  = await treeFrame.waitForSelector('label[for="tree-item-133"]');
+  const pkgCoords = await getAbsoluteCoords(treeFrame, pkgLabel);
+  await cursor.moveTo(pkgCoords);             // move the cursor to the "pkg" subdir label, but don't immediately click the "pkg" subdir label
+  await new Promise(r => setTimeout(r, 1000)); // brief pause before clicking the "pkg" subdir label
+  await page.mouse.click(pkgCoords.x, pkgCoords.y, { delay: 100 });
 
   // click the "kubelet" subdir
-  const kubeletLabel = await treeFrame.waitForSelector('label[for="tree-item-527"]');
+  const kubeletLabel  = await treeFrame.waitForSelector('label[for="tree-item-527"]');
   await treeFrame.evaluate((el) => {
     el.scrollIntoView({
       behavior: 'smooth',
@@ -51,13 +61,11 @@ const OUTPUT = 'demo.webm';
       inline:   'nearest'
     });
   }, kubeletLabel);
-  await new Promise(r => setTimeout(r, 600)); // wait for scroll to finish, and pause briefly before moving to and clicking the "kubelet" subdir label
-  await cursor.move(kubeletLabel);            // move the cursor to "kubelet" subdir, but don't immediately click the label
-  const { x, y } = cursor.getLocation();      // move the cursor to "kubelet" subdir
-  await cursor.moveTo({ x, y });              // cursor.moveTo(cursor.getLocation()) won't work because the coordinates will be passed by reference
-  // WHY does the cursor ALWAYS move BELOW the bottom of the "tree" frame here ??!
-  await new Promise(r => setTimeout(r, 400)); // brief pause before clicking the "kubelet" subdir label
-  await cursor.click(kubeletLabel);
+  await new Promise(r => setTimeout(r, 1000)); // wait for scroll to finish, and pause briefly before moving to and clicking the "kubelet" subdir label
+  const kubeletCoords = await getAbsoluteCoords(treeFrame, kubeletLabel);
+  await cursor.moveTo(kubeletCoords);          // move the cursor to "kubelet" subdir, but don't immediately click the label
+  await new Promise(r => setTimeout(r, 1000)); // brief pause before clicking the "kubelet" subdir label
+  await page.mouse.click(kubeletCoords.x, kubeletCoords.y, { delay: 100 });
 
   // click the "kubelet_network.go" link
   const goSrcLink = await treeFrame.waitForSelector('a[href="pkg/kubelet/kubelet_network.go.html"]');
@@ -68,8 +76,11 @@ const OUTPUT = 'demo.webm';
       inline:   'center',
     });
   }, goSrcLink);
-  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "kubelet_network.go" link
-  await cursor.click(goSrcLink);
+  await new Promise(r => setTimeout(r, 1000));
+  const goSrcLinkCoords = await getAbsoluteCoords(treeFrame, goSrcLink);
+  await cursor.moveTo(goSrcLinkCoords);
+  await new Promise(r => setTimeout(r, 1000)); // brief pause before clicking the "kubelet_network.go" link
+  await page.mouse.click(goSrcLinkCoords.x, goSrcLinkCoords.y, { delay: 100 });
 
   // move to the "code" iframe and scroll down to its lower boundary
   const codeFrameHandle = await page.waitForSelector('iframe#code');
@@ -89,25 +100,31 @@ const OUTPUT = 'demo.webm';
   const indexBodyHandle = await page.waitForSelector('body#index');
   await cursor.move(indexBodyHandle);
   const themeButton     = await page.waitForSelector('#theme');
-  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "theme" button
-  await cursor.click(themeButton);
+  const themeButtonCoords = await getAbsoluteCoords(page.mainFrame(), themeButton);
+  await cursor.moveTo(themeButtonCoords);
+  await new Promise(r => setTimeout(r, 1000)); // brief pause before clicking the "theme" button
+  await page.mouse.click(themeButtonCoords.x, themeButtonCoords.y, { delay: 100 });
 
   // click the "expand" button
   const expandButton = await page.waitForSelector('#expand');
-  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "expand" button
-  await cursor.click(expandButton);
+  const expandButtonCoords = await getAbsoluteCoords(page.mainFrame(), expandButton);
+  await cursor.moveTo(expandButtonCoords);
+  await new Promise(r => setTimeout(r, 1000)); // brief pause before clicking the "expand" button
+  await page.mouse.click(expandButtonCoords.x, expandButtonCoords.y, { delay: 100 });
 
   // click the "theme" button again
-  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "theme" button
-  await cursor.click(themeButton);
+  await cursor.moveTo(themeButtonCoords);
+  await new Promise(r => setTimeout(r, 1000)); // brief pause before clicking the "theme" button
+  await page.mouse.click(themeButtonCoords.x, themeButtonCoords.y, { delay: 100 });
 
   // click the "expand" button again
-  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "expand" button again
-  await cursor.click(expandButton);
+  await cursor.moveTo(expandButtonCoords);
+  await new Promise(r => setTimeout(r, 1000)); // brief pause before clicking the "expand" button again
+  await page.mouse.click(expandButtonCoords.x, expandButtonCoords.y, { delay: 100 });
 
   // click the "expand" button yet again
-  await new Promise(r => setTimeout(r, 500)); // brief pause before clicking the "expand" button yet again
-  await cursor.click(expandButton);
+  await new Promise(r => setTimeout(r, 2000)); // brief pause before clicking the "expand" button yet again
+  await page.mouse.click(expandButtonCoords.x, expandButtonCoords.y, { delay: 100 });
 
   // give the audience a moment to inspect the expanded tree
   await new Promise(r => setTimeout(r, 1000));
