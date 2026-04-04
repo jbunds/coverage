@@ -19,12 +19,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: checkout
-      id:   checkout
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 10 # https://github.com/gwatts/go-coverage-action#example-workflow
-
     - name: setup-go
       id:   steup_go
       uses: actions/setup-go@v6
