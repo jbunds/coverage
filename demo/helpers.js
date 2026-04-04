@@ -34,6 +34,10 @@ export async function installMousePointer(page) {
 <path d="M10 7v11.188l2.53-2.442 2.901 5.254 1.765-.941-2.775-5.202h3.604L10 7z" fill="black" stroke="white" stroke-width="1.5"/>
 </svg>`;
     // TODO(jeff): stop the cursor from shrinking in size once it traverses into the main frame
+    //
+    //             it might actually be an illusion since it seems to coincide with the
+    //             application of the light theme, and i cannot think of any reason such
+    //             odd behavior would occur
     Object.assign(cursor.style, {
       top:   '0',    left:   '0',    position: 'fixed', pointerEvents: 'none',
       width: '32px', height: '32px', zIndex:   '1000',  transform:     'translate(0,0)',
