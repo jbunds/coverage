@@ -8,9 +8,9 @@ branding:
   color: blue
 inputs:
   coverage-threshold:
-    description: "coverage-threshold" parameter for gwatts/go-coverage-action
+    description: '"coverage-threshold" parameter for gwatts/go-coverage-action'
     required:    false
-    default:     0
+    default:     "0" # not sure why this must be quoted
 outputs:
   all:           # accessed downstream via ${{ fromJson(steps.coverage_report.outputs.all).report-pathname }} for example
     description: JSON string containing all outputs from gwatts/go-coverage-action
@@ -37,8 +37,9 @@ runs:
       with:
         coverage-threshold: ${{ inputs.coverage-threshold }}
 
-    - name: coverage report
-      id:   coverage_report
+    - name:  coverage report
+      id:    coverage_report
+      shell: bash
       run: |
         go run github.com/jbunds/coverage@latest \
           -coverprofile="${{ steps.coverage_profile.outputs.gocov-pathname }}" \
