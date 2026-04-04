@@ -14,8 +14,6 @@ const OUTPUT = 'demo.webm';
   const browser = await launchChrome(URL);
   const [page]  = await browser.pages();
 
-  page.on('console', msg => console.log('browser log:', msg.text()));
-
   // there is apparently no trivial way to constrain GhostCursor's random
   // movements to ensure the cursor always remains within the viewport
   // page.setViewport({ width: VIEWPORT.width, height: VIEWPORT.height });
