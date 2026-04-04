@@ -6,11 +6,14 @@ export const VIEWPORT = {
   width:             1280,
   height:            720 };
 
+// launch Chrome with flags enabling all required permissions (likely overscoped; see TODO comment below)
 export async function launchChrome(url = URL) {
   const options = {
     headless:        false,
     defaultViewport: null,
     executablePath:  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    // TODO(jeff): determine which specific flags are actually required,
+    //             and remove those that are not strictly required
     args: [
       '--window-size=' + VIEWPORT.width + ',' + VIEWPORT.height,
       '--disable-web-security',
@@ -22,7 +25,8 @@ export async function launchChrome(url = URL) {
   return await puppeteer.launch(options);
 }
 
-export async function createMousePointer(page) {
+// install a custom mouse pointer (analogous to GhostCursor's installMouseHelper)
+export async function installMousePointer(page) {
   await page.evaluate((initialX = 0, initialY = 0) => {
     const cursor = document.createElement('div');
     cursor.id        = 'custom-pointer';
@@ -31,8 +35,8 @@ export async function createMousePointer(page) {
 </svg>`;
     // TODO(jeff): stop the cursor from shrinking in size once it traverses into the main frame
     Object.assign(cursor.style, {
-      position: 'fixed', top: '0', left: '0', width: '32px', height: '32px',
-      zIndex: '1000', pointerEvents: 'none', transform: 'translate(0,0)'
+      top:   '0',    left:   '0',    position: 'fixed', pointerEvents: 'none',
+      width: '32px', height: '32px', zIndex:   '1000',  transform:     'translate(0,0)',
     });
     document.documentElement.appendChild(cursor);
     const path     = cursor.querySelector('path');
@@ -82,6 +86,7 @@ export async function registerListeners(page) {
   }
 }
 
+// get the absolute coordinates (relative to the viewport) of a given element
 export async function getAbsoluteCoords(frame, element) {
   return await frame.evaluate((el) => {
     const rect = el.getBoundingClientRect();
