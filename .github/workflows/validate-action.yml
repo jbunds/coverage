@@ -22,5 +22,4 @@ jobs:
         node-version: '25'
 
     - name: validate action.yml
-      run: |
-        npm run validate-action
+      run:  npx action-validator action.yml
