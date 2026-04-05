@@ -1,6 +1,7 @@
 name: validate action
 
 on:
+  workflow_dispatch: # allows this workflow to be manually triggered from the UI
   push:
     branches:
       - main
