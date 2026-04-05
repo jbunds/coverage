@@ -1,4 +1,3 @@
-import puppeteer from 'puppeteer';
 import { GhostCursor } from 'ghost-cursor';
 import {
   URL,
