@@ -18,10 +18,11 @@ jobs:
     - name: setup node.js
       uses: actions/setup-node@v6
       with:
-        cache-dependency-path: demo/package.json
-        node-version:          '25'  # 'lts/*'
+        node-version: '25'  # 'lts/*' ?
+
+    - run: npm ci
 
     - name: eslint
       run: |
         cd demo
-        npm run lint
+        npx eslint .
