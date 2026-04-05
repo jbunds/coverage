@@ -1,0 +1,5 @@
+{ "dependencies": {
+    "@action-validator/cli":  "^0.8.0",
+    "@action-validator/core": "^0.8.0"
+  }
+}
