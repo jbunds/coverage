@@ -22,4 +22,6 @@ jobs:
         node-version: '25'
 
     - name: validate action.yml
+      uses: mpalmer/action-validator@v0.8.0
       run:  npx action-validator action.yml
+
