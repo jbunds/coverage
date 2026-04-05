@@ -19,9 +19,9 @@ jobs:
     - name: setup node.js
       uses: actions/setup-node@v6
       with:
-        node-version: '25'
+        node-version:          '25'
+        cache:                 npm
+        cache-dependency-path: '.github/workflows/*.yml'  # obviates need for package-lock.json files according to https://til.simonwillison.net/github-actions/npm-cache-with-npx-no-package
 
     - name: validate action.yml
-      uses: mpalmer/action-validator@v0.8.0
       run:  npx action-validator action.yml
-
