@@ -19,11 +19,14 @@ jobs:
     - name: setup node.js
       uses: actions/setup-node@v6
       with:
-        node-version: '25'  # 'lts/*' ?
+        node-version:          '25'  # 'lts/*' ?
+        cache:                 npm
+        cache-dependency-path: demo/package-lock.json
 
-    - run: npm ci
+    - name:              npm ci
+      run:               npm ci
+      working-directory: demo
 
-    - name: eslint
-      run: |
-        cd demo
-        npx eslint .
+    - name:              eslint
+      run:               npx eslint
+      working-directory: demo
