@@ -1,0 +1,25 @@
+name: validate action
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'action.yml'
+
+jobs:
+  validate:
+    runs-on: macos-latest
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v6
+
+    - name: setup node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '25'
+
+    - name: validate action.yml
+      run: |
+        npm run validate-action

@@ -1,0 +1,27 @@
+name: eslint
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'demo/**/*.js'
+
+jobs:
+  lint:
+    runs-on: macos-latest
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v6
+
+    - name: setup node.js
+      uses: actions/setup-node@v6
+      with:
+        cache-dependency-path: demo/package.json
+        node-version:          '25'
+
+    - name: eslint
+      run: |
+        cd demo
+        npm run lint
