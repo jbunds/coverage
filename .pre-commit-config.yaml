@@ -18,6 +18,7 @@ repos:
         entry:    go test -v -race ./...
         pass_filenames: false
         require_serial: true
+        files:    \.go$|^go\.(?:mod|sum)$
       - language: system
         id:       eslint
         name:     eslint
