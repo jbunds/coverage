@@ -5,13 +5,11 @@ repos:
     rev:  v6.0.0
     hooks:
       - id: check-yaml
-repos:
   - repo: https://github.com/golangci/golangci-lint
     rev:  v2.11.4
     hooks:
       - id:    golangci-lint
         entry: golangci-lint run --verbose # or `go run github.com/golangci/golangci-lint/cmd/golangci-lint run`
-repos:
   - repo: local
     hooks:
       - language: system
@@ -20,3 +18,13 @@ repos:
         entry:    go test -v -race ./...
         pass_filenames: false
         require_serial: true
+      - language: system
+        id:       eslint
+        name:     eslint
+        entry:    npx eslint -c demo/eslint.config.js --
+        files:    \.js$
+      - language: system
+        id:       stylelint
+        name:     stylelint
+        entry:    npx stylelint --formatter verbose --
+        files:    \.css$
