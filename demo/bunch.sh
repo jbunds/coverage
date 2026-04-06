@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/zsh
+#!/bin/zsh
 
 for i in {1..20}; do
   fname=$(printf '%02d\n' $i)
