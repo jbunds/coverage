@@ -7,23 +7,22 @@ export const VIEWPORT = {
   height:            720,
 }
 
-// launch Chrome with flags enabling all required permissions (likely overscoped; see TODO comment below)
+// launch Chrome with flags enabling all required permissions (possibly overscoped; see TODO comment below)
 export async function launchChrome (url = URL) {
   const options = {
     headless:        false,
     defaultViewport: null,
-    executablePath:  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    channel:        'chrome',
     // TODO(jeff): determine which specific flags are actually required,
     //             and remove those that are not strictly required
     args: [
-      '--window-size=' + VIEWPORT.width + ',' + VIEWPORT.height,
+      `--window-size=${VIEWPORT.width},${VIEWPORT.height}`,
       '--disable-web-security',
-      '--disable-features=IsolateOrigins,site-per-process',
       '--disable-blink-features=AutomationControlled',
-      url,
-    ],
+      url
+    ]
   }
-  return await puppeteer.launch(options)
+  return puppeteer.launch(options)
 }
 
 // install a custom mouse pointer (analogous to GhostCursor's installMouseHelper)
