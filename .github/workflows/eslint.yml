@@ -28,5 +28,5 @@ jobs:
       working-directory: demo
 
     - name:              eslint
-      run:               npx eslint | cat  # the eslint-plugin-file-progress eslint plugin emits carriage returns instead of newlines
+      run:               npx eslint --format json --stats | jq -r '.[].filePath'  # hack to get eslint to list the files it lints
       working-directory: demo
