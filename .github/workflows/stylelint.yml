@@ -28,4 +28,4 @@ jobs:
           cache:        npm
       - run:  npm ci
       - name: stylelint
-        run:  npx stylelint '**/*.css'
+        run:  npx stylelint '**/*.css' --formatter verbose
