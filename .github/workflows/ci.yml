@@ -33,11 +33,11 @@ jobs:
       id:   test
       run:  go test -v -race ./...
 
-    - name: coverage
-      uses: gwatts/go-coverage-action@v2 # https://github.com/gwatts/go-coverage-action#usage
-      id:   coverage
+    - name: coverage report
+      id:   coverage_report
+      uses: jbunds/coverage@v1 # self-hosting
       with:
-        coverage-threshold: 50
+        coverage-threshold: 50 # https://github.com/gwatts/go-coverage-action#usage
 
     - name: update coverage badge # https://github.com/schneegans/dynamic-badges-action#%EF%B8%8F-configuration
       uses: schneegans/dynamic-badges-action@v1.7.0
@@ -46,19 +46,5 @@ jobs:
         gistID:   5a36403860174baeee62844ab96a77d9
         filename: coverage.json
         label:    coverage
-        message:  ${{ steps.coverage.outputs.coverage-pct-1dp }}%
-        color:    ${{ steps.coverage.outputs.meets-threshold == 'true' && 'green' || 'red' }}
-
-    - name: coverage report
-      run: |
-        go run github.com/jbunds/coverage@latest \
-          -coverprofile="${{ steps.coverage.outputs.gocov-pathname }}" \
-          -path=./coverage_report
-
-    - name: store artifacts
-      uses: actions/upload-artifact@v7 # https://github.com/actions/upload-artifact
-      with:
-        name: coverage report
-        retention-days: 7
-        path: |
-          ./coverage_report/
+        message:  ${{ fromJson(steps.coverage_report.outputs.all).coverage-pct-1dp }}%
+        color:    ${{ fromJson(steps.coverage_report.outputs.all).meets-threshold == 'true' && 'green' || 'red' }}

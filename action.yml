@@ -37,12 +37,14 @@ runs:
       run: |
         go run github.com/jbunds/coverage@latest \
           -coverprofile="${{ steps.coverage_profile.outputs.gocov-pathname }}" \
-          -path=./coverage_report
+          -path=coverage_report
+
+    - name: tar coverage report files  # preserve the subdirectory in the archive to avoid creating a tarbomb
+      run:  tar cf coverage_report.tar coverage_report
 
     - name: store coverage report
       id:   store_coverage_report
       uses: actions/upload-artifact@v7
       with:
         name: coverage report
-        path: |
-          ./coverage_report/
+        path: coverage_report.tar
