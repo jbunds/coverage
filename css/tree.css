@@ -1,5 +1,4 @@
-/* TODO(jeff): refactor, consolidate, and better encapsulate all CSS that's *
- *             currently strewn about among different files. try cssnano.   */
+/* TODO(jeff): refactor, simplify, and encapsulate with finer resolution all CSS  */
 
 .tree input[type="checkbox"] { display: none }
 
