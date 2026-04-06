@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - 'action.yml'
+      - action.yml
 
 jobs:
   validate:
@@ -21,7 +21,7 @@ jobs:
       with:
         node-version:          '25'
         cache:                 npm
-        cache-dependency-path: '.github/workflows/*.yml'  # obviates need for package-lock.json files according to https://til.simonwillison.net/github-actions/npm-cache-with-npx-no-package
+        cache-dependency-path: package-lock.json
 
     - name: validate action.yml
       run:  npx @action-validator/cli action.yml

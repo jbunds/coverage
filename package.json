@@ -1,8 +1,8 @@
 {
   "dependencies": {
-    "@action-validator/cli":  "^0.6.0",
+    "@action-validator/cli": "^0.6.0",
     "@action-validator/core": "^0.6.0"
-  }
+  },
   "scripts": {
     "validate-action": "action-validator action.yml"
   }
