@@ -9,13 +9,25 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Mon Apr  6 12:32:52 CEST 2026
+Mon Apr  6 12:36:03 CEST 2026
 ```
 
 ```
-$ scc --exclude-dir .git --include-ext go,css,js,mjs --dryness --by-file --wide
+$ scc --exclude-dir .git --include-ext go,css,js,mjs,yml --dryness --by-file --wide
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Language                              Files     Lines   Blanks  Comments     Code Complexity Complexity/Lines
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+YAML                                      8       255       37         7      211          0             0.00
+(ULOC)                                            155
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+action.yml                                         52        6         1       45          0             0.00
+.github/workflows/ci.yml                           50        9         1       40          0             0.00
+.github/workflows/golangci-lint.yml                36        7         2       27          0             0.00
+.github/workflows/eslint.yml                       32        6         0       26          0             0.00
+.github/workflows/stylelint.yml                    30        3         0       27          0             0.00
+.github/workflows/validate-action.yml              27        5         0       22          0             0.00
+.golangci.yml                                      16        0         2       14          0             0.00
+.github/dependabot.yml                             12        1         1       10          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Go                                        6      1687      125        62     1500        231           104.25
 (ULOC)                                            980
@@ -42,14 +54,14 @@ CSS                                       2       255       38         2      21
 css/style.css                                     135       18         0      117          0             0.00
 css/tree.css                                      120       20         2       98          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                                    13      2232      193       113     1926        239           124.12
+Total                                    21      2487      230       120     2137        239           124.12
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Unique Lines of Code (ULOC)                      1368
+Unique Lines of Code (ULOC)                      1522
 DRYness %                                        0.61
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $53,763
-Estimated Schedule Effort (organic) 4.53 months
-Estimated People Required (organic) 1.05
-Processed 68335 bytes, 0.068 megabytes (SI)
+Estimated Cost to Develop (organic) $59,963
+Estimated Schedule Effort (organic) 4.72 months
+Estimated People Required (organic) 1.13
+Processed 77486 bytes, 0.077 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```
