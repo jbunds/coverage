@@ -9,7 +9,7 @@ on:
       - 'demo/**/*.js'
 
 jobs:
-  lint:
+  eslint:
     runs-on: macos-latest
 
     steps:
@@ -28,5 +28,5 @@ jobs:
       working-directory: demo
 
     - name:              eslint
-      run:               npx eslint
+      run:               npx eslint | cat  # the eslint-plugin-file-progress eslint plugin emits carriage returns instead of newlines
       working-directory: demo
