@@ -4,11 +4,11 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - '**.css'
+      - '**/*.css'
   pull_request:
     branches: [ "main" ]
     paths:
-      - '**.css'
+      - '**/*.css'
   workflow_dispatch: # allows this workflow to be manually triggered from the UI
 
 permissions: # https://docs.github.com/actions/reference/workflows-and-actions/workflow-syntax#permissions
@@ -25,6 +25,7 @@ jobs:
       - uses: actions/setup-node@v6 # https://github.com/actions/setup-node
         with:
           node-version: 25
-      - run: npm install stylelint
-      - run: npm add -D stylelint stylelint-config-standard # https://stylelint.io/user-guide/get-started/#manual-setup
-      - run: npx stylelint css/*.css                        # https://stylelint.io/user-guide/get-started/#manual-setup
+          cache:        npm
+      - run:  npm ci
+      - name: stylelint
+        run:  npx stylelint '**/*.css'
