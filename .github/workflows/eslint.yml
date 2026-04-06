@@ -19,7 +19,7 @@ jobs:
     - name: setup node.js
       uses: actions/setup-node@v6
       with:
-        node-version:          '25'  # 'lts/*' ?
+        node-version:          'lts/*'
         cache:                 npm
         cache-dependency-path: demo/package-lock.json
 
