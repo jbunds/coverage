@@ -1,11 +1,10 @@
 import globals          from 'globals';
 import js               from '@eslint/js';
-import { defineConfig } from 'eslint/config';
 
-export default defineConfig([
+export default [
   js.configs.recommended, {
     languageOptions: {
       globals: { ...globals.browser },
     },
   }
-]);
+];
