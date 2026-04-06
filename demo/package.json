@@ -9,8 +9,7 @@
     "lint": "eslint"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "eslint": "^10.2.0",
-    "globals": "^17.4.0"
+    "eslint": "^9.39.4",
+    "neostandard": "^0.13.0"
   }
 }
