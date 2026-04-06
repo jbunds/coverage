@@ -107,15 +107,15 @@ await page.mouse.click(goSrcLinkCoords.x, goSrcLinkCoords.y, { delay: 100 }) // 
 const codeFrameHandle = await page.waitForSelector('iframe#code')
 const codeFrame       = await codeFrameHandle.contentFrame()
 await codeFrame.waitForSelector('body')                      // wait for quiescence; alternatively, could "await page.waitForNetworkIdle()", etc
-await codeFrame.evaluate(() => {                              // add mousemove listener to "code" iframe
-  window.addEventListener('mousemove', (e) => {               // register a listener for mousemove events within the "code" iframe
+await codeFrame.evaluate(() => {                             // add mousemove listener to "code" iframe
+  window.addEventListener('mousemove', (e) => {              // register a listener for mousemove events within the "code" iframe
     const rect = window.frameElement.getBoundingClientRect() // offset coordinates by the iframe's position on the main page
     window.parent.mouseX = e.clientX + rect.left
     window.parent.mouseY = e.clientY + rect.top
   })
 })
-await cursor.move(codeFrameHandle)                           // move the cursor somewhere within the "code" frame
-await cursor.scrollTo('bottom', { scrollSpeed: 8 })          // slowly scroll to the bottom of the "code" frame
+await cursor.move(codeFrameHandle)                  // move the cursor somewhere within the "code" frame
+await cursor.scrollTo('bottom', { scrollSpeed: 8 }) // slowly scroll to the bottom of the "code" frame
 
 // click the "theme" button
 const indexBodyHandle   = await page.waitForSelector('body#index')
