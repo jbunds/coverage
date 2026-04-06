@@ -13,13 +13,13 @@ repos:
         entry: golangci-lint run --verbose # or `go run github.com/golangci/golangci-lint/cmd/golangci-lint run`
   - repo: local
     hooks:
-      - language: system
-        id:       go-test
-        name:     go test
-        entry:    go test -v -race ./...
+      - language:       system
+        id:             go-test
+        name:           go test
+        entry:          go test -v -race ./...
+        files:          \.go$|^go\.(?:mod|sum)$
         pass_filenames: false
         require_serial: true
-        files:    \.go$|^go\.(?:mod|sum)$
       - language: system
         id:       eslint
         name:     eslint
