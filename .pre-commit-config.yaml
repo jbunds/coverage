@@ -23,7 +23,7 @@ repos:
       - language: system
         id:       eslint
         name:     eslint
-        entry:    npx eslint -c demo/eslint.config.js --
+        entry:    npx eslint --config demo/eslint.config.js --
         files:    \.js$
       - language: system
         id:       stylelint
