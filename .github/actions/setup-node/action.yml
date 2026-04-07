@@ -1,5 +1,10 @@
 name:        setup node
 description: standardized Node.js setup with unified caching
+inputs:
+  cache-dependency-path:
+    description: path to the package-lock.json file
+    default:     package-lock.json
+    required:    false
 
 runs:
   using: composite
@@ -7,5 +12,6 @@ runs:
     - name: setup node.js
       uses: actions/setup-node@v6
       with:
-        node-version: 'lts/*'
-        cache:        npm
+        node-version:          'lts/*'
+        cache:                 npm
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
