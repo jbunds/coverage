@@ -68,6 +68,8 @@ The Go test coverage report can also be published to GitHub Pages by adding the 
 - uses: jbunds/coverage/.github/actions/upload-pages@v1
 ```
 
+See https://jbunds.github.io/coverage/ for an example.
+
 ---
 
 #### But _Why?_
