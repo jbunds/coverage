@@ -6,7 +6,7 @@ on:
     inputs:
       go-version:
         type:        string
-        descroption: 'Go version'
+        description: 'Go version'
         required:    false
         defaultl:    '1.26.1'
       coverage-threshold:
