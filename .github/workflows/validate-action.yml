@@ -13,7 +13,5 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v6
-    - name: validate action
+    - name: action-validator
       uses: mpalmer/action-validator@v0.9.0
-      with:
-        path: action.yml
