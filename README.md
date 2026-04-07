@@ -65,10 +65,14 @@ ${{ fromJson(steps.coverage_report.outputs.all).meets-threshold  }}
 
 etc...
 
-The Go test coverage report can also be published to GitHub Pages by adding the following workflow step:
+Users who wish to publish the Go test coverage report to GitHub Pages should _instead_ use the following (again, all parameters are optional):
 
 ```
-- uses: jbunds/coverage/.github/actions/upload-pages@v1
+- uses: jbunds/coverage/.github/workflows/pages.yml@v1
+  with:
+    go-version:           '1.26.1'           # optional: default is '1.26.1'
+    coverage-threshold:   '50'               # optional; default is '0'
+    coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
 ```
 
 See https://jbunds.github.io/coverage/ for an example.
