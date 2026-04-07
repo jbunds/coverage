@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
-    - uses: .github/actions/setup-node/action.yml
+    - uses: .github/actions/setup-node
       with:
         cache-dependency-path: demo/package-lock.json
 
