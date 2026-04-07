@@ -1,4 +1,4 @@
-name: deploy Go coverage report to GitHub Pages
+name: deploy coverage report to Pages
 
 on:
   workflow_dispatch:
