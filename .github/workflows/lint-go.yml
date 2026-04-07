@@ -7,11 +7,11 @@ on:
   push:
     branches: [ 'main' ]
     paths:
-      - '**.go'
+      - '**/*.go'
   pull_request:
     branches: [ 'main' ]
     paths:
-      - '**.go'
+      - '**/*.go'
   workflow_dispatch: # allows this workflow to be manually triggered from the UI
 
 permissions: # https://docs.github.com/actions/reference/workflows-and-actions/workflow-syntax#permissions
