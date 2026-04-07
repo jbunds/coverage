@@ -17,7 +17,7 @@ inputs:
     required:    false
     default:     '0'
   coverage-report-path:
-    description: 'path to the root of the Go coverage HTML report files'
+    description: 'path to the root of the Go coverage report'
     required:    false
     default:     'coverage_report'
 
