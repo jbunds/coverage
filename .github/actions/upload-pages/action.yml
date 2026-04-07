@@ -13,11 +13,11 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: configure Pages
+    - name: configure GitHub Pages
       id:   configure_pages
       uses: actions/configure-pages@v6
 
-    - name: upload Pages artifact
+    - name: upload GitHub Pages artifact
       id:   upload_pages_artifact
       uses: actions/upload-pages-artifact@v4
       with:
