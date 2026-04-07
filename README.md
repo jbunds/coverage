@@ -41,17 +41,13 @@ When served via HTTP, buttons are available to:
 
 #### GitHub Action Workflow Configuration
 
-Example GitHub workflow configuration (the [`coverage-threshold`][gwatts-gocov-outputs] parameter is optional):
+Example GitHub Action workflow configuration (the [`coverage-threshold`][gwatts-gocov-outputs] and `coverage-report-path` parameters are optional) which can be added per the following workflow step:
 
 ```
-jobs:
-  coverage: # or whatever you wish to call your workflow
-    steps:
-    - name: coverage report
-      id:   coverage_report
-      uses: actions/go-test-coverage-html-report@v1
-      with:
-        coverage-threshold: 50
+- uses: jbunds/coverage@v1
+  with:
+    coverage-threshold:   50               # optional; default is 0
+    coverage-report-path: coverage_report  # optional; this is the default
 ```
 
 All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding:
@@ -64,6 +60,12 @@ ${{ fromJson(steps.coverage_report.outputs.all).coverage-pct-1dp }}
 ${{ fromJson(steps.coverage_report.outputs.all).meets-threshold  }}
 
 # etc...
+```
+
+The Go test coverage report can also be published to GitHub Pages by adding the following workflow step:
+
+```
+- uses: jbunds/coverage/.github/actions/upload-pages@v1
 ```
 
 ---
