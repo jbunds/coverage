@@ -5,10 +5,12 @@ on:
   workflow_call:
     inputs:
       coverage-threshold:
+        type:        string
         description: 'coverage threshold percentage'
         required:    false
         default:     '0'
       coverage-report-path:
+        type:        string
         description: 'path to the root of the Go coverage HTML report files'
         required:    false
         default:     'coverage_report'
