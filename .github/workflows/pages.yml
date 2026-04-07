@@ -1,4 +1,4 @@
-name: deploy Go coverage HTML to GitHub Pages
+name: deploy Go coverage report to GitHub Pages
 
 on:
   workflow_dispatch:
@@ -11,11 +11,13 @@ on:
         default:     '0'
       coverage-report-path:
         type:        string
-        description: 'path to the root of the Go coverage HTML report files'
+        description: 'path to the root of the Go coverage report'
         required:    false
         default:     'coverage_report'
   push:
     branches: ['main']
+    paths:
+      - '**/*.go'
 
 concurrency: # avoid races
   group:              'pages'
