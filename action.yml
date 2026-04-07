@@ -10,7 +10,7 @@ inputs:
   coverage-threshold:
     description: '"coverage-threshold" parameter for gwatts/go-coverage-action'
     required:    false
-    default:     "0" # not sure why this must be quoted
+    default:     '0' # not sure why this must be quoted
 outputs:
   all:           # accessed downstream via ${{ fromJson(steps.coverage_report.outputs.all).report-pathname }} for example
     description: JSON string containing all outputs from gwatts/go-coverage-action
