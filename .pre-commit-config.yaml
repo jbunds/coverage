@@ -24,7 +24,7 @@ repos:
         id:       eslint
         name:     eslint
         entry:    npx eslint --config demo/eslint.config.js --
-        files:    \.js$
+        files:    \.m?js$
       - language: system
         id:       stylelint
         name:     stylelint
