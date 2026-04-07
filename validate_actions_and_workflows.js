@@ -13,7 +13,7 @@ const workflowFiles = [
   '.github/workflows/lint-js.yml',
   '.github/workflows/pages.yml',
   '.github/workflows/test-go.yml',
-  '.github/workflows/validate-action.yml',
+  '.github/workflows/validate-actions-and-workflows.yml',
 ]
 
 for (const actionFile of actionFiles) {
