@@ -1,0 +1,24 @@
+# https://docs.github.com/actions/reference/workflows-and-actions/metadata-syntax
+
+name:        upload Go coverage report to GitHub Pages
+description: configures GitHub Pages and uploads the Go coverage HTML report
+author:      jbunds
+
+inputs:
+  coverage-report-path:
+    description: 'path to the root of the Go coverage HTML report files'
+    required:    false
+    default:     'coverage_report'
+
+runs:
+  using: composite
+  steps:
+    - name: configure Pages
+      id:   configure_pages
+      uses: actions/configure-pages@v6
+
+    - name: upload Pages artifact
+      id:   upload_pages_artifact
+      uses: actions/upload-pages-artifact@v4
+      with:
+        path: ${{ inputs.coverage-report-path }}

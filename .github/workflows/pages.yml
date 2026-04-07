@@ -1,0 +1,52 @@
+name: deploy Go coverage HTML to GitHub Pages
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      coverage-threshold:
+        description: 'coverage threshold percentage'
+        required:    false
+        default:     '0'
+      coverage-report-path:
+        description: 'path to the root of the Go coverage HTML report files'
+        required:    false
+        default:     'coverage_report'
+  push:
+    branches: ['main']
+
+concurrency: # avoid races
+  group:              'pages'
+  cancel-in-progress: false
+
+jobs:
+  generate-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Go coverage report
+        uses: ./  # './' refers to the root action.yml; external callers should use the full path: jbunds/coverage@main
+        with:
+          coverage-threshold:   ${{ inputs.coverage-threshold   || '0' }}
+          coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
+
+      - name: upload to GitHub Pages
+        uses: ./.github/actions/upload-pages
+        with:
+          coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs:   generate-and-upload
+    permissions: # required permissions for the GITHUB_TOKEN to deploy to GitHub Pages
+      contents: read
+      pages:    write
+      id-token: write
+    environment:
+      name: github-pages
+      url:  ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: deploy to GitHub Pages
+        id:   deployment
+        uses: actions/deploy-pages@v5

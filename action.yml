@@ -6,11 +6,17 @@ author:      jbunds
 branding:
   icon:  layout
   color: blue
+
 inputs:
   coverage-threshold:
-    description: '"coverage-threshold" parameter for gwatts/go-coverage-action'
+    description: 'coverage threshold percentage (gwatts/go-coverage-action)'
     required:    false
-    default:     '0' # not sure why this must be quoted
+    default:     '0'
+  coverage-report-path:
+    description: 'path to the root of the Go coverage HTML report files'
+    required:    false
+    default:     'coverage_report'
+
 outputs:
   all:           # accessed downstream via ${{ fromJson(steps.coverage_report.outputs.all).report-pathname }} for example
     description: JSON string containing all outputs from gwatts/go-coverage-action
@@ -20,7 +26,7 @@ runs:
   using: composite
   steps:
     - name: setup-go
-      id:   steup_go
+      id:   setup_go
       uses: actions/setup-go@v6
       with:
         cache:      false    # workaround https://github.com/actions/setup-go/issues/722
@@ -38,15 +44,4 @@ runs:
       run: |
         go run github.com/jbunds/coverage@latest \
           -coverprofile="${{ steps.coverage_profile.outputs.gocov-pathname }}" \
-          -path=coverage_report
-
-    - name:  tar coverage report files  # preserve the subdirectory in the archive to avoid creating a tarbomb
-      shell: bash
-      run:   tar cf coverage_report.tar coverage_report
-
-    - name: store coverage report
-      id:   store_coverage_report
-      uses: actions/upload-artifact@v7
-      with:
-        name: coverage_report     # outputs coverage_report.zip
-        path: coverage_report.tar
+          -path="${{ inputs.coverage-report-path }}"
