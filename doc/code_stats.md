@@ -14,7 +14,6 @@ Tue Apr  7 17:42:35 CEST 2026
 
 ```
 $ scc --exclude-dir .git --include-ext go,css,js,mjs,yml,yaml --dryness --by-file --wide
-scc --exclude-dir .git --include-ext go,css,js,mjs,yml,yaml --dryness --by-file --wide
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Language                              Files     Lines   Blanks  Comments     Code Complexity Complexity/Lines
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
