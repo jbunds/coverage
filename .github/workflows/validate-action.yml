@@ -1,4 +1,4 @@
-name: validate action
+name: validate actions and workflows
 
 on:
   workflow_dispatch: # allows this workflow to be manually triggered from the UI
@@ -6,7 +6,9 @@ on:
     branches:
       - main
     paths:
-      - action.yml
+      - 'action.yml'
+      - '.github/actions/**/action.yml'
+      - '.github/workflows/*.yml'
 
 jobs:
   validate:
@@ -16,4 +18,7 @@ jobs:
     - name: action-validator
       uses: mpalmer/action-validator@v0.9.0
       with:
-        patterns: action.yml
+        patterns: |
+          action.yml
+          .github/actions/**/action.yml
+          .github/workflows/*.yml
