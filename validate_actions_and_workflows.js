@@ -1,39 +1,19 @@
-import { readFileSync                     } from 'fs'
+import { readFileSync,   globSync         } from 'node:fs'
 import { validateAction, validateWorkflow } from '@action-validator/core'
 
-const actionFiles = [
-  './action.yml',
-  '.github/actions/setup-node/action.yml',
-  '.github/actions/upload-pages/action.yml'
-]
+const actions   = globSync(['action.yml', '.github/actions/*/action.yml'])
+const workflows = globSync(['.github/workflows/*.yml'])
 
-const workflowFiles = [
-  '.github/workflows/lint-css.yml',
-  '.github/workflows/lint-go.yml',
-  '.github/workflows/lint-js.yml',
-  '.github/workflows/pages.yml',
-  '.github/workflows/test-go.yml',
-  '.github/workflows/validate-actions-and-workflows.yml',
-]
-
-for (const actionFile of actionFiles) {
-  const state = validateAction(readFileSync(actionFile, 'utf8'))
-
-  if (state.errors.length > 0) {
-    console.error(`${actionFile} is invalid:`, state.errors)
-    process.exit(1)
-  } else {
-    console.log(`${actionFile} is valid`)
+const validate = (files, validator) => {
+  for (const file of files) {
+    const { errors } = validator(readFileSync(file, 'utf8'))
+    if (errors.length > 0) {
+      console.error(`${file} is invalid:`, errors)
+      process.exit(1)
+    }
+    console.log(`${file} is valid`)
   }
 }
 
-for (const workflowFile of workflowFiles) {
-  const state = validateWorkflow(readFileSync(workflowFile, 'utf8'))
-
-  if (state.errors.length > 0) {
-    console.error(`${workflowFile} is invalid:`, state.errors)
-    process.exit(1)
-  } else {
-    console.log(`${workflowFile} is valid`)
-  }
-}
+validate(actions,   validateAction)
+validate(workflows, validateWorkflow)
