@@ -33,7 +33,7 @@ jobs:
           coverage-threshold:   ${{ inputs.coverage-threshold   || '0' }}
           coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
 
-      - name: upload to GitHub Pages
+      - name: upload to GitHub Pages  # https://jbunds.github.io/coverage/
         uses: ./.github/actions/upload-pages
         with:
           coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
