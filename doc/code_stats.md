@@ -9,22 +9,23 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Mon Apr  6 12:36:03 CEST 2026
+Tue Apr  7 09:37:22 CEST 2026
 ```
 
 ```
-$ scc --exclude-dir .git --include-ext go,css,js,mjs,yml --dryness --by-file --wide
+$ scc --exclude-dir .git --include-ext go,css,js,mjs,yml,yaml --dryness --by-file --wide
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Language                              Files     Lines   Blanks  Comments     Code Complexity Complexity/Lines
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-YAML                                      8       255       37         7      211          0             0.00
-(ULOC)                                            155
+YAML                                      9       288       38         8      242          0             0.00
+(ULOC)                                            183
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 action.yml                                         52        6         1       45          0             0.00
 .github/workflows/ci.yml                           50        9         1       40          0             0.00
 .github/workflows/golangci-lint.yml                36        7         2       27          0             0.00
+.pre-commit-config.yaml                            32        1         1       30          0             0.00
 .github/workflows/eslint.yml                       32        6         0       26          0             0.00
-.github/workflows/stylelint.yml                    30        3         0       27          0             0.00
+.github/workflows/stylelint.yml                    31        3         0       28          0             0.00
 .github/workflows/validate-action.yml              27        5         0       22          0             0.00
 .golangci.yml                                      16        0         2       14          0             0.00
 .github/dependabot.yml                             12        1         1       10          0             0.00
@@ -39,29 +40,29 @@ tree.go                                           190       32        11      14
 flags_test.go                                     149        4         0      145         22            15.17
 flags.go                                           35        2         1       32          7            21.88
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-JavaScript                                5       290       30        49      211          8            19.87
-(ULOC)                                            228
+JavaScript                                5       294       30        49      215          8            19.87
+(ULOC)                                            230
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 demo/render.js                                    154       22        37       95          0             0.00
 demo/helpers.js                                   111        5        11       95          7             7.37
-demo/eslint.config.js                              11        1         0       10          0             0.00
+demo/eslint.config.js                              15        1         0       14          0             0.00
 action_validator.js                                10        2         0        8          1            12.50
 stylelint.config.mjs                                4        0         1        3          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-CSS                                       2       255       38         2      215          0             0.00
-(ULOC)                                            165
+CSS                                       2       254       38         1      215          0             0.00
+(ULOC)                                            164
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 css/style.css                                     135       18         0      117          0             0.00
-css/tree.css                                      120       20         2       98          0             0.00
+css/tree.css                                      119       20         1       98          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                                    21      2487      230       120     2137        239           124.12
+Total                                    22      2523      231       120     2172        239           124.12
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Unique Lines of Code (ULOC)                      1522
+Unique Lines of Code (ULOC)                      1550
 DRYness %                                        0.61
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $59,963
-Estimated Schedule Effort (organic) 4.72 months
-Estimated People Required (organic) 1.13
-Processed 77486 bytes, 0.077 megabytes (SI)
+Estimated Cost to Develop (organic) $60,995
+Estimated Schedule Effort (organic) 4.75 months
+Estimated People Required (organic) 1.14
+Processed 77798 bytes, 0.078 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```
