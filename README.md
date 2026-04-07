@@ -58,9 +58,9 @@ ${{ fromJson(steps.coverage_report.outputs.all).report-pathname  }}
 ${{ fromJson(steps.coverage_report.outputs.all).coverage-pct     }}
 ${{ fromJson(steps.coverage_report.outputs.all).coverage-pct-1dp }}
 ${{ fromJson(steps.coverage_report.outputs.all).meets-threshold  }}
-
-# etc...
 ```
+
+etc...
 
 The Go test coverage report can also be published to GitHub Pages by adding the following workflow step:
 
