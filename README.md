@@ -53,7 +53,7 @@ Example GitHub Action workflow configuration (the [`go-version`][go-version], [`
     coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
 ```
 
-All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding:
+All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
 
 ```
 ${{ fromJson(steps.coverage_report.outputs.all).gcov-pathname    }}
