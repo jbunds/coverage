@@ -8,6 +8,10 @@ branding:
   color: blue
 
 inputs:
+  go-version:
+    description: 'Go version to use'
+    required:    false
+    default:     '1.26.1'
   coverage-threshold:
     description: 'coverage threshold percentage (gwatts/go-coverage-action)'
     required:    false
@@ -30,7 +34,7 @@ runs:
       uses: actions/setup-go@v6
       with:
         cache:      false    # workaround https://github.com/actions/setup-go/issues/722
-        go-version: '1.26.1'
+        go-version: ${{ inputs.go-version }}
 
     - name: coverage profile
       id:   coverage_profile

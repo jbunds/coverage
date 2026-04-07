@@ -32,13 +32,13 @@ jobs:
       - name: Go coverage report
         uses: ./  # './' refers to the action.yml file in the root of this repo; external callers should use "jbunds/coverage@v1"
         with:
-          coverage-threshold:   ${{ inputs.coverage-threshold   || '0' }}
-          coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
+          coverage-threshold:   ${{ inputs.coverage-threshold   }}
+          coverage-report-path: ${{ inputs.coverage-report-path }}
 
       - name: upload to GitHub Pages          # https://jbunds.github.io/coverage/
         uses: ./.github/actions/upload-pages  # external callers should use "jbunds/coverage/.github/actions/upload-pages@v1"
         with:
-          coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
+          coverage-report-path: ${{ inputs.coverage-report-path }}
 
   deploy:
     runs-on: ubuntu-latest

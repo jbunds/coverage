@@ -5,6 +5,7 @@
 [dark theme]:           ./screenshots/dark_theme.jpg "dark theme"
 [gwatts-gocov-action]:  https://github.com/gwatts/go-coverage-action
 [gwatts-gocov-outputs]: https://github.com/gwatts/go-coverage-action/blob/main/action.yml
+[go-version]:           https://github.com/jbunds/coverage/blob/main/action.yml
 [coverage-report-path]: https://github.com/jbunds/coverage/blob/main/.github/workflows/pages.yml
 
 #### Simple Web UI for Go Test Coverage
@@ -42,13 +43,14 @@ When served via HTTP, buttons are available to:
 
 #### GitHub Action Workflow Configuration
 
-Example GitHub Action workflow configuration (the [`coverage-threshold`][gwatts-gocov-outputs] and [`coverage-report-path`][coverage-report-path] parameters are optional):
+Example GitHub Action workflow configuration (the [`go-version`][go-version], [`coverage-threshold`][gwatts-gocov-outputs] and [`coverage-report-path`][coverage-report-path] parameters are optional):
 
 ```
 - uses: jbunds/coverage@v1
   with:
-    coverage-threshold:   50               # optional; default is 0
-    coverage-report-path: coverage_report  # optional; default is 'coverage_report'
+    go-version:           '1.26.1'           # optional: default is '1.26.1'
+    coverage-threshold:   '50'               # optional; default is '0'
+    coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
 ```
 
 All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding:
