@@ -2,11 +2,11 @@ name: lint CSS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ 'main' ]
     paths:
       - '**/*.css'
   pull_request:
-    branches: [ "main" ]
+    branches: [ 'main' ]
     paths:
       - '**/*.css'
   workflow_dispatch: # allows this workflow to be manually triggered from the UI
@@ -15,17 +15,13 @@ permissions: # https://docs.github.com/actions/reference/workflows-and-actions/w
   contents: read
 
 jobs:
-  stylelint:              # TODO: consolidate all linters (golangci-lint and stylelint) into a single GitHub Actions workflow called linters.yml
+  stylelint:
     name:    stylelint
     runs-on: macos-latest # https://docs.github.com/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for--private-repositories
     env:
       NPM_CONFIG_LOGLEVEL: verbose
     steps:
-      - uses: actions/checkout@v6   # https://github.com/actions/checkout
-      - uses: actions/setup-node@v6 # https://github.com/actions/setup-node
-        with:
-          node-version: 'lts/*'
-          cache:        npm
+      - uses: actions/checkout@v6
+      - uses: .github/actions/setup-node/action.yml
       - run:  npm ci
-      - name: stylelint
-        run:  npx stylelint '**/*.css' --formatter verbose
+      - run:  npx stylelint '**/*.css' --formatter verbose

@@ -6,27 +6,21 @@ on:
     branches:
       - main
     paths:
-      - 'demo/**/*.js'
+      - '**/*.js'
 
 jobs:
   eslint:
     runs-on: macos-latest
 
     steps:
-    - name: checkout
-      uses: actions/checkout@v6
+    - uses: actions/checkout@v6
 
-    - name: setup node.js
-      uses: actions/setup-node@v6
+    - uses: .github/actions/setup-node/action.yml
       with:
-        node-version:          'lts/*'
-        cache:                 npm
         cache-dependency-path: demo/package-lock.json
 
-    - name:              npm ci
-      run:               npm ci
+    - run:               npm ci
       working-directory: demo
 
-    - name:              eslint
-      run:               npx eslint --format json --stats | jq -r '.[].filePath'  # hack to get eslint to list the files it lints
+    - run:               npx eslint --format json --stats | jq -r '.[].filePath'  # hack to get eslint to list the files it lints
       working-directory: demo

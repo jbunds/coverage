@@ -1,0 +1,11 @@
+name:        setup node
+description: standardized Node.js setup with unified caching
+
+runs:
+  using: composite
+  steps:
+    - name: setup node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: 'lts/*'
+        cache:        npm

@@ -13,15 +13,10 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - name: checkout
-      uses: actions/checkout@v6
+    - uses: actions/checkout@v6
 
-    - name: setup node.js
-      uses: actions/setup-node@v6
+    - uses: .github/actions/setup-node/action.yml
       with:
-        node-version:          'lts/*'
-        cache:                 npm
         cache-dependency-path: package-lock.json
 
-    - name: validate action.yml
-      run:  npx @action-validator/cli action.yml
+    - run:  npx @action-validator/cli action.yml
