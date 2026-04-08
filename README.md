@@ -5,8 +5,8 @@
 [dark theme]:           ./screenshots/dark_theme.jpg "dark theme"
 [gwatts-gocov-action]:  https://github.com/gwatts/go-coverage-action
 [gwatts-gocov-outputs]: https://github.com/gwatts/go-coverage-action/blob/main/action.yml
-[go-version]:           https://github.com/jbunds/coverage/blob/main/action.yml
-[coverage-report-path]: https://github.com/jbunds/coverage/blob/main/.github/workflows/pages.yml
+[action]:               https://github.com/jbunds/coverage/blob/main/action.yml
+[workflow]:             https://github.com/jbunds/coverage/blob/main/.github/workflows/pages.yml
 [actions]:              https://docs.github.com/actions
 [workflows]:            https://docs.github.com/actions/how-tos/reuse-automations/reuse-workflows
 [pages]:                https://docs.github.com/pages
@@ -46,9 +46,9 @@ When served via HTTP, buttons are available to:
 
 #### GitHub Workflow Configuration
 
-Aside from the [CLI interface](#cli-usage), there are two ways to incorporate this `coverage` module within [GitHub workflows][workflows]:
+Aside from the [CLI interface](#cli-usage), there are two ways to incorporate the `coverage` module within [GitHub workflows][workflows]:
 
-1. The `jbunds/coverage@v1` reusable [GitHub Action][actions] generates the test coverage report and writes the files comprising the report to `coverage-report-path` (`coverage_report` by default). For example:
+1. The [`jbunds/coverage@v1`][action] reusable [GitHub Action][actions] generates the test coverage report and writes the files comprising the report to `coverage-report-path`. For example:
 
 ```
 - uses: jbunds/coverage@v1
@@ -58,7 +58,7 @@ Aside from the [CLI interface](#cli-usage), there are two ways to incorporate th
     coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
 ```
 
-The [`go-version`][go-version], [`coverage-threshold`][gwatts-gocov-outputs] and [`coverage-report-path`][coverage-report-path] parameters are optional.
+The [`go-version`][action], [`coverage-threshold`][gwatts-gocov-outputs] and [`coverage-report-path`][workflow] parameters are optional.
 
 All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
 
@@ -72,7 +72,7 @@ ${{ fromJson(steps.coverage_report.outputs.all).meets-threshold  }}
 
 etc...
 
-2. The `jbunds/coverage/.github/workflows/pages.yml@v1` reusable [GitHub Workflow][workflows] generates the test coverage report and also deploys it to [GitHub Pages][pages]. For example:
+2. The [`jbunds/coverage/.github/workflows/pages.yml@v1`][workflow] reusable [GitHub Workflow][workflows] generates the test coverage report and also deploys it to [GitHub Pages][pages]. For example:
 
 ```
 - uses: jbunds/coverage/.github/workflows/pages.yml@v1
