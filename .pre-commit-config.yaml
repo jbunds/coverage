@@ -36,4 +36,3 @@ repos:
         name:     stylelint
         entry:    npx stylelint --formatter verbose --
         files:    \.css$
-
