@@ -19,7 +19,6 @@ permissions: # https://docs.github.com/actions/reference/workflows-and-actions/w
 
 jobs:
   golangci:               # TODO: consolidate all linters (golangci-lint and stylelint) into a single GitHub Actions workflow called linters.yml
-    name: lint
     runs-on: macos-latest # https://docs.github.com/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for--private-repositories
     steps:
 
