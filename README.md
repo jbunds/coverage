@@ -8,7 +8,7 @@
 [action]:               https://github.com/jbunds/coverage/blob/main/action.yml
 [workflow]:             https://github.com/jbunds/coverage/blob/main/.github/workflows/pages.yml
 [actions]:              https://docs.github.com/actions
-[workflows]:            https://docs.github.com/actions/how-tos/reuse-automations/reuse-workflows
+[workflows]:            https://docs.github.com/actions/concepts/workflows-and-actions/workflows
 [pages]:                https://docs.github.com/pages
 
 #### Simple Web UI for Go Test Coverage
