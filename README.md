@@ -46,7 +46,7 @@ When served via HTTP, buttons are available to:
 
 #### GitHub Workflow Configuration
 
-There are two ways to use this `coverage` module:
+There are two ways to incorporate this `coverage` module within [GitHub workflows][workflows]:
 
 1. The `jbunds/coverage@v1` reusable [GitHub Action][actions] generates the test coverage report and writes the files comprising the report to `coverage-report-path` (`coverage_report` by default). For example:
 
