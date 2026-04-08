@@ -20,6 +20,12 @@ repos:
         files:          \.go$|^go\.(?:mod|sum)$
         pass_filenames: false
         require_serial: true
+      - language:       system
+        id:             validate-actions-and-workflows
+        name:           validate actions and workflows
+        entry:          node validate.js
+        files:          \.ya?ml$
+        pass_filenames: false
       - language: system
         id:       eslint
         name:     eslint
@@ -30,3 +36,4 @@ repos:
         name:     stylelint
         entry:    npx stylelint --formatter verbose --
         files:    \.css$
+
