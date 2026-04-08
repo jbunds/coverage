@@ -1,4 +1,4 @@
-name: lint JavaScript
+name: JS ESLint
 
 on:
   workflow_dispatch: # allows this workflow to be manually triggered from the UI

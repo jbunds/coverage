@@ -1,4 +1,4 @@
-name: lint CSS
+name: CSS stylelint
 
 on:
   push:
