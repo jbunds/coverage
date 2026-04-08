@@ -7,6 +7,9 @@
 [gwatts-gocov-outputs]: https://github.com/gwatts/go-coverage-action/blob/main/action.yml
 [go-version]:           https://github.com/jbunds/coverage/blob/main/action.yml
 [coverage-report-path]: https://github.com/jbunds/coverage/blob/main/.github/workflows/pages.yml
+[actions]:              https://docs.github.com/actions
+[workflows]:            https://docs.github.com/actions/how-tos/reuse-automations/reuse-workflows
+[pages]:                https://docs.github.com/pages
 
 #### Simple Web UI for Go Test Coverage
 
@@ -14,36 +17,38 @@ Drop-in replacement for `go tool cover -html`.
 
 The `coverage` Go module renders an HTML file for each `*.go` source file listed in the specified Go test coverage profile file (typically created per an invocation of `go test -coverprofile <filename> ./...`, or similar).
 
-The program expects the specification of two flags with corresponding arguments: `-coverprofile` and `-path` (see [usage](#usage) below).
+The program expects the specification of two flags with corresponding arguments: `-coverprofile` and `-path` (see [usage](#cli-usage) below).
 
 The generated HTML files are marked up to identify which lines are covered by tests ($\color{seagreen}{\text{green}}$), and which lines are not ($\color{red}{\text{red}}$). Each HTML file is written to the specified path (per the `-path` flag) following the same directory structure as the source from which the coverage profile file (per the `-coverprofile` flag) was created.
 
-The program then creates a `tree.html` file which provides a navigable view of the source rendered as a directory tree within an iframe on the left, where each node is either a subdirectory (`📁 subdirectory`) or a source file (`file.go`). Clicking on a subdirectory node expands its contents, and clicking on a source file node renders the marked up source in the iframe to the right of the directory tree.
+The program then creates a `tree.html` file which provides a navigable view of the source rendered as a directory tree within an iframe on the left, where each node is either a subdirectory (`📁 <subdirectory>`) or a source file (`<source file>.go`). Clicking on a subdirectory node expands its contents, and clicking on a source file node renders the marked up source in the iframe to the right of the directory tree.
 
 Both iframes are hosted by a parent `index.html` file, and both HTML files can be inspected in a browser, either directly via the `file://` scheme, or via an HTTP server using the `http://` scheme.
 
 When served via HTTP, buttons are available to:
 
-- toggle between ***light*** and ***dark*** themes
+- toggle between **light** and **dark** themes
 - toggle between a fully-collapsed and fully-expanded directory tree
 
 ---
 
 #### User Interface
 
-***light*** theme:
+**light** theme:
 
 ![light theme][light theme]
 
-***dark*** theme:
+**dark** theme:
 
 ![dark theme][dark theme]
 
 ---
 
-#### GitHub Action Workflow Configuration
+#### GitHub Workflow Configuration
 
-Example GitHub Action workflow configuration (the [`go-version`][go-version], [`coverage-threshold`][gwatts-gocov-outputs] and [`coverage-report-path`][coverage-report-path] parameters are optional):
+There are two ways to use this `coverage` module:
+
+1. The `jbunds/coverage@v1` reusable [GitHub Action][actions] generates the test coverage report and writes the files comprising the report to `coverage-report-path` (`coverage_report` by default). For example:
 
 ```
 - uses: jbunds/coverage@v1
@@ -52,6 +57,8 @@ Example GitHub Action workflow configuration (the [`go-version`][go-version], [`
     coverage-threshold:   '50'               # optional; default is '0'
     coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
 ```
+
+The [`go-version`][go-version], [`coverage-threshold`][gwatts-gocov-outputs] and [`coverage-report-path`][coverage-report-path] parameters are optional.
 
 All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
 
@@ -65,7 +72,7 @@ ${{ fromJson(steps.coverage_report.outputs.all).meets-threshold  }}
 
 etc...
 
-Users who wish to publish the Go test coverage report to GitHub Pages should _instead_ use the following (again, all parameters are optional):
+2. The `jbunds/coverage/.github/workflows/pages.yml@v1` reusable [GitHub Workflow][workflows] generates the test coverage report and also deploys it to [GitHub Pages][pages]. For example:
 
 ```
 - uses: jbunds/coverage/.github/workflows/pages.yml@v1
