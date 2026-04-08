@@ -1,5 +1,13 @@
 # https://docs.github.com/actions/reference/workflows-and-actions/metadata-syntax
 
+# reusable composite action which does the following:
+#
+#   1. uses gwatts/go-coverage-action@v2 to create a Go test coverage
+#      profile file
+#
+#   2. runs `go run github.com/jbunds/coverage@latest` to generate a Go
+#      test coverage HTML report from the generated coverage profile
+
 name:        Go test coverage HTML report
 description: Go test coverage HTML report generator
 author:      jbunds

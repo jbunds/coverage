@@ -1,7 +1,13 @@
 # https://docs.github.com/actions/reference/workflows-and-actions/metadata-syntax
 
-name:        upload Go coverage report to GitHub Pages
-description: configures GitHub Pages and uploads the Go coverage HTML report
+# reusable composite action which uses these standard actions
+# to upload a Go test coverage HTML report to GitHub Pages:
+#
+#   actions/configure-pages@v6 and
+#   actions/upload-pages-artifact@v4 
+
+name:        upload Go test coverage HTML report to GitHub Pages
+description: uploads a Go test coverage HTML report to GitHub Pages
 author:      jbunds
 
 inputs:

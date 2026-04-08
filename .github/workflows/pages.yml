@@ -1,3 +1,17 @@
+# all-in-one reusable workflow which does the following:
+#
+#   1. generates a Go test coverage HTML report via ./action.yml
+#
+#   2. uses .github/actions/upload-pages/action.yml to upload
+#      the Go test coverage HTML report files to GitHub Pages
+#      per these standard actions:
+#
+#        - actions/configure-pages@v6
+#        - actions/upload-pages-artifact@v4
+#
+#   3. deploys the Go test coverage HTML report to GitHub Pages
+#      via actions/deploy-pages@v5
+
 name: deploy coverage report to Pages
 
 on:
@@ -24,7 +38,7 @@ on:
     paths:
       - '**/*.go'
 
-concurrency: # avoid races
+concurrency:          # avoid races
   group:              'pages'
   cancel-in-progress: false
 

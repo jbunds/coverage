@@ -1,3 +1,5 @@
+# https://docs.github.com/actions/reference/workflows-and-actions/metadata-syntax
+
 name:        setup node
 description: standardized Node.js setup with unified caching
 inputs:
