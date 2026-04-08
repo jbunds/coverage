@@ -40,7 +40,7 @@ jobs:
         coverage-threshold: 50 # https://github.com/gwatts/go-coverage-action#usage
 
     - name: update coverage badge # https://github.com/schneegans/dynamic-badges-action#%EF%B8%8F-configuration
-      uses: schneegans/dynamic-badges-action@v1.7.0
+      uses: schneegans/dynamic-badges-action@v1.8.0
       with:
         auth:     ${{ secrets.GIST_SECRET }}
         gistID:   5a36403860174baeee62844ab96a77d9
