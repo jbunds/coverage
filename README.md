@@ -44,9 +44,25 @@ When served via HTTP, buttons are available to:
 
 ---
 
+#### CLI Usage
+
+```
+$ go get github.com/jbunds/coverage
+
+$ go run github.com/jbunds/coverage
+coverage usage:
+
+  -coverprofile string
+    	path to Go test coverage profile file
+  -path string
+    	path where HTML files will be written
+```
+
+---
+
 #### GitHub Workflow Configuration
 
-Aside from the [CLI interface](#cli-usage), there are two ways to incorporate the `coverage` module within [GitHub workflows][workflows]:
+Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to incorporate the `coverage` module within [GitHub workflows][workflows]:
 
 1. The [`jbunds/coverage@v1`][action] reusable [GitHub Action][actions] generates the test coverage report and writes the files comprising the report to `coverage-report-path`. For example:
 
@@ -91,19 +107,3 @@ See https://jbunds.github.io/coverage/ for an example.
 The motivation for the `coverage` module was to create a relatively minimal alternative to the default HTML interface produced by `go tool cover -html <coverage profile filename> -o <html filename>`, with a simple and intuitive UI, and with minimal JavaScript (55 lines total as of this writing, to implement the functionality of the toggle buttons).
 
 The CSS code was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it clearly still needs to be polished. But I am definitely _not_ a CSS expert, and it fulfills the required behavior as-is.
-
----
-
-#### CLI Usage
-
-```
-$ go get github.com/jbunds/coverage
-
-$ go run github.com/jbunds/coverage
-coverage usage:
-
-  -coverprofile string
-    	path to Go test coverage profile file
-  -path string
-    	path where HTML files will be written
-```
