@@ -25,13 +25,6 @@ repos:
         files:          \.go$|^go\.(?:mod|sum)$
         pass_filenames: false
         require_serial: true
-      # TODO(jeff): delete the following commented-out lines
-      #- language:       system
-      #  id:             validate-actions-and-workflows
-      #  name:           validate actions and workflows
-      #  entry:          npx @action-validator/cli
-      #  files:          \.ya?ml$
-      #  pass_filenames: false
       - language: system
         id:       eslint
         name:     eslint
