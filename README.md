@@ -1,6 +1,7 @@
 [![Go Version](https://img.shields.io/badge/go-%20v1.26.1-blue?logo=go)](https://github.com/jbunds/coverage/blob/main/go.mod) &nbsp; [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) &nbsp; [![tests](https://github.com/jbunds/coverage/actions/workflows/test-go.yml/badge.svg)](https://github.com/jbunds/coverage/actions/workflows/test-go.yml) &nbsp; [![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jbunds/5a36403860174baeee62844ab96a77d9/raw/coverage.json)](https://github.com/jbunds/coverage/actions/workflows/test-go.yml) &nbsp; [![lint](https://github.com/jbunds/coverage/actions/workflows/lint-go.yml/badge.svg)](https://github.com/jbunds/coverage/actions/workflows/lint-go.yml) &nbsp; [![ESLint | neostandard](https://img.shields.io/badge/ESLint-neostandard-brightgreen?style=flat)](https://github.com/neostandard/neostandard)
 
 [simple-tree]:          https://github.com/psnet/simple-tree
+[k8s]:                  https://github.com/kubernetes/kubernetes
 [light theme]:          ./screenshots/light_theme.jpg "light theme"
 [dark theme]:           ./screenshots/dark_theme.jpg "dark theme"
 [gwatts-gocov-action]:  https://github.com/gwatts/go-coverage-action
@@ -98,7 +99,7 @@ etc...
     coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
 ```
 
-See https://jbunds.github.io/coverage/ for an example.
+See https://jbunds.github.io/coverage/ for an example, which is not particularly interesting since it consists of just three Go source files which all reside in the repo's root directory. The well-known and relatively large (3+ million LoC) [Kubernetes][k8s] project was chosen for the demo to better illustrate all of the `coverage` module's features.
 
 ---
 
