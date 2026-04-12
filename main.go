@@ -66,7 +66,7 @@ type coverage struct {
 	total   int
 }
 
-// wrappers to make testing easier
+// wrappers to facilitate test injection
 
 // writeFS defines an interface that extends fs.FS with writing capabilities.
 // This abstraction is necessary to allow for mocking the file system within
@@ -95,8 +95,26 @@ type stringWriter interface { // because io.StringWriter is braindead (at least 
 	String() string
 }
 
-type gitRemoteURLGetter func(goModFileParentDir string) (string, error)
+// wraps exec.Cmd for test injection
+type cmd struct { *exec.Cmd }
 
+func (c *cmd) Output() ([]byte, error) { return c.Cmd.Output() }
+
+func (c *cmd) SetDir(dir string) { c.Dir = dir } // cleaner than performing a type assertion to expose the embedded "Dir" field
+
+// enables command execution mocks in tests
+type commander interface {
+	Output() ([]byte, error)
+	SetDir(dir string)
+}
+
+type execCommand func(name string, args ...string) commander
+
+func gitCommand(_ string, args ...string) commander {
+	return &cmd{Cmd: exec.Command("git", args...)} //nolint:gosec // G204: secure code or testable code? choose one
+}
+
+// wraps packages.Load for test injection
 type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
 
 // stores state, simplifies method signatures, avoids copying values, and makes testing easier
@@ -143,7 +161,7 @@ func main() {
 		os.Exit(3)
 	}
 
-	if err := repGen.getRepoURL(getGitRemoteURL, goModFile); err != nil { // sets repGen.repoURL
+	if err := repGen.getRepoURL(gitCommand, goModFile); err != nil { // sets repGen.repoURL
 		fmt.Fprintf(os.Stderr, "cannot determine repo URL: %v\n", err)
 		os.Exit(4)
 	}
@@ -198,14 +216,14 @@ func (rg *reportGenerator) getModName(goModFile string) error {
 }
 
 // getGitRemoteURL determines the Git URL for the remote origin tracked by the current branch
-func getGitRemoteURL(goModFileParentDir string) (string, error) {
+func getGitRemoteURL(execCommand execCommand, goModFileParentDir string) (string, error) {
 	// get the name of the remote origin tracked by the current branch (e.g., "origin", "upstream")
-	remoteNameCmd    := exec.Command("git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
-	remoteNameCmd.Dir = goModFileParentDir
-	
+	remoteNameCmd := execCommand("git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
+	remoteNameCmd.SetDir(goModFileParentDir)
+
 	var remoteName string
 	out, err := remoteNameCmd.Output()
-	if err == nil { // output looks like "origin/main"; we want "origin"
+	if err == nil { // output should be "origin/<branch>"; we want "origin"
 		remoteName = strings.Split(strings.TrimSpace(string(out)), "/")[0]
 	} else {        // fallback for fresh clones or detached HEADs that are not yet tracked
 		remoteName = "origin"
@@ -216,9 +234,9 @@ func getGitRemoteURL(goModFileParentDir string) (string, error) {
 	}
 
 	// get the actual URL for that specific remote (better than 'config --get' because Git's "insteadOf" URL rewriting is handled transparently)
-	urlCmd    := exec.Command("git", "remote", "get-url", remoteName) //nolint:gosec // G204: remoteName is validated per the above regex check
-	urlCmd.Dir = goModFileParentDir
-	
+	urlCmd := execCommand("git", "remote", "get-url", remoteName) //nolint:gosec // G204: remoteName is validated per the above regex check
+	urlCmd.SetDir(goModFileParentDir)
+
 	gitURL, err := urlCmd.Output()
 	if err != nil { return "", fmt.Errorf("cannot determine git URL for remote %q: %w", remoteName, err) }
 
@@ -226,8 +244,8 @@ func getGitRemoteURL(goModFileParentDir string) (string, error) {
 }
 
 // getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML
-func (rg *reportGenerator) getRepoURL(gitRemoteURLGetter gitRemoteURLGetter, goModFile string) error {
-	gitURL, err := gitRemoteURLGetter(filepath.Dir(goModFile))
+func (rg *reportGenerator) getRepoURL(execCommand execCommand, goModFile string) error {
+	gitURL, err := getGitRemoteURL(execCommand, filepath.Dir(goModFile))
 	if err != nil { return fmt.Errorf("cannot determine Git URL: %w", err) }
 	httpURL := gitURL
 	httpURL  = strings.TrimPrefix(httpURL, "ssh://")

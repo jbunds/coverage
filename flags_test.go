@@ -12,6 +12,7 @@ import (
 )
 
 func TestUsage(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name             string
 		args             []string

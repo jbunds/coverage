@@ -11,6 +11,7 @@ import (
 	"testing/fstest"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/cover"
 	"golang.org/x/tools/go/packages"
 )
@@ -74,8 +75,8 @@ func (w *sliceWriter) Write(p []byte) (int, error) {
 }
 
 type mockFile struct {
-	closeFails bool
 	writer     io.Writer
+	closeFails bool
 }
 
 func (m *mockFile) Close() error {
@@ -87,9 +88,19 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 	return m.writer.Write(p)
 }
 
+type mockCmd struct {
+	dir    string
+	output []byte
+	err    error
+}
+
+func (c *mockCmd) Output() ([]byte, error) { return c.output, c.err }
+func (c *mockCmd) SetDir(dir string) { c.dir = dir }
+
 // tests
 
 func TestGetModName(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name     string
 		fsys     fs.FS
@@ -127,32 +138,46 @@ func TestGetModName(t *testing.T) {
 }
 
 func TestGetRepoURL(t *testing.T) {
-	mockGetGitRemoteURL := func(goModFileParentDir string) (string, error) {
-		if goModFileParentDir == "fail" {
-			return "", fmt.Errorf("getGitRemoteURL failed")
-		}
-		return "git@github.com:foo/bar.git", nil
-	}
+	t.Parallel()
 	tests := []struct {
 		name               string
 		goModFileParentDir string
+		execCommand        execCommand
 		want               string
 		wantErr            bool
 	}{
 		{
 			name:               "succeeds",
 			goModFileParentDir: "foo/bar",
-			want:               "https://github.com/foo/bar",
+			execCommand:        func(_ string, args ...string) commander {
+				output := []byte("origin/main")
+				if len(args) > 0 && args[0] == "remote" {
+					output = []byte("git@github.com:foo/bar.git")
+				}
+				return &mockCmd{ output: output }
+			},
+			want: "https://github.com/foo/bar",
 		},
 		{
-			name:               "fails",
-			goModFileParentDir: "fail/foo",
-			wantErr:            true,
+			name:               "git remote get-url origin fails",
+			goModFileParentDir: "foo",
+			execCommand:        func(_ string, _ ...string) commander {
+				return &mockCmd{ err: fmt.Errorf("'git remote get-url origin' failed") }
+			},
+			wantErr: true,
+		},
+		{
+			name:               "invalid remote name",
+			goModFileParentDir: "bar",
+			execCommand:        func(_ string, _ ...string) commander {
+				return &mockCmd{ output: []byte("this is invalid") }
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		repGen := &reportGenerator{}
-		err := repGen.getRepoURL(mockGetGitRemoteURL, tt.goModFileParentDir)
+		err := repGen.getRepoURL(tt.execCommand, tt.goModFileParentDir)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("getRepoURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}
@@ -163,6 +188,7 @@ func TestGetRepoURL(t *testing.T) {
 }
 
 func TestGetAllPkgPaths(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		profilePath string
@@ -203,13 +229,14 @@ func TestGetAllPkgPaths(t *testing.T) {
 		if (err != nil) != tt.wantErr {
 			t.Errorf("getAllPkgPaths(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}
-		if diff := cmp.Diff(tt.want, got); diff != "" {
+		if diff := cmp.Diff(tt.want, got, cmpopts.SortSlices(strings.Compare)); diff != "" {
 			t.Errorf("getAllPkgPaths(%q) mismatch (-want +got):\n%s", tt.name, diff)
 		}
 	}
 }
 
 func TestPrimePkgDirCache(t *testing.T) {
+	t.Parallel()
 	mockPkgLoader := func(_ *packages.Config, patterns ...string) ([]*packages.Package, error) {
 		pkgs := make([]*packages.Package, len(patterns))
 		for i, p := range patterns {
@@ -285,6 +312,7 @@ func TestPrimePkgDirCache(t *testing.T) {
 }
 
 func TestWriteCovHTMLFiles(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		fsys           fs.FS
@@ -400,6 +428,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 }
 
 func TestWriteIndexHTML(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name          string
 		embeddedFiles fs.FS
@@ -447,6 +476,7 @@ func TestWriteIndexHTML(t *testing.T) {
 }
 
 func TestWriteStyleCSS(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name          string
 		embeddedFiles fs.FS
@@ -491,6 +521,7 @@ func TestWriteStyleCSS(t *testing.T) {
 }
 
 func TestWriteTemplateFile(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name          string
 		embeddedFiles fs.FS
@@ -531,6 +562,7 @@ func TestWriteTemplateFile(t *testing.T) {
 }
 
 func TestPrintCoverage(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name            string
 		cov             map[string]coverage
@@ -571,6 +603,7 @@ func TestPrintCoverage(t *testing.T) {
 }
 
 func TestWriteAncillaryFiles(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name           string
 		embeddedFiles  fs.FS
@@ -637,6 +670,7 @@ func TestWriteAncillaryFiles(t *testing.T) {
 }
 
 func TestFilterArgs(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		args []string
 		want []string

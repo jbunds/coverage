@@ -11,6 +11,7 @@ import (
 )
 
 func TestWriteTreeHTML(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name         string
 		fsys         fs.FS
@@ -58,6 +59,7 @@ func TestWriteTreeHTML(t *testing.T) {
 }
 
 func TestGenHTML(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name         string
 		fsys         fs.FS
@@ -131,6 +133,7 @@ func TestGenHTML(t *testing.T) {
 }
 
 func TestProcessEntry(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name         string
 		fileName     string
@@ -179,6 +182,7 @@ func TestProcessEntry(t *testing.T) {
 }
 
 func TestPreamble(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name    string
 		writer  io.Writer
@@ -203,6 +207,7 @@ func TestPreamble(t *testing.T) {
 }
 
 func TestPostamble(t *testing.T) {
+	t.Parallel()
 	tests := []struct{
 		name    string
 		writer  io.Writer
