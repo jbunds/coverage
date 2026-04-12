@@ -95,6 +95,8 @@ type stringWriter interface { // because io.StringWriter is braindead (at least 
 	String() string
 }
 
+type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
+
 // stores state, simplifies method signatures, avoids copying values, and makes testing easier
 type reportGenerator struct {
 	fsys            writeFS
@@ -144,7 +146,7 @@ func main() {
 		os.Exit(4)
 	}
 
-	if err := repGen.primePkgDirCache(profilePath); err != nil { // sets repGen.pkgDirCache
+	if err := repGen.primePkgDirCache(packages.Load, profilePath); err != nil { // sets repGen.pkgDirCache
 		fmt.Fprintf(os.Stderr, "cannot prime package directory cache: %v\n", err)
 		os.Exit(5)
 	}
@@ -194,7 +196,7 @@ func (rg *reportGenerator) getModName(goModFile string) error {
 }
 
 // getGitRemoteURL determines the Git URL for the remote origin tracked by the current branch
-func (rg *reportGenerator) getGitRemoteURL(goModFileParentDir string) (string, error) {
+func getGitRemoteURL(goModFileParentDir string) (string, error) {
 	// get the name of the remote origin tracked by the current branch (e.g., "origin", "upstream")
 	remoteNameCmd    := exec.Command("git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
 	remoteNameCmd.Dir = goModFileParentDir
@@ -202,8 +204,7 @@ func (rg *reportGenerator) getGitRemoteURL(goModFileParentDir string) (string, e
 	var remoteName string
 	out, err := remoteNameCmd.Output()
 	if err == nil { // output looks like "origin/main"; we want "origin"
-		fullRef   := strings.TrimSpace(string(out))
-		remoteName = strings.Split(fullRef, "/")[0]
+		remoteName = strings.Split(strings.TrimSpace(string(out)), "/")[0]
 	} else {        // fallback for fresh clones or detached HEADs that are not yet tracked
 		remoteName = "origin"
 	}
@@ -224,7 +225,7 @@ func (rg *reportGenerator) getGitRemoteURL(goModFileParentDir string) (string, e
 
 // getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML
 func (rg *reportGenerator) getRepoURL(goModFile string) error {
-	gitURL, err := rg.getGitRemoteURL(filepath.Dir(goModFile))
+	gitURL, err := getGitRemoteURL(filepath.Dir(goModFile))
 	if err != nil { return fmt.Errorf("cannot determine Git URL: %w", err) }
 	httpURL := gitURL
 	httpURL  = strings.TrimPrefix(httpURL, "ssh://")
@@ -238,9 +239,9 @@ func (rg *reportGenerator) getRepoURL(goModFile string) error {
 	return nil
 }
 
-// extractAllPkgPaths extracts all unique package paths from the coverage profile file for subsequent use in primePkgDirCache
-func extractAllPkgPaths(profilePath string) ([]string, error) {
-	f, err := os.Open(filepath.Clean(profilePath))
+// getAllPkgPaths extracts all unique package paths from the coverage profile file for subsequent use in primePkgDirCache
+func (rg *reportGenerator) getAllPkgPaths(profilePath string) ([]string, error) {
+	f, err := rg.fsys.Open(filepath.Clean(profilePath))
 	if err != nil { return nil, err }
 	defer func() {
 		closeErr := f.Close()
@@ -256,10 +257,7 @@ func extractAllPkgPaths(profilePath string) ([]string, error) {
 		parts := strings.Split(line, ":")
 		if len(parts) < 2 { continue }
 
-		filePath := parts[0]
-		pkgPath := filepath.Dir(filePath)
-
-		pkgSet[pkgPath] = struct{}{} // to dedup
+		pkgSet[filepath.Dir(parts[0])] = struct{}{}
 	}
 
 	allPaths := make([]string, 0, len(pkgSet))
@@ -268,16 +266,16 @@ func extractAllPkgPaths(profilePath string) ([]string, error) {
 }
 
 // primePkgDirCache primes rg.pkgDirCache for subsequent use in buildCovHTML
-func (rg *reportGenerator) primePkgDirCache(profilePath string) error {
+func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath string) error {
 	rg.pkgDirCache    = &pkgDirCache{ cache: make(map[string]string) }
-	allPkgPaths, err := extractAllPkgPaths(profilePath)
+	allPkgPaths, err := rg.getAllPkgPaths(profilePath)
 	if err != nil { return err }
 	cfg := &packages.Config{
 		Mode:  packages.NeedFiles | packages.NeedModule | packages.NeedName,
 		Tests: false,
 	}
 
-	pkgs, err := packages.Load(cfg, allPkgPaths...)
+	pkgs, err := pkgLoader(cfg, allPkgPaths...)
 	if err != nil { return err }
 
 	rg.pkgDirCache.mu.Lock()
