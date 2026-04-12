@@ -33,10 +33,10 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/go-git/go-git/v5"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/cover"
+	"gopkg.in/ini.v1"
 )
 
 //go:embed html/* css/* img/*
@@ -94,8 +94,8 @@ type stringWriter interface { // because io.StringWriter is braindead (at least 
 	String() string
 }
 
-// wraps git.PlainOpen for test injection
-type repoOpener func(path string) (*git.Repository, error)
+// wraps ini.Load for test injection
+type iniLoader func(source any, others ...any) (*ini.File, error)
 
 // wraps packages.Load for test injection
 type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
@@ -144,7 +144,7 @@ func main() {
 		os.Exit(3)
 	}
 
-	if err := repGen.getRepoURL(git.PlainOpen, goModFile); err != nil { // sets repGen.repoURL
+	if err := repGen.getRepoURL(ini.Load, goModFile); err != nil { // sets repGen.repoURL
 		fmt.Fprintf(os.Stderr, "cannot determine repo URL: %v\n", err)
 		os.Exit(4)
 	}
@@ -199,20 +199,21 @@ func (rg *reportGenerator) getModName(goModFile string) error {
 }
 
 // getGitRemoteURL determines the Git URL for the remote origin tracked by the current branch
-func getGitRemoteURL(repoOpener repoOpener, goModFile string) (string, error) {
-	repo, err := repoOpener(filepath.Dir(goModFile))
+func getGitRemoteURL(iniLoader iniLoader, goModFile string) (string, error) {
+	cfg, err := iniLoader(filepath.Join(filepath.Dir(goModFile), ".git", "config"))
 	if err != nil { return "", err }
-	remote, err := repo.Remote("origin")
-	if err != nil { return "", err }
-	if len(remote.Config().URLs) > 0 && remote.Config().URLs[0] != "" {
-		return remote.Config().URLs[0], nil
-	}
-	return "", fmt.Errorf("cannot determine Git remote URL")
+
+	section := cfg.Section(`remote "origin"`)
+	url     := section.Key("url").String()
+
+	if url == "" { return "", fmt.Errorf("cannot determine Git remote URL") }
+
+	return url, nil
 }
 
 // getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML
-func (rg *reportGenerator) getRepoURL(repoOpener repoOpener, goModFile string) error {
-	gitRemoteURL, err := getGitRemoteURL(repoOpener, goModFile)
+func (rg *reportGenerator) getRepoURL(iniLoader iniLoader, goModFile string) error {
+	gitRemoteURL, err := getGitRemoteURL(iniLoader, goModFile)
 	if err != nil { return err }
 	httpURL := gitRemoteURL
 	httpURL  = strings.TrimPrefix(httpURL, "ssh://")

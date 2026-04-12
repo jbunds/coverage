@@ -10,13 +10,11 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
-	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/cover"
 	"golang.org/x/tools/go/packages"
+	"gopkg.in/ini.v1"
 )
 
 // fakes and mocks
@@ -134,32 +132,46 @@ func TestGetModName(t *testing.T) {
 func TestGetRepoURL(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name               string
-		url                string
-		want               string
-		wantErr            bool
+		name    string
+		fsys    fs.FS
+		want    string
+		wantErr bool
 	}{
 		{
 			name: "succeeds",
-			url:  "git@github.com:foo/bar.git",
+			fsys: fstest.MapFS{
+				".git/config": &fstest.MapFile{
+					Data: []byte(strings.Join([]string{
+						"[remote \"origin\"]",
+						"	url = git@github.com:foo/bar.git",
+						"	fetch = +refs/heads/main:refs/remotes/origin/main",
+						"[branch \"main\"]",
+						"	remote = origin",
+						"	merge = refs/heads/main",
+					}, "\n")),
+				},
+			},
 			want: "https://github.com/foo/bar",
 		},
 		{
 			name:    "fails",
+			fsys:    fstest.MapFS{},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
-		repo, _ := git.Init(memory.NewStorage(), nil)
-		_, _ = repo.CreateRemote(&config.RemoteConfig{
-			Name: "origin",
-			URLs: []string{tt.url},
-		})
-		mockRepoOpener := func(_ string) (*git.Repository, error) {
-			return repo, nil
+		repGen := &reportGenerator{
+			fsys: &mockFS{ FS: tt.fsys },
 		}
-		repGen := &reportGenerator{}
-		err := repGen.getRepoURL(mockRepoOpener, ".")
+		mockIniLoader := func(source any, _ ...any) (*ini.File, error) {
+			path := source.(string)
+			data, err := fs.ReadFile(repGen.fsys, path)
+			if err != nil {
+				return nil, err
+			}
+			return ini.Load(data)
+		}
+		err := repGen.getRepoURL(mockIniLoader, ".")
 		if (err != nil) != tt.wantErr {
 			t.Errorf("getRepoURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}
