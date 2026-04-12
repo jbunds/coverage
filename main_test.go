@@ -154,8 +154,13 @@ func TestGetRepoURL(t *testing.T) {
 			want: "https://github.com/foo/bar",
 		},
 		{
-			name:    "fails",
+			name:    ".git/config does not exist",
 			fsys:    fstest.MapFS{},
+			wantErr: true,
+		},
+		{
+			name:    "invalid .git/config contents",
+			fsys:    fstest.MapFS{ ".git/config": &fstest.MapFile{ Data: []byte("bogus git config") }},
 			wantErr: true,
 		},
 	}
