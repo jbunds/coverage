@@ -163,6 +163,21 @@ func TestGetRepoURL(t *testing.T) {
 			fsys:    fstest.MapFS{ ".git/config": &fstest.MapFile{ Data: []byte("bogus git config") }},
 			wantErr: true,
 		},
+		{
+			name: "missing url field in 'remote \"origin\" section",
+			fsys: fstest.MapFS{
+				".git/config": &fstest.MapFile{
+					Data: []byte(strings.Join([]string{
+						"[remote \"origin\"]",
+						"	fetch = +refs/heads/main:refs/remotes/origin/main",
+						"[branch \"main\"]",
+						"	remote = origin",
+						"	merge = refs/heads/main",
+					}, "\n")),
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		repGen := &reportGenerator{
