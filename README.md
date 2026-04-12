@@ -55,6 +55,8 @@ coverage usage:
 
   -coverprofile string
     	path to Go test coverage profile file
+  -gomod string
+    	path to the root go.mod file
   -path string
     	path where HTML files will be written
 ```
@@ -70,12 +72,13 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
 ```
 - uses: jbunds/coverage@v1
   with:
-    go-version:           '1.26.1'           # optional: default is '1.26.1'
+    go-version:           '1.26.1'           # optional; default is '1.26.1'
+    go-mod:               'go.mod'           # optional; default is 'go.mod'
     coverage-threshold:   '50'               # optional; default is '0'
     coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
 ```
 
-The [`go-version`][action], [`coverage-threshold`][gwatts-gocov-outputs] and [`coverage-report-path`][workflow] parameters are optional.
+The [`go-version`][action], [`go-mod`][action], [`coverage-threshold`][gwatts-gocov-outputs], and [`coverage-report-path`][workflow] parameters are optional.
 
 All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
 
@@ -95,13 +98,14 @@ etc...
 - uses: jbunds/coverage/.github/workflows/pages.yml@v1
   with:
     go-version:           '1.26.1'           # optional: default is '1.26.1'
+    go-mod:               'go.mod'           # optional; default is 'go.mod'
     coverage-threshold:   '50'               # optional; default is '0'
     coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
 ```
 
 See https://jbunds.github.io/coverage/ for an example, which is not particularly interesting since it consists of just three Go source files which all reside in the repo's root directory.
 
-The well-known and relatively large (3+ million LoC) [Kubernetes][k8s] project was chosen for the demo to better illustrate all of the `coverage` module's features.
+The well-known and relatively large (at 3+ million LoC) [Kubernetes][k8s] project was chosen for the demo to better illustrate the features and performance.
 
 ---
 
