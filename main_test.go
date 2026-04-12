@@ -10,6 +10,9 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/cover"
@@ -88,15 +91,6 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 	return m.writer.Write(p)
 }
 
-type mockCmd struct {
-	dir    string
-	output []byte
-	err    error
-}
-
-func (c *mockCmd) Output() ([]byte, error) { return c.output, c.err }
-func (c *mockCmd) SetDir(dir string) { c.dir = dir }
-
 // tests
 
 func TestGetModName(t *testing.T) {
@@ -141,43 +135,31 @@ func TestGetRepoURL(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name               string
-		goModFileParentDir string
-		execCommand        execCommand
+		url                string
 		want               string
 		wantErr            bool
 	}{
 		{
-			name:               "succeeds",
-			goModFileParentDir: "foo/bar",
-			execCommand:        func(_ string, args ...string) commander {
-				output := []byte("origin/main")
-				if len(args) > 0 && args[0] == "remote" {
-					output = []byte("git@github.com:foo/bar.git")
-				}
-				return &mockCmd{ output: output }
-			},
+			name: "succeeds",
+			url:  "git@github.com:foo/bar.git",
 			want: "https://github.com/foo/bar",
 		},
 		{
-			name:               "git remote get-url origin fails",
-			goModFileParentDir: "foo",
-			execCommand:        func(_ string, _ ...string) commander {
-				return &mockCmd{ err: fmt.Errorf("'git remote get-url origin' failed") }
-			},
-			wantErr: true,
-		},
-		{
-			name:               "invalid remote name",
-			goModFileParentDir: "bar",
-			execCommand:        func(_ string, _ ...string) commander {
-				return &mockCmd{ output: []byte("this is invalid") }
-			},
+			name:    "fails",
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
+		repo, _ := git.Init(memory.NewStorage(), nil)
+		_, _ = repo.CreateRemote(&config.RemoteConfig{
+			Name: "origin",
+			URLs: []string{tt.url},
+		})
+		mockRepoOpener := func(_ string) (*git.Repository, error) {
+			return repo, nil
+		}
 		repGen := &reportGenerator{}
-		err := repGen.getRepoURL(tt.execCommand, tt.goModFileParentDir)
+		err := repGen.getRepoURL(mockRepoOpener, ".")
 		if (err != nil) != tt.wantErr {
 			t.Errorf("getRepoURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}
