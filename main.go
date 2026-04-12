@@ -95,6 +95,8 @@ type stringWriter interface { // because io.StringWriter is braindead (at least 
 	String() string
 }
 
+type gitRemoteURLGetter func(goModFileParentDir string) (string, error)
+
 type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
 
 // stores state, simplifies method signatures, avoids copying values, and makes testing easier
@@ -141,7 +143,7 @@ func main() {
 		os.Exit(3)
 	}
 
-	if err := repGen.getRepoURL(goModFile); err != nil { // sets repGen.repoURL
+	if err := repGen.getRepoURL(getGitRemoteURL, goModFile); err != nil { // sets repGen.repoURL
 		fmt.Fprintf(os.Stderr, "cannot determine repo URL: %v\n", err)
 		os.Exit(4)
 	}
@@ -224,8 +226,8 @@ func getGitRemoteURL(goModFileParentDir string) (string, error) {
 }
 
 // getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML
-func (rg *reportGenerator) getRepoURL(goModFile string) error {
-	gitURL, err := getGitRemoteURL(filepath.Dir(goModFile))
+func (rg *reportGenerator) getRepoURL(gitRemoteURLGetter gitRemoteURLGetter, goModFile string) error {
+	gitURL, err := gitRemoteURLGetter(filepath.Dir(goModFile))
 	if err != nil { return fmt.Errorf("cannot determine Git URL: %w", err) }
 	httpURL := gitURL
 	httpURL  = strings.TrimPrefix(httpURL, "ssh://")

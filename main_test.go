@@ -127,6 +127,12 @@ func TestGetModName(t *testing.T) {
 }
 
 func TestGetRepoURL(t *testing.T) {
+	mockGetGitRemoteURL := func(goModFileParentDir string) (string, error) {
+		if goModFileParentDir == "fail" {
+			return "", fmt.Errorf("getGitRemoteURL failed")
+		}
+		return "git@github.com:foo/bar.git", nil
+	}
 	tests := []struct {
 		name               string
 		goModFileParentDir string
@@ -135,18 +141,18 @@ func TestGetRepoURL(t *testing.T) {
 	}{
 		{
 			name:               "succeeds",
-			goModFileParentDir: ".",
-			want:               "https://github.com/jbunds/coverage",
+			goModFileParentDir: "foo/bar",
+			want:               "https://github.com/foo/bar",
 		},
 		{
 			name:               "fails",
-			goModFileParentDir: "/does/not/exist",
+			goModFileParentDir: "fail/foo",
 			wantErr:            true,
 		},
 	}
 	for _, tt := range tests {
 		repGen := &reportGenerator{}
-		err    := repGen.getRepoURL(tt.goModFileParentDir)
+		err := repGen.getRepoURL(mockGetGitRemoteURL, tt.goModFileParentDir)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("getRepoURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}
