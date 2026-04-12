@@ -15,37 +15,58 @@ func TestUsage(t *testing.T) {
 	tests := []struct{
 		name             string
 		args             []string
-		wantOut          string
+		wantGoMod        string
 		wantCoverProfile string
 		wantPath         string
+		wantOut          string
 		stdErr           string
 		err              string // zero value means no error expected (err113)
 	}{
 		{
 			name: "valid",
 			args: []string{
-				"-coverprofile", "foo",
-				"-path",         "bar",
+				"-gomod",        "foo",
+				"-coverprofile", "bar",
+				"-path",         "baz",
 			},
-			wantCoverProfile:  "foo",
-			wantPath:          "bar",
+			wantGoMod:         "foo",
+			wantCoverProfile:  "bar",
+			wantPath:          "baz",
+		},
+		{
+			name:    "missing -gomod",
+			err:     "no value specified for -gomod",
+			wantOut: strings.Join([]string{
+				"missing -gomod usage:",
+				"",
+				"  -coverprofile string",
+				"    	path to Go test coverage profile file",
+				"  -gomod string",
+				"    	path to the root go.mod file",
+				"  -path string",
+				"    	path where HTML files will be written",
+				"\n"}, "\n"),
 		},
 		{
 			name:    "missing -coverprofile",
+			args:    []string{"-gomod", "foo"},
 			err:     "no value specified for -coverprofile",
 			wantOut: strings.Join([]string{
 				"missing -coverprofile usage:",
 				"",
 				"  -coverprofile string",
 				"    	path to Go test coverage profile file",
+				"  -gomod string",
+				"    	path to the root go.mod file",
 				"  -path string",
 				"    	path where HTML files will be written",
 				"\n"}, "\n"),
 		},
 		{
-			name: "missing -path",
-			args: []string{
-				"-coverprofile", "baz",
+			name:    "missing -path",
+			args:    []string{
+				"-gomod",        "foo",
+				"-coverprofile", "bar",
 			},
 			err:     "no value specified for -path",
 			wantOut: strings.Join([]string{
@@ -53,6 +74,8 @@ func TestUsage(t *testing.T) {
 				"",
 				"  -coverprofile string",
 				"    	path to Go test coverage profile file",
+				"  -gomod string",
+				"    	path to the root go.mod file",
 				"  -path string",
 				"    	path where HTML files will be written",
 				"\n"}, "\n"),
@@ -60,14 +83,16 @@ func TestUsage(t *testing.T) {
 		{
 			name: "ignored args",
 			args: []string{
-				"-coverprofile", "boo",
-				"-path",         "bug",
-				"qux",
-				"bip",
+				"-gomod",        "foo",
+				"-coverprofile", "bar",
+				"-path",         "baz",
+				"bug",
+				"boo",
 			},
-			wantCoverProfile: "boo",
-			wantPath:         "bug",
-			stdErr:           "ignored arguments: qux, bip\n",
+			wantGoMod:        "foo",
+			wantCoverProfile: "bar",
+			wantPath:         "baz",
+			stdErr:           "ignored arguments: bug, boo\n",
 		},
 		{
 			name:    "invalid",
@@ -78,6 +103,8 @@ func TestUsage(t *testing.T) {
 				"",
 				"  -coverprofile string",
 				"    	path to Go test coverage profile file",
+				"  -gomod string",
+				"    	path to the root go.mod file",
 				"  -path string",
 				"    	path where HTML files will be written",
 				"\n"}, "\n"),
@@ -90,9 +117,9 @@ func TestUsage(t *testing.T) {
 			fs     := flag.NewFlagSet(tt.name, flag.ContinueOnError)
 			fs.SetOutput(gotOut)
 			var err error
-			var gotCoverProfile, gotPath string
+			var gotGoMod, gotCoverProfile, gotPath string
 			gotErr := captureStderr(t, func() {
-				gotCoverProfile, gotPath, err = flags(fs, tt.args)
+				gotGoMod, gotCoverProfile, gotPath, err = flags(fs, tt.args)
 			})
 			if tt.err != "" {
 				if err == nil {
@@ -107,6 +134,9 @@ func TestUsage(t *testing.T) {
 			}
 			if diff := cmp.Diff(tt.wantOut, gotOut.String()); diff != "" {
 				t.Errorf("flags(%q) usage message mismatch (-want +got):\n%s", tt.name, diff)
+			}
+			if diff := cmp.Diff(tt.wantGoMod, gotGoMod); diff != "" {
+				t.Errorf("flags(%q) goMod mismatch (-want +got):\n%s", tt.name, diff)
 			}
 			if diff := cmp.Diff(tt.wantCoverProfile, gotCoverProfile); diff != "" {
 				t.Errorf("flags(%q) coverProfile mismatch (-want +got):\n%s", tt.name, diff)

@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"cmp"
 	"embed"
-	"errors"
 	"flag"
 	"fmt"
 	"html"
@@ -28,13 +27,16 @@ import (
 	"io/fs"
 	"maps"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
+	"sync"
 	"text/template"
 
 	"golang.org/x/mod/modfile"
-	"golang.org/x/mod/module"
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/cover"
 )
 
@@ -52,6 +54,13 @@ var (
 	}
 )
 
+// pkgDirCache maps canonical Go packages to their respective paths on disk
+type pkgDirCache struct {
+	cache map[string]string
+	mu    sync.RWMutex
+}
+
+// coverage tracks per-file coverage
 type coverage struct {
 	covered int
 	total   int
@@ -91,7 +100,8 @@ type reportGenerator struct {
 	fsys            writeFS
 	embeddedFiles   fs.FS
 	modName         string
-	srcRoot         string
+	repoURL         string
+	pkgDirCache     *pkgDirCache
 	outRoot         string
 	profilePath     string
 	profiles        []*cover.Profile
@@ -103,7 +113,7 @@ type reportGenerator struct {
 }
 
 func main() {
-	profilePath, outRoot, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))
+	goModFile, profilePath, outRoot, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cannot parse flags: %v\n", err)
 		os.Exit(1)
@@ -124,26 +134,31 @@ func main() {
 		ancillaryFiles: ancillaryFiles,
 	}
 
-	if err := repGen.getModName(); err != nil { // sets repGen.modName
+	if err := repGen.getModName(goModFile); err != nil { // sets repGen.modName
 		fmt.Fprintf(os.Stderr, "cannot determine module name: %v\n", err)
 		os.Exit(3)
 	}
 
-	if err := repGen.getSrcRoot(); err != nil { // sets repGen.srcRoot
-		fmt.Fprintf(os.Stderr, "cannot determine source root: %v\n", err)
+	if err := repGen.getRepoURL(goModFile); err != nil { // sets repGen.repoURL
+		fmt.Fprintf(os.Stderr, "cannot determine repo URL: %v\n", err)
 		os.Exit(4)
+	}
+
+	if err := repGen.primePkgDirCache(profilePath); err != nil { // sets repGen.pkgDirCache
+		fmt.Fprintf(os.Stderr, "cannot prime package directory cache: %v\n", err)
+		os.Exit(5)
 	}
 
 	if err := repGen.writeCovHTMLFiles(&strings.Builder{}); err != nil { // sets repGen.cov
 		fmt.Fprintf(os.Stderr, "cannot write HTML coverage files: %v\n", err)
-		os.Exit(5)
+		os.Exit(6)
 	}
 
 	repGen.printCoverage() // requires repGen.cov
 
 	if err := repGen.writeIndexHTML(indexHTML); err != nil { // requires repGen.modName
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", indexHTML, err)
-		os.Exit(6)
+		os.Exit(7)
 	}
 
 	tb := &treeBuilder{
@@ -154,84 +169,126 @@ func main() {
 
 	if repGen.maxWidth, err = tb.writeTreeHTML(); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", treeHTML, err)
-		os.Exit(7)
+		os.Exit(8)
 	}
 
 	if err := repGen.writeStyleCSS(styleCSS); err != nil { // requires repGen.maxWidth
 		fmt.Fprintf(os.Stderr, "cannot write %s: %v\n", styleCSS, err)
-		os.Exit(8)
+		os.Exit(9)
 	}
 
 	if err := repGen.writeAncillaryFiles(); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write ancillary files: %v\n", err)
-		os.Exit(9)
+		os.Exit(10)
 	}
 }
 
-// getModName tries to read the go.mod file to determine the name of the Go module,
-// and falls back to inspecting the coverage profiles if that fails
-func (rg *reportGenerator) getModName() error {
-	goMod, err := fs.ReadFile(rg.fsys, "go.mod")
-	if err == nil {
-		modFile, err := modfile.Parse("go.mod", goMod, nil)
-		if err != nil || modFile.Module == nil { return fmt.Errorf("cannot parse go.mod: %w", err) }
-		rg.modName = modFile.Module.Mod.Path
-		return nil
-	}
-	return rg.findCommonRoot() // fallback to inspecting the coverage profiles
+// getModName reads the repo's root go.mod file to determine the name of the Go module
+func (rg *reportGenerator) getModName(goModFile string) error {
+	goMod, err := fs.ReadFile(rg.fsys, goModFile)
+	if err != nil { return fmt.Errorf("cannot read %q: %w", goModFile, err) }
+	modFile, err := modfile.Parse(goModFile, goMod, nil)
+	if err != nil || modFile.Module == nil { return fmt.Errorf("cannot parse %q: %w", goModFile, err) }
+	rg.modName = modFile.Module.Mod.Path
+	return nil
 }
 
-// findCommonRoot finds the longest path prefix common to all files listed in the Go test coverage profile file.
-// downstream code assumes this longest common prefix (sans the trailing "/") specifies the Go module name
-func (rg *reportGenerator) findCommonRoot() error {
-	if len(rg.profiles) < 1 { return nil }
-	common := strings.Split(rg.profiles[0].FileName, "/")
-	for _, profile := range rg.profiles[1:] {
-		current  := strings.Split(profile.FileName, "/")
-		matchLen := 0
-		for i := 0; i < min(len(common), len(current)); i++ {
-			if common[i] == current[i] {
-				matchLen++
-			} else {
-				break
-			}
+// getGitRemoteURL determines the Git URL for the remote origin tracked by the current branch
+func (rg *reportGenerator) getGitRemoteURL(goModFileParentDir string) (string, error) {
+	// get the name of the remote origin tracked by the current branch (e.g., "origin", "upstream")
+	remoteNameCmd    := exec.Command("git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
+	remoteNameCmd.Dir = goModFileParentDir
+	
+	var remoteName string
+	out, err := remoteNameCmd.Output()
+	if err == nil { // output looks like "origin/main"; we want "origin"
+		fullRef   := strings.TrimSpace(string(out))
+		remoteName = strings.Split(fullRef, "/")[0]
+	} else {        // fallback for fresh clones or detached HEADs that are not yet tracked
+		remoteName = "origin"
+	}
+
+	if !regexp.MustCompile(`^[[:alnum:]\-\._]+$`).MatchString(remoteName) { // validate remoteName to mitigate malicious injection
+		return "", fmt.Errorf("invalid remote name: %q", remoteName)
+	}
+
+	// get the actual URL for that specific remote (better than 'config --get' because Git's "insteadOf" URL rewriting is handled transparently)
+	urlCmd    := exec.Command("git", "remote", "get-url", remoteName) //nolint:gosec // G204: remoteName is validated per the above regex check
+	urlCmd.Dir = goModFileParentDir
+	
+	gitURL, err := urlCmd.Output()
+	if err != nil { return "", fmt.Errorf("cannot determine git URL for remote %q: %w", remoteName, err) }
+
+	return strings.TrimSpace(string(gitURL)), nil
+}
+
+// getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML
+func (rg *reportGenerator) getRepoURL(goModFile string) error {
+	gitURL, err := rg.getGitRemoteURL(filepath.Dir(goModFile))
+	if err != nil { return fmt.Errorf("cannot determine Git URL: %w", err) }
+	httpURL := gitURL
+	httpURL  = strings.TrimPrefix(httpURL, "ssh://")
+	httpURL  = strings.TrimPrefix(httpURL, "git://")
+	if idx  := strings.Index     (httpURL, "@"); idx != -1 { httpURL = httpURL[idx+1:] }
+	httpURL  = strings.Replace   (httpURL, ":", "/", 1)
+	httpURL  = strings.TrimSuffix(httpURL, ".git")
+	httpURL  = strings.TrimSuffix(httpURL, "/")
+	if !strings.HasPrefix(httpURL, "http") { httpURL = "https://" + httpURL }
+	rg.repoURL = httpURL
+	return nil
+}
+
+// extractAllPkgPaths extracts all unique package paths from the coverage profile file for subsequent use in primePkgDirCache
+func extractAllPkgPaths(profilePath string) ([]string, error) {
+	f, err := os.Open(filepath.Clean(profilePath))
+	if err != nil { return nil, err }
+	defer func() {
+		closeErr := f.Close()
+		if err == nil { err = closeErr }
+	}()
+
+	pkgSet  := make(map[string]struct{})
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "mode:") { continue }
+
+		parts := strings.Split(line, ":")
+		if len(parts) < 2 { continue }
+
+		filePath := parts[0]
+		pkgPath := filepath.Dir(filePath)
+
+		pkgSet[pkgPath] = struct{}{} // to dedup
+	}
+
+	allPaths := make([]string, 0, len(pkgSet))
+	for p := range pkgSet { allPaths = append(allPaths, p) }
+	return allPaths, scanner.Err()
+}
+
+// primePkgDirCache primes rg.pkgDirCache for subsequent use in buildCovHTML
+func (rg *reportGenerator) primePkgDirCache(profilePath string) error {
+	rg.pkgDirCache    = &pkgDirCache{ cache: make(map[string]string) }
+	allPkgPaths, err := extractAllPkgPaths(profilePath)
+	if err != nil { return err }
+	cfg := &packages.Config{
+		Mode:  packages.NeedFiles | packages.NeedModule | packages.NeedName,
+		Tests: false,
+	}
+
+	pkgs, err := packages.Load(cfg, allPkgPaths...)
+	if err != nil { return err }
+
+	rg.pkgDirCache.mu.Lock()
+	defer rg.pkgDirCache.mu.Unlock()
+
+	for _, pkg := range pkgs {
+		if len(pkg.GoFiles) > 0 {
+			rg.pkgDirCache.cache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])
 		}
-		common = common[:matchLen]
-		if len(common) == 0 { return fmt.Errorf("cannot determine common root") }
-	}
-	rg.modName = strings.Join(common, "/")
-	return nil
-}
-
-// getSrcRoot determines the root of the Go source files by the checking for the existence of
-// the first source file returned from cover.ParseProfiles in one of the following locations:
-//
-//   - the current working directory
-//   - the parent directory of the coverage profile file (per the value of the -coverprofile flag)
-//   - the parent directory of the output path           (per the value of the -path flag)
-func (rg *reportGenerator) getSrcRoot() error {
-	firstSrcRelPath       := strings.TrimPrefix(rg.profiles[0].FileName, rg.modName + "/")
-	profilePathParentDir  := filepath.Dir(rg.profilePath)
-	profilePathSrcRelPath := filepath.Join(profilePathParentDir, firstSrcRelPath)
-	outRootParentDir      := filepath.Dir(rg.outRoot)
-	outRootSrcRelPath     := filepath.Join(outRootParentDir, firstSrcRelPath)
-	switch {
-	case fileExists(rg.fsys, firstSrcRelPath):
-		rg.srcRoot = "."
-	case fileExists(rg.fsys, profilePathSrcRelPath):
-		rg.srcRoot = profilePathParentDir
-	case fileExists(rg.fsys, outRootSrcRelPath):
-		rg.srcRoot = outRootParentDir
-	default:
-		return fmt.Errorf("cannot locate source root")
 	}
 	return nil
-}
-
-// fileExists returns a boolean indicating whether or not a given file exists
-func fileExists(fsys fs.FS, path string) bool {
-	_, err := fs.Stat(fsys, path)
-	return !errors.Is(err, os.ErrNotExist)
 }
 
 // writeCovHTMLFiles calculates per-file coverage percentages and writes a
@@ -251,18 +308,18 @@ func (rg *reportGenerator) writeCovHTMLFiles(w stringWriter) error {
 		rg.totalCovered    += fileCovered
 		rg.totalStatements += fileStatements
 
-		localPath := strings.TrimPrefix(profile.FileName, rg.modName + "/")
-		rg.cov[localPath] = coverage{
+		rg.cov[profile.FileName] = coverage{
 			covered: fileCovered,
 			total:   fileStatements,
 		}
 
 		w.Reset()
-		if err := rg.buildCovHTML(w, profile, localPath); err != nil {
-			return fmt.Errorf("cannot write HTML file for %s: %w", localPath, err)
+
+		if err := rg.buildCovHTML(w, profile, profile.FileName); err != nil {
+			return fmt.Errorf("cannot write HTML file for %s: %w", profile.FileName, err)
 		}
 
-		outPath := filepath.Clean(filepath.Join(rg.outRoot, localPath + ".html"))
+		outPath := filepath.Clean(filepath.Join(rg.outRoot, profile.FileName + ".html"))
 		if err := rg.fsys.MkdirAll(filepath.Dir(outPath), 0700); err != nil {
 			return fmt.Errorf("cannot create directory: %w", err)
 		}
@@ -274,15 +331,18 @@ func (rg *reportGenerator) writeCovHTMLFiles(w stringWriter) error {
 }
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage
-func (rg *reportGenerator) buildCovHTML(w io.Writer, profile *cover.Profile, localPath string) error {
-	src, err := fs.ReadFile(rg.fsys, filepath.Join(rg.srcRoot, localPath))
+func (rg *reportGenerator) buildCovHTML(w io.Writer, profile *cover.Profile, srcPath string) error {
+	pkgPath  := filepath.Dir (profile.FileName)
+	fileName := filepath.Base(profile.FileName)
+
+	src, err := fs.ReadFile(rg.fsys, filepath.Join(rg.pkgDirCache.cache[pkgPath], fileName))
 	if err != nil { return err }
 
-	bw    := bufio.NewWriter(w)
+	bw := bufio.NewWriter(w)
 	write := func(s string) { _, _ = bw.WriteString(html.EscapeString(s)) }
 
-	cssPath := strings.Repeat("../", strings.Count(localPath, "/")) + filepath.Base(styleCSS)
-	_ = writePreamble(bw, cssPath, localPath)
+	cssPath := strings.Repeat("../", strings.Count(srcPath, "/")) + filepath.Base(styleCSS)
+	if err := writePreamble(bw, cssPath, srcPath); err != nil { return err }
 
 	pos := 0
 	for _, b := range profile.Boundaries(src) {
@@ -306,11 +366,12 @@ func (rg *reportGenerator) buildCovHTML(w io.Writer, profile *cover.Profile, loc
 	}
 
 	write(string(src[pos:]))
-	_ = writePostamble(bw)
+	if err := writePostamble(bw); err != nil { return err }
 	return bw.Flush()
 }
 
-func writePreamble(w io.Writer, cssRelPath, localPath string) error {
+// writePreamble writes the preamble portion of the HTML content common to every Go source HTML file
+func writePreamble(w io.Writer, cssRelPath, srcPath string) error {
 	_, err := fmt.Fprintf(w, `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -319,10 +380,11 @@ func writePreamble(w io.Writer, cssRelPath, localPath string) error {
 <title>%s</title>
 </head>
 <body id="code">
-<pre>`, cssRelPath, localPath)
+<pre>`, cssRelPath, srcPath)
 	return err
 }
 
+// writePreamble writes the postamble portion of the HTML content common to every Go source HTML file
 func writePostamble(w io.Writer) error {
 	_, err := io.WriteString(w, `</pre>
 <script>
@@ -387,15 +449,13 @@ func (rg *reportGenerator) printCoverage() {
 }
 
 // writeIndexHTML writes the index HTML file, which contains two template parameters
-// (ModName and ModURL), and hosts two iframes (directory tree & source code), 
+// (ModName and ModURL), and hosts two iframes (directory tree & source code)
 func (rg *reportGenerator) writeIndexHTML(indexHTML string) error {
-	repoURL, _, ok := module.SplitPathVersion(rg.modName)
-	if !ok { repoURL = rg.modName }
 	data := struct{
 		ModName, ModURL string
 	}{
 		ModName: rg.modName,
-		ModURL:  "https://" + repoURL,
+		ModURL:  rg.repoURL,
 	}
 	return rg.writeTemplateFile(indexHTML, data)
 }
@@ -410,6 +470,7 @@ func (rg *reportGenerator) writeStyleCSS(styleCSS string) error {
 	return rg.writeTemplateFile(styleCSS, data)
 }
 
+// writeTemplateFile writes the specified template file
 func (rg *reportGenerator) writeTemplateFile(file string, tmplVars any) error {
 	outFile   := filepath.Clean(filepath.Join(rg.outRoot, filepath.Base(file)))
 	tmpl, err := template.ParseFS(rg.embeddedFiles, file)
@@ -420,7 +481,7 @@ func (rg *reportGenerator) writeTemplateFile(file string, tmplVars any) error {
 	return f.Close()
 }
 
-// writeAncillaryFiles writes the supporting files defined per the ancillaryFiles global variable to the user-specified path
+// writeAncillaryFiles writes the files required by the coverage report to the user-specified path
 func (rg *reportGenerator) writeAncillaryFiles() error {
 	for _, file := range rg.ancillaryFiles {
 		outFile   := filepath.Clean(filepath.Join(rg.outRoot, filepath.Base(file)))
@@ -434,7 +495,7 @@ func (rg *reportGenerator) writeAncillaryFiles() error {
 	return nil
 }
 
-// filterArgs discards any arguments up to and including "--", potentially useful for testing
+// filterArgs discards any arguments up to and including "--" (potentially useful for testing)
 func filterArgs(args []string) []string {
 	for i, arg := range args {
 		if arg == "--" {

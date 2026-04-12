@@ -98,21 +98,12 @@ func TestGetModName(t *testing.T) {
 	}{
 		{
 			name: "succeeds",
-			fsys: os.DirFS("."),
-			want: "github.com/jbunds/coverage",
+			fsys: fstest.MapFS{ "go.mod": &fstest.MapFile{ Data: []byte("module github.com/foo/bar") } },
+			want: "github.com/foo/bar",
 		},
 		{
 			name:    "cannot parse go.mod",
 			fsys:    fstest.MapFS{ "go.mod": &fstest.MapFile{} },
-			wantErr: true,
-		},
-		{
-			name:     "cannot determine common root",
-			fsys:     fstest.MapFS{},
-			profiles: []*cover.Profile{
-				{ FileName: "foo" },
-				{ FileName: "bar" },
-			},
 			wantErr: true,
 		},
 	}
@@ -121,7 +112,7 @@ func TestGetModName(t *testing.T) {
 			fsys:     &mockFS{ FS: tt.fsys },
 			profiles: tt.profiles,
 		}
-		err := repGen.getModName()
+		err := repGen.getModName("go.mod")
 		if (err != nil) != tt.wantErr {
 			t.Errorf("getModeName(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}
@@ -131,110 +122,12 @@ func TestGetModName(t *testing.T) {
 	}
 }
 
-func TestFindCommonRoot(t *testing.T) {
-	tests := []struct{
-		name     string
-		profiles []*cover.Profile
-		want     string
-	}{
-		{
-			name:     "empty",
-			profiles: []*cover.Profile{},
-		},
-		{
-			name:     "shallow",
-			profiles: []*cover.Profile{{ FileName: "one" }},
-			want:     "one",
-		},
-		{
-			name:     "deep",
-			profiles: []*cover.Profile{
-				{ FileName: "one/two/three"           },
-				{ FileName: "one/two/three/four"      },
-				{ FileName: "one/two"                 },
-				{ FileName: "one/two/three/four/five" },
-			},
-			want: "one/two",
-		},
-	}
-	for _, tt := range tests {
-		repGen := &reportGenerator{ profiles: tt.profiles }
-		err := repGen.findCommonRoot()
-		if err != nil {
-			t.Errorf("findCommonRoot(%q) failed: %v", tt.name, err)
-		}
-		got := repGen.modName
-		if diff := cmp.Diff(tt.want, got); diff != "" {
-			t.Errorf("findCommonRoot(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
-	}
-}
-
-func TestGetSrcRoot(t *testing.T) {
-	tests := []struct{
-		name        string
-		fsys        fs.FS
-		modName     string
-		profilePath string
-		outRoot     string
-		profiles    []*cover.Profile
-		want        string
-		wantErr     bool
-	}{
-		{
-			name:    "go.mod in cwd",
-			fsys:     os.DirFS("."),
-			profiles: []*cover.Profile{{ FileName: "main.go" }},
-			want:     ".",
-		},
-		{
-			name:     "no go.mod in cwd",
-			fsys:     os.DirFS("."),
-			profiles: []*cover.Profile{{ FileName: "foo/bar.go" }},
-			wantErr:  true,
-		},
-		{
-			name:        "no go.mod in cwd, source root is sibling of profile path",
-			fsys:        fstest.MapFS{ "foo/bar/baz.go": &fstest.MapFile{}},
-			modName:     "foo",
-			profilePath: "foo/bar",
-			profiles:    []*cover.Profile{{ FileName: "foo/bar/baz.go" }},
-			want:        "foo",
-		},
-		{
-			name:        "no go.mod in cwd, source root is sibling of output path",
-			fsys:        fstest.MapFS{ "foo/bar/baz.go": &fstest.MapFile{}},
-			modName:     "foo",
-			profilePath: "boo/hoo",
-			outRoot:     "foo/bar",
-			profiles:    []*cover.Profile{{ FileName: "bar/baz.go" }},
-			want:        "foo",
-		},
-	}
-	for _, tt := range tests {
-		repGen := &reportGenerator{
-			fsys:        &mockFS{ FS: tt.fsys },
-			profilePath: tt.profilePath,
-			modName:     tt.modName,
-			outRoot:     tt.outRoot,
-			profiles:    tt.profiles,
-		}
-		err := repGen.getSrcRoot()
-		if (err != nil) != tt.wantErr {
-			t.Errorf("getSrcRoot(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, repGen.srcRoot); diff != "" {
-			t.Errorf("getSrcRoot(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
-	}
-}
-
 func TestWriteCovHTMLFiles(t *testing.T) {
-	tests := []struct{
+	tests := []struct {
 		name           string
 		fsys           fs.FS
 		modName        string
-		srcRoot        string
+		pkgDirCache    map[string]string
 		profiles       []*cover.Profile
 		mkdirAllFails  bool
 		writeFileFails bool
@@ -254,13 +147,13 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 						"  fmt.Println(\"hello world\")",
 						"}\n",
 					}, "\n"))}},
-			modName:   "foo",
-			srcRoot:   ".",
-			profiles:   []*cover.Profile{{
-				FileName: "foo/bar/baz.go",
-				Blocks:   []cover.ProfileBlock{{
+			modName:     "foo",
+			pkgDirCache: map[string]string{ "foo/bar": "foo/bar" },
+			profiles:    []*cover.Profile{{
+				FileName:  "foo/bar/baz.go",
+				Blocks: []cover.ProfileBlock{{
 					StartLine: 5,
-					StartCol: 13,
+					StartCol:  13,
 					EndLine:   7,
 					EndCol:    1,
 					NumStmt:   3,
@@ -300,36 +193,39 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				"</html>"}, "\n"),
 		},
 		{
-			name:     "source does not exist",
-			fsys:     fstest.MapFS{},
-			profiles: []*cover.Profile{{ FileName: "foo.go" }},
-			wantErr:  true,
+			name:        "source does not exist",
+			fsys:        fstest.MapFS{},
+			pkgDirCache: make(map[string]string),
+			profiles:    []*cover.Profile{{ FileName: "foo.go" }},
+			wantErr:     true,
 		},
 		{
 			name:          "MkdirAll fails",
-			fsys:          fstest.MapFS{ "foo.go": &fstest.MapFile{}},
+			fsys:          fstest.MapFS{ "foo.go": &fstest.MapFile{} },
+			pkgDirCache:   make(map[string]string),
 			profiles:      []*cover.Profile{{ FileName: "foo.go" }},
 			mkdirAllFails: true,
 			wantErr:       true,
 		},
 		{
 			name:           "WriteFile fails",
-			fsys:           fstest.MapFS{ "foo.go": &fstest.MapFile{}},
+			fsys:           fstest.MapFS{ "foo.go": &fstest.MapFile{} },
+			pkgDirCache:    make(map[string]string),
 			profiles:       []*cover.Profile{{ FileName: "foo.go" }},
 			writeFileFails: true,
 			wantErr:        true,
 		},
 	}
 	for _, tt := range tests {
-		mfs    := &mockFS{
+		mfs := &mockFS{
 			FS:             tt.fsys,
 			mkdirAllFails:  tt.mkdirAllFails,
 			writeFileFails: tt.writeFileFails,
 		}
 		repGen := &reportGenerator{
-			fsys:     mfs,
-			profiles: tt.profiles,
-			srcRoot:  tt.srcRoot,
+			fsys:        mfs,
+			profiles:    tt.profiles,
+			pkgDirCache: &pkgDirCache{ cache: tt.pkgDirCache },
 		}
 		err := repGen.writeCovHTMLFiles(&strings.Builder{})
 		if (err != nil) != tt.wantErr {
@@ -344,44 +240,39 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 func TestWriteIndexHTML(t *testing.T) {
 	tests := []struct{
 		name          string
-		modName       string
 		embeddedFiles fs.FS
+		modName       string
+		repoURL       string
 		createFails   bool
 		want          string
 		wantErr       bool
 	}{
 		{
 			name:          "succeeds",
-			modName:       "foo/bar/baz",
 			embeddedFiles: fstest.MapFS{ "index.html": &fstest.MapFile{ Data: []byte("ModName: {{ .ModName }}, ModURL: {{ .ModURL }}") }},
-			want:          "ModName: foo/bar/baz, ModURL: https://foo/bar/baz",
-		},
-		{
-			name:          "invalid module path",
-			modName:       "foo/bar/v1",
-			embeddedFiles: fstest.MapFS{ "index.html": &fstest.MapFile{ Data: []byte("ModName: {{ .ModName }}, ModURL: {{ .ModURL }}") }},
-			want:          "ModName: foo/bar/v1, ModURL: https://foo/bar/v1",
+			modName:       "github.com/foo/bar",
+			repoURL:       "https://github.com/foo/bar",
+			want:          "ModName: github.com/foo/bar, ModURL: https://github.com/foo/bar",
 		},
 		{
 			name:          "template.ParseFS fails because index file does not exist",
-			modName:       "foo/bar/baz",
 			embeddedFiles: fstest.MapFS{},
 			wantErr:       true,
 		},
 		{
 			name:          "Create fails",
-			modName:       "foo",
 			embeddedFiles: fstest.MapFS{ "index.html": &fstest.MapFile{} },
 			createFails:   true,
 			wantErr:       true,
 		},
 	}
 	for _, tt := range tests {
-		mfs    := &mockFS{ createFails: tt.createFails }
+		mfs := &mockFS{createFails: tt.createFails}
 		repGen := &reportGenerator{
 			fsys:          mfs,
-			embeddedFiles: tt.embeddedFiles,
 			modName:       tt.modName,
+			repoURL:       tt.repoURL,
+			embeddedFiles: tt.embeddedFiles,
 		}
 		err := repGen.writeIndexHTML("index.html")
 		if (err != nil) != tt.wantErr {
