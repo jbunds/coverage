@@ -34,8 +34,8 @@ Both iframes are hosted by a parent `index.html` file, and both HTML files can b
 
 When served via HTTP, buttons are available to:
 
-- <img alt="theme button" src="./theme.png" height="24"> toggles between **light** and **dark** themes
-- <img alt="expand button" src="./expand.png" height="24"> toggles between a fully-collapsed and fully-expanded directory tree
+- <img height="20" style="vertical-align: middle;" alt="theme button"  src="./theme.png" > toggles between **light** and **dark** themes
+- <img height="20" style="vertical-align: middle;" alt="expand button" src="./expand.png"> toggles between a fully-collapsed and fully-expanded directory tree
 
 ---
 
