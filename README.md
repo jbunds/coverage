@@ -18,7 +18,13 @@ Drop-in replacement for `go tool cover -html`.
 
 The `coverage` Go module renders an HTML file for each `*.go` source file listed in the specified Go test coverage profile file (typically created per an invocation of `go test -coverprofile <filename> ./...`, or similar).
 
-The program expects the specification of two flags with corresponding arguments: `-coverprofile` and `-path` (see [usage](#cli-usage) below).
+The program expects the specification of three flags with corresponding arguments (see [usage](#cli-usage) below):
+
+```
+-gomod         # path to the root go.mod file
+-coverprofile  # path to the Go test coverage profile file
+-path          # path where HTML files will be written
+```
 
 The generated HTML files are marked up to identify which lines are covered by tests ($\color{seagreen}{\text{green}}$), and which lines are not ($\color{red}{\text{red}}$). Each HTML file is written to the specified path (per the `-path` flag) following the same directory structure as the source from which the coverage profile file (per the `-coverprofile` flag) was created.
 
