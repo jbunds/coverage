@@ -33,6 +33,8 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/jbunds/coverage/progress"
+
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/cover"
@@ -258,6 +260,7 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath str
 	rg.pkgDirCache    = &pkgDirCache{ cache: make(map[string]string) }
 	allPkgPaths, err := rg.getAllPkgPaths(profilePath)
 	if err != nil { return err }
+
 	cfg := &packages.Config{
 		Mode:  packages.NeedFiles | packages.NeedModule | packages.NeedName,
 		Tests: false,
@@ -282,7 +285,10 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath str
 func (rg *reportGenerator) writeCovHTMLFiles(w stringWriter) error {
 	rg.cov = make(map[string]coverage, len(rg.profiles))
 
+	prog := progress.NewProgress(len(rg.profiles))
+
 	for _, profile := range rg.profiles { // calculate per-file coverage
+		prog.Update(profile.FileName)
 		var fileStatements, fileCovered int
 		for _, block := range profile.Blocks {
 			fileStatements += int(block.NumStmt)
@@ -313,6 +319,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(w stringWriter) error {
 			return fmt.Errorf("cannot write file %q: %w", outPath, err)
 		}
 	}
+	prog.Close()
 	return nil
 }
 
