@@ -105,7 +105,7 @@ etc...
 
 See https://jbunds.github.io/coverage/ for an example, which is not particularly interesting since it consists of just three Go source files which all reside in the repo's root directory.
 
-The well-known and relatively large (at 3+ million LoC) [Kubernetes][k8s] project was chosen for the demo to better illustrate the features and performance.
+The well-known and relatively large (500k+ LoC) [Kubernetes][k8s] project was chosen for the demo to better illustrate the features and performance.
 
 ---
 
