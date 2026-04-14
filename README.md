@@ -41,6 +41,8 @@ When served via HTTP, buttons are available to:
 
 #### User Interface
 
+[demo.webm](https://github.com/user-attachments/assets/a9b5a7e6-7450-4846-b251-f6fc5e2ed906)
+
 **light** theme:
 
 ![light theme][light theme]
