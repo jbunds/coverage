@@ -131,6 +131,8 @@ func main() {
 		os.Exit(2)
 	}
 
+	fmt.Fprintf(os.Stderr, "processing %d source files...", len(profiles))
+
 	repGen := &reportGenerator{
 		fsys:           &localFS{},
 		embeddedFiles:  embeddedFiles,
