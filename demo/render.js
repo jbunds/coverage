@@ -66,15 +66,45 @@ const recorder = await page.screencast({ path: OUTPUT })
 // the 100ms delay between "mousedown" and "mouseup" events is necessary to capture
 // at least one frame of the mouse pointer changing color when clicking an element
 
+// click the "k8s.io" subdir checkbox label
+const k8sIOLabel  = await treeFrame.waitForSelector('label[for="tree-item-1"]')
+const k8sIOCoords = await getAbsoluteCoords(treeFrame, k8sIOLabel)
+await cursor.moveTo(k8sIOCoords)                                     // move the cursor to the "k8s.io" subdir label, but don't immediately click it
+await setTimeout(1000)                                               // 1s pause before clicking
+await page.mouse.click(k8sIOCoords.x, k8sIOCoords.y, { delay: 100 }) // click on the middle of the label, with a 100ms delay between mousedown and mouseup events
+
+// click the "kubernetes" subdir checkbox label
+const k8sLabel = await treeFrame.waitForSelector('label[for="tree-item-816"]')
+await treeFrame.evaluate((el) => {
+  el.scrollIntoView({
+    behavior: 'smooth', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#behavior
+    block:    'center', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#block
+    inline:   'center'  // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#inline
+  })
+}, k8sLabel)
+await setTimeout(1000)
+const k8sCoords = await getAbsoluteCoords(treeFrame, k8sLabel)
+await cursor.moveTo(k8sCoords)                                   // mouse the cursor to the "kubernetes" label, but don't immediately click it
+await setTimeout(1000)                                           // 1s pause before clicking
+await page.mouse.click(k8sCoords.x, k8sCoords.y, { delay: 100 }) // click on the middle of the label, with a 100ms delay between mousedown and mouseup events
+
 // click the "pkg" subdir checkbox label
-const pkgLabel  = await treeFrame.waitForSelector('label[for="tree-item-133"]')
+const pkgLabel = await treeFrame.waitForSelector('label[for="tree-item-902"]')
+await treeFrame.evaluate((el) => {
+  el.scrollIntoView({
+    behavior: 'smooth', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#behavior
+    block:    'center', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#block
+    inline:   'center'  // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#inline
+  })
+}, pkgLabel)
+await setTimeout(1000)
 const pkgCoords = await getAbsoluteCoords(treeFrame, pkgLabel)
 await cursor.moveTo(pkgCoords)                                   // move the cursor to the "pkg" subdir label, but don't immediately click it
 await setTimeout(1000)                                           // 1s pause before clicking
 await page.mouse.click(pkgCoords.x, pkgCoords.y, { delay: 100 }) // click on the middle of the label, with a 100ms delay between mousedown and mouseup events
 
 // click the "kubelet" subdir checkbox label
-const kubeletLabel  = await treeFrame.waitForSelector('label[for="tree-item-527"]')
+const kubeletLabel = await treeFrame.waitForSelector('label[for="tree-item-1138"]')
 await treeFrame.evaluate((el) => {
   el.scrollIntoView({
     behavior: 'smooth', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#behavior
@@ -89,7 +119,7 @@ await setTimeout(1000)                                                   // 1s p
 await page.mouse.click(kubeletCoords.x, kubeletCoords.y, { delay: 100 }) // click the label with a 100ms delay between mousedown and mouseup events
 
 // click the "kubelet_network.go" link
-const goSrcLink = await treeFrame.waitForSelector('a[href="pkg/kubelet/kubelet_network.go.html"]')
+const goSrcLink = await treeFrame.waitForSelector('a[href="k8s.io/kubernetes/pkg/kubelet/kubelet_network.go.html"]')
 await treeFrame.evaluate((el) => {
   el.scrollIntoView({
     behavior: 'smooth', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#behavior
