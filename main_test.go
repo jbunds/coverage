@@ -14,7 +14,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/tools/cover"
 	"golang.org/x/tools/go/packages"
-	"gopkg.in/ini.v1"
 )
 
 // fakes and mocks
@@ -89,6 +88,15 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 	return m.writer.Write(p)
 }
 
+type mockIniFileConfig struct {
+	returnValue string
+	err         error
+}
+
+func (m *mockIniFileConfig) Value(_, _ string) (string, error) {
+	return m.returnValue, m.err
+}
+
 // tests
 
 func TestGetModName(t *testing.T) {
@@ -133,49 +141,19 @@ func TestGetRepoURL(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name    string
+		gitCfg  *mockIniFileConfig
 		fsys    fs.FS
 		want    string
 		wantErr bool
 	}{
 		{
-			name: "succeeds",
-			fsys: fstest.MapFS{
-				".git/config": &fstest.MapFile{
-					Data: []byte(strings.Join([]string{
-						"[remote \"origin\"]",
-						"	url = git@github.com:foo/bar.git",
-						"	fetch = +refs/heads/main:refs/remotes/origin/main",
-						"[branch \"main\"]",
-						"	remote = origin",
-						"	merge = refs/heads/main",
-					}, "\n")),
-				},
-			},
-			want: "https://github.com/foo/bar",
+			name:   "succeeds",
+			gitCfg: &mockIniFileConfig{ returnValue: "git@github.com:foo/bar.git" },
+			want:   "https://github.com/foo/bar",
 		},
 		{
-			name:    ".git/config does not exist",
-			fsys:    fstest.MapFS{},
-			wantErr: true,
-		},
-		{
-			name:    "invalid .git/config contents",
-			fsys:    fstest.MapFS{ ".git/config": &fstest.MapFile{ Data: []byte("bogus git config") }},
-			wantErr: true,
-		},
-		{
-			name: "missing url field in 'remote \"origin\" section",
-			fsys: fstest.MapFS{
-				".git/config": &fstest.MapFile{
-					Data: []byte(strings.Join([]string{
-						"[remote \"origin\"]",
-						"	fetch = +refs/heads/main:refs/remotes/origin/main",
-						"[branch \"main\"]",
-						"	remote = origin",
-						"	merge = refs/heads/main",
-					}, "\n")),
-				},
-			},
+			name:    "fails",
+			gitCfg:  &mockIniFileConfig{ err: fmt.Errorf("inifile.IniConfig.Value failed") },
 			wantErr: true,
 		},
 	}
@@ -183,15 +161,7 @@ func TestGetRepoURL(t *testing.T) {
 		repGen := &reportGenerator{
 			fsys: &mockFS{ FS: tt.fsys },
 		}
-		mockIniLoader := func(source any, _ ...any) (*ini.File, error) {
-			path := source.(string)
-			data, err := fs.ReadFile(repGen.fsys, path)
-			if err != nil {
-				return nil, err
-			}
-			return ini.Load(data)
-		}
-		err := repGen.getRepoURL(mockIniLoader, ".")
+		err := repGen.getRepoURL(tt.gitCfg)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("getRepoURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}

@@ -33,12 +33,11 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/graniticio/inifile"
 	"github.com/jbunds/coverage/progress"
-
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/cover"
-	"gopkg.in/ini.v1"
 )
 
 //go:embed html/* css/* img/*
@@ -96,8 +95,8 @@ type stringWriter interface { // because io.StringWriter is braindead (at least 
 	String() string
 }
 
-// wraps ini.Load for test injection
-type iniLoader func(source any, others ...any) (*ini.File, error)
+// wraps inifile.IniConfig.Value for test injection
+type iniFileValueGetter interface { Value(section, key string) (string, error) }
 
 // wraps packages.Load for test injection
 type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
@@ -146,26 +145,33 @@ func main() {
 		os.Exit(3)
 	}
 
-	if err := repGen.getRepoURL(ini.Load, goModFile); err != nil { // sets repGen.repoURL
-		fmt.Fprintf(os.Stderr, "cannot determine repo URL: %v\n", err)
+	var gitConfig *inifile.IniConfig
+	gitConfigPath := filepath.Join(filepath.Dir(goModFile), ".git", "config")
+	if gitConfig, err = inifile.NewIniConfigFromPath(gitConfigPath); err != nil {
+		fmt.Fprintf(os.Stderr, "cannot parse Git config (%q): %v\n", gitConfigPath, err)
 		os.Exit(4)
+	}
+
+	if err := repGen.getRepoURL(gitConfig); err != nil { // sets repGen.repoURL
+		fmt.Fprintf(os.Stderr, "cannot determine repo URL: %v\n", err)
+		os.Exit(5)
 	}
 
 	if err := repGen.primePkgDirCache(packages.Load, profilePath); err != nil { // sets repGen.pkgDirCache
 		fmt.Fprintf(os.Stderr, "cannot prime package directory cache: %v\n", err)
-		os.Exit(5)
+		os.Exit(6)
 	}
 
 	if err := repGen.writeCovHTMLFiles(&strings.Builder{}); err != nil { // sets repGen.cov
 		fmt.Fprintf(os.Stderr, "cannot write HTML coverage files: %v\n", err)
-		os.Exit(6)
+		os.Exit(7)
 	}
 
 	repGen.printCoverage() // requires repGen.cov
 
 	if err := repGen.writeIndexHTML(indexHTML); err != nil { // requires repGen.modName
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", indexHTML, err)
-		os.Exit(7)
+		os.Exit(8)
 	}
 
 	tb := &treeBuilder{
@@ -176,17 +182,17 @@ func main() {
 
 	if repGen.maxWidth, err = tb.writeTreeHTML(); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", treeHTML, err)
-		os.Exit(8)
+		os.Exit(9)
 	}
 
 	if err := repGen.writeStyleCSS(styleCSS); err != nil { // requires repGen.maxWidth
 		fmt.Fprintf(os.Stderr, "cannot write %s: %v\n", styleCSS, err)
-		os.Exit(9)
+		os.Exit(10)
 	}
 
 	if err := repGen.writeAncillaryFiles(); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write ancillary files: %v\n", err)
-		os.Exit(10)
+		os.Exit(11)
 	}
 }
 
@@ -200,22 +206,9 @@ func (rg *reportGenerator) getModName(goModFile string) error {
 	return nil
 }
 
-// getGitRemoteURL determines the Git URL for the remote origin tracked by the current branch
-func getGitRemoteURL(iniLoader iniLoader, goModFile string) (string, error) {
-	cfg, err := iniLoader(filepath.Join(filepath.Dir(goModFile), ".git", "config"))
-	if err != nil { return "", err }
-
-	section := cfg.Section(`remote "origin"`)
-	url     := section.Key("url").String()
-
-	if url == "" { return "", fmt.Errorf("cannot determine Git remote URL") }
-
-	return url, nil
-}
-
 // getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML
-func (rg *reportGenerator) getRepoURL(iniLoader iniLoader, goModFile string) error {
-	gitRemoteURL, err := getGitRemoteURL(iniLoader, goModFile)
+func (rg *reportGenerator) getRepoURL(gitConfig iniFileValueGetter) error {
+	gitRemoteURL, err := gitConfig.Value(`remote "origin"`, "url")
 	if err != nil { return err }
 	httpURL := gitRemoteURL
 	httpURL  = strings.TrimPrefix(httpURL, "ssh://")
