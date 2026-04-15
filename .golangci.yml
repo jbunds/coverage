@@ -3,6 +3,7 @@
 version: "2"
 run:
   timeout: 1m
+
 linters:
   default: standard # https://github.com/golangci/golangci-lint/blob/60180aacaa642385a3f683875507013b43214edf/.golangci.reference.yml#L14
   enable:
@@ -14,3 +15,8 @@ linters:
     - godoclint
     - gosec
     - revive
+  settings:
+    errcheck:
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf

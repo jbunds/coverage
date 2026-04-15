@@ -11,7 +11,7 @@ import (
 // flags parses command line flags
 func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, err error) {
 	fs.Usage = func() {
-		fmt.Fprintf(fs.Output(), "%s usage:\n\n", filepath.Base(fs.Name())) //nolint:errcheck // such usage is documented in the standard library: https://pkg.go.dev/flag#pkg-variables
+		fmt.Fprintf(fs.Output(), "%s usage:\n\n", filepath.Base(fs.Name()))
 		fs.PrintDefaults()
 		fmt.Fprintln(fs.Output()) //nolint:errcheck
 	}

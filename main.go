@@ -164,7 +164,7 @@ func main() {
 		os.Exit(6)
 	}
 
-	if err := repGen.writeCovHTMLFiles(&strings.Builder{}); err != nil { // sets repGen.cov
+	if err := repGen.writeCovHTMLFiles(&strings.Builder{}, os.Stderr); err != nil { // sets repGen.cov
 		fmt.Fprintf(os.Stderr, "cannot write HTML coverage files: %v\n", err)
 		os.Exit(7)
 	}
@@ -277,10 +277,10 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath str
 
 // writeCovHTMLFiles calculates per-file coverage percentages and writes a
 // *.go.html file for each Go source file listed in the coverage profile file
-func (rg *reportGenerator) writeCovHTMLFiles(w stringWriter) error {
+func (rg *reportGenerator) writeCovHTMLFiles(w stringWriter, progressOutput io.Writer) error {
 	rg.cov = make(map[string]coverage, len(rg.profiles))
 
-	prog := progress.NewProgress(len(rg.profiles))
+	prog := progress.NewProgress(len(rg.profiles), progressOutput)
 
 	for _, profile := range rg.profiles { // calculate per-file coverage
 		prog.Update(profile.FileName)
