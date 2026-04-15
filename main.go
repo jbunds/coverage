@@ -19,6 +19,7 @@ package main
 import (
 	"bufio"
 	"cmp"
+	"context"
 	"embed"
 	"flag"
 	"fmt"
@@ -28,6 +29,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -38,6 +40,7 @@ import (
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/cover"
+	"golang.org/x/sync/errgroup"
 )
 
 //go:embed html/* css/* img/*
@@ -66,6 +69,11 @@ type coverage struct {
 	total   int
 }
 
+type workUnit struct {
+	profile *cover.Profile
+	outPath string
+}
+
 // wrappers to facilitate test injection
 
 // writeFS defines an interface that extends fs.FS with writing capabilities.
@@ -88,12 +96,6 @@ func (lfs *localFS) Open     (name string) (fs.File,                      error)
 func (lfs *localFS) Create   (name string) (io.WriteCloser,               error) { return os.Create   (filepath.Clean(name)) }
 func (lfs *localFS) MkdirAll (path string, perm fs.FileMode)              error  { return os.MkdirAll (filepath.Clean(path), perm) }
 func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error  { return os.WriteFile(name,          data,  perm) }
-
-type stringWriter interface { // because io.StringWriter is braindead (at least for my purposes)
-	io.Writer
-	Reset()
-	String() string
-}
 
 // wraps inifile.IniConfig.Value for test injection
 type iniFileValueGetter interface { Value(section, key string) (string, error) }
@@ -166,7 +168,7 @@ func main() {
 		os.Exit(6)
 	}
 
-	if err := repGen.writeCovHTMLFiles(&strings.Builder{}, os.Stderr); err != nil { // sets repGen.cov
+	if err := repGen.writeCovHTMLFiles(os.Stderr); err != nil { // sets repGen.cov
 		fmt.Fprintf(os.Stderr, "cannot write HTML coverage files: %v\n", err)
 		os.Exit(7)
 	}
@@ -279,49 +281,86 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath str
 
 // writeCovHTMLFiles calculates per-file coverage percentages and writes a
 // *.go.html file for each Go source file listed in the coverage profile file
-func (rg *reportGenerator) writeCovHTMLFiles(w stringWriter, progressOutput io.Writer) error {
+func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 	rg.cov = make(map[string]coverage, len(rg.profiles))
-
 	prog := progress.NewProgress(len(rg.profiles), progressOutput)
 
-	for _, profile := range rg.profiles { // calculate per-file coverage
-		prog.Update(profile.FileName)
-		var fileStatements, fileCovered int
-		for _, block := range profile.Blocks {
-			fileStatements += int(block.NumStmt)
-			if block.Count > 0 {
-				fileCovered += int(block.NumStmt)
-			}
-		}
-
-		rg.totalCovered    += fileCovered
-		rg.totalStatements += fileStatements
-
-		rg.cov[profile.FileName] = coverage{
-			covered: fileCovered,
-			total:   fileStatements,
-		}
-
-		w.Reset()
-
-		if err := rg.buildCovHTML(w, profile, profile.FileName); err != nil {
-			return fmt.Errorf("cannot write HTML file for %s: %w", profile.FileName, err)
-		}
-
+	// optimization to move the relatively heavy mkdir syscalls out of the concurrent loop
+	units        := make([]workUnit, 0, len(rg.profiles))
+	dirsToCreate := make(map[string]struct{})
+	for _, profile := range rg.profiles {
 		outPath := filepath.Clean(filepath.Join(rg.outRoot, profile.FileName + ".html"))
-		if err := rg.fsys.MkdirAll(filepath.Dir(outPath), 0700); err != nil {
-			return fmt.Errorf("cannot create directory: %w", err)
-		}
-		if err := rg.fsys.WriteFile(outPath, []byte(w.String()), 0600); err != nil {
-			return fmt.Errorf("cannot write file %q: %w", outPath, err)
+		units    = append(units, workUnit{
+			profile: profile,
+			outPath: outPath,
+		})
+		dirsToCreate[filepath.Dir(outPath)] = struct{}{}
+	}
+	for dir := range dirsToCreate {
+		if err := rg.fsys.MkdirAll(dir, 0700); err != nil {
+			return fmt.Errorf("cannot create directory %q: %w", dir, err)
 		}
 	}
+	
+	var mu sync.Mutex // protects rg.cov and coverage totals computed concurrently
+	group, ctx := errgroup.WithContext(context.Background())
+	group.SetLimit(runtime.NumCPU()) // full send
+
+	for _, unit := range units {
+		group.Go(func() error {
+			select {
+			case <-ctx.Done(): // if another worker failed...
+				return ctx.Err() // ...stop immediately
+			default:
+			}
+
+			var fileStatements, fileCovered int
+			for _, block := range unit.profile.Blocks {
+				fileStatements += int(block.NumStmt)
+				if block.Count > 0 {
+					fileCovered += int(block.NumStmt)
+				}
+			}
+
+			var buf strings.Builder
+			if err := rg.buildCovHTML(ctx, &buf, unit.profile, unit.profile.FileName); err != nil {
+				return fmt.Errorf("cannot build HTML for %q: %w", unit.profile.FileName, err)
+			}
+
+			// WriteFile doesn't support passing a context, but we check the context above to prevent starting new I/O if any worker in the group fails
+			if err := rg.fsys.WriteFile(unit.outPath, []byte(buf.String()), 0600); err != nil {
+				return fmt.Errorf("cannot write HTML file for %q: %w", unit.profile.FileName, err)
+			}
+
+			mu.Lock()
+			rg.totalCovered    += fileCovered
+			rg.totalStatements += fileStatements
+			rg.cov[unit.profile.FileName] = coverage{
+				covered: fileCovered,
+				total:   fileStatements,
+			}
+			mu.Unlock()
+
+			prog.Update(unit.profile.FileName)
+
+			return nil
+		})
+	}
+
+	if err := group.Wait(); err != nil { return err }
+	
 	prog.Close()
+
 	return nil
 }
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage
-func (rg *reportGenerator) buildCovHTML(w io.Writer, profile *cover.Profile, srcPath string) error {
+func (rg *reportGenerator) buildCovHTML(ctx context.Context, w io.Writer, profile *cover.Profile, srcPath string) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
 	pkgPath  := filepath.Dir (profile.FileName)
 	fileName := filepath.Base(profile.FileName)
 
@@ -336,6 +375,11 @@ func (rg *reportGenerator) buildCovHTML(w io.Writer, profile *cover.Profile, src
 
 	pos := 0
 	for _, b := range profile.Boundaries(src) {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		chunk := string(src[pos:b.Offset])
 		if b.Start {
 			class := "miss"

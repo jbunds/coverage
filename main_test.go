@@ -401,7 +401,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 			profiles:    tt.profiles,
 			pkgDirCache: &pkgDirCache{ cache: tt.pkgDirCache },
 		}
-		err := repGen.writeCovHTMLFiles(&strings.Builder{}, io.Discard)
+		err := repGen.writeCovHTMLFiles(io.Discard)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("writeCovHTMLFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}
