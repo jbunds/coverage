@@ -105,6 +105,7 @@ type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Packa
 type reportGenerator struct {
 	fsys            writeFS
 	embeddedFiles   fs.FS
+	modFile         string
 	modName         string
 	repoURL         string
 	pkgDirCache     *pkgDirCache
@@ -136,6 +137,7 @@ func main() {
 	repGen := &reportGenerator{
 		fsys:           &localFS{},
 		embeddedFiles:  embeddedFiles,
+		modFile:        goModFile,
 		outRoot:        filepath.Clean(outRoot),
 		profilePath:    filepath.Clean(profilePath),
 		profiles:       profiles,
@@ -259,8 +261,8 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath str
 	cfg := &packages.Config{
 		Mode:  packages.NeedFiles | packages.NeedModule | packages.NeedName,
 		Tests: false,
+		Dir:   filepath.Dir(rg.modFile),
 	}
-
 	pkgs, err := pkgLoader(cfg, allPkgPaths...)
 	if err != nil { return err }
 
