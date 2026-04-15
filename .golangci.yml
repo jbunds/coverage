@@ -20,3 +20,4 @@ linters:
       exclude-functions:
         - fmt.Fprint
         - fmt.Fprintf
+        - fmt.Fprintln
