@@ -4,9 +4,18 @@
 ├── css
 │   ├── style.css
 │   └── tree.css
+├── demo
+│   ├── bunch.sh
+│   ├── demo.sh
+│   ├── eslint.config.js
+│   ├── helpers.js
+│   ├── package-lock.json
+│   ├── package.json
+│   └── render.js
 ├── doc
 │   ├── code_stats.md
 │   └── structure.md
+├── expand.png
 ├── flags_test.go
 ├── flags.go
 ├── go.mod
@@ -19,11 +28,20 @@
 ├── LICENSE
 ├── main_test.go
 ├── main.go
+├── package-lock.json
+├── package.json
+├── progress
+│   ├── progress_test_stub.go
+│   └── progress.go
 ├── README.md
 ├── screenshots
 │   ├── dark_theme.jpg
 │   └── light_theme.jpg
 ├── stylelint.config.mjs
+├── theme.png
 ├── tree_test.go
-└── tree.go
+├── tree.go
+└── validate.js
+
+8 directories, 35 files
 ```
