@@ -37,6 +37,8 @@ When served via HTTP, buttons are available to:
 - <img height="20" style="vertical-align: middle;" alt="theme button"  src="./theme.png" > toggle between **light** and **dark** themes
 - <img height="20" style="vertical-align: middle;" alt="expand button" src="./expand.png"> toggle between a fully-collapsed and fully-expanded directory tree
 
+See https://deepwiki.com/jbunds/coverage for more technical details.
+
 ---
 
 #### User Interface
