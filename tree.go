@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"path/filepath"
 	"strings"
+
+	"github.com/jbunds/coverage/progress"
 )
 
 // treeBuilder stores state during processEntry recursion
@@ -32,8 +34,8 @@ type htmlBuilder struct {
 }
 
 // writeTreeHTML writes HTML to the specified treeHTML file
-func (tb *treeBuilder) writeTreeHTML() (int, error) {
-	html, err := tb.genHTML()
+func (tb *treeBuilder) writeTreeHTML(progressOutput io.Writer) (int, error) {
+	html, err := tb.genHTML(progressOutput)
 	if err != nil { return 0, err }
 
 	treeFile, err := tb.fsys.Create(filepath.Clean(filepath.Join(tb.outRoot, treeHTML)))
@@ -48,9 +50,11 @@ func (tb *treeBuilder) writeTreeHTML() (int, error) {
 }
 
 // genHTML reads a given directory to process its contents and generate HTML content
-func (tb *treeBuilder) genHTML() (string, error) {
+func (tb *treeBuilder) genHTML(progressOutput io.Writer) (string, error) {
 	entries, err := fs.ReadDir(tb.fsys, tb.outRoot)
 	if err != nil { return "", err }
+
+	prog := progress.NewProgress(len(entries), progressOutput)
 
 	var sb strings.Builder
 	sb.WriteString("<ul class=\"tree\">\n")
@@ -58,10 +62,13 @@ func (tb *treeBuilder) genHTML() (string, error) {
 	for _, entry := range entries {
 		res, err := tb.processEntry(".", entry, 1)
 		if err != nil { return "", err }
+		prog.Update(entry.Name())
 		sb.WriteString(res.html)
 	}
 
 	sb.WriteString("</ul>\n")
+
+	prog.Close()
 
 	return sb.String(), nil
 }

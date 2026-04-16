@@ -22,7 +22,7 @@ func TestWriteTreeHTML(t *testing.T) {
 	}{
 		{
 			name: "succeeds",
-			fsys: fstest.MapFS{ "foo.go.html": &fstest.MapFile{}},
+			fsys: fstest.MapFS{ "foo.go.html": &fstest.MapFile{} },
 			want: 17, // len("foo.go") == 6 + indent == 1 + 10 == 17
 		},
 		{
@@ -33,7 +33,7 @@ func TestWriteTreeHTML(t *testing.T) {
 		},
 		{
 			name:        "Create fails",
-			fsys:        fstest.MapFS{},
+			fsys:        fstest.MapFS{ "bar.go.html": &fstest.MapFile{} },
 			createFails: true,
 			wantErr:     true,
 		},
@@ -48,7 +48,7 @@ func TestWriteTreeHTML(t *testing.T) {
 			fsys:    mfs,
 			outRoot: ".",
 		}
-		got, err := tb.writeTreeHTML()
+		got, err := tb.writeTreeHTML(io.Discard)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("writeTreeHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}
@@ -122,7 +122,7 @@ func TestGenHTML(t *testing.T) {
 			cov:     tt.cov,
 			outRoot: ".",
 		}
-		got, err := tb.genHTML()
+		got, err := tb.genHTML(io.Discard)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("genHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}

@@ -186,7 +186,7 @@ func main() {
 		cov:     repGen.cov,
 	}
 
-	if repGen.maxWidth, err = tb.writeTreeHTML(); err != nil {
+	if repGen.maxWidth, err = tb.writeTreeHTML(os.Stderr); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", treeHTML, err)
 		os.Exit(9)
 	}
@@ -283,10 +283,10 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath str
 // *.go.html file for each Go source file listed in the coverage profile file
 func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 	rg.cov = make(map[string]coverage, len(rg.profiles))
-	prog := progress.NewProgress(len(rg.profiles), progressOutput)
+	units := make([]workUnit, 0, len(rg.profiles))
+	prog  := progress.NewProgress(len(rg.profiles), progressOutput)
 
-	// optimization to move the relatively heavy mkdir syscalls out of the concurrent loop
-	units        := make([]workUnit, 0, len(rg.profiles))
+	// keep the relatively heavy mkdir syscalls outside of the concurrent loop
 	dirsToCreate := make(map[string]struct{})
 	for _, profile := range rg.profiles {
 		outPath := filepath.Clean(filepath.Join(rg.outRoot, profile.FileName + ".html"))
@@ -297,19 +297,20 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 		dirsToCreate[filepath.Dir(outPath)] = struct{}{}
 	}
 	for dir := range dirsToCreate {
+		prog.Update("creating " + dir)
 		if err := rg.fsys.MkdirAll(dir, 0700); err != nil {
 			return fmt.Errorf("cannot create directory %q: %w", dir, err)
 		}
 	}
 	
-	var mu sync.Mutex // protects rg.cov and coverage totals computed concurrently
+	var mu sync.Mutex // guards concurrent access to rg.cov and the computed coverage totals
 	group, ctx := errgroup.WithContext(context.Background())
 	group.SetLimit(runtime.NumCPU()) // full send
 
 	for _, unit := range units {
 		group.Go(func() error {
 			select {
-			case <-ctx.Done(): // if another worker failed...
+			case <-ctx.Done(): // if any of the workers fails...
 				return ctx.Err() // ...stop immediately
 			default:
 			}
@@ -322,12 +323,13 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 				}
 			}
 
+			prog.Update(unit.profile.FileName)
+
 			var buf strings.Builder
 			if err := rg.buildCovHTML(ctx, &buf, unit.profile, unit.profile.FileName); err != nil {
 				return fmt.Errorf("cannot build HTML for %q: %w", unit.profile.FileName, err)
 			}
 
-			// WriteFile doesn't support passing a context, but we check the context above to prevent starting new I/O if any worker in the group fails
 			if err := rg.fsys.WriteFile(unit.outPath, []byte(buf.String()), 0600); err != nil {
 				return fmt.Errorf("cannot write HTML file for %q: %w", unit.profile.FileName, err)
 			}
@@ -341,16 +343,12 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 			}
 			mu.Unlock()
 
-			prog.Update(unit.profile.FileName)
-
 			return nil
 		})
 	}
 
 	if err := group.Wait(); err != nil { return err }
-	
 	prog.Close()
-
 	return nil
 }
 
