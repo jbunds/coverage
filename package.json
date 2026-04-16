@@ -1,6 +1,6 @@
 {
   "name": "coverage",
-	"type": "module",
+  "type": "module",
   "scripts": {
     "validate-action": "action-validator action.yml"
   },
