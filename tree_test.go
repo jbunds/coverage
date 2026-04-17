@@ -8,6 +8,7 @@ import (
 	"testing/fstest"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/jbunds/coverage/progress"
 )
 
 func TestWriteTreeHTML(t *testing.T) {
@@ -171,7 +172,8 @@ func TestProcessEntry(t *testing.T) {
 		if err != nil {
 			t.Errorf("fs.Stat failed unexpectedly: %v", err)
 		}
-		got, err := tb.processEntry(".", fs.FileInfoToDirEntry(info), 1)
+		prog := progress.NewProgress(0, io.Discard)
+		got, err := tb.processEntry(".", fs.FileInfoToDirEntry(info), 1, prog, 0)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("processEntry(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 		}

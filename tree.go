@@ -54,15 +54,15 @@ func (tb *treeBuilder) genHTML(progressOutput io.Writer) (string, error) {
 	entries, err := fs.ReadDir(tb.fsys, tb.outRoot)
 	if err != nil { return "", err }
 
-	prog := progress.NewProgress(len(entries), progressOutput)
+	prog        := progress.NewProgress(0, progressOutput)
+	childBudget := prog.InitialBudget() / uint64(len(entries))
 
 	var sb strings.Builder
 	sb.WriteString("<ul class=\"tree\">\n")
 
 	for _, entry := range entries {
-		res, err := tb.processEntry(".", entry, 1)
+		res, err := tb.processEntry("", entry, 1, prog, childBudget)
 		if err != nil { return "", err }
-		prog.Update(entry.Name())
 		sb.WriteString(res.html)
 	}
 
@@ -74,18 +74,20 @@ func (tb *treeBuilder) genHTML(progressOutput io.Writer) (string, error) {
 }
 
 // processEntry recursively processes a directory's contents to produce an entryResult for each relevant directory entry encountered
-func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, indent int) (entryResult, error) {
+func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, indent int, prog *progress.Progress, budget uint64) (entryResult, error) {
 	isDir        := entry.IsDir()
 	isTargetFile := !isDir && strings.HasSuffix(entry.Name(), ".go.html")
 
-	if !isDir && !isTargetFile { return entryResult{}, nil }
+	if !isDir && !isTargetFile {
+		prog.Report(budget, "") // consume budget even if the file is not processed, so that progress always ultimately adds up to 100%
+		return entryResult{}, nil
+	}
 
-	src      := strings.TrimSuffix(entry.Name(), ".html")
-	srcPath  := filepath.Clean(filepath.Join(relParentPath, src))
+	src      := strings.TrimSuffix(entry.Name(), ".html")         // normalized filename
+	srcPath  := filepath.Clean(filepath.Join(relParentPath, src)) // package-normalized path
 	htmlPath := filepath.Clean(filepath.Join(relParentPath, entry.Name()))
 
-	width    := indent + len(src)
-
+	width := indent + len(src)
 	if isDir { width += 2 } // account for the folder icon emoji
 	if width > tb.maxWidth { tb.maxWidth = width }
 
@@ -100,12 +102,23 @@ func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, ind
 		var subDirSB strings.Builder
 		var dirCovered, dirStatements int
 
-		for _, subEntry := range subDirEntries {
-			res, err := tb.processEntry(htmlPath, subEntry, indent + 2) // indent by an additional two spaces each time we recurse into a subdirectory
-			if err != nil { return entryResult{}, err }
-			subDirSB.WriteString(res.html)
-			dirCovered    += res.covered
-			dirStatements += res.total
+		if len(subDirEntries) > 0 { // split this subdir's budget up among its children
+			subDirChildBudget := budget / uint64(len(subDirEntries))
+			remainder         := budget % uint64(len(subDirEntries))
+
+			for i, subEntry := range subDirEntries {
+				b := subDirChildBudget
+				if i == len(subDirEntries)-1 { b += remainder } // the last child takes on the remainder
+
+				res, err := tb.processEntry(srcPath, subEntry, indent + 2, prog, b) // indent by an additional two spaces each time we recurse into a subdirectory
+				if err != nil { return entryResult{}, err }
+
+				subDirSB.WriteString(res.html)
+				dirCovered    += res.covered
+				dirStatements += res.total
+			}
+		} else {
+			prog.Report(budget, srcPath)
 		}
 
 		hb := &htmlBuilder{
@@ -119,6 +132,8 @@ func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, ind
 			covered: dirCovered,
 			total:   dirStatements}, nil
 	}
+
+	prog.Report(budget, srcPath)
 
 	cov     := tb.cov[srcPath]
 	percent := 0.0

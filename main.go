@@ -284,7 +284,7 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath str
 func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 	rg.cov = make(map[string]coverage, len(rg.profiles))
 	units := make([]workUnit, 0, len(rg.profiles))
-	prog  := progress.NewProgress(len(rg.profiles), progressOutput)
+	prog  := progress.NewProgress(uint64(len(rg.profiles)), progressOutput)
 
 	// keep the relatively heavy mkdir syscalls outside of the concurrent loop
 	dirsToCreate := make(map[string]struct{})
@@ -297,7 +297,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 		dirsToCreate[filepath.Dir(outPath)] = struct{}{}
 	}
 	for dir := range dirsToCreate {
-		prog.Update("creating " + dir)
+		prog.Report(1, "creating " + dir) // TODO(jeff): calculate more accurate weight
 		if err := rg.fsys.MkdirAll(dir, 0700); err != nil {
 			return fmt.Errorf("cannot create directory %q: %w", dir, err)
 		}
@@ -323,7 +323,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 				}
 			}
 
-			prog.Update(unit.profile.FileName)
+			prog.Report(1, unit.profile.FileName) // TODO(jeff): calculate more accurate weight
 
 			var buf strings.Builder
 			if err := rg.buildCovHTML(ctx, &buf, unit.profile, unit.profile.FileName); err != nil {
