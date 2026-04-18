@@ -69,6 +69,7 @@ type coverage struct {
 	total   int
 }
 
+// workUnit represents a unit of work to be concurrently performed: the generation of an HTML file for a Go source file's coverage profile
 type workUnit struct {
 	profile *cover.Profile
 	outPath string
@@ -154,7 +155,7 @@ func main() {
 	var gitConfig *inifile.IniConfig
 	gitConfigPath := filepath.Join(filepath.Dir(goModFile), ".git", "config")
 	if gitConfig, err = inifile.NewIniConfigFromPath(gitConfigPath); err != nil {
-		fmt.Fprintf(os.Stderr, "cannot parse Git config (%q): %v\n", gitConfigPath, err)
+		fmt.Fprintf(os.Stderr, "cannot parse Git config file (%q): %v\n", gitConfigPath, err)
 		os.Exit(4)
 	}
 
@@ -279,8 +280,7 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath str
 	return nil
 }
 
-// writeCovHTMLFiles calculates per-file coverage percentages and writes a
-// *.go.html file for each Go source file listed in the coverage profile file
+// writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the coverage profile file
 func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 	rg.cov = make(map[string]coverage, len(rg.profiles))
 	units := make([]workUnit, 0, len(rg.profiles))
