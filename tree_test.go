@@ -152,7 +152,7 @@ func TestProcessEntry(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name:     "neither DirEntry nor *.go.teml file",
+			name:     "neither DirEntry nor *.go.html file",
 			fileName: "file",
 			file:     &fstest.MapFile{},
 			fsys:     fstest.MapFS{ "file": &fstest.MapFile{} },
