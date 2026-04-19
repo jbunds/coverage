@@ -43,7 +43,7 @@ See also [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jbun
 
 #### User Interface
 
-[demo.webm](https://github.com/user-attachments/assets/a9b5a7e6-7450-4846-b251-f6fc5e2ed906)
+[demo_14.webm](https://github.com/user-attachments/assets/6a99f2f8-d176-467e-b7fa-bee467f8ac55)
 
 **light** theme:
 
