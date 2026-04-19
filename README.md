@@ -16,7 +16,7 @@
 
 Drop-in replacement for `go tool cover -html`.
 
-The `coverage` Go module renders an HTML file for each `*.go` source file listed in the specified Go test coverage profile file (typically created per an invocation of `go test -coverprofile <filename> ./...`, or similar).
+The `coverage` Go module renders an HTML file for each `*.go` source file listed in the specified Go test coverage profile file (typically created per an invocation of `go test -coverprofile <filename>`).
 
 The program expects the specification of three flags with corresponding arguments (see [usage](#cli-usage) below):
 
