@@ -9,7 +9,7 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Wed Apr 15 20:38:01 CEST 2026
+Sun Apr 19 11:39:05 CEST 2026
 ```
 
 ```
@@ -33,16 +33,16 @@ action.yml                                         64        7         8       4
 .github/actions/setup-node/action.yml              19        2         1       16          0             0.00
 .github/dependabot.yml                             12        1         1       10          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Go                                        8      2106      185        71     1850        290           135.58
-(ULOC)                                           1177
+Go                                        8      2220      194        93     1933        301           138.02
+(ULOC)                                           1242
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-main_test.go                                      711       30         2      679         76            11.19
-main.go                                           495       70        48      377         92            24.40
-tree_test.go                                      232        7         0      225         28            12.44
-tree.go                                           190       32        11      147         32            21.77
-flags_test.go                                     180        4         0      176         24            13.64
-progress/progress.go                              137       27         9      101         15            14.85
-progress/progress_test.go                         121       13         0      108         14            12.96
+main_test.go                                      718       29         2      687         69            10.04
+main.go                                           539       72        49      418         99            23.68
+tree_test.go                                      249        7         0      242         28            11.57
+tree.go                                           210       38         9      163         36            22.09
+progress/progress.go                              199       28        32      139         29            20.86
+flags_test.go                                     148        3         0      145         17            11.72
+progress/progress_test.go                         117       15         0      102         14            13.73
 flags.go                                           40        2         1       37          9            24.32
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 JavaScript                                5       333       33        51      249          9            19.87
@@ -60,14 +60,14 @@ CSS                                       2       254       38         1      21
 css/style.css                                     135       18         0      117          0             0.00
 css/tree.css                                      119       20         1       98          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                                    27      3121      307       159     2655        299           155.45
+Total                                    27      3235      316       181     2738        310           157.89
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Unique Lines of Code (ULOC)                      1855
+Unique Lines of Code (ULOC)                      1920
 DRYness %                                        0.59
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $75,311
-Estimated Schedule Effort (organic) 5.15 months
-Estimated People Required (organic) 1.30
-Processed 95508 bytes, 0.096 megabytes (SI)
+Estimated Cost to Develop (organic) $77,785
+Estimated Schedule Effort (organic) 5.21 months
+Estimated People Required (organic) 1.33
+Processed 101700 bytes, 0.102 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```
