@@ -49,7 +49,6 @@ export async function installMousePointer (page) {
     window.mouseX = initialX
     window.mouseY = initialY
     const updatePos = (e) => { window.mouseX = e.clientX; window.mouseY = e.clientY }
-    window.addEventListener('scroll',    updatePos)
     window.addEventListener('mousemove', updatePos)
     window.addEventListener('mousedown', setGray)
     window.addEventListener('mouseup',   setBlack)
@@ -82,7 +81,6 @@ export async function registerListeners (page) {
         window.parent.mouseX = e.clientX + rect.left
         window.parent.mouseY = e.clientY + rect.top
       }
-      window.addEventListener('scroll',    updateParentPos)
       window.addEventListener('mousemove', updateParentPos)
       window.addEventListener('mousedown', () => { forwardEvent('down') })
       window.addEventListener('mouseup',   () => { forwardEvent('up'  ) })
