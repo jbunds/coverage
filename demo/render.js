@@ -26,9 +26,9 @@ const cursor = new GhostCursor(page, {
     y: VIEWPORT.height / 2,
   },
   defaultOptions: {
-    paddingPercentage:  100,
-    moveDelay:          1000,
-    overshootThreshold: 10000,
+    paddingPercentage:  100,   // move the mouse pointer to the center of the element
+    moveDelay:          1000,  // one-second delay after moving the mouse
+    overshootThreshold: 10000, // distance between current location and destination which triggers overshoot to occur
   }
 })
 
