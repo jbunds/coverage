@@ -44,9 +44,7 @@ func (tb *treeBuilder) writeTreeHTML(progressOutput io.Writer) (int, error) {
 	if _, err := fmt.Fprint(treeFile, html); err != nil { return 0, err }
 	if    err := postamble( treeFile);       err != nil { return 0, err }
 
-	// +10 accounts for the coverage percentage width (8ch) plus a 2ch gap,
-	// to cohere with "margin-right: 10ch;" in tree.css
-	return tb.maxWidth + 10, treeFile.Close()
+	return tb.maxWidth + 10, treeFile.Close() // +10 == len("100.0%") + 2ch (gap) to cohere with "margin-right: 10ch;" in tree.css
 }
 
 // genHTML reads a given directory to process its contents and generate HTML content

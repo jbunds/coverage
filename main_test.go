@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -124,16 +123,19 @@ func TestGetModName(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		repGen := &reportGenerator{
-			fsys: &mockFS{ FS: tt.fsys },
-		}
-		err := repGen.getModName("go.mod")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("getModeName(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, repGen.modName); diff != "" {
-			t.Errorf("getModName(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			repGen := &reportGenerator{
+				fsys: &mockFS{ FS: tt.fsys },
+			}
+			err := repGen.getModName("go.mod")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getModeName(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, repGen.modName); diff != "" {
+				t.Errorf("getModName(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
@@ -158,16 +160,19 @@ func TestGetRepoURL(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		repGen := &reportGenerator{
-			fsys: &mockFS{ FS: tt.fsys },
-		}
-		err := repGen.getRepoURL(tt.gitCfg)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("getRepoURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, repGen.repoURL); diff != "" {
-			t.Errorf("getRepoURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			repGen := &reportGenerator{
+				fsys: &mockFS{ FS: tt.fsys },
+			}
+			err := repGen.getRepoURL(tt.gitCfg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getRepoURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, repGen.repoURL); diff != "" {
+				t.Errorf("getRepoURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
@@ -206,16 +211,19 @@ func TestGetAllPkgPaths(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		repGen := &reportGenerator{
-			fsys: &mockFS{ FS: tt.fsys },
-		}
-		got, err := repGen.getAllPkgPaths(tt.profilePath)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("getAllPkgPaths(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, got, cmpopts.SortSlices(strings.Compare)); diff != "" {
-			t.Errorf("getAllPkgPaths(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			repGen := &reportGenerator{
+				fsys: &mockFS{ FS: tt.fsys },
+			}
+			got, err := repGen.getAllPkgPaths(tt.profilePath)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getAllPkgPaths(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, got, cmpopts.SortSlices(strings.Compare)); diff != "" {
+				t.Errorf("getAllPkgPaths(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
@@ -282,16 +290,19 @@ func TestPrimePkgDirCache(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		repGen := &reportGenerator{
-			fsys: &mockFS{ FS: tt.fsys },
-		}
-		err := repGen.primePkgDirCache(mockPkgLoader, tt.profilePath)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("primePkgDirCache(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, repGen.pkgDirCache.cache); diff != "" {
-			t.Errorf("primePkgDirCache(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			repGen := &reportGenerator{
+				fsys: &mockFS{ FS: tt.fsys },
+			}
+			err := repGen.primePkgDirCache(mockPkgLoader, tt.profilePath)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("primePkgDirCache(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, repGen.pkgDirCache.cache); diff != "" {
+				t.Errorf("primePkgDirCache(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
@@ -391,23 +402,26 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		mfs := &mockFS{
-			FS:             tt.fsys,
-			mkdirAllFails:  tt.mkdirAllFails,
-			writeFileFails: tt.writeFileFails,
-		}
-		repGen := &reportGenerator{
-			fsys:        mfs,
-			profiles:    tt.profiles,
-			pkgDirCache: &pkgDirCache{ cache: tt.pkgDirCache },
-		}
-		err := repGen.writeCovHTMLFiles(io.Discard)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("writeCovHTMLFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
-			t.Errorf("writeCovHTMLFiles(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			mfs := &mockFS{
+				FS:             tt.fsys,
+				mkdirAllFails:  tt.mkdirAllFails,
+				writeFileFails: tt.writeFileFails,
+			}
+			repGen := &reportGenerator{
+				fsys:        mfs,
+				profiles:    tt.profiles,
+				pkgDirCache: &pkgDirCache{ cache: tt.pkgDirCache },
+			}
+			err := repGen.writeCovHTMLFiles(io.Discard)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("writeCovHTMLFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
+				t.Errorf("writeCovHTMLFiles(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
@@ -442,20 +456,23 @@ func TestWriteIndexHTML(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		mfs := &mockFS{createFails: tt.createFails}
-		repGen := &reportGenerator{
-			fsys:          mfs,
-			modName:       tt.modName,
-			repoURL:       tt.repoURL,
-			embeddedFiles: tt.embeddedFiles,
-		}
-		err := repGen.writeIndexHTML("index.html")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("writeIndexHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
-			t.Errorf("writeIndexHTML(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			mfs := &mockFS{createFails: tt.createFails}
+			repGen := &reportGenerator{
+				fsys:          mfs,
+				modName:       tt.modName,
+				repoURL:       tt.repoURL,
+				embeddedFiles: tt.embeddedFiles,
+			}
+			err := repGen.writeIndexHTML("index.html")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("writeIndexHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
+				t.Errorf("writeIndexHTML(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
@@ -488,19 +505,22 @@ func TestWriteStyleCSS(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		mfs    := &mockFS{ createFails: tt.createFails }
-		repGen := &reportGenerator{
-			fsys:          mfs,
-			embeddedFiles: tt.embeddedFiles,
-			maxWidth:      tt.maxWidth,
-		}
-		err := repGen.writeStyleCSS("style.css")
-		if (err != nil) != tt.wantErr {
-			t.Errorf("writeStyleCSS(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
-			t.Errorf("writeStyleCSS(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			mfs    := &mockFS{ createFails: tt.createFails }
+			repGen := &reportGenerator{
+				fsys:          mfs,
+				embeddedFiles: tt.embeddedFiles,
+				maxWidth:      tt.maxWidth,
+			}
+			err := repGen.writeStyleCSS("style.css")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("writeStyleCSS(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
+				t.Errorf("writeStyleCSS(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
@@ -530,18 +550,21 @@ func TestWriteTemplateFile(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		mfs    := &mockFS{}
-		repGen := &reportGenerator{
-			fsys:          mfs,
-			embeddedFiles: tt.embeddedFiles,
-		}
-		err := repGen.writeTemplateFile(tt.fileName, tt.tmplData)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("writeTemplateFile(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
-			t.Errorf("writeTemplateFile(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			mfs    := &mockFS{}
+			repGen := &reportGenerator{
+				fsys:          mfs,
+				embeddedFiles: tt.embeddedFiles,
+			}
+			err := repGen.writeTemplateFile(tt.fileName, tt.tmplData)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("writeTemplateFile(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
+				t.Errorf("writeTemplateFile(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
@@ -574,15 +597,19 @@ func TestPrintCoverage(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		repGen := &reportGenerator{
-			cov:             tt.cov,
-			totalCovered:    tt.totalCovered,
-			totalStatements: tt.totalStatements,
-		}
-		got := captureStdout(t, func() { repGen.printCoverage() })
-		if diff := cmp.Diff(tt.want, got); diff != "" {
-			t.Errorf("printCoverage() mismatch (-want +got):\n%s", diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			repGen := &reportGenerator{
+				cov:             tt.cov,
+				totalCovered:    tt.totalCovered,
+				totalStatements: tt.totalStatements,
+			}
+			got := new(bytes.Buffer)
+			repGen.printCoverage(got)
+			if diff := cmp.Diff(tt.want, got.String()); diff != "" {
+				t.Errorf("printCoverage() mismatch (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
 
@@ -633,79 +660,59 @@ func TestWriteAncillaryFiles(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		mfs := &mockFS{
-			createFails: tt.createFails,
-			closeFails:  tt.closeFails,
-			badWriter:   tt.badWriter,
-		}
-		repGen := &reportGenerator{
-			fsys:           mfs,
-			embeddedFiles:  tt.embeddedFiles,
-			ancillaryFiles: tt.ancillaryFiles,
-		}
-		err := repGen.writeAncillaryFiles()
-		if (err != nil) != tt.wantErr {
-			t.Errorf("writeAncillaryFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
-			t.Errorf("writeAncillaryFiles(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			mfs := &mockFS{
+				createFails: tt.createFails,
+				closeFails:  tt.closeFails,
+				badWriter:   tt.badWriter,
+			}
+			repGen := &reportGenerator{
+				fsys:           mfs,
+				embeddedFiles:  tt.embeddedFiles,
+				ancillaryFiles: tt.ancillaryFiles,
+			}
+			err := repGen.writeAncillaryFiles()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("writeAncillaryFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
+				t.Errorf("writeAncillaryFiles(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
 func TestFilterArgs(t *testing.T) {
 	t.Parallel()
 	tests := []struct{
+		name string
 		args []string
 		want []string
 	}{
 		{
-			args: []string{"-coverfile", "foo", "-path", "bar"},
-			want: []string{"-coverfile", "foo", "-path", "bar"},
+			name: "no extra args",
+			args: []string{"-gomod", "foo", "-coverfile", "bar", "-path", "baz"},
+			want: []string{"-gomod", "foo", "-coverfile", "bar", "-path", "baz"},
 		},
 		{
-			args: []string{"-coverfile", "foo", "-path", "bar", "--", "boo", "hoo"},
+			name: "extra args",
+			args: []string{"-gomod", "foo", "-coverfile", "bar", "-path", "baz", "--", "boo", "hoo"},
 			want: []string{"boo", "hoo"},
 		},
 		{
+			name: "invalid args",
 			args: []string{"foo", "bar", "--", "baz", "boo"},
 			want: []string{"baz", "boo"},
 		},
 	}
 	for _, tt := range tests {
-		got := filterArgs(tt.args)
-		if diff := cmp.Diff(tt.want, got); diff != "" {
-			t.Errorf("filterArgs(%v) mismatch (-want +got):\n%s", tt.args, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := filterArgs(tt.args)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("filterArgs(%v) mismatch (-want +got):\n%s", tt.args, diff)
+			}
+		})
 	}
-}
-
-func captureStdout(tb testing.TB, fn func()) string {
-	tb.Helper()
-	r, w, err := os.Pipe()
-	if err != nil {
-		tb.Fatalf("failed to create pipe to capture stdout: %v", err)
-	}
-	orig := os.Stdout
-	tb.Cleanup(func() { os.Stdout = orig })
-	os.Stdout = w
-	type result struct {
-		out string
-		err error
-	}
-	resChan := make(chan result)
-	go func() {
-		buf        := new(bytes.Buffer)
-		_, copyErr := io.Copy(buf, r)
-		resChan <- result{out: buf.String(), err: copyErr}
-	}()
-	fn()
-	if err := w.Close(); err != nil {
-		tb.Errorf("w.Close() failed: %v", err)
-	}
-	res := <-resChan
-	if res.err != nil {
-		tb.Errorf("failed to capture stdout: %v", err)
-	}
-	return res.out
 }

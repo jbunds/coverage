@@ -40,22 +40,25 @@ func TestWriteTreeHTML(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		mfs := &mockFS{
-			FS:           tt.fsys,
-			readDirFails: tt.readDirFails,
-			createFails:  tt.createFails,
-		}
-		tb := &treeBuilder{
-			fsys:    mfs,
-			outRoot: ".",
-		}
-		got, err := tb.writeTreeHTML(io.Discard)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("writeTreeHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, got); diff != "" {
-			t.Errorf("writeTreeHTML(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			mfs := &mockFS{
+				FS:           tt.fsys,
+				readDirFails: tt.readDirFails,
+				createFails:  tt.createFails,
+			}
+			tb := &treeBuilder{
+				fsys:    mfs,
+				outRoot: ".",
+			}
+			got, err := tb.writeTreeHTML(io.Discard)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("writeTreeHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("writeTreeHTML(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
@@ -114,22 +117,25 @@ func TestGenHTML(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		mfs := &mockFS{
-			FS:           tt.fsys,
-			readDirFails: tt.readDirFails,
-		}
-		tb := &treeBuilder{
-			fsys:    mfs,
-			cov:     tt.cov,
-			outRoot: ".",
-		}
-		got, err := tb.genHTML(io.Discard)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("genHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, got); diff != "" {
-			t.Errorf("genHTML(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			mfs := &mockFS{
+				FS:           tt.fsys,
+				readDirFails: tt.readDirFails,
+			}
+			tb := &treeBuilder{
+				fsys:    mfs,
+				cov:     tt.cov,
+				outRoot: ".",
+			}
+			got, err := tb.genHTML(io.Discard)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("genHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("genHTML(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
@@ -163,23 +169,26 @@ func TestProcessEntry(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		mfs := &mockFS{
-			FS:           tt.fsys,
-			readDirFails: tt.readDirFails,
-		}
-		tb        := &treeBuilder{ fsys: mfs }
-		info, err := fs.Stat(mfs, tt.fileName)
-		if err != nil {
-			t.Errorf("fs.Stat failed unexpectedly: %v", err)
-		}
-		prog := progress.NewProgress(0, io.Discard)
-		got, err := tb.processEntry(".", fs.FileInfoToDirEntry(info), 1, prog, 0)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("processEntry(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
-		if diff := cmp.Diff(tt.want, got, cmp.AllowUnexported(entryResult{})); diff != "" {
-			t.Errorf("processEntry(%q) mismatch (-want +got):\n%s", tt.name, diff)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			mfs := &mockFS{
+				FS:           tt.fsys,
+				readDirFails: tt.readDirFails,
+			}
+			tb        := &treeBuilder{ fsys: mfs }
+			info, err := fs.Stat(mfs, tt.fileName)
+			if err != nil {
+				t.Errorf("fs.Stat failed unexpectedly: %v", err)
+			}
+			prog := progress.NewProgress(0, io.Discard)
+			got, err := tb.processEntry(".", fs.FileInfoToDirEntry(info), 1, prog, 0)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("processEntry(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, got, cmp.AllowUnexported(entryResult{})); diff != "" {
+				t.Errorf("processEntry(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			}
+		})
 	}
 }
 
@@ -201,10 +210,13 @@ func TestPreamble(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		err := preamble(tt.writer)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("preamble(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			err := preamble(tt.writer)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("preamble(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+		})
 	}
 }
 
@@ -226,9 +238,12 @@ func TestPostamble(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		err := postamble(tt.writer)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("postamble(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			err := postamble(tt.writer)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("postamble(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+		})
 	}
 }

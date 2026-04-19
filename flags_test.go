@@ -3,8 +3,6 @@ package main
 import (
 	"bytes"
 	"flag"
-	"io"
-	"os"
 	"strings"
 	"testing"
 
@@ -114,14 +112,14 @@ func TestUsage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotOut := new(bytes.Buffer)
+			gotErr := new(bytes.Buffer)
 			fs     := flag.NewFlagSet(tt.name, flag.ContinueOnError)
 			fs.SetOutput(gotOut)
 			var err error
 			var gotGoMod, gotCoverProfile, gotPath string
-			gotErr := captureStderr(t, func() {
-				gotGoMod, gotCoverProfile, gotPath, err = flags(fs, tt.args)
-			})
+			gotGoMod, gotCoverProfile, gotPath, err = flags(fs, tt.args, gotErr)
 			if tt.err != "" {
 				if err == nil {
 					t.Errorf("flags(%q) did not fail", tt.name)
@@ -130,7 +128,7 @@ func TestUsage(t *testing.T) {
 					t.Errorf("flags(%q) returned %q; expected %q\n", tt.name, err, tt.err)
 				}
 			}
-			if diff := cmp.Diff(tt.stdErr, gotErr); diff != "" {
+			if diff := cmp.Diff(tt.stdErr, gotErr.String()); diff != "" {
 				t.Errorf("flags(%q) stderr mismatch (-want +got):\n%s", tt.name, diff)
 			}
 			if diff := cmp.Diff(tt.wantOut, gotOut.String()); diff != "" {
@@ -147,34 +145,4 @@ func TestUsage(t *testing.T) {
 			}
 		})
 	}
-}
-
-func captureStderr(tb testing.TB, fn func()) string {
-	tb.Helper()
-	r, w, err := os.Pipe()
-	if err != nil {
-		tb.Fatalf("failed to create pipe to capture stderr: %v", err)
-	}
-	orig := os.Stderr
-	tb.Cleanup(func() { os.Stderr = orig })
-	os.Stderr = w
-	type result struct {
-		out string
-		err error
-	}
-	resChan  := make(chan result)
-	go func() {
-		buf        := new(bytes.Buffer)
-		_, copyErr := io.Copy(buf, r)
-		resChan <- result{out: buf.String(), err: copyErr}
-	}()
-	fn()
-	if err := w.Close(); err != nil {
-		tb.Errorf("w.Close() failed: %v", err)
-	}
-	res := <-resChan
-	if res.err != nil {
-		tb.Errorf("failed to capture stderr: %v", err)
-	}
-	return res.out
 }
