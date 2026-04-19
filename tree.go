@@ -59,7 +59,7 @@ func (tb *treeBuilder) genHTML(progressOutput io.Writer) (string, error) {
 	sb.WriteString("<ul class=\"tree\">\n")
 
 	for _, entry := range entries {
-		res, err := tb.processEntry("", entry, 1, prog, childBudget)
+		res, err := tb.processEntry(".", entry, 1, prog, childBudget)
 		if err != nil { return "", err }
 		sb.WriteString(res.html)
 	}
