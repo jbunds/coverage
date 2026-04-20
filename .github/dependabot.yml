@@ -10,3 +10,11 @@ updates:
     directory: "/"                      # https://docs.github.com/code-security/reference/supply-chain-security/dependabot-options-reference#directories-or-directory--
     schedule:
       interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/demo"
+    schedule:
+      interval: "weekly"
