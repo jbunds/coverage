@@ -37,7 +37,7 @@ When served via HTTP, buttons are available to:
 - <img height="20" style="vertical-align: middle;" alt="theme button"  src="./theme.png" > toggle between **light** and **dark** themes
 - <img height="20" style="vertical-align: middle;" alt="expand button" src="./expand.png"> toggle between a fully-collapsed and fully-expanded directory tree
 
-See also [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jbunds/coverage)
+See also [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jbunds/coverage) and [![Go Reference](https://pkg.go.dev/badge/github.com/jbunds/coverage.svg)](https://pkg.go.dev/github.com/jbunds/coverage)
 
 ---
 
