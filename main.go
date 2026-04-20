@@ -285,6 +285,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 	rg.cov = make(map[string]coverage, len(rg.profiles))
 	units := make([]workUnit, 0, len(rg.profiles))
 	prog  := progress.NewProgress(uint64(len(rg.profiles)), progressOutput)
+	defer prog.Close()
 
 	// keep the relatively heavy mkdir syscalls outside of the concurrent loop
 	dirsToCreate := make(map[string]struct{})
@@ -347,9 +348,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 		})
 	}
 
-	if err := group.Wait(); err != nil { return err }
-	prog.Close()
-	return nil
+	return group.Wait()
 }
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage

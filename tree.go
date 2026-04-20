@@ -52,21 +52,20 @@ func (tb *treeBuilder) genHTML(progressOutput io.Writer) (string, error) {
 	entries, err := fs.ReadDir(tb.fsys, tb.outRoot)
 	if err != nil { return "", err }
 
-	prog        := progress.NewProgress(0, progressOutput)
-	childBudget := prog.InitialBudget() / uint64(len(entries))
+	prog := progress.NewProgress(0, progressOutput)
+	defer prog.Close()
 
 	var sb strings.Builder
 	sb.WriteString("<ul class=\"tree\">\n")
 
 	for _, entry := range entries {
-		res, err := tb.processEntry(".", entry, 1, prog, childBudget)
+		res, err := tb.processEntry(".", entry, 1, prog, prog.InitialBudget() / uint64(len(entries)))
 		if err != nil { return "", err }
 		sb.WriteString(res.html)
 	}
 
 	sb.WriteString("</ul>\n")
 
-	prog.Close()
 
 	return sb.String(), nil
 }
