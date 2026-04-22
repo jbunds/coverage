@@ -38,9 +38,9 @@ import (
 	"github.com/graniticio/inifile"
 	"github.com/jbunds/coverage/progress"
 	"golang.org/x/mod/modfile"
-	"golang.org/x/tools/go/packages"
-	"golang.org/x/tools/cover"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/tools/cover"
+	"golang.org/x/tools/go/packages"
 )
 
 //go:embed html/* css/* img/*
@@ -294,13 +294,13 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 		dirsToCreate[filepath.Dir(outPath)] = struct{}{}
 	}
 	progDirs := progress.NewProgress(uint64(len(dirsToCreate)), progressOutput)
-	defer progDirs.Close()
 	for dir := range dirsToCreate {
-		progDirs.Report(1, "creating " + dir)
 		if err := rg.fsys.MkdirAll(dir, 0700); err != nil {
 			return fmt.Errorf("cannot create directory %q: %w", dir, err)
 		}
+		progDirs.Report(1, "created " + dir)
 	}
+	progDirs.Close()
 	
 	// considering the possibility of huge disparities between different source files, e.g.:
 	//
