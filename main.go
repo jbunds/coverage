@@ -282,13 +282,9 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath str
 
 // writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the coverage profile file
 func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
-	rg.cov = make(map[string]coverage, len(rg.profiles))
-	units := make([]workUnit, 0, len(rg.profiles))
-	prog  := progress.NewProgress(uint64(len(rg.profiles)), progressOutput)
-	defer prog.Close()
-
-	// keep the relatively heavy mkdir syscalls outside of the concurrent loop
-	dirsToCreate := make(map[string]struct{})
+	rg.cov        = make(map[string]coverage, len(rg.profiles))
+	units        := make([]workUnit, 0, len(rg.profiles))
+	dirsToCreate := make(map[string]struct{}) // exclude duplicate directories and keep the relatively heavy mkdir syscalls outside of the concurrent loop
 	for _, profile := range rg.profiles {
 		outPath := filepath.Clean(filepath.Join(rg.outRoot, profile.FileName + ".html"))
 		units    = append(units, workUnit{
@@ -297,13 +293,39 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 		})
 		dirsToCreate[filepath.Dir(outPath)] = struct{}{}
 	}
+	progDirs := progress.NewProgress(uint64(len(dirsToCreate)), progressOutput)
+	defer progDirs.Close()
 	for dir := range dirsToCreate {
-		prog.Report(1, "creating " + dir) // TODO(jeff): calculate more accurate weight
+		progDirs.Report(1, "creating " + dir)
 		if err := rg.fsys.MkdirAll(dir, 0700); err != nil {
 			return fmt.Errorf("cannot create directory %q: %w", dir, err)
 		}
 	}
 	
+	// considering the possibility of huge disparities between different source files, e.g.:
+	//
+	//   k8s.io/kubernetes/pkg/kubelet/apis/config/register.go // contains    1 func def
+	//   k8s.io/api/core/v1/generated.pb.go                    // contains 1692 func defs
+	//
+	// it would be much better to use aggregate per-file and total cover.ProfileBlock.NumStmt
+	// calculations as a reasonable normalizing proxy for work units and total work:
+	//
+	//   p := progress.NewProgress(len(rg.totalStatements)) // rg.totalStatements not yet calulated
+	//   p.Report(fileStatements)
+	//
+	// but the overall total number of statements recognized by the compiler is not calculated
+	// until immediately before this method returns (per rg.totalStatements), precluding the
+	// viability of that approach without first performing some costly profile pre-processing
+	// (or perhaps some major refactoring of significant portions of the program)
+	//
+	// so instead we treat each source file as a uniform unit of work, which, as outlined above,
+	// is wildly inaccurate:
+	//
+	//   p := progress.NewProgress(len(rg.profiles)) // incorrectly assumes that the processing of each source file is a uniform unit of work
+	//   p.Report(1)
+	progFiles := progress.NewProgress(uint64(len(rg.profiles)), progressOutput)
+	defer progFiles.Close()
+
 	var mu sync.Mutex // guards concurrent access to rg.cov and the computed coverage totals
 	group, ctx := errgroup.WithContext(context.Background())
 	group.SetLimit(runtime.NumCPU()) // full send
@@ -324,8 +346,6 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 				}
 			}
 
-			prog.Report(1, unit.profile.FileName) // TODO(jeff): calculate more accurate weight
-
 			var buf strings.Builder
 			if err := rg.buildCovHTML(ctx, &buf, unit.profile, unit.profile.FileName); err != nil {
 				return fmt.Errorf("cannot build HTML for %q: %w", unit.profile.FileName, err)
@@ -334,6 +354,8 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 			if err := rg.fsys.WriteFile(unit.outPath, []byte(buf.String()), 0600); err != nil {
 				return fmt.Errorf("cannot write HTML file for %q: %w", unit.profile.FileName, err)
 			}
+
+			progFiles.Report(1, unit.profile.FileName)
 
 			mu.Lock()
 			rg.totalCovered    += fileCovered
