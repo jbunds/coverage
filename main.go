@@ -174,8 +174,6 @@ func main() {
 		os.Exit(7)
 	}
 
-	repGen.printCoverage(os.Stdout) // requires repGen.cov
-
 	if err := repGen.writeIndexHTML(indexHTML); err != nil { // requires repGen.modName
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", indexHTML, err)
 		os.Exit(8)
@@ -201,6 +199,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "cannot write ancillary files: %v\n", err)
 		os.Exit(11)
 	}
+
+	repGen.printCoverage(os.Stdout) // requires repGen.cov
 }
 
 // getModName reads the repo's root go.mod file to determine the name of the Go module
@@ -324,7 +324,6 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 	//   p := progress.NewProgress(len(rg.profiles)) // incorrectly assumes that the processing of each source file is a uniform unit of work
 	//   p.Report(1)
 	progFiles := progress.NewProgress(uint64(len(rg.profiles)), progressOutput)
-	defer progFiles.Close()
 
 	var mu sync.Mutex // guards concurrent access to rg.cov and the computed coverage totals
 	group, ctx := errgroup.WithContext(context.Background())
@@ -369,6 +368,8 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 			return nil
 		})
 	}
+
+	progFiles.Close()
 
 	return group.Wait()
 }

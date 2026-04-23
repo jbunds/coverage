@@ -66,7 +66,6 @@ func (tb *treeBuilder) genHTML(progressOutput io.Writer) (string, error) {
 
 	sb.WriteString("</ul>\n")
 
-
 	return sb.String(), nil
 }
 
@@ -76,7 +75,7 @@ func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, ind
 	isTargetFile := !isDir && strings.HasSuffix(entry.Name(), ".go.html")
 
 	if !isDir && !isTargetFile {
-		prog.Report(budget, "") // consume budget even if the file is not processed, so that progress always ultimately adds up to 100%
+		prog.Report(budget, "") // ensure progress ultimately adds up to 100% by consuming budget even if the file is not processed
 		return entryResult{}, nil
 	}
 
@@ -100,14 +99,14 @@ func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, ind
 		var dirCovered, dirStatements int
 
 		if len(subDirEntries) > 0 { // split this subdir's budget up among its children
-			subDirChildBudget := budget / uint64(len(subDirEntries))
-			remainder         := budget % uint64(len(subDirEntries))
+			childBudget := budget / uint64(len(subDirEntries))
+			remainder   := budget % uint64(len(subDirEntries))
 
-			for i, subEntry := range subDirEntries {
-				b := subDirChildBudget
-				if i == len(subDirEntries)-1 { b += remainder } // the last child takes on the remainder
+			for i, subDirEntry := range subDirEntries {
+				subDirBudget := childBudget
+				if i == len(subDirEntries) - 1 { subDirBudget += remainder } // the last child takes on the remainder
 
-				res, err := tb.processEntry(srcPath, subEntry, indent + 2, prog, b) // indent by an additional two spaces each time we recurse into a subdirectory
+				res, err := tb.processEntry(srcPath, subDirEntry, indent + 2, prog, subDirBudget) // indent by an additional two spaces each time we recurse into a subdirectory
 				if err != nil { return entryResult{}, err }
 
 				subDirSB.WriteString(res.html)
@@ -115,7 +114,7 @@ func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, ind
 				dirStatements += res.total
 			}
 		} else {
-			prog.Report(budget, srcPath)
+			prog.Report(budget, srcPath) // inform the progress tracker that srcPath has been processed
 		}
 
 		hb := &htmlBuilder{
@@ -130,7 +129,7 @@ func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, ind
 			total:   dirStatements}, nil
 	}
 
-	prog.Report(budget, srcPath)
+	prog.Report(budget, srcPath) // inform the progress tracker that srcPath has been processed
 
 	cov     := tb.cov[srcPath]
 	percent := 0.0
