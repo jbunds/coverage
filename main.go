@@ -294,6 +294,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 		dirsToCreate[filepath.Dir(outPath)] = struct{}{}
 	}
 	progDirs := progress.NewProgress(uint64(len(dirsToCreate)), progressOutput)
+	defer progDirs.Close()
 	for dir := range dirsToCreate {
 		if err := rg.fsys.MkdirAll(dir, 0700); err != nil {
 			return fmt.Errorf("cannot create directory %q: %w", dir, err)
@@ -323,7 +324,8 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 	//
 	//   p := progress.NewProgress(len(rg.profiles)) // incorrectly assumes that the processing of each source file is a uniform unit of work
 	//   p.Report(1)
-	progFiles := progress.NewProgress(uint64(len(rg.profiles)), progressOutput)
+	progFiles := progress.NewProgress(0, progressOutput)
+	defer progFiles.Close()
 
 	var mu sync.Mutex // guards concurrent access to rg.cov and the computed coverage totals
 	group, ctx := errgroup.WithContext(context.Background())
@@ -345,6 +347,9 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 				}
 			}
 
+			fileWeight := uint64(fileStatements)
+			progFiles.AddTotal(fileWeight)
+
 			var buf strings.Builder
 			if err := rg.buildCovHTML(ctx, &buf, unit.profile, unit.profile.FileName); err != nil {
 				return fmt.Errorf("cannot build HTML for %q: %w", unit.profile.FileName, err)
@@ -354,7 +359,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 				return fmt.Errorf("cannot write HTML file for %q: %w", unit.profile.FileName, err)
 			}
 
-			progFiles.Report(1, unit.profile.FileName)
+			progFiles.Report(float64(fileWeight), unit.profile.FileName)
 
 			mu.Lock()
 			rg.totalCovered    += fileCovered
@@ -369,9 +374,11 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 		})
 	}
 
+	err := group.Wait() // wait for all workers to finish, including their respective calls to progFiles.Report()
+
 	progFiles.Close()
 
-	return group.Wait()
+	return err
 }
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage

@@ -59,7 +59,7 @@ func (tb *treeBuilder) genHTML(progressOutput io.Writer) (string, error) {
 	sb.WriteString("<ul class=\"tree\">\n")
 
 	for _, entry := range entries {
-		res, err := tb.processEntry(".", entry, 1, prog, prog.InitialBudget() / uint64(len(entries)))
+		res, err := tb.processEntry(".", entry, 1, prog, prog.InitialBudget() / float64(len(entries)))
 		if err != nil { return "", err }
 		sb.WriteString(res.html)
 	}
@@ -70,7 +70,7 @@ func (tb *treeBuilder) genHTML(progressOutput io.Writer) (string, error) {
 }
 
 // processEntry recursively processes a directory's contents to produce an entryResult for each relevant directory entry encountered
-func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, indent int, prog *progress.Progress, budget uint64) (entryResult, error) {
+func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, indent int, prog *progress.Progress, budget float64) (entryResult, error) {
 	isDir        := entry.IsDir()
 	isTargetFile := !isDir && strings.HasSuffix(entry.Name(), ".go.html")
 
@@ -99,12 +99,17 @@ func (tb *treeBuilder) processEntry(relParentPath string, entry fs.DirEntry, ind
 		var dirCovered, dirStatements int
 
 		if len(subDirEntries) > 0 { // split this subdir's budget up among its children
-			childBudget := budget / uint64(len(subDirEntries))
-			remainder   := budget % uint64(len(subDirEntries))
+			childBudget := budget / float64(len(subDirEntries))
+			remaining   := budget
 
 			for i, subDirEntry := range subDirEntries {
-				subDirBudget := childBudget
-				if i == len(subDirEntries) - 1 { subDirBudget += remainder } // the last child takes on the remainder
+				var subDirBudget float64
+				if i == len(subDirEntries) - 1 {
+					subDirBudget += remaining // the last child takes on the remainder
+				} else {
+					subDirBudget = childBudget
+					remaining   -= subDirBudget
+				}
 
 				res, err := tb.processEntry(srcPath, subDirEntry, indent + 2, prog, subDirBudget) // indent by an additional two spaces each time we recurse into a subdirectory
 				if err != nil { return entryResult{}, err }
