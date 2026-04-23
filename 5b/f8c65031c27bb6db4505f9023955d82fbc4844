@@ -1,1 +1,1 @@
-{"go-coverage-action-fmt":1,"coverage_pct":79.38931297709924,"pkg_stats":{"github.com/jbunds/coverage":[78.19905213270142],"github.com/jbunds/coverage/progress":[84.31372549019608]},"skipped_count":0}
+{"go-coverage-action-fmt":1,"coverage_pct":79.38931297709924,"pkg_stats":{"github.com/jbunds/coverage/progress":[84.31372549019608],"github.com/jbunds/coverage":[78.19905213270142]},"skipped_count":0}
