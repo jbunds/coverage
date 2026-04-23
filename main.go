@@ -69,10 +69,30 @@ type coverage struct {
 	total   int
 }
 
-// workUnit represents a unit of work to be concurrently performed: the generation of an HTML file for a Go source file's coverage profile
+// workUnit represents a unit of work to be performed: the generation of an HTML file for a Go source file's coverage profile
+// the main program utilizes all available CPU cores to process all workUnits concurrently
 type workUnit struct {
 	profile *cover.Profile
 	outPath string
+}
+
+// reportGenerator orchestrates the generation of the HTML report
+// it stores state, simplifies method signatures, avoids copying values, and makes testing easier
+type reportGenerator struct {
+	fsys            writeFS
+	embeddedFiles   fs.FS
+	modFile         string
+	modName         string
+	repoURL         string
+	pkgDirCache     *pkgDirCache
+	outRoot         string
+	profilePath     string
+	profiles        []*cover.Profile
+	cov             map[string]coverage
+	totalCovered    int
+	totalStatements int
+	maxWidth        int
+	ancillaryFiles  []string
 }
 
 // wrappers to facilitate test injection
@@ -103,24 +123,6 @@ type iniFileValueGetter interface { Value(section, key string) (string, error) }
 
 // wraps packages.Load for test injection
 type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
-
-// stores state, simplifies method signatures, avoids copying values, and makes testing easier
-type reportGenerator struct {
-	fsys            writeFS
-	embeddedFiles   fs.FS
-	modFile         string
-	modName         string
-	repoURL         string
-	pkgDirCache     *pkgDirCache
-	outRoot         string
-	profilePath     string
-	profiles        []*cover.Profile
-	cov             map[string]coverage
-	totalCovered    int
-	totalStatements int
-	maxWidth        int
-	ancillaryFiles  []string
-}
 
 func main() {
 	goModFile, profilePath, outRoot, err := flags(flag.CommandLine, filterArgs(os.Args[1:]), os.Stderr)
