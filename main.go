@@ -303,27 +303,18 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 	}
 	progDirs.Close()
 	
-	// considering the possibility of huge disparities between different source files, e.g.:
+	// The total number of statements (cover.ProfileBlock.NumStmt) is used as a normalizing
+	// proxy for work units to ensure the progress tracker accurately reflects the
+	// computational effort required for files of vastly different sizes, e.g.:
 	//
 	//   k8s.io/kubernetes/pkg/kubelet/apis/config/register.go // contains    1 func def
 	//   k8s.io/api/core/v1/generated.pb.go                    // contains 1692 func defs
 	//
-	// it would be much better to use aggregate per-file and total cover.ProfileBlock.NumStmt
-	// calculations as a reasonable normalizing proxy for work units and total work:
-	//
-	//   p := progress.NewProgress(len(rg.totalStatements)) // rg.totalStatements not yet calulated
-	//   p.Report(fileStatements)
-	//
-	// but the overall total number of statements recognized by the compiler is not calculated
-	// until immediately before this method returns (per rg.totalStatements), precluding the
-	// viability of that approach without first performing some costly profile pre-processing
-	// (or perhaps some major refactoring of significant portions of the program)
-	//
-	// so instead we treat each source file as a uniform unit of work, which, as outlined above,
-	// is wildly inaccurate:
-	//
-	//   p := progress.NewProgress(len(rg.profiles)) // incorrectly assumes that the processing of each source file is a uniform unit of work
-	//   p.Report(1)
+	// Since the global total of statements is not known a priori, dynamic discovery is
+	// implemented whereby each worker goroutine calls AddTotal() as it parses a source
+	// file's profiled blocks, allowing the progress tracker to refine its denominator
+	// in real-time without requiring a separate pre-processing pass.
+
 	progFiles := progress.NewProgress(0, progressOutput)
 	defer progFiles.Close()
 
