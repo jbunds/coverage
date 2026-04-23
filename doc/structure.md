@@ -31,7 +31,13 @@
 ├── package-lock.json
 ├── package.json
 ├── progress
-│   ├── progress_test_stub.go
+│   ├── examples
+│   │   ├── README.md
+│   │   ├── fractional
+│   │   │   └── main.go
+│   │   └── weight-based
+│   │       └── main.go
+│   ├── progress_test.go
 │   └── progress.go
 ├── README.md
 ├── screenshots
@@ -43,5 +49,5 @@
 ├── tree.go
 └── validate.js
 
-8 directories, 35 files
+11 directories, 38 files
 ```
