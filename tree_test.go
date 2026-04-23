@@ -51,7 +51,7 @@ func TestWriteTreeHTML(t *testing.T) {
 				fsys:    mfs,
 				outRoot: ".",
 			}
-			got, err := tb.writeTreeHTML(io.Discard)
+			got, err := tb.writeTreeHTML(t.Context(), io.Discard)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeTreeHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}

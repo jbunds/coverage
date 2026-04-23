@@ -102,9 +102,11 @@ type reportGenerator struct {
 // unit tests, as the standard "os" package cannot be directly mocked.
 type writeFS interface {
 	fs.FS
-	Create   (string)     (io.WriteCloser, error)
-	MkdirAll (string,         fs.FileMode) error
-	WriteFile(string, []byte, fs.FileMode) error
+	Create         (context.Context, string)                      (io.WriteCloser, error)
+	MkdirAll       (context.Context, string,         fs.FileMode)                  error
+	ReadFile       (context.Context, string)                      ([]byte,         error)
+	WriteFile      (context.Context, string, []byte, fs.FileMode)                  error
+	OpenWithContext(context.Context, string)                      (fs.File,        error)
 }
 
 // localFS provides a concrete implementation of the writeFS interface by
@@ -113,10 +115,34 @@ type writeFS interface {
 // via alternative interface implementations.
 type localFS struct{}
 
-func (lfs *localFS) Open     (name string) (fs.File,                      error) { return os.Open     (filepath.Clean(name)) }
-func (lfs *localFS) Create   (name string) (io.WriteCloser,               error) { return os.Create   (filepath.Clean(name)) }
-func (lfs *localFS) MkdirAll (path string, perm fs.FileMode)              error  { return os.MkdirAll (filepath.Clean(path), perm) }
-func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error  { return os.WriteFile(name,          data,  perm) }
+func (lfs *localFS) Open(name string) (fs.File, error) {
+	return os.Open(filepath.Clean(name))
+}
+
+func (lfs *localFS) Create(ctx context.Context, name string) (io.WriteCloser, error) {
+	if err := ctx.Err(); err != nil { return nil, err }
+	return os.Create(filepath.Clean(name))
+}
+
+func (lfs *localFS) MkdirAll(ctx context.Context, path string, perm fs.FileMode) error {
+	if err := ctx.Err(); err != nil { return err }
+	return os.MkdirAll(filepath.Clean(path), perm)
+}
+
+func (lfs *localFS) ReadFile(ctx context.Context, name string) ([]byte, error) {
+	if err := ctx.Err(); err != nil { return nil, err }
+	return fs.ReadFile(lfs, name)
+}
+
+func (lfs *localFS) WriteFile(ctx context.Context, name string, data []byte, perm fs.FileMode) error {
+	if err := ctx.Err(); err != nil { return err }
+	return os.WriteFile(filepath.Clean(name), data, perm)
+}
+
+func (lfs *localFS) OpenWithContext(ctx context.Context, name string) (fs.File, error) {
+	if err := ctx.Err(); err != nil { return nil, err }
+	return lfs.Open(filepath.Clean(name))
+}
 
 // wraps inifile.IniConfig.Value for test injection
 type iniFileValueGetter interface { Value(section, key string) (string, error) }
@@ -139,6 +165,7 @@ func main() {
 
 	fmt.Fprintf(os.Stderr, "processing %d source files...", len(profiles))
 
+	ctx    := context.Background()
 	repGen := &reportGenerator{
 		fsys:           &localFS{},
 		embeddedFiles:  embeddedFiles,
@@ -149,7 +176,7 @@ func main() {
 		ancillaryFiles: ancillaryFiles,
 	}
 
-	if err := repGen.getModName(goModFile); err != nil { // sets repGen.modName
+	if err := repGen.getModName(ctx, goModFile); err != nil { // sets repGen.modName
 		fmt.Fprintf(os.Stderr, "cannot determine module name: %v\n", err)
 		os.Exit(3)
 	}
@@ -161,22 +188,22 @@ func main() {
 		os.Exit(4)
 	}
 
-	if err := repGen.getRepoURL(gitConfig); err != nil { // sets repGen.repoURL
+	if err := repGen.getRepoURL(ctx, gitConfig); err != nil { // sets repGen.repoURL
 		fmt.Fprintf(os.Stderr, "cannot determine repo URL: %v\n", err)
 		os.Exit(5)
 	}
 
-	if err := repGen.primePkgDirCache(packages.Load, profilePath); err != nil { // sets repGen.pkgDirCache
+	if err := repGen.primePkgDirCache(ctx, packages.Load, profilePath); err != nil { // sets repGen.pkgDirCache
 		fmt.Fprintf(os.Stderr, "cannot prime package directory cache: %v\n", err)
 		os.Exit(6)
 	}
 
-	if err := repGen.writeCovHTMLFiles(os.Stderr); err != nil { // sets repGen.cov
+	if err := repGen.writeCovHTMLFiles(ctx, os.Stderr); err != nil { // sets repGen.cov
 		fmt.Fprintf(os.Stderr, "cannot write HTML coverage files: %v\n", err)
 		os.Exit(7)
 	}
 
-	if err := repGen.writeIndexHTML(indexHTML); err != nil { // requires repGen.modName
+	if err := repGen.writeIndexHTML(ctx, indexHTML); err != nil { // requires repGen.modName
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", indexHTML, err)
 		os.Exit(8)
 	}
@@ -187,27 +214,31 @@ func main() {
 		cov:     repGen.cov,
 	}
 
-	if repGen.maxWidth, err = tb.writeTreeHTML(os.Stderr); err != nil {
+	if repGen.maxWidth, err = tb.writeTreeHTML(ctx, os.Stderr); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", treeHTML, err)
 		os.Exit(9)
 	}
 
-	if err := repGen.writeStyleCSS(styleCSS); err != nil { // requires repGen.maxWidth
+	if err := repGen.writeStyleCSS(ctx, styleCSS); err != nil { // requires repGen.maxWidth
 		fmt.Fprintf(os.Stderr, "cannot write %s: %v\n", styleCSS, err)
 		os.Exit(10)
 	}
 
-	if err := repGen.writeAncillaryFiles(); err != nil {
+	if err := repGen.writeAncillaryFiles(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write ancillary files: %v\n", err)
 		os.Exit(11)
 	}
 
-	repGen.printCoverage(os.Stdout) // requires repGen.cov
+	if err := repGen.printCoverage(ctx, os.Stdout); err != nil { // requires repGen.cov
+		fmt.Fprintf(os.Stderr, "cannot print per-file coverage figures: %v\n", err)
+		os.Exit(12)
+	}
 }
 
 // getModName reads the repo's root go.mod file to determine the name of the Go module
-func (rg *reportGenerator) getModName(goModFile string) error {
-	goMod, err := fs.ReadFile(rg.fsys, goModFile)
+func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) error {
+	if err := ctx.Err(); err != nil { return err }
+	goMod, err := rg.fsys.ReadFile(ctx, goModFile)
 	if err != nil { return fmt.Errorf("cannot read %q: %w", goModFile, err) }
 	modFile, err := modfile.Parse(goModFile, goMod, nil)
 	if err != nil || modFile.Module == nil { return fmt.Errorf("cannot parse %q: %w", goModFile, err) }
@@ -216,7 +247,8 @@ func (rg *reportGenerator) getModName(goModFile string) error {
 }
 
 // getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML
-func (rg *reportGenerator) getRepoURL(gitConfig iniFileValueGetter) error {
+func (rg *reportGenerator) getRepoURL(ctx context.Context, gitConfig iniFileValueGetter) error {
+	if err := ctx.Err(); err != nil { return err }
 	gitRemoteURL, err := gitConfig.Value(`remote "origin"`, "url")
 	if err != nil { return err }
 	httpURL := gitRemoteURL
@@ -232,8 +264,9 @@ func (rg *reportGenerator) getRepoURL(gitConfig iniFileValueGetter) error {
 }
 
 // getAllPkgPaths extracts all unique package paths from the coverage profile file for subsequent use in primePkgDirCache
-func (rg *reportGenerator) getAllPkgPaths(profilePath string) ([]string, error) {
-	f, err := rg.fsys.Open(filepath.Clean(profilePath))
+func (rg *reportGenerator) getAllPkgPaths(ctx context.Context, profilePath string) ([]string, error) {
+	if err := ctx.Err(); err != nil { return nil, err }
+	f, err := rg.fsys.OpenWithContext(ctx, filepath.Clean(profilePath))
 	if err != nil { return nil, err }
 	defer func() {
 		closeErr := f.Close()
@@ -258,9 +291,10 @@ func (rg *reportGenerator) getAllPkgPaths(profilePath string) ([]string, error) 
 }
 
 // primePkgDirCache primes rg.pkgDirCache for subsequent use in buildCovHTML
-func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath string) error {
+func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLoader, profilePath string) error {
+	if err := ctx.Err(); err != nil { return err }
 	rg.pkgDirCache    = &pkgDirCache{ cache: make(map[string]string) }
-	allPkgPaths, err := rg.getAllPkgPaths(profilePath)
+	allPkgPaths, err := rg.getAllPkgPaths(ctx, profilePath)
 	if err != nil { return err }
 
 	cfg := &packages.Config{
@@ -283,10 +317,12 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader, profilePath str
 }
 
 // writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the coverage profile file
-func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
+func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput io.Writer) error {
+	if err := ctx.Err(); err != nil { return err }
 	rg.cov        = make(map[string]coverage, len(rg.profiles))
 	units        := make([]workUnit, 0, len(rg.profiles))
 	dirsToCreate := make(map[string]struct{}) // exclude duplicate directories and keep the relatively heavy mkdir syscalls outside of the concurrent loop
+
 	for _, profile := range rg.profiles {
 		outPath := filepath.Clean(filepath.Join(rg.outRoot, profile.FileName + ".html"))
 		units    = append(units, workUnit{
@@ -295,14 +331,23 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 		})
 		dirsToCreate[filepath.Dir(outPath)] = struct{}{}
 	}
-	progDirs := progress.NewProgress(uint64(len(dirsToCreate)), progressOutput)
+
+	group, gCtx := errgroup.WithContext(ctx)
+	progDirs    := progress.NewProgress(uint64(len(dirsToCreate)), progressOutput)
 	defer progDirs.Close()
+
 	for dir := range dirsToCreate {
-		if err := rg.fsys.MkdirAll(dir, 0700); err != nil {
-			return fmt.Errorf("cannot create directory %q: %w", dir, err)
-		}
-		progDirs.Report(1, "created " + dir)
+		group.Go(func() error {
+			if err := rg.fsys.MkdirAll(gCtx, dir, 0700); err != nil {
+				return fmt.Errorf("cannot create directory %q: %w", dir, err)
+			}
+			progDirs.Report(1, "created " + dir)
+			return nil
+		})
 	}
+
+	if err := group.Wait(); err != nil { return err }
+
 	progDirs.Close()
 	
 	// The total number of statements (cover.ProfileBlock.NumStmt) is used as a normalizing
@@ -321,7 +366,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 	defer progFiles.Close()
 
 	var mu sync.Mutex // guards concurrent access to rg.cov and the computed coverage totals
-	group, ctx := errgroup.WithContext(context.Background())
+	group, gCtx = errgroup.WithContext(ctx)
 	group.SetLimit(runtime.NumCPU()) // full send
 
 	for _, unit := range units {
@@ -348,7 +393,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 				return fmt.Errorf("cannot build HTML for %q: %w", unit.profile.FileName, err)
 			}
 
-			if err := rg.fsys.WriteFile(unit.outPath, []byte(buf.String()), 0600); err != nil {
+			if err := rg.fsys.WriteFile(ctx, unit.outPath, []byte(buf.String()), 0600); err != nil {
 				return fmt.Errorf("cannot write HTML file for %q: %w", unit.profile.FileName, err)
 			}
 
@@ -376,6 +421,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(progressOutput io.Writer) error {
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage
 func (rg *reportGenerator) buildCovHTML(ctx context.Context, w io.Writer, profile *cover.Profile, srcPath string) error {
+	if err := ctx.Err(); err != nil { return err }
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -384,7 +430,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, w io.Writer, profil
 	pkgPath  := filepath.Dir (profile.FileName)
 	fileName := filepath.Base(profile.FileName)
 
-	src, err := fs.ReadFile(rg.fsys, filepath.Join(rg.pkgDirCache.cache[pkgPath], fileName))
+	src, err := rg.fsys.ReadFile(ctx, filepath.Join(rg.pkgDirCache.cache[pkgPath], fileName))
 	if err != nil { return err }
 
 	bw := bufio.NewWriter(w)
@@ -459,7 +505,8 @@ window.addEventListener('message', (event) => {
 }
 
 // printCoverage prints per-file coverage percentages to the specified destination (typically stdout)
-func (rg *reportGenerator) printCoverage(w io.Writer) {
+func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error {
+	if err := ctx.Err(); err != nil { return err }
 	keys       := slices.Collect(maps.Keys(rg.cov))
 	maxPathLen := len(slices.MaxFunc(keys, func(a, b string) int {
 		return cmp.Compare(len(a), len(b))
@@ -500,46 +547,52 @@ func (rg *reportGenerator) printCoverage(w io.Writer) {
 
 	fmt.Fprintln(w, strings.Repeat("—", maxPathLen + 9)) // 9 == 2 spaces + len("100.00%")
 	fmt.Fprintf(w, fmtData, "Total", totalPercent)
+
+	return nil
 }
 
 // writeIndexHTML writes the index HTML file, which contains two template parameters
 // (ModName and ModURL), and hosts two iframes (directory tree & source code)
-func (rg *reportGenerator) writeIndexHTML(indexHTML string) error {
+func (rg *reportGenerator) writeIndexHTML(ctx context.Context, indexHTML string) error {
+	if err := ctx.Err(); err != nil { return err }
 	data := struct{
 		ModName, ModURL string
 	}{
 		ModName: rg.modName,
 		ModURL:  rg.repoURL,
 	}
-	return rg.writeTemplateFile(indexHTML, data)
+	return rg.writeTemplateFile(ctx, indexHTML, data)
 }
 
 // writeStyleCSS writes the style.css file, which contains a single "MaxWidth" template parameter
-func (rg *reportGenerator) writeStyleCSS(styleCSS string) error {
+func (rg *reportGenerator) writeStyleCSS(ctx context.Context, styleCSS string) error {
+	if err := ctx.Err(); err != nil { return err }
 	data := struct{
 		MaxWidth int
 	}{
 		MaxWidth: rg.maxWidth,
 	}
-	return rg.writeTemplateFile(styleCSS, data)
+	return rg.writeTemplateFile(ctx, styleCSS, data)
 }
 
 // writeTemplateFile writes the specified template file
-func (rg *reportGenerator) writeTemplateFile(file string, tmplVars any) error {
+func (rg *reportGenerator) writeTemplateFile(ctx context.Context, file string, tmplVars any) error {
+	if err := ctx.Err(); err != nil { return err }
 	outFile   := filepath.Clean(filepath.Join(rg.outRoot, filepath.Base(file)))
 	tmpl, err := template.ParseFS(rg.embeddedFiles, file)
 	if err != nil { return fmt.Errorf("cannot parse %q: %w", file, err) }
-	f, err := rg.fsys.Create(outFile)
+	f, err := rg.fsys.Create(ctx, outFile)
 	if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
 	if err := tmpl.Execute(f, tmplVars); err != nil { return fmt.Errorf("cannot render template: %w", err) }
 	return f.Close()
 }
 
 // writeAncillaryFiles writes the files required by the coverage report to the user-specified path
-func (rg *reportGenerator) writeAncillaryFiles() error {
+func (rg *reportGenerator) writeAncillaryFiles(ctx context.Context) error {
+	if err := ctx.Err(); err != nil { return err }
 	for _, file := range rg.ancillaryFiles {
 		outFile   := filepath.Clean(filepath.Join(rg.outRoot, filepath.Base(file)))
-		f, err    := rg.fsys.Create(outFile)
+		f, err    := rg.fsys.Create(ctx, outFile)
 		if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
 		data, err := fs.ReadFile(rg.embeddedFiles, file)
 		if err != nil { return fmt.Errorf("cannot read %q: %w", file, err) }

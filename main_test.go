@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/fs"
@@ -34,7 +35,8 @@ type mockFS struct {
 	data           []byte
 }
 
-func (m *mockFS) Create(_ string) (io.WriteCloser, error) {
+func (m *mockFS) Create(ctx context.Context, _ string) (io.WriteCloser, error) {
+	if err := ctx.Err(); err != nil { return nil, err }
 	if m.createFails { return nil, fmt.Errorf("Create failed") }
 	var w io.Writer
 	if m.badWriter {
@@ -48,17 +50,33 @@ func (m *mockFS) Create(_ string) (io.WriteCloser, error) {
 	}, nil
 }
 
+func (m *mockFS) Open(name string) (fs.File, error) {
+	return m.FS.Open(name)
+}
+
+func (m *mockFS) OpenWithContext(ctx context.Context, name string) (fs.File, error) {
+	if err := ctx.Err(); err != nil { return nil, err }
+	return m.Open(name)
+}
+
 func (m *mockFS) ReadDir(dir string) ([]fs.DirEntry, error) {
 	if m.readDirFails { return nil, fmt.Errorf("ReadDir failed") }
 	return fs.ReadDir(m.FS, dir)
 }
 
-func (m *mockFS) MkdirAll(_ string, _ fs.FileMode) error {
+func (m *mockFS) MkdirAll(ctx context.Context, _ string, _ fs.FileMode) error {
+	if err := ctx.Err(); err != nil { return err }
 	if m.mkdirAllFails { return fmt.Errorf("MkdirAll failed") }
 	return nil
 }
 
-func (m *mockFS) WriteFile(_ string, data []byte, _ fs.FileMode) error {
+func (m *mockFS) ReadFile(ctx context.Context, name string) ([]byte, error) {
+	if err := ctx.Err(); err != nil { return nil, err }
+	return fs.ReadFile(m, name)
+}
+
+func (m *mockFS) WriteFile(ctx context.Context, _ string, data []byte, _ fs.FileMode) error {
+	if err := ctx.Err(); err != nil { return err }
 	if m.writeFileFails { return fmt.Errorf("WriteFile failed") }
 	m.data = data
 	return nil
@@ -128,7 +146,7 @@ func TestGetModName(t *testing.T) {
 			repGen := &reportGenerator{
 				fsys: &mockFS{ FS: tt.fsys },
 			}
-			err := repGen.getModName("go.mod")
+			err := repGen.getModName(t.Context(), "go.mod")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getModeName(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -165,7 +183,7 @@ func TestGetRepoURL(t *testing.T) {
 			repGen := &reportGenerator{
 				fsys: &mockFS{ FS: tt.fsys },
 			}
-			err := repGen.getRepoURL(tt.gitCfg)
+			err := repGen.getRepoURL(t.Context(), tt.gitCfg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getRepoURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -216,7 +234,7 @@ func TestGetAllPkgPaths(t *testing.T) {
 			repGen := &reportGenerator{
 				fsys: &mockFS{ FS: tt.fsys },
 			}
-			got, err := repGen.getAllPkgPaths(tt.profilePath)
+			got, err := repGen.getAllPkgPaths(t.Context(), tt.profilePath)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getAllPkgPaths(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -295,7 +313,7 @@ func TestPrimePkgDirCache(t *testing.T) {
 			repGen := &reportGenerator{
 				fsys: &mockFS{ FS: tt.fsys },
 			}
-			err := repGen.primePkgDirCache(mockPkgLoader, tt.profilePath)
+			err := repGen.primePkgDirCache(t.Context(), mockPkgLoader, tt.profilePath)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("primePkgDirCache(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -414,7 +432,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				profiles:    tt.profiles,
 				pkgDirCache: &pkgDirCache{ cache: tt.pkgDirCache },
 			}
-			err := repGen.writeCovHTMLFiles(io.Discard)
+			err := repGen.writeCovHTMLFiles(t.Context(), io.Discard)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeCovHTMLFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -465,7 +483,7 @@ func TestWriteIndexHTML(t *testing.T) {
 				repoURL:       tt.repoURL,
 				embeddedFiles: tt.embeddedFiles,
 			}
-			err := repGen.writeIndexHTML("index.html")
+			err := repGen.writeIndexHTML(t.Context(), "index.html")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeIndexHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -513,7 +531,7 @@ func TestWriteStyleCSS(t *testing.T) {
 				embeddedFiles: tt.embeddedFiles,
 				maxWidth:      tt.maxWidth,
 			}
-			err := repGen.writeStyleCSS("style.css")
+			err := repGen.writeStyleCSS(t.Context(), "style.css")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeStyleCSS(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -557,7 +575,7 @@ func TestWriteTemplateFile(t *testing.T) {
 				fsys:          mfs,
 				embeddedFiles: tt.embeddedFiles,
 			}
-			err := repGen.writeTemplateFile(tt.fileName, tt.tmplData)
+			err := repGen.writeTemplateFile(t.Context(), tt.fileName, tt.tmplData)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeTemplateFile(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -576,6 +594,7 @@ func TestPrintCoverage(t *testing.T) {
 		totalCovered    int
 		totalStatements int
 		want            string
+		wantErr         bool
 	}{
 		{
 			name: "succeeds",
@@ -605,9 +624,12 @@ func TestPrintCoverage(t *testing.T) {
 				totalStatements: tt.totalStatements,
 			}
 			got := new(bytes.Buffer)
-			repGen.printCoverage(got)
+			err := repGen.printCoverage(t.Context(), got)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("printCoverage(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
 			if diff := cmp.Diff(tt.want, got.String()); diff != "" {
-				t.Errorf("printCoverage() mismatch (-want +got):\n%s", diff)
+				t.Errorf("printCoverage(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}
@@ -672,7 +694,7 @@ func TestWriteAncillaryFiles(t *testing.T) {
 				embeddedFiles:  tt.embeddedFiles,
 				ancillaryFiles: tt.ancillaryFiles,
 			}
-			err := repGen.writeAncillaryFiles()
+			err := repGen.writeAncillaryFiles(t.Context())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeAncillaryFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/fs"
@@ -34,11 +35,11 @@ type htmlBuilder struct {
 }
 
 // writeTreeHTML writes HTML to the specified treeHTML file
-func (tb *treeBuilder) writeTreeHTML(progressOutput io.Writer) (int, error) {
+func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writer) (int, error) {
 	html, err := tb.genHTML(progressOutput)
 	if err != nil { return 0, err }
 
-	treeFile, err := tb.fsys.Create(filepath.Clean(filepath.Join(tb.outRoot, treeHTML)))
+	treeFile, err := tb.fsys.Create(ctx, filepath.Clean(filepath.Join(tb.outRoot, treeHTML)))
 	if                                       err != nil { return 0, err }
 	if    err := preamble(  treeFile);       err != nil { return 0, err }
 	if _, err := fmt.Fprint(treeFile, html); err != nil { return 0, err }
