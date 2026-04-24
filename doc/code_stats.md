@@ -9,7 +9,7 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Thu Apr 23 16:22:55 CEST 2026
+Fri Apr 24 03:08:23 CEST 2026
 ```
 
 ```
@@ -33,15 +33,15 @@ action.yml                                         64        7         8       4
 .github/dependabot.yml                             20        1         1       18          0             0.00
 .github/actions/setup-node/action.yml              19        2         1       16          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Go                                       10      2649      231       111     2307        338           157.24
-(ULOC)                                           1467
+Go                                       10      2818      254       115     2449        411           167.56
+(ULOC)                                           1549
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-main_test.go                                      718       29         2      687         69            10.04
-main.go                                           559       76        59      424         97            22.88
+main_test.go                                      740       32         2      706         82            11.61
+main.go                                           670       91        63      516        142            27.52
 progress/progress_test.go                         349       25         0      324         36            11.11
 progress/progress.go                              274       34        38      202         34            16.83
+tree.go                                           249       42         9      198         52            26.26
 tree_test.go                                      249        7         0      242         28            11.57
-tree.go                                           213       37         9      167         37            22.16
 flags_test.go                                     148        3         0      145         17            11.72
 progress/examples/fractional/main.go               56       10         1       45          8            17.78
 progress/examples/weight-based/main.go             43        8         1       34          3             8.82
@@ -62,14 +62,14 @@ CSS                                       2       256       38         1      21
 css/style.css                                     137       18         0      119          0             0.00
 css/tree.css                                      119       20         1       98          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                                    29      3676      353       199     3124        347           177.27
+Total                                    29      3845      376       203     3266        420           187.59
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Unique Lines of Code (ULOC)                      2150
+Unique Lines of Code (ULOC)                      2232
 DRYness %                                        0.58
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $89,339
-Estimated Schedule Effort (organic) 5.49 months
-Estimated People Required (organic) 1.44
-Processed 114189 bytes, 0.114 megabytes (SI)
+Estimated Cost to Develop (organic) $93,607
+Estimated Schedule Effort (organic) 5.59 months
+Estimated People Required (organic) 1.49
+Processed 120253 bytes, 0.120 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```
