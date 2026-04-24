@@ -605,7 +605,7 @@ func TestPrintCoverage(t *testing.T) {
 			},
 			totalCovered:     10 + 180 + 40,
 			totalStatements: 100 + 200 + 40,
-			want: strings.Join([]string{
+			want:            strings.Join([]string{
 				"File    Coverage",
 				"————————————————",
 				"boo      100.00%",

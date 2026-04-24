@@ -2,13 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"io/fs"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 
 	"github.com/jbunds/coverage/progress"
@@ -21,8 +19,7 @@ type treeBuilder struct {
 	outRoot  string
 	cov      map[string]coverage
 	counter  atomic.Int64
-	mu       sync.Mutex // protects maxWidth
-	maxWidth int
+	maxWidth atomic.Int64
 }
 
 // entryResult stores the results of processing directory entries containing *.go.html files generated from coverge profiles
@@ -47,12 +44,12 @@ func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writ
 	if err != nil { return 0, err }
 
 	treeFile, err := tb.fsys.Create(ctx, filepath.Clean(filepath.Join(tb.outRoot, treeHTML)))
-	if                                       err != nil { return 0, err }
-	if    err := preamble  (ctx,  treeFile); err != nil { return 0, err }
-	if _, err := fmt.Fprint(treeFile, html); err != nil { return 0, err }
-	if    err := postamble (ctx,  treeFile); err != nil { return 0, err }
+	if                                           err != nil { return 0, err }
+	if    err := preamble      (ctx,  treeFile); err != nil { return 0, err }
+	if _, err := io.WriteString(treeFile, html); err != nil { return 0, err }
+	if    err := postamble     (ctx,  treeFile); err != nil { return 0, err }
 
-	return tb.maxWidth + 10, treeFile.Close() // +10 == len("100.0%") + 2ch (gap) to cohere with "margin-right: 10ch;" in tree.css
+	return int(tb.maxWidth.Add(10)), treeFile.Close() // +10 == len("100.0%") + 2ch (gap) to cohere with "margin-right: 10ch;" in tree.css
 }
 
 // genHTML recursively traverses the output directory to generate the nested <ul> and <li> HTML string representing the file coverage tree
@@ -107,14 +104,20 @@ func (tb *treeBuilder) processEntry(ctx context.Context, relParentPath string, e
 	srcPath  := filepath.Clean(filepath.Join(relParentPath, src)) // package-normalized path
 	htmlPath := filepath.Clean(filepath.Join(relParentPath, entry.Name()))
 
-	width := indent + len(src)
+	width := int64(indent + len(src))
 	if isDir { width += 2 } // account for the folder icon emoji
-	tb.mu.Lock()
-	if width > tb.maxWidth { tb.maxWidth = width }
-	tb.mu.Unlock()
+	for {
+		current := tb.maxWidth.Load()
+		if width <= current {
+			break
+		}
+		if tb.maxWidth.CompareAndSwap(current, width) {
+			break
+		}
+	}
 
 	if isDir {
-		itemID             := fmt.Sprintf("tree-item-%d", tb.counter.Add(1))
+		itemID             := "tree-item-" + strconv.FormatInt(tb.counter.Add(1), 10)
 		fullPath           := filepath.Join(tb.outRoot, htmlPath)
 		subDirEntries, err := fs.ReadDir(tb.fsys, fullPath)
 		if err != nil { return entryResult{}, err }
@@ -169,12 +172,12 @@ func (tb *treeBuilder) processEntry(ctx context.Context, relParentPath string, e
 		percent = float64(cov.covered) / float64(cov.total) * 100
 	}
 
-	srcSpan := fmt.Sprintf("<span class=\"src\"><a href=\"%s\">%s</a></span>", htmlPath, src)
-	covSpan := fmt.Sprintf("<span class=\"cov\">%.1f%%</span>", percent)
-	html    := strings.Repeat("  ", indent) + fmt.Sprintf("<li><div class=\"tree-node\">%s %s</div></li>\n", srcSpan, covSpan)
+	pct     := strconv.FormatFloat(percent, 'f', 1, 64)
+	srcSpan := "<span class=\"src\"><a href=\"" + htmlPath + "\">" + src + "</a></span>"
+	covSpan := "<span class=\"cov\">" + pct + "%</span>"
 
 	return entryResult{
-		html:    html,
+		html:    strings.Repeat("  ", indent) + "<li><div class=\"tree-node\">" + srcSpan + " " + covSpan + "</div></li>\n",
 		covered: cov.covered,
 		total:   cov.total}, nil
 }
@@ -207,7 +210,7 @@ func (hb *htmlBuilder) buildHTML(ctx context.Context, subDirHTML string, dirCove
 // preamble writes the preliminary portion of the tree HTML document
 func preamble(ctx context.Context, w io.Writer) error {
 	if err := ctx.Err(); err != nil { return err }
-	if _, err := fmt.Fprintln(w, `<!DOCTYPE html>
+	const content = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -216,14 +219,16 @@ func preamble(ctx context.Context, w io.Writer) error {
 <title>Go source tree</title>
 <base target="code"/>
 </head>
-<body id="tree-body">`); err != nil { return err }
-	return nil
+<body id="tree-body">
+`
+	_, err := io.WriteString(w, content)
+	return err
 }
 
 // postamble writes the final portion of the tree HTML document
 func postamble(ctx context.Context, w io.Writer) error {
 	if err := ctx.Err(); err != nil { return err }
-	if _, err := fmt.Fprint(w, `</body>
+	const content = `</body>
 <script>
 try {
   const parentTheme = window.parent.document.documentElement.getAttribute('theme');
@@ -238,6 +243,7 @@ window.addEventListener('message', (event) => {
   if (event.data.type === 'EXPAND_OR_COLLAPSE') document.querySelectorAll('.tree input[type="checkbox"]').forEach(cb => cb.checked = event.data.expanded);
 });
 </script>
-</html>`); err != nil { return err }
-	return nil
+</html>`
+	_, err := io.WriteString(w, content)
+	return err
 }

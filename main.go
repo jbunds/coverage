@@ -4,14 +4,14 @@
 //
 // The header portion of the index HTML file will also render two buttons if the browser's CORS policies allow it. These buttons are:
 //
-//   "theme"                  - toggles between two hardcoded "light" and "dark" themes
-//   "expand" (or "collapse") - toggles the opening (or closing) of all subdirectories rendered within the tree HTML document
+//	"theme"                  - toggles between two hardcoded "light" and "dark" themes
+//	"expand" (or "collapse") - toggles the opening (or closing) of all subdirectories rendered within the tree HTML document
 //
 // Note that the "theme" and "expand" / "collapse" buttons will not be rendered when the index page is loaded via the file:// scheme.
 //
 // A simple workaround is to instantiate an HTTP server to serve the HTML files, e.g.:
 //
-//   $ python3 -m http.server 8000
+//	$ python3 -m http.server 8000
 //
 // and then load http://localhost:8000/ in a browser.
 package main
@@ -27,10 +27,12 @@ import (
 	"io"
 	"io/fs"
 	"maps"
+	"math"
 	"os"
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -39,6 +41,7 @@ import (
 	"github.com/jbunds/coverage/progress"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/term"
 	"golang.org/x/tools/cover"
 	"golang.org/x/tools/go/packages"
 )
@@ -56,6 +59,26 @@ var (
 		"img/go-blue-gradient.svg",
 	}
 )
+
+const (
+	colorReset = "\033[0m"
+	colorRed   = "\033[31m"
+	colorGreen = "\033[32m"
+)
+
+// errorWriter is a wrapper that tracks the first encountered I/O error to allow multiple sequential writes without repetitive inline error checking
+type errorWriter struct {
+	w   io.Writer
+	err error
+}
+
+// write performs a sticky-error write that optionally wraps the provided string in ANSI color codes
+func (e *errorWriter) write(s, color string, useColor bool) {
+	if e.err != nil { return }
+	if useColor { _, e.err = io.WriteString(e.w, color) }
+	_, e.err = io.WriteString(e.w, s)
+	if useColor { _, e.err = io.WriteString(e.w, colorReset) }
+}
 
 // pkgDirCache maps canonical Go packages to their respective paths on disk
 type pkgDirCache struct {
@@ -452,11 +475,15 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, w io.Writer, profil
 			if b.Count > 0 { class = "hit" }
 			if nl := strings.LastIndexByte(chunk, '\n'); nl != -1 {
 				write(chunk[:nl+1])
-				_, _ = fmt.Fprintf(bw, `<span class="%s">`, class)
+				_, _ = bw.WriteString(`<span class="`)
+				_, _ = bw.WriteString(class)
+				_, _ = bw.WriteString(`">`)
 				write(chunk[nl+1:])
 			} else {
 				write(chunk)
-				_, _ = fmt.Fprintf(bw, `<span class="%s">`, class)
+				_, _ = bw.WriteString(`<span class="`)
+				_, _ = bw.WriteString(class)
+				_, _ = bw.WriteString(`">`)
 			}
 		} else {
 			write(chunk)
@@ -507,6 +534,7 @@ window.addEventListener('message', (event) => {
 // printCoverage prints per-file coverage percentages to the specified destination (typically stdout)
 func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error {
 	if err := ctx.Err(); err != nil { return err }
+
 	keys       := slices.Collect(maps.Keys(rg.cov))
 	maxPathLen := len(slices.MaxFunc(keys, func(a, b string) int {
 		return cmp.Compare(len(a), len(b))
@@ -514,22 +542,31 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 
 	maxPathLen = max(maxPathLen, 5) // 5 == len("Total")
 
-	fmtHeader := fmt.Sprintf("%%-%ds %%7s\n",        maxPathLen)
-	fmtData   := fmt.Sprintf("%%-%ds  %%6.2f%%%%\n", maxPathLen)
-
-	fmt.Fprintf(w, fmtHeader, "File", "Coverage")
-	fmt.Fprintln(w, strings.Repeat("—", maxPathLen + 9)) // 9 == 2 spaces + len("100.00%")
-
 	// TODO(jeff): allow users to chose how the rows rendered in the tree should be sorted;
 	//             default should probably path-depth, then alphanumerically, just like here
 	slices.SortFunc(keys, func(a, b string) int {
-		depthA := strings.Count(a, "/")
-		depthB := strings.Count(b, "/")
-		if depthA != depthB {
-			return cmp.Compare(depthA, depthB) // sort by path depth
-		}
+		depthA, depthB := strings.Count(a, "/"), strings.Count(b, "/")
+		if depthA != depthB { return cmp.Compare(depthA, depthB) } // sort by path depth
 		return cmp.Compare(a, b) // sort alphanumerically
 	})
+
+	useColor := false
+	if f, ok := w.(*os.File); ok {
+		fd := f.Fd()
+		if fd <= math.MaxInt {
+			if term.IsTerminal(int(fd)) {
+				useColor = true
+			}
+		}
+	}
+
+	divider := strings.Repeat("—", maxPathLen + 9) + "\n" // 9 == 2 spaces + len("100.00%")
+
+	ew := &errorWriter{w: w}
+	ew.write("File", "", false)
+	ew.write(strings.Repeat(" ", maxPathLen - 4 + 1), "", false) // align "Coverage"
+	ew.write("Coverage\n", "", false)
+	ew.write(divider, "", false)
 
 	for _, path := range keys {
 		cov     := rg.cov[path]
@@ -537,18 +574,37 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 		if cov.total > 0 {
 			percent = float64(cov.covered) / float64(cov.total) * 100
 		}
-		fmt.Fprintf(w, fmtData, path, percent)
+		ew.write(path, "", false)
+		ew.write(strings.Repeat(" ", maxPathLen - len(path) + 2), "", false)
+		pct := strconv.FormatFloat(percent, 'f', 2, 64)
+		colorCode := colorGreen
+		if percent < 50 {
+			colorCode = colorRed
+		}
+		ew.write(strings.Repeat(" ", 6 - len(pct)), "", false) // right-align coverage percentage
+		ew.write(pct, colorCode, useColor)
+		ew.write("%", colorCode, useColor)
+		ew.write("\n", "", false)
 	}
 
 	totalPercent := 0.0
 	if rg.totalStatements > 0 {
 		totalPercent = float64(rg.totalCovered) / float64(rg.totalStatements) * 100
 	}
+	ew.write(divider, "", false)
+	ew.write("Total", "", false)
+	ew.write(strings.Repeat(" ", maxPathLen - 5 + 2), "", false)
+	totalPct := strconv.FormatFloat(totalPercent, 'f', 2, 64)
+	colorCode := colorGreen
+	if totalPercent < 50 {
+		colorCode = colorRed
+	}
+	ew.write(strings.Repeat(" ", 6 - len(totalPct)), "", false)
+	ew.write(totalPct, colorCode, useColor)
+	ew.write("%", colorCode, useColor)
+	ew.write("\n", "", false)
 
-	fmt.Fprintln(w, strings.Repeat("—", maxPathLen + 9)) // 9 == 2 spaces + len("100.00%")
-	fmt.Fprintf(w, fmtData, "Total", totalPercent)
-
-	return nil
+	return ew.err
 }
 
 // writeIndexHTML writes the index HTML file, which contains two template parameters
