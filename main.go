@@ -563,10 +563,10 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 	divider := strings.Repeat("—", maxPathLen + 9) + "\n" // 9 == 2 spaces + len("100.00%")
 
 	ew := &errorWriter{w: w}
-	ew.write("File", "", false)
+	ew.write("File",                                  "", false)
 	ew.write(strings.Repeat(" ", maxPathLen - 4 + 1), "", false) // align "Coverage"
-	ew.write("Coverage\n", "", false)
-	ew.write(divider, "", false)
+	ew.write("Coverage\n",                            "", false)
+	ew.write(divider,                                 "", false)
 
 	for _, path := range keys {
 		cov     := rg.cov[path]
@@ -574,35 +574,33 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 		if cov.total > 0 {
 			percent = float64(cov.covered) / float64(cov.total) * 100
 		}
-		ew.write(path, "", false)
+		ew.write(path,                                            "", false)
 		ew.write(strings.Repeat(" ", maxPathLen - len(path) + 2), "", false)
-		pct := strconv.FormatFloat(percent, 'f', 2, 64)
+		pct       := strconv.FormatFloat(percent, 'f', 2, 64)
 		colorCode := colorGreen
 		if percent < 50 {
 			colorCode = colorRed
 		}
-		ew.write(strings.Repeat(" ", 6 - len(pct)), "", false) // right-align coverage percentage
-		ew.write(pct, colorCode, useColor)
-		ew.write("%", colorCode, useColor)
-		ew.write("\n", "", false)
+		ew.write(strings.Repeat(" ", 6 - len(pct)), "",        false   ) // right-align coverage percentage
+		ew.write(pct + "%",                         colorCode, useColor)
+		ew.write("\n",                              "",        false   )
 	}
 
 	totalPercent := 0.0
 	if rg.totalStatements > 0 {
 		totalPercent = float64(rg.totalCovered) / float64(rg.totalStatements) * 100
 	}
-	ew.write(divider, "", false)
-	ew.write("Total", "", false)
+	ew.write(divider,                                 "", false)
+	ew.write("Total",                                 "", false)
 	ew.write(strings.Repeat(" ", maxPathLen - 5 + 2), "", false)
-	totalPct := strconv.FormatFloat(totalPercent, 'f', 2, 64)
+	totalPct  := strconv.FormatFloat(totalPercent, 'f', 2, 64)
 	colorCode := colorGreen
 	if totalPercent < 50 {
 		colorCode = colorRed
 	}
-	ew.write(strings.Repeat(" ", 6 - len(totalPct)), "", false)
-	ew.write(totalPct, colorCode, useColor)
-	ew.write("%", colorCode, useColor)
-	ew.write("\n", "", false)
+	ew.write(strings.Repeat(" ", 6 - len(totalPct)), "",        false   )
+	ew.write(totalPct + "%",                         colorCode, useColor)
+	ew.write("\n",                                   "",        false   )
 
 	return ew.err
 }
