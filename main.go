@@ -18,12 +18,12 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"cmp"
 	"context"
 	"embed"
 	"flag"
 	"fmt"
-	"html"
 	"io"
 	"io/fs"
 	"maps"
@@ -66,18 +66,42 @@ const (
 	colorGreen = "\033[32m"
 )
 
-// errorWriter is a wrapper that tracks the first encountered I/O error to allow multiple sequential writes without repetitive inline error checking
+// stickyWriter is a wrapper interface used to enable sequential string writing with deferred error handling
+type stickyWriter interface {
+	io.Writer
+	write(string)
+	err() error
+}
+
+// errorWriter tracks the first encountered I/O failure to allow multiple sequential writes without repetitive inline error checking
 type errorWriter struct {
-	w   io.Writer
-	err error
+	w io.Writer
+	e error
+}
+
+// write performs a sticky-error write
+func (e *errorWriter) write(s string) {
+	if e.e != nil { return }
+	_, e.e = io.WriteString(e.w, s)
 }
 
 // write performs a sticky-error write that optionally wraps the provided string in ANSI color codes
-func (e *errorWriter) write(s, color string, useColor bool) {
-	if e.err != nil { return }
-	if useColor { _, e.err = io.WriteString(e.w, color) }
-	_, e.err = io.WriteString(e.w, s)
-	if useColor { _, e.err = io.WriteString(e.w, colorReset) }
+func (e *errorWriter) writeColor(s, color string, useColor bool) {
+	if e.e != nil { return }
+	if useColor { _, e.e = io.WriteString(e.w, color     ) }
+	              _, e.e = io.WriteString(e.w, s         )
+	if useColor { _, e.e = io.WriteString(e.w, colorReset) }
+}
+
+// err returns the first I/O failure encountered during multiple sequential write operations
+func (e *errorWriter) err() error { return e.e }
+
+// Write satisfies the io.Writer interface, but it unused
+func (e *errorWriter) Write(p []byte) (int, error) {
+	if e.e != nil { return 0, e.e }
+	n := 0
+	n, e.e = e.w.Write(p)
+	return n, e.e
 }
 
 // pkgDirCache maps canonical Go packages to their respective paths on disk
@@ -261,19 +285,23 @@ func main() {
 // getModName reads the repo's root go.mod file to determine the name of the Go module
 func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) error {
 	if err := ctx.Err(); err != nil { return err }
+
 	goMod, err := rg.fsys.ReadFile(ctx, goModFile)
-	if err != nil { return fmt.Errorf("cannot read %q: %w", goModFile, err) }
+	if err != nil                          { return fmt.Errorf("cannot read %q: %w",  goModFile, err) }
 	modFile, err := modfile.Parse(goModFile, goMod, nil)
 	if err != nil || modFile.Module == nil { return fmt.Errorf("cannot parse %q: %w", goModFile, err) }
 	rg.modName = modFile.Module.Mod.Path
+
 	return nil
 }
 
 // getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML
 func (rg *reportGenerator) getRepoURL(ctx context.Context, gitConfig iniFileValueGetter) error {
 	if err := ctx.Err(); err != nil { return err }
+
 	gitRemoteURL, err := gitConfig.Value(`remote "origin"`, "url")
 	if err != nil { return err }
+
 	httpURL := gitRemoteURL
 	httpURL  = strings.TrimPrefix(httpURL, "ssh://")
 	httpURL  = strings.TrimPrefix(httpURL, "git://")
@@ -281,16 +309,20 @@ func (rg *reportGenerator) getRepoURL(ctx context.Context, gitConfig iniFileValu
 	httpURL  = strings.Replace   (httpURL, ":", "/", 1)
 	httpURL  = strings.TrimSuffix(httpURL, ".git")
 	httpURL  = strings.TrimSuffix(httpURL, "/")
+
 	if !strings.HasPrefix(httpURL, "http") { httpURL = "https://" + httpURL }
 	rg.repoURL = httpURL
+
 	return nil
 }
 
 // getAllPkgPaths extracts all unique package paths from the coverage profile file for subsequent use in primePkgDirCache
 func (rg *reportGenerator) getAllPkgPaths(ctx context.Context, profilePath string) ([]string, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
+
 	f, err := rg.fsys.OpenWithContext(ctx, filepath.Clean(profilePath))
 	if err != nil { return nil, err }
+
 	defer func() {
 		closeErr := f.Close()
 		if err == nil { err = closeErr }
@@ -310,12 +342,14 @@ func (rg *reportGenerator) getAllPkgPaths(ctx context.Context, profilePath strin
 
 	allPaths := make([]string, 0, len(pkgSet))
 	for p := range pkgSet { allPaths = append(allPaths, p) }
+
 	return allPaths, scanner.Err()
 }
 
 // primePkgDirCache primes rg.pkgDirCache for subsequent use in buildCovHTML
 func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLoader, profilePath string) error {
 	if err := ctx.Err(); err != nil { return err }
+
 	rg.pkgDirCache    = &pkgDirCache{ cache: make(map[string]string) }
 	allPkgPaths, err := rg.getAllPkgPaths(ctx, profilePath)
 	if err != nil { return err }
@@ -336,12 +370,14 @@ func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLo
 			rg.pkgDirCache.cache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])
 		}
 	}
+
 	return nil
 }
 
 // writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the coverage profile file
 func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput io.Writer) error {
 	if err := ctx.Err(); err != nil { return err }
+
 	rg.cov        = make(map[string]coverage, len(rg.profiles))
 	units        := make([]workUnit, 0, len(rg.profiles))
 	dirsToCreate := make(map[string]struct{}) // exclude duplicate directories and keep the relatively heavy mkdir syscalls outside of the concurrent loop
@@ -394,11 +430,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 
 	for _, unit := range units {
 		group.Go(func() error {
-			select {
-			case <-ctx.Done(): // if any of the workers fails...
-				return ctx.Err() // ...stop immediately
-			default:
-			}
+			if err := gCtx.Err(); err != nil { return err }
 
 			var fileStatements, fileCovered int
 			for _, block := range unit.profile.Blocks {
@@ -411,12 +443,13 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 			fileWeight := uint64(fileStatements)
 			progFiles.AddTotal(fileWeight)
 
-			var buf strings.Builder
-			if err := rg.buildCovHTML(ctx, &buf, unit.profile, unit.profile.FileName); err != nil {
+			var buf bytes.Buffer
+			ew := &errorWriter{w: &buf}
+			if err := rg.buildCovHTML(ctx, ew, unit.profile, unit.profile.FileName); err != nil {
 				return fmt.Errorf("cannot build HTML for %q: %w", unit.profile.FileName, err)
 			}
 
-			if err := rg.fsys.WriteFile(ctx, unit.outPath, []byte(buf.String()), 0600); err != nil {
+			if err := rg.fsys.WriteFile(ctx, unit.outPath, buf.Bytes(), 0600); err != nil {
 				return fmt.Errorf("cannot write HTML file for %q: %w", unit.profile.FileName, err)
 			}
 
@@ -435,7 +468,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 		})
 	}
 
-	err := group.Wait() // wait for all workers to finish, including their respective calls to progFiles.Report()
+	err := group.Wait()
 
 	progFiles.Close()
 
@@ -443,78 +476,59 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 }
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage
-func (rg *reportGenerator) buildCovHTML(ctx context.Context, w io.Writer, profile *cover.Profile, srcPath string) error {
+func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath string) error {
 	if err := ctx.Err(); err != nil { return err }
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
+
 	pkgPath  := filepath.Dir (profile.FileName)
 	fileName := filepath.Base(profile.FileName)
 
 	src, err := rg.fsys.ReadFile(ctx, filepath.Join(rg.pkgDirCache.cache[pkgPath], fileName))
 	if err != nil { return err }
 
-	bw := bufio.NewWriter(w)
-	write := func(s string) { _, _ = bw.WriteString(html.EscapeString(s)) }
-
 	cssPath := strings.Repeat("../", strings.Count(srcPath, "/")) + filepath.Base(styleCSS)
-	if err := writePreamble(bw, cssPath, srcPath); err != nil { return err }
+	writePreamble(ew, cssPath, srcPath)
 
 	pos := 0
 	for _, b := range profile.Boundaries(src) {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-		chunk := string(src[pos:b.Offset])
+		chunk := src[pos:b.Offset]
 		if b.Start {
 			class := "miss"
 			if b.Count > 0 { class = "hit" }
-			if nl := strings.LastIndexByte(chunk, '\n'); nl != -1 {
-				write(chunk[:nl+1])
-				_, _ = bw.WriteString(`<span class="`)
-				_, _ = bw.WriteString(class)
-				_, _ = bw.WriteString(`">`)
-				write(chunk[nl+1:])
+			if nl := bytes.LastIndexByte(chunk, '\n'); nl != -1 {
+				template.HTMLEscape(ew, chunk[:nl + 1])
+				ew.write(`<span class="`)
+				ew.write(class)
+				ew.write(`">`)
+				template.HTMLEscape(ew, chunk[nl + 1:])
 			} else {
-				write(chunk)
-				_, _ = bw.WriteString(`<span class="`)
-				_, _ = bw.WriteString(class)
-				_, _ = bw.WriteString(`">`)
+				template.HTMLEscape(ew, chunk)
+				ew.write(`<span class="`)
+				ew.write(class)
+				ew.write(`">`)
 			}
 		} else {
-			write(chunk)
-			_, _ = bw.WriteString("</span>")
+			template.HTMLEscape(ew, chunk)
+			ew.write("</span>")
 		}
 		pos = b.Offset
 	}
 
-	write(string(src[pos:]))
-	if err := writePostamble(bw); err != nil { return err }
-	return bw.Flush()
+	template.HTMLEscape(ew, src[pos:])
+	writePostamble(ew)
+	return ew.err()
 }
 
 // writePreamble writes the preamble portion of the HTML content common to every Go source HTML file
-func writePreamble(w io.Writer, cssRelPath, srcPath string) error {
-	_, err := fmt.Fprintf(w, `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<link rel="stylesheet" href="%s" type="text/css">
-<title>%s</title>
-</head>
-<body id="code">
-<pre>`, cssRelPath, srcPath)
-	return err
+func writePreamble(ew stickyWriter, cssRelPath, srcPath string) {
+	ew.write("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n")
+	ew.write("<link rel=\"stylesheet\" href=\"")
+	ew.write(cssRelPath)
+	ew.write("\" type=\"text/css\">\n<title>")
+	ew.write(srcPath)
+	ew.write("</title>\n</head>\n<body id=\"code\">\n<pre>\n")
 }
 
-// writePreamble writes the postamble portion of the HTML content common to every Go source HTML file
-func writePostamble(w io.Writer) error {
-	_, err := io.WriteString(w, `</pre>
-<script>
+const js = `
 try {
   const parentTheme = window.parent.document.documentElement.getAttribute('theme');
   if (parentTheme) document.documentElement.setAttribute('theme', parentTheme);
@@ -527,8 +541,12 @@ window.addEventListener('message', (event) => {
 });
 </script>
 </body>
-</html>`)
-	return err
+</html>`
+
+// writePostamble writes the postamble portion of the HTML content common to every Go source HTML file
+func writePostamble(ew stickyWriter) {
+	ew.write("</pre>\n<script>")
+	ew.write(js)
 }
 
 // printCoverage prints per-file coverage percentages to the specified destination (typically stdout)
@@ -563,10 +581,10 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 	divider := strings.Repeat("—", maxPathLen + 9) + "\n" // 9 == 2 spaces + len("100.00%")
 
 	ew := &errorWriter{w: w}
-	ew.write("File",                                  "", false)
-	ew.write(strings.Repeat(" ", maxPathLen - 4 + 1), "", false) // align "Coverage"
-	ew.write("Coverage\n",                            "", false)
-	ew.write(divider,                                 "", false)
+	ew.write("File")
+	ew.write(strings.Repeat(" ", maxPathLen - 4 + 1))
+	ew.write("Coverage\n")
+	ew.write(divider)
 
 	for _, path := range keys {
 		cov     := rg.cov[path]
@@ -574,85 +592,89 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 		if cov.total > 0 {
 			percent = float64(cov.covered) / float64(cov.total) * 100
 		}
-		ew.write(path,                                            "", false)
-		ew.write(strings.Repeat(" ", maxPathLen - len(path) + 2), "", false)
+		ew.write(path)
+		ew.write(strings.Repeat(" ", maxPathLen - len(path) + 2))
 		pct       := strconv.FormatFloat(percent, 'f', 2, 64)
 		colorCode := colorGreen
-		if percent < 50 {
-			colorCode = colorRed
-		}
-		ew.write(strings.Repeat(" ", 6 - len(pct)), "",        false   ) // right-align coverage percentage
-		ew.write(pct + "%",                         colorCode, useColor)
-		ew.write("\n",                              "",        false   )
+		if percent < 50 { colorCode = colorRed }
+		ew.write(strings.Repeat(" ", 6 - len(pct)))
+		ew.writeColor(pct + "%", colorCode, useColor)
+		ew.write("\n")
 	}
 
 	totalPercent := 0.0
 	if rg.totalStatements > 0 {
 		totalPercent = float64(rg.totalCovered) / float64(rg.totalStatements) * 100
 	}
-	ew.write(divider,                                 "", false)
-	ew.write("Total",                                 "", false)
-	ew.write(strings.Repeat(" ", maxPathLen - 5 + 2), "", false)
+	ew.write(divider)
+	ew.write("Total")
+	ew.write(strings.Repeat(" ", maxPathLen - 5 + 2))
 	totalPct  := strconv.FormatFloat(totalPercent, 'f', 2, 64)
 	colorCode := colorGreen
-	if totalPercent < 50 {
-		colorCode = colorRed
-	}
-	ew.write(strings.Repeat(" ", 6 - len(totalPct)), "",        false   )
-	ew.write(totalPct + "%",                         colorCode, useColor)
-	ew.write("\n",                                   "",        false   )
+	if totalPercent < 50 { colorCode = colorRed }
+	ew.write(strings.Repeat(" ", 6 - len(totalPct)))
+	ew.writeColor(totalPct + "%", colorCode, useColor)
+	ew.write("\n")
 
-	return ew.err
+	return ew.err()
 }
 
 // writeIndexHTML writes the index HTML file, which contains two template parameters
 // (ModName and ModURL), and hosts two iframes (directory tree & source code)
 func (rg *reportGenerator) writeIndexHTML(ctx context.Context, indexHTML string) error {
 	if err := ctx.Err(); err != nil { return err }
+
 	data := struct{
 		ModName, ModURL string
 	}{
 		ModName: rg.modName,
 		ModURL:  rg.repoURL,
 	}
+
 	return rg.writeTemplateFile(ctx, indexHTML, data)
 }
 
 // writeStyleCSS writes the style.css file, which contains a single "MaxWidth" template parameter
 func (rg *reportGenerator) writeStyleCSS(ctx context.Context, styleCSS string) error {
 	if err := ctx.Err(); err != nil { return err }
+
 	data := struct{
 		MaxWidth int
 	}{
 		MaxWidth: rg.maxWidth,
 	}
+
 	return rg.writeTemplateFile(ctx, styleCSS, data)
 }
 
 // writeTemplateFile writes the specified template file
 func (rg *reportGenerator) writeTemplateFile(ctx context.Context, file string, tmplVars any) error {
 	if err := ctx.Err(); err != nil { return err }
+
 	outFile   := filepath.Clean(filepath.Join(rg.outRoot, filepath.Base(file)))
 	tmpl, err := template.ParseFS(rg.embeddedFiles, file)
-	if err != nil { return fmt.Errorf("cannot parse %q: %w", file, err) }
+	if err != nil                                   { return fmt.Errorf("cannot parse %q: %w",     file, err) }
 	f, err := rg.fsys.Create(ctx, outFile)
-	if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
-	if err := tmpl.Execute(f, tmplVars); err != nil { return fmt.Errorf("cannot render template: %w", err) }
+	if err != nil                                   { return fmt.Errorf("cannot create %q: %w", outFile, err) }
+	if err := tmpl.Execute(f, tmplVars); err != nil { return fmt.Errorf("cannot render template: %w",    err) }
+
 	return f.Close()
 }
 
 // writeAncillaryFiles writes the files required by the coverage report to the user-specified path
 func (rg *reportGenerator) writeAncillaryFiles(ctx context.Context) error {
 	if err := ctx.Err(); err != nil { return err }
+
 	for _, file := range rg.ancillaryFiles {
 		outFile   := filepath.Clean(filepath.Join(rg.outRoot, filepath.Base(file)))
 		f, err    := rg.fsys.Create(ctx, outFile)
-		if err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
+		if err != nil                                        { return fmt.Errorf("cannot create %q: %w",     outFile, err) }
 		data, err := fs.ReadFile(rg.embeddedFiles, file)
-		if err != nil { return fmt.Errorf("cannot read %q: %w", file, err) }
+		if err != nil                                        { return fmt.Errorf("cannot read %q: %w",          file, err) }
 		if _, err := fmt.Fprint(f, string(data)); err != nil { return fmt.Errorf("cannot write file %q: %w", outFile, err) }
 		if err := f.Close(); err != nil { return fmt.Errorf("cannot close file %q: %w", outFile, err) }
 	}
+
 	return nil
 }
 

@@ -29,7 +29,7 @@ type entryResult struct {
 	total   int
 }
 
-// htmlBuilder stores data used to render subdirectories in the tree
+// htmlBuilder stores the state used to render the navigable directory tree (tree.html)
 type htmlBuilder struct {
 	indent int
 	itemID string
