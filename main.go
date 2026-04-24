@@ -35,6 +35,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"text/template"
 
 	"github.com/graniticio/inifile"
@@ -112,8 +113,8 @@ type pkgDirCache struct {
 
 // coverage tracks per-file coverage
 type coverage struct {
-	covered int
-	total   int
+	covered int64
+	total   int64
 }
 
 // workUnit represents a unit of work to be performed: the generation of an HTML file for a Go source file's coverage profile
@@ -136,8 +137,8 @@ type reportGenerator struct {
 	profilePath     string
 	profiles        []*cover.Profile
 	cov             map[string]coverage
-	totalCovered    int
-	totalStatements int
+	totalCovered    atomic.Int64
+	totalStatements atomic.Int64
 	maxWidth        int
 	ancillaryFiles  []string
 }
@@ -421,27 +422,27 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	// file's profiled blocks, allowing the progress tracker to refine its denominator
 	// in real-time without requiring a separate pre-processing pass.
 
+	perFileCov := make([]coverage, len(units))
+
 	progFiles := progress.NewProgress(0, progressOutput)
 	defer progFiles.Close()
 
-	var mu sync.Mutex // guards concurrent access to rg.cov and the computed coverage totals
 	group, gCtx = errgroup.WithContext(ctx)
 	group.SetLimit(runtime.NumCPU()) // full send
 
-	for _, unit := range units {
+	for i, unit := range units {
 		group.Go(func() error {
 			if err := gCtx.Err(); err != nil { return err }
 
-			var fileStatements, fileCovered int
+			var fileStatements, fileCovered int64
 			for _, block := range unit.profile.Blocks {
-				fileStatements += int(block.NumStmt)
+				fileStatements += int64(block.NumStmt)
 				if block.Count > 0 {
-					fileCovered += int(block.NumStmt)
+					fileCovered += int64(block.NumStmt)
 				}
 			}
 
-			fileWeight := uint64(fileStatements)
-			progFiles.AddTotal(fileWeight)
+			progFiles.AddTotal(uint64(fileStatements))
 
 			var buf bytes.Buffer
 			ew := &errorWriter{w: &buf}
@@ -453,26 +454,29 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 				return fmt.Errorf("cannot write HTML file for %q: %w", unit.profile.FileName, err)
 			}
 
-			progFiles.Report(float64(fileWeight), unit.profile.FileName)
+			progFiles.Report(float64(fileStatements), unit.profile.FileName)
 
-			mu.Lock()
-			rg.totalCovered    += fileCovered
-			rg.totalStatements += fileStatements
-			rg.cov[unit.profile.FileName] = coverage{
+			rg.totalCovered.Add(fileCovered)
+			rg.totalStatements.Add(fileStatements)
+
+			perFileCov[i] = coverage{
 				covered: fileCovered,
 				total:   fileStatements,
 			}
-			mu.Unlock()
 
 			return nil
 		})
 	}
 
-	err := group.Wait()
+	if err := group.Wait(); err != nil { return err }
 
 	progFiles.Close()
 
-	return err
+	for i, cov := range perFileCov {
+		rg.cov[units[i].profile.FileName] = cov
+	}
+
+	return nil
 }
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage
@@ -602,9 +606,11 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 		ew.write("\n")
 	}
 
-	totalPercent := 0.0
-	if rg.totalStatements > 0 {
-		totalPercent = float64(rg.totalCovered) / float64(rg.totalStatements) * 100
+	totalPercent    := 0.0
+	totalCovered    := rg.totalCovered.Load()
+	totalStatements := rg.totalStatements.Load()
+	if totalStatements > 0 {
+		totalPercent = float64(totalCovered) / float64(totalStatements) * 100
 	}
 	ew.write(divider)
 	ew.write("Total")

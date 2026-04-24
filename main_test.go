@@ -592,8 +592,8 @@ func TestPrintCoverage(t *testing.T) {
 	tests := []struct{
 		name            string
 		cov             map[string]coverage
-		totalCovered    int
-		totalStatements int
+		totalCovered    int64
+		totalStatements int64
 		want            string
 		wantErr         bool
 	}{
@@ -619,11 +619,9 @@ func TestPrintCoverage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			repGen := &reportGenerator{
-				cov:             tt.cov,
-				totalCovered:    tt.totalCovered,
-				totalStatements: tt.totalStatements,
-			}
+			repGen := &reportGenerator{ cov: tt.cov }
+			repGen.totalCovered.Store(tt.totalCovered)
+			repGen.totalStatements.Store(tt.totalStatements)
 			got := new(bytes.Buffer)
 			err := repGen.printCoverage(t.Context(), got)
 			if (err != nil) != tt.wantErr {

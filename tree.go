@@ -25,8 +25,8 @@ type treeBuilder struct {
 // entryResult stores the results of processing directory entries containing *.go.html files generated from coverge profiles
 type entryResult struct {
 	html    string
-	covered int
-	total   int
+	covered int64
+	total   int64
 }
 
 // htmlBuilder stores the state used to render the navigable directory tree (tree.html)
@@ -123,7 +123,7 @@ func (tb *treeBuilder) processEntry(ctx context.Context, relParentPath string, e
 		if err != nil { return entryResult{}, err }
 
 		var subDirSB strings.Builder
-		var dirCovered, dirStatements int
+		var dirCovered, dirStatements int64
 
 		if len(subDirEntries) > 0 { // split this subdir's budget up among its children
 			childBudget := budget / float64(len(subDirEntries))
@@ -183,7 +183,7 @@ func (tb *treeBuilder) processEntry(ctx context.Context, relParentPath string, e
 }
 
 // buildHTML builds an HTML string used to render a subdirectory in the tree
-func (hb *htmlBuilder) buildHTML(ctx context.Context, subDirHTML string, dirCovered, dirStatements int) (string, error) {
+func (hb *htmlBuilder) buildHTML(ctx context.Context, subDirHTML string, dirCovered, dirStatements int64) (string, error) {
 	if err := ctx.Err(); err != nil { return "", err }
 
 	percent := 0.0
