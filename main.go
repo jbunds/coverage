@@ -468,7 +468,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 		})
 	}
 
-	if err := group.Wait(); err != nil { return err }
+	err := group.Wait()
 
 	progFiles.Close()
 
@@ -476,7 +476,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 		rg.cov[units[i].profile.FileName] = cov
 	}
 
-	return nil
+	return err
 }
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage
