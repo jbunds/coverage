@@ -4,14 +4,14 @@
 //
 // The header portion of the index HTML file will also render two buttons if the browser's CORS policies allow it. These buttons are:
 //
-//	"theme"                  - toggles between two hardcoded "light" and "dark" themes
-//	"expand" (or "collapse") - toggles the opening (or closing) of all subdirectories rendered within the tree HTML document
+//   "theme"                  - toggles between two hardcoded "light" and "dark" themes
+//   "expand" (or "collapse") - toggles the opening (or closing) of all subdirectories rendered within the tree HTML document
 //
 // Note that the "theme" and "expand" / "collapse" buttons will not be rendered when the index page is loaded via the file:// scheme.
 //
 // A simple workaround is to instantiate an HTTP server to serve the HTML files, e.g.:
 //
-//	$ python3 -m http.server 8000
+//   $ python3 -m http.server 8000
 //
 // and then load http://localhost:8000/ in a browser.
 package main
