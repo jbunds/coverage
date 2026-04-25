@@ -532,7 +532,10 @@ func writePreamble(ew stickyWriter, cssRelPath, srcPath string) {
 	ew.write("</title>\n</head>\n<body id=\"code\">\n<pre>\n")
 }
 
-const js = `
+// writePostamble writes the postamble portion of the HTML content common to every Go source HTML file
+func writePostamble(ew stickyWriter) {
+	ew.write("</pre>\n<script>")
+	ew.write(`
 try {
   const parentTheme = window.parent.document.documentElement.getAttribute('theme');
   if (parentTheme) document.documentElement.setAttribute('theme', parentTheme);
@@ -545,12 +548,7 @@ window.addEventListener('message', (event) => {
 });
 </script>
 </body>
-</html>`
-
-// writePostamble writes the postamble portion of the HTML content common to every Go source HTML file
-func writePostamble(ew stickyWriter) {
-	ew.write("</pre>\n<script>")
-	ew.write(js)
+</html>`)
 }
 
 // printCoverage prints per-file coverage percentages to the specified destination (typically stdout)
