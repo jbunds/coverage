@@ -59,8 +59,8 @@ func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (s
 	entries, err := fs.ReadDir(tb.fsys, tb.outRoot)
 	if err != nil { return "", err }
 
-	prog := progress.New(0, progressOutput)
-	defer prog.Close()
+	prog := progress.New(ctx, 0, progressOutput)
+	defer prog.Close(ctx)
 
 	group, gCtx    := errgroup.WithContext(ctx)
 	results        := make([]string, len(entries))

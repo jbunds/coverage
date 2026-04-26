@@ -180,7 +180,9 @@ func TestProcessEntry(t *testing.T) {
 			if err != nil {
 				t.Errorf("fs.Stat failed unexpectedly: %v", err)
 			}
-			prog := progress.New(0, io.Discard)
+			ctx  := t.Context()
+			prog := progress.New(ctx, 0, io.Discard)
+			t.Cleanup(func() { prog.Close(ctx) })
 			got, err := tb.processEntry(t.Context(), ".", fs.FileInfoToDirEntry(info), 1, prog, 0)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("processEntry(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)

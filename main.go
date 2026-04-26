@@ -29,6 +29,7 @@ import (
 	"maps"
 	"math"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -36,6 +37,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"text/template"
 
 	"github.com/graniticio/inifile"
@@ -207,22 +209,32 @@ type iniFileValueGetter interface { Value(string, string) (string, error) }
 type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
+	ctx, stop := signal.NotifyContext(context.Background(),
+		os.Interrupt,    // ctrl+c
+		syscall.SIGTERM, // standard kill signal
+		syscall.SIGHUP,  // terminal closed, SSH disconnection, etc
+	)
+	defer stop()
+
 	goModFile, profilePath, outRoot, err := flags(flag.CommandLine, filterArgs(os.Args[1:]), os.Stderr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cannot parse flags: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
 
 	profiles, err := cover.ParseProfiles(profilePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cannot parse coverage profile file: %v\n", err)
-		os.Exit(2)
+		return 2
 	}
 
 	fmt.Fprintf(os.Stderr, "processing %d source files...", len(profiles))
 	if !isTerm { fmt.Println() }
 
-	ctx    := context.Background()
 	repGen := &reportGenerator{
 		fsys:           &localFS{},
 		embeddedFiles:  embeddedFiles,
@@ -235,34 +247,34 @@ func main() {
 
 	if err := repGen.getModName(ctx, goModFile); err != nil { // sets repGen.modName
 		fmt.Fprintf(os.Stderr, "cannot determine module name: %v\n", err)
-		os.Exit(3)
+		return 3
 	}
 
 	var gitConfig *inifile.IniConfig
 	gitConfigPath := filepath.Join(filepath.Dir(goModFile), ".git", "config")
 	if gitConfig, err = inifile.NewIniConfigFromPath(gitConfigPath); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot parse Git config file (%q): %v\n", gitConfigPath, err)
-		os.Exit(4)
+		return 4
 	}
 
 	if err := repGen.getRepoURL(ctx, gitConfig); err != nil { // sets repGen.repoURL
 		fmt.Fprintf(os.Stderr, "cannot determine repo URL: %v\n", err)
-		os.Exit(5)
+		return 5
 	}
 
 	if err := repGen.primePkgDirCache(ctx, packages.Load, profilePath); err != nil { // sets repGen.pkgDirCache
 		fmt.Fprintf(os.Stderr, "cannot prime package directory cache: %v\n", err)
-		os.Exit(6)
+		return 6
 	}
 
 	if err := repGen.writeCovHTMLFiles(ctx, os.Stderr); err != nil { // sets repGen.cov
 		fmt.Fprintf(os.Stderr, "cannot write HTML coverage files: %v\n", err)
-		os.Exit(7)
+		return 7
 	}
 
 	if err := repGen.writeIndexHTML(ctx, indexHTML); err != nil { // requires repGen.modName
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", indexHTML, err)
-		os.Exit(8)
+		return 8
 	}
 
 	tb := &treeBuilder{
@@ -273,23 +285,25 @@ func main() {
 
 	if repGen.maxWidth, err = tb.writeTreeHTML(ctx, os.Stderr); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", treeHTML, err)
-		os.Exit(9)
+		return 9
 	}
 
 	if err := repGen.writeStyleCSS(ctx, styleCSS); err != nil { // requires repGen.maxWidth
 		fmt.Fprintf(os.Stderr, "cannot write %s: %v\n", styleCSS, err)
-		os.Exit(10)
+		return 10
 	}
 
 	if err := repGen.writeAncillaryFiles(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write ancillary files: %v\n", err)
-		os.Exit(11)
+		return 11
 	}
 
 	if err := repGen.printCoverage(ctx, os.Stdout); err != nil { // requires repGen.cov
 		fmt.Fprintf(os.Stderr, "cannot print per-file coverage figures: %v\n", err)
-		os.Exit(12)
+		return 12
 	}
+
+	return 0
 }
 
 // getModName reads the repo's root go.mod file to determine the name of the Go module
@@ -402,8 +416,8 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	}
 
 	group, gCtx := errgroup.WithContext(ctx)
-	progDirs    := progress.New(uint64(len(dirsToCreate)), progressOutput)
-	defer progDirs.Close()
+	progDirs    := progress.New(ctx, uint64(len(dirsToCreate)), progressOutput)
+	defer progDirs.Close(ctx)
 
 	for dir := range dirsToCreate {
 		group.Go(func() error {
@@ -417,7 +431,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 
 	if err := group.Wait(); err != nil { return err }
 
-	progDirs.Close()
+	progDirs.Close(ctx)
 	
 	// The total number of statements (cover.ProfileBlock.NumStmt) is used as a normalizing
 	// proxy for work units to ensure the progress tracker accurately reflects the
@@ -433,8 +447,8 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 
 	perFileCov := make([]coverage, len(units))
 
-	progFiles := progress.New(0, progressOutput)
-	defer progFiles.Close()
+	progFiles := progress.New(ctx, 0, progressOutput)
+	defer progFiles.Close(ctx)
 
 	group, gCtx = errgroup.WithContext(ctx)
 	group.SetLimit(runtime.NumCPU()) // full send
@@ -479,7 +493,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 
 	err := group.Wait()
 
-	progFiles.Close()
+	progFiles.Close(ctx)
 
 	for i, cov := range perFileCov {
 		rg.cov[units[i].profile.FileName] = cov
