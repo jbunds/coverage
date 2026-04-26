@@ -402,7 +402,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	}
 
 	group, gCtx := errgroup.WithContext(ctx)
-	progDirs    := progress.NewProgress(uint64(len(dirsToCreate)), progressOutput)
+	progDirs    := progress.New(uint64(len(dirsToCreate)), progressOutput)
 	defer progDirs.Close()
 
 	for dir := range dirsToCreate {
@@ -433,7 +433,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 
 	perFileCov := make([]coverage, len(units))
 
-	progFiles := progress.NewProgress(0, progressOutput)
+	progFiles := progress.New(0, progressOutput)
 	defer progFiles.Close()
 
 	group, gCtx = errgroup.WithContext(ctx)
