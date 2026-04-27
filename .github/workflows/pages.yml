@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:   generate-and-upload
     permissions: # required permissions for the GITHUB_TOKEN to deploy to GitHub Pages
-      contents: read
+      contents: write # required for callers (!!!) to execute `git push origin refs/notes/gocoverage`; https://docs.github.com/actions/reference/workflows-and-actions/reusing-workflow-configurations#access-and-permissions-for-nested-workflows
       pages:    write
       id-token: write
     environment:
