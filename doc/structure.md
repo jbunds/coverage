@@ -30,15 +30,6 @@
 ├── main.go
 ├── package-lock.json
 ├── package.json
-├── progress
-│   ├── examples
-│   │   ├── README.md
-│   │   ├── fractional
-│   │   │   └── main.go
-│   │   └── weight-based
-│   │       └── main.go
-│   ├── progress_test.go
-│   └── progress.go
 ├── README.md
 ├── screenshots
 │   ├── dark_theme.jpg
@@ -49,5 +40,5 @@
 ├── tree.go
 └── validate.js
 
-11 directories, 38 files
+7 directories, 33 files
 ```
