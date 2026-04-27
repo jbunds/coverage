@@ -8,7 +8,7 @@ import (
 	"testing/fstest"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/jbunds/coverage/progress"
+	"github.com/jbunds/progress"
 )
 
 func TestWriteTreeHTML(t *testing.T) {

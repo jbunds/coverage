@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/jbunds/coverage/progress"
+	"github.com/jbunds/progress"
 	"golang.org/x/sync/errgroup"
 )
 

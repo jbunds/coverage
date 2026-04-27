@@ -41,7 +41,7 @@ import (
 	"text/template"
 
 	"github.com/graniticio/inifile"
-	"github.com/jbunds/coverage/progress"
+	"github.com/jbunds/progress"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/term"
