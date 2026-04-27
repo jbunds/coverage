@@ -26,7 +26,7 @@ jobs:
 
       - uses: actions/setup-go@v6 # http://github.com/actions/setup-go
         with:
-          go-version: '1.26.1'    # https://github.com/marketplace/actions/setup-go-environment#supported-version-syntax
+          go-version: '1.26.2'    # https://github.com/marketplace/actions/setup-go-environment#supported-version-syntax
 
       - name: golangci-lint                    # https://golangci-lint.run/docs/
         uses: golangci/golangci-lint-action@v9 # https://github.com/golangci/golangci-lint-action

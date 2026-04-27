@@ -19,7 +19,7 @@ inputs:
   go-version:
     description: 'Go version to use'
     required:    false
-    default:     '1.26.1'
+    default:     '1.26.2'
   go-mod:
     description: 'path to the root go.mod file'
     required:    false
