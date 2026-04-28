@@ -102,6 +102,8 @@ ${{ fromJson(steps.coverage_report.outputs.all).meets-threshold  }}
 
 etc...
 
+See [jbunds/progress/.github/workflows/test-go.yml](https://github.com/jbunds/progress/blob/main/.github/workflows/test-go.yml) for a working example.
+
 2. The [`jbunds/coverage/.github/workflows/pages.yml@v1`][workflow] reusable [GitHub Workflow][workflows] generates the test coverage report and also deploys it to [GitHub Pages][pages]. For example:
 
 ```
@@ -117,7 +119,9 @@ etc...
     coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
 ```
 
-See [jbunds.github.io/coverage/](https://jbunds.github.io/coverage/) for an example, which is not particularly interesting since it consists of just the three Go source files which implement the module.
+See [jbunds/progress/.github/workflows/pages.yml](https://github.com/jbunds/progress/blob/main/.github/workflows/pages.yml) for a working example.
+
+See [jbunds.github.io/coverage/](https://jbunds.github.io/coverage/) for an example HTML report uploaded to Pages, which is not particularly interesting since it consists of just the three Go source files which implement the module.
 
 The well-known and relatively large (500k+ LoC) [Kubernetes][k8s] project was chosen for the demo to better illustrate the features and performance.
 
