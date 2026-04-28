@@ -106,6 +106,10 @@ etc...
 
 ```
 - uses: jbunds/coverage/.github/workflows/pages.yml@v1
+  permissions:
+    contents: write  # required by gwatts/go-coverage-action to execute `git push origin refs/notes/gocoverage`
+    pages:    write  # required by actions/deploy-pages
+    id-token: write  # required by actions/deploy-pages
   with:
     go-version:           '1.26.2'           # optional: default is '1.26.2'
     go-mod:               'go.mod'           # optional; default is 'go.mod'
@@ -113,7 +117,7 @@ etc...
     coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
 ```
 
-See https://jbunds.github.io/coverage/ for an example, which is not particularly interesting since it consists of just the four Go source files which implement the module.
+See [jbunds.github.io/coverage/](https://jbunds.github.io/coverage/) for an example, which is not particularly interesting since it consists of just the three Go source files which implement the module.
 
 The well-known and relatively large (500k+ LoC) [Kubernetes][k8s] project was chosen for the demo to better illustrate the features and performance.
 
