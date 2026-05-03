@@ -225,7 +225,7 @@ func run() int {
 	)
 	defer stop()
 
-	goModFile, profilePath, outRoot, err := flags(flag.CommandLine, filterArgs(os.Args[1:]), os.Stderr)
+	goModFile, profilePath, outRoot, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cannot parse flags: %v\n", err)
 		return 1
