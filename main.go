@@ -27,7 +27,6 @@ import (
 	"io"
 	"io/fs"
 	"maps"
-	"math"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -712,12 +711,17 @@ func filterArgs(args []string) []string {
 }
 
 // isTerm determines if the specified writer is connected to a terminal
-func isTerm(w io.Writer) bool {
-	if f, ok := w.(*os.File); ok {
-		fd := f.Fd()
-		if fd <= math.MaxInt && term.IsTerminal(int(fd)) {
-			return true
-		}
-	}
-	return false
+func isTerm(v any) bool {
+	if testing.Testing() { return false }
+	if os.Getenv("GITHUB_ACTIONS") == "true" || // https://docs.github.com/actions/reference/workflows-and-actions/variables
+	   os.Getenv("CI"            ) == "true" { return false }
+	fd := getFD(v)
+	if fd < 0 { return false }
+	return term.IsTerminal(fd)
+}
+
+// getFD returns the file descriptor of the provided argument.
+func getFD(w any) int {
+	if f, ok := w.(interface{ Fd() uintptr }); ok { return int(f.Fd()) }
+	return -1
 }
