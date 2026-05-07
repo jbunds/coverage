@@ -115,7 +115,7 @@ func (e *errorWriter) Write(p []byte) (int, error) {
 func newErrorWriter(w io.Writer) *errorWriter {
 	return &errorWriter{
 		w:        w,
-		useColor: isTerm(w) && !testing.Testing(),
+		useColor: isTerm(w),
 	}
 }
 
