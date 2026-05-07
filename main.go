@@ -419,11 +419,14 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 		dirsToCreate[filepath.Dir(outPath)] = struct{}{}
 	}
 
-	group, gCtx := errgroup.WithContext(ctx)
 	progDirs    := progress.New(ctx, uint64(len(dirsToCreate)), progressOutput)
 	defer progDirs.Close(ctx)
 
+	group, gCtx := errgroup.WithContext(ctx)
+	group.SetLimit(runtime.NumCPU()) // full send
+
 	for dir := range dirsToCreate {
+		if err := gCtx.Err(); err != nil { break } // the call to group.Wait() below will capture the error
 		group.Go(func() error {
 			if err := rg.fsys.MkdirAll(gCtx, dir, 0700); err != nil {
 				return fmt.Errorf("cannot create directory %q: %w", dir, err)
@@ -458,8 +461,8 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	group.SetLimit(runtime.NumCPU()) // full send
 
 	for i, unit := range units {
+		if err := gCtx.Err(); err != nil { break } // the call to group.Wait() below will capture the error
 		group.Go(func() error {
-			if err := gCtx.Err(); err != nil { return err }
 
 			var fileStatements, fileCovered int64
 			for _, block := range unit.profile.Blocks {
