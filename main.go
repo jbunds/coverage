@@ -426,7 +426,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	}
 
 	progDirs    := progress.New(ctx, uint64(len(dirsToCreate)), progressOutput)
-	defer progDirs.Close(ctx)
+	defer progDirs.Close()
 
 	group, gCtx := errgroup.WithContext(ctx)
 	group.SetLimit(runtime.NumCPU()) // full send
@@ -444,7 +444,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 
 	if err := group.Wait(); err != nil { return err }
 
-	progDirs.Close(ctx)
+	progDirs.Close()
 	
 	// The total number of statements (cover.ProfileBlock.NumStmt) is used as a normalizing
 	// proxy for work units to ensure the progress tracker accurately reflects the
@@ -461,7 +461,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	perFileCov := make([]coverage, len(units))
 
 	progFiles := progress.New(ctx, 0, progressOutput)
-	defer progFiles.Close(ctx)
+	defer progFiles.Close()
 
 	group, gCtx = errgroup.WithContext(ctx)
 	group.SetLimit(runtime.NumCPU()) // full send
@@ -506,7 +506,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 
 	err := group.Wait()
 
-	progFiles.Close(ctx)
+	progFiles.Close()
 
 	for i, cov := range perFileCov {
 		rg.cov[units[i].profile.FileName] = cov

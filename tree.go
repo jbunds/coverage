@@ -61,7 +61,7 @@ func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (s
 	if err != nil { return "", err }
 
 	prog := progress.New(ctx, 0, progressOutput)
-	defer prog.Close(ctx)
+	defer prog.Close()
 
 	results        := make([]string, len(entries))
 	budgetPerEntry := prog.InitialBudget() / float64(len(entries))
