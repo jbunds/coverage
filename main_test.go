@@ -59,7 +59,8 @@ func (m *mockFS) OpenWithContext(ctx context.Context, name string) (fs.File, err
 	return m.Open(name)
 }
 
-func (m *mockFS) ReadDir(dir string) ([]fs.DirEntry, error) {
+func (m *mockFS) ReadDir(ctx context.Context, dir string) ([]fs.DirEntry, error) {
+	if err := ctx.Err(); err != nil { return nil, err }
 	if m.readDirFails { return nil, fmt.Errorf("ReadDir failed") }
 	return fs.ReadDir(m.FS, dir)
 }

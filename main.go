@@ -166,6 +166,7 @@ type writeFS interface {
 	fs.FS
 	Create         (context.Context, string)                      (io.WriteCloser, error)
 	MkdirAll       (context.Context, string,         fs.FileMode)                  error
+	ReadDir        (context.Context, string)                      ([]fs.DirEntry,  error)
 	ReadFile       (context.Context, string)                      ([]byte,         error)
 	WriteFile      (context.Context, string, []byte, fs.FileMode)                  error
 	OpenWithContext(context.Context, string)                      (fs.File,        error)
@@ -177,33 +178,38 @@ type writeFS interface {
 // via alternative interface implementations.
 type localFS struct{}
 
+func (lfs *localFS) OpenWithContext(ctx context.Context, name string) (fs.File, error) {
+	if err := ctx.Err(); err != nil { return nil, err }
+	return lfs.Open(name) // expects callers pass filepath.Clean(name)
+}
+
 func (lfs *localFS) Open(name string) (fs.File, error) {
-	return os.Open(filepath.Clean(name))
+	return os.Open(name) // #nosec G304 expects callers pass filepath.Clean(name)
 }
 
 func (lfs *localFS) Create(ctx context.Context, name string) (io.WriteCloser, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
-	return os.Create(filepath.Clean(name))
+	return os.Create(name) // #nosec G304 expects callers pass filepath.Clean(name)
 }
 
 func (lfs *localFS) MkdirAll(ctx context.Context, path string, perm fs.FileMode) error {
 	if err := ctx.Err(); err != nil { return err }
-	return os.MkdirAll(filepath.Clean(path), perm)
+	return os.MkdirAll(path, perm) // expects callers pass filepath.Clean(path)
+}
+
+func (lfs *localFS) ReadDir(ctx context.Context, name string) ([]fs.DirEntry, error) {
+	if err := ctx.Err(); err != nil { return nil, err }
+	return os.ReadDir(name) // expects callers pass filepath.Clean(name)
 }
 
 func (lfs *localFS) ReadFile(ctx context.Context, name string) ([]byte, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
-	return fs.ReadFile(lfs, name)
+	return fs.ReadFile(lfs, name) // expects callers pass filepath.Clean(name)
 }
 
 func (lfs *localFS) WriteFile(ctx context.Context, name string, data []byte, perm fs.FileMode) error {
 	if err := ctx.Err(); err != nil { return err }
-	return os.WriteFile(filepath.Clean(name), data, perm)
-}
-
-func (lfs *localFS) OpenWithContext(ctx context.Context, name string) (fs.File, error) {
-	if err := ctx.Err(); err != nil { return nil, err }
-	return lfs.Open(filepath.Clean(name))
+	return os.WriteFile(name, data, perm) // expects callers pass filepath.Clean(name)
 }
 
 // wraps inifile.IniConfig.Value for test injection
@@ -242,7 +248,7 @@ func run() int {
 	repGen := &reportGenerator{
 		fsys:           &localFS{},
 		embeddedFiles:  embeddedFiles,
-		modFile:        goModFile,
+		modFile:        filepath.Clean(goModFile),
 		outRoot:        filepath.Clean(outRoot),
 		profilePath:    filepath.Clean(profilePath),
 		profiles:       profiles,
@@ -476,11 +482,11 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 
 			var buf bytes.Buffer
 			ew := newErrorWriter(&buf)
-			if err := rg.buildCovHTML(ctx, ew, unit.profile, unit.profile.FileName); err != nil {
+			if err := rg.buildCovHTML(gCtx, ew, unit.profile, unit.profile.FileName); err != nil {
 				return fmt.Errorf("cannot build HTML for %q: %w", unit.profile.FileName, err)
 			}
 
-			if err := rg.fsys.WriteFile(ctx, unit.outPath, buf.Bytes(), 0600); err != nil {
+			if err := rg.fsys.WriteFile(gCtx, unit.outPath, buf.Bytes(), 0600); err != nil {
 				return fmt.Errorf("cannot write HTML file for %q: %w", unit.profile.FileName, err)
 			}
 

@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -56,17 +57,19 @@ func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writ
 func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (string, error) {
 	if err := ctx.Err(); err != nil { return "", err }
 
-	entries, err := fs.ReadDir(tb.fsys, tb.outRoot)
+	entries, err := tb.fsys.ReadDir(ctx, tb.outRoot)
 	if err != nil { return "", err }
 
 	prog := progress.New(ctx, 0, progressOutput)
 	defer prog.Close(ctx)
 
-	group, gCtx    := errgroup.WithContext(ctx)
 	results        := make([]string, len(entries))
 	budgetPerEntry := prog.InitialBudget() / float64(len(entries))
+	group, gCtx    := errgroup.WithContext(ctx)
+	group.SetLimit(runtime.NumCPU()) // full send
 
 	for i, entry := range entries {
+		if err := gCtx.Err(); err != nil { break }
 		group.Go(func() error {
 			res, err := tb.processEntry(gCtx, ".", entry, 1, prog, budgetPerEntry)
 			if err != nil { return err }
@@ -86,7 +89,6 @@ func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (s
 
 	return sb.String(), nil
 }
-
 
 // processEntry recursively builds ordered HTML tree nodes and aggregates coverage metrics for individual files and directories
 func (tb *treeBuilder) processEntry(ctx context.Context, relParentPath string, entry fs.DirEntry, indent int, prog *progress.Progress, budget float64) (entryResult, error) {
@@ -119,7 +121,7 @@ func (tb *treeBuilder) processEntry(ctx context.Context, relParentPath string, e
 	if isDir {
 		itemID             := "tree-item-" + strconv.FormatInt(tb.counter.Add(1), 10)
 		fullPath           := filepath.Join(tb.outRoot, htmlPath)
-		subDirEntries, err := fs.ReadDir(tb.fsys, fullPath)
+		subDirEntries, err := tb.fsys.ReadDir(ctx, fullPath)
 		if err != nil { return entryResult{}, err }
 
 		var subDirSB strings.Builder
