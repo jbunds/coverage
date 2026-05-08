@@ -34,7 +34,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"syscall"
 	"testing"
@@ -84,32 +83,30 @@ type errorWriter struct {
 }
 
 // write performs a sticky-error write
-func (e *errorWriter) write(s string) {
-	if e.e != nil { return }
-	_, e.e = io.WriteString(e.w, s)
+func (w *errorWriter) write(s string) {
+	if w.e != nil { return }
+	_, w.e = io.WriteString(w.w, s)
 }
 
 // write performs a sticky-error write that optionally wraps the provided string in ANSI color codes
-func (e *errorWriter) writeColor(s, color string) {
-	if e.e != nil { return }
-	if !e.useColor {
-		e.write(s)
+func (w *errorWriter) writeColor(s, color string) {
+	if w.e != nil { return }
+	if !w.useColor {
+		w.write(s)
 		return
 	}
-	e.write(color)
-	e.write(s)
-	e.write(colorReset)
+	w.write(color)
+	w.write(s)
+	w.write(colorReset)
 }
 
 // err returns the first I/O failure encountered during multiple sequential write operations
-func (e *errorWriter) err() error { return e.e }
+func (w *errorWriter) err() error { return w.e }
 
 // Write satisfies the io.Writer interface, but it unused
-func (e *errorWriter) Write(p []byte) (int, error) {
-	if e.e != nil { return 0, e.e }
-	n := 0
-	n, e.e = e.w.Write(p)
-	return n, e.e
+func (w *errorWriter) Write(p []byte) (int, error) {
+	if w.e != nil { return 0, w.e }
+	return w.w.Write(p)
 }
 
 func newErrorWriter(w io.Writer) *errorWriter {
@@ -117,12 +114,6 @@ func newErrorWriter(w io.Writer) *errorWriter {
 		w:        w,
 		useColor: isTerm(w),
 	}
-}
-
-// pkgDirCache maps canonical Go packages to their respective paths on disk
-type pkgDirCache struct {
-	cache map[string]string
-	mu    sync.RWMutex
 }
 
 // coverage tracks per-file coverage
@@ -146,10 +137,10 @@ type reportGenerator struct {
 	modFile         string
 	modName         string
 	repoURL         string
-	pkgDirCache     *pkgDirCache
 	outRoot         string
 	profilePath     string
 	profiles        []*cover.Profile
+	pkgDirCache     map[string]string // pkgDirCache maps canonical Go packages to their respective paths on disk
 	cov             map[string]coverage
 	totalCovered    atomic.Int64
 	totalStatements atomic.Int64
@@ -172,10 +163,10 @@ type writeFS interface {
 	OpenWithContext(context.Context, string)                      (fs.File,        error)
 }
 
-// localFS provides a concrete implementation of the writeFS interface by
-// wrapping the standard "os" package. This allows the program to perform
-// actual system operations in production while remaining easily testable
-// via alternative interface implementations.
+// localFS provides a context-aware, concrete implementation of the writeFS
+// interface by wrapping the standard "os" package. This allows the program
+// to perform actual system operations in production while remaining easily
+// testable via alternative interface implementations.
 type localFS struct{}
 
 func (lfs *localFS) OpenWithContext(ctx context.Context, name string) (fs.File, error) {
@@ -384,7 +375,6 @@ func (rg *reportGenerator) getAllPkgPaths(ctx context.Context, profilePath strin
 func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLoader, profilePath string) error {
 	if err := ctx.Err(); err != nil { return err }
 
-	rg.pkgDirCache    = &pkgDirCache{ cache: make(map[string]string) }
 	allPkgPaths, err := rg.getAllPkgPaths(ctx, profilePath)
 	if err != nil { return err }
 
@@ -396,14 +386,15 @@ func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLo
 	pkgs, err := pkgLoader(cfg, allPkgPaths...)
 	if err != nil { return err }
 
-	rg.pkgDirCache.mu.Lock()
-	defer rg.pkgDirCache.mu.Unlock()
+	tempCache := make(map[string]string)
 
 	for _, pkg := range pkgs {
 		if len(pkg.GoFiles) > 0 {
-			rg.pkgDirCache.cache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])
+			tempCache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])
 		}
 	}
+
+	rg.pkgDirCache = tempCache
 
 	return nil
 }
@@ -425,7 +416,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 		dirsToCreate[filepath.Dir(outPath)] = struct{}{}
 	}
 
-	progDirs    := progress.New(ctx, uint64(len(dirsToCreate)), progressOutput)
+	progDirs := progress.New(ctx, uint64(len(dirsToCreate)), progressOutput)
 	defer progDirs.Close()
 
 	group, gCtx := errgroup.WithContext(ctx)
@@ -522,7 +513,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	pkgPath  := filepath.Dir (profile.FileName)
 	fileName := filepath.Base(profile.FileName)
 
-	src, err := rg.fsys.ReadFile(ctx, filepath.Join(rg.pkgDirCache.cache[pkgPath], fileName))
+	src, err := rg.fsys.ReadFile(ctx, filepath.Join(rg.pkgDirCache[pkgPath], fileName))
 	if err != nil { return err }
 
 	cssPath := strings.Repeat("../", strings.Count(srcPath, "/")) + filepath.Base(styleCSS)

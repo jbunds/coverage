@@ -290,7 +290,6 @@ func TestPrimePkgDirCache(t *testing.T) {
 			name:        "cannot read coverage profile file",
 			profilePath: "nope",
 			fsys:        fstest.MapFS{},
-			want:        map[string]string{},
 			wantErr:     true,
 		},
 		{
@@ -304,7 +303,6 @@ func TestPrimePkgDirCache(t *testing.T) {
 					}, "\n")),
 				},
 			},
-			want:    map[string]string{},
 			wantErr: true,
 		},
 	}
@@ -318,7 +316,8 @@ func TestPrimePkgDirCache(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("primePkgDirCache(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
-			if diff := cmp.Diff(tt.want, repGen.pkgDirCache.cache); diff != "" {
+			if tt.wantErr { return }
+			if diff := cmp.Diff(tt.want, repGen.pkgDirCache); diff != "" {
 				t.Errorf("primePkgDirCache(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
@@ -398,16 +397,14 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				"</html>"}, "\n"),
 		},
 		{
-			name:        "source does not exist",
-			fsys:        fstest.MapFS{},
-			pkgDirCache: make(map[string]string),
-			profiles:    []*cover.Profile{{ FileName: "foo.go" }},
-			wantErr:     true,
+			name:     "source does not exist",
+			fsys:     fstest.MapFS{},
+			profiles: []*cover.Profile{{ FileName: "foo.go" }},
+			wantErr:  true,
 		},
 		{
 			name:          "MkdirAll fails",
 			fsys:          fstest.MapFS{ "foo.go": &fstest.MapFile{} },
-			pkgDirCache:   make(map[string]string),
 			profiles:      []*cover.Profile{{ FileName: "foo.go" }},
 			mkdirAllFails: true,
 			wantErr:       true,
@@ -415,7 +412,6 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 		{
 			name:           "WriteFile fails",
 			fsys:           fstest.MapFS{ "foo.go": &fstest.MapFile{} },
-			pkgDirCache:    make(map[string]string),
 			profiles:       []*cover.Profile{{ FileName: "foo.go" }},
 			writeFileFails: true,
 			wantErr:        true,
@@ -432,7 +428,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 			repGen := &reportGenerator{
 				fsys:        mfs,
 				profiles:    tt.profiles,
-				pkgDirCache: &pkgDirCache{ cache: tt.pkgDirCache },
+				pkgDirCache: tt.pkgDirCache,
 			}
 			err := repGen.writeCovHTMLFiles(t.Context(), io.Discard)
 			if (err != nil) != tt.wantErr {
