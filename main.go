@@ -263,7 +263,7 @@ func run() int {
 		return 5
 	}
 
-	if err := repGen.primePkgDirCache(ctx, packages.Load, profilePath); err != nil { // sets repGen.pkgDirCache
+	if err := repGen.primePkgDirCache(ctx, packages.Load); err != nil { // sets repGen.pkgDirCache
 		fmt.Fprintf(os.Stderr, "cannot prime package directory cache: %v\n", err)
 		return 6
 	}
@@ -342,10 +342,10 @@ func (rg *reportGenerator) getRepoURL(ctx context.Context, gitConfig iniFileValu
 }
 
 // getAllPkgPaths extracts all unique package paths from the coverage profile file for subsequent use in primePkgDirCache
-func (rg *reportGenerator) getAllPkgPaths(ctx context.Context, profilePath string) ([]string, error) {
+func (rg *reportGenerator) getAllPkgPaths(ctx context.Context) ([]string, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
 
-	f, err := rg.fsys.OpenWithContext(ctx, filepath.Clean(profilePath))
+	f, err := rg.fsys.OpenWithContext(ctx, filepath.Clean(rg.profilePath))
 	if err != nil { return nil, err }
 
 	defer func() {
@@ -372,10 +372,10 @@ func (rg *reportGenerator) getAllPkgPaths(ctx context.Context, profilePath strin
 }
 
 // primePkgDirCache primes rg.pkgDirCache for subsequent use in buildCovHTML
-func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLoader, profilePath string) error {
+func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLoader) error {
 	if err := ctx.Err(); err != nil { return err }
 
-	allPkgPaths, err := rg.getAllPkgPaths(ctx, profilePath)
+	allPkgPaths, err := rg.getAllPkgPaths(ctx)
 	if err != nil { return err }
 
 	cfg := &packages.Config{

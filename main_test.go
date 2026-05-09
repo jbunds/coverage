@@ -233,9 +233,10 @@ func TestGetAllPkgPaths(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			repGen := &reportGenerator{
-				fsys: &mockFS{ FS: tt.fsys },
+				profilePath: tt.profilePath,
+				fsys:        &mockFS{ FS: tt.fsys },
 			}
-			got, err := repGen.getAllPkgPaths(t.Context(), tt.profilePath)
+			got, err := repGen.getAllPkgPaths(t.Context())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getAllPkgPaths(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -310,9 +311,10 @@ func TestPrimePkgDirCache(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			repGen := &reportGenerator{
-				fsys: &mockFS{ FS: tt.fsys },
+				profilePath: tt.profilePath,
+				fsys:        &mockFS{ FS: tt.fsys },
 			}
-			err := repGen.primePkgDirCache(t.Context(), mockPkgLoader, tt.profilePath)
+			err := repGen.primePkgDirCache(t.Context(), mockPkgLoader)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("primePkgDirCache(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}

@@ -44,7 +44,7 @@ func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writ
 	html, err := tb.genHTML(ctx, progressOutput)
 	if err != nil { return 0, err }
 
-	treeFile, err := tb.fsys.Create(ctx, filepath.Clean(filepath.Join(tb.outRoot, treeHTML)))
+	treeFile, err := tb.fsys.Create(ctx, filepath.Join(tb.outRoot, treeHTML))
 	if                                           err != nil { return 0, err }
 	if    err := preamble      (ctx,  treeFile); err != nil { return 0, err }
 	if _, err := io.WriteString(treeFile, html); err != nil { return 0, err }
@@ -102,20 +102,16 @@ func (tb *treeBuilder) processEntry(ctx context.Context, relParentPath string, e
 		return entryResult{}, nil
 	}
 
-	src      := strings.TrimSuffix(entry.Name(), ".html")         // normalized filename
-	srcPath  := filepath.Clean(filepath.Join(relParentPath, src)) // package-normalized path
-	htmlPath := filepath.Clean(filepath.Join(relParentPath, entry.Name()))
+	src      := strings.TrimSuffix(entry.Name(), ".html")  // normalized filename
+	srcPath  := filepath.Join(relParentPath, src)          // package-normalized path
+	htmlPath := filepath.Join(relParentPath, entry.Name()) // TODO(jeff): document htmlPath
 
 	width := int64(indent + len(src))
 	if isDir { width += 2 } // account for the folder icon emoji
 	for {
 		current := tb.maxWidth.Load()
-		if width <= current {
-			break
-		}
-		if tb.maxWidth.CompareAndSwap(current, width) {
-			break
-		}
+		if width <= current                           { break }
+		if tb.maxWidth.CompareAndSwap(current, width) { break }
 	}
 
 	if isDir {
