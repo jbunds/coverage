@@ -280,6 +280,7 @@ func run() int {
 
 	tb := &treeBuilder{
 		fsys:    &localFS{},
+		modName: repGen.modName,
 		outRoot: filepath.Clean(outRoot),
 		cov:     repGen.cov,
 	}

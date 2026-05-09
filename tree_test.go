@@ -183,7 +183,14 @@ func TestProcessEntry(t *testing.T) {
 			ctx  := t.Context()
 			prog := progress.New(ctx, 0, io.Discard)
 			t.Cleanup(func() { prog.Close() })
-			got, err := tb.processEntry(t.Context(), ".", fs.FileInfoToDirEntry(info), 1, prog, 0)
+			st := scanState{
+				parentPath: ".",
+				entry:      fs.FileInfoToDirEntry(info),
+				indent:     1,
+				prog:       prog,
+				budget:     0,
+			}
+			got, err := tb.processEntry(t.Context(), st)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("processEntry(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
