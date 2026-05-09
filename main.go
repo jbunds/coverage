@@ -421,10 +421,10 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	defer progDirs.Close()
 
 	group, gCtx := errgroup.WithContext(ctx)
-	group.SetLimit(runtime.NumCPU()) // full send
+	group.SetLimit(runtime.NumCPU()) // saturate available CPU threads for maximum throughput while bounding concurrent syscalls
 
 	for dir := range dirsToCreate {
-		if err := gCtx.Err(); err != nil { break } // the call to group.Wait() below will capture the error
+		if err := gCtx.Err(); err != nil { break } // group.Wait() below captures the error
 		group.Go(func() error {
 			if err := rg.fsys.MkdirAll(gCtx, dir, 0700); err != nil {
 				return fmt.Errorf("cannot create directory %q: %w", dir, err)
@@ -456,10 +456,10 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	defer progFiles.Close()
 
 	group, gCtx = errgroup.WithContext(ctx)
-	group.SetLimit(runtime.NumCPU()) // full send
+	group.SetLimit(runtime.NumCPU()) // saturate available CPU threads for maximum throughput while bounding memory used by concurrent HTML buffers
 
 	for i, unit := range units {
-		if err := gCtx.Err(); err != nil { break } // the call to group.Wait() below will capture the error
+		if err := gCtx.Err(); err != nil { break } // group.Wait() below captures the error
 		group.Go(func() error {
 
 			var fileStatements, fileCovered int64

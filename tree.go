@@ -14,7 +14,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// treeBuilder stores state during processEntry recursion.
+// treeBuilder manages the global configuration, coverage data, and
+// and atomic counters used to create the directory tree HTML.
 type treeBuilder struct {
 	fsys     writeFS
 	modName  string
@@ -84,7 +85,7 @@ func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (s
 	remainingBudget := initialBudget
 
 	group, gCtx := errgroup.WithContext(ctx)
-	group.SetLimit(runtime.NumCPU()) // full send
+	group.SetLimit(runtime.NumCPU()) // saturate available CPU threads for maximum throughput while bounding memory used by concurrent HTML buffers
 
 	for i, entry := range entries {
 		if err := gCtx.Err(); err != nil { break }
