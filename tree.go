@@ -89,13 +89,11 @@ func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (s
 
 	for i, entry := range entries {
 		if err := gCtx.Err(); err != nil { break }
-		var currentBudget float64
+		currentBudget := budgetPerEntry
 		if i == len(entries) - 1 {
-			currentBudget    = remainingBudget
-		} else {
-			currentBudget    = budgetPerEntry
-			remainingBudget -= currentBudget
+			currentBudget = remainingBudget
 		}
+		remainingBudget -= currentBudget
 		group.Go(func() error {
 			st := scanState{
 				parentPath: pkgRelRoot,
@@ -157,17 +155,15 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 		var dirCovered, dirStatements int64
 
 		if len(subDirEntries) > 0 { // split this subdir's budget up among its children
-			childBudget := st.budget / float64(len(subDirEntries))
-			remaining   := st.budget
+			childBudget     := st.budget / float64(len(subDirEntries))
+			remainingBudget := st.budget
 
 			for i, subDirEntry := range subDirEntries {
-				var subDirBudget float64
+				subDirBudget := childBudget
 				if i == len(subDirEntries) - 1 {
-					subDirBudget = remaining // the last child takes on the remainder
-				} else {
-					subDirBudget = childBudget
-					remaining   -= subDirBudget
+					subDirBudget = remainingBudget // the last child takes on the remainder
 				}
+				remainingBudget -= subDirBudget
 
 				childState := scanState{
 					parentPath: pkgPath,
