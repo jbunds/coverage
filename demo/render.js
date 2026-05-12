@@ -69,12 +69,11 @@ const recorder = await page.screencast({ path: OUTPUT })
 // click the "k8s.io" subdir checkbox label
 const k8sIOLabel  = await treeFrame.waitForSelector('label[for="tree-item-1"]')
 const k8sIOCoords = await getAbsoluteCoords(treeFrame, k8sIOLabel)
-await cursor.moveTo(k8sIOCoords)                                     // move the cursor to the "k8s.io" subdir label, but don't immediately click it
-await setTimeout(600)                                                // 0.6s pause before clicking
-await page.mouse.click(k8sIOCoords.x, k8sIOCoords.y, { delay: 100 }) // click on the middle of the label, with a 100ms delay between mousedown and mouseup events
+await cursor.moveTo(k8sIOCoords) // move the cursor to the "k8s.io" subdir label, but don't immediately click it
+await setTimeout(400)            // 0.4s pause before the next cursor action
 
 // click the "kubernetes" subdir checkbox label
-const k8sLabel = await treeFrame.waitForSelector('label[for="tree-item-816"]')
+const k8sLabel = await treeFrame.waitForSelector('label[for="tree-item-390"]')
 await treeFrame.evaluate((el) => {
   el.scrollIntoView({
     behavior: 'smooth', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#behavior
@@ -90,7 +89,7 @@ await page.mouse.click(k8sCoords.x, k8sCoords.y, { delay: 100 }) // click on the
 await setTimeout(500)
 
 // click the "pkg" subdir checkbox label
-const pkgLabel = await treeFrame.waitForSelector('label[for="tree-item-902"]')
+const pkgLabel = await treeFrame.waitForSelector('label[for="tree-item-783"]')
 await treeFrame.evaluate((el) => {
   el.scrollIntoView({
     behavior: 'smooth', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#behavior
@@ -106,7 +105,7 @@ await page.mouse.click(pkgCoords.x, pkgCoords.y, { delay: 100 }) // click on the
 await setTimeout(500)
 
 // click the "kubelet" subdir checkbox label
-const kubeletLabel = await treeFrame.waitForSelector('label[for="tree-item-1138"]')
+const kubeletLabel = await treeFrame.waitForSelector('label[for="tree-item-1173"]')
 await treeFrame.evaluate((el) => {
   el.scrollIntoView({
     behavior: 'smooth', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#behavior
