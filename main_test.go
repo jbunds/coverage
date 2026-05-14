@@ -159,7 +159,6 @@ func TestGetModName(t *testing.T) {
 }
 
 func TestGetRepoURL(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name    string
 		gitCfg  *mockIniFileConfig
@@ -168,8 +167,37 @@ func TestGetRepoURL(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:   "succeeds",
+			name: "GitHub CI environment variable set",
+			want: "https://github.com/foo/bar",
+		},
+		{
+			name:   "local SSH standard (SCP style)",
 			gitCfg: &mockIniFileConfig{ returnValue: "git@github.com:foo/bar.git" },
+			want:   "https://github.com/foo/bar",
+		},
+		{
+			name:   "local SSH standard (no extension)",
+			gitCfg: &mockIniFileConfig{ returnValue: "git@github.com:foo/bar" },
+			want:   "https://github.com/foo/bar",
+		},
+		{
+			name:   "local SSH explicit protocol",
+			gitCfg: &mockIniFileConfig{ returnValue: "ssh://git@github.com:foo/bar.git" },
+			want:   "https://github.com/foo/bar",
+		},
+		{
+			name:   "local HTTPS standard",
+			gitCfg: &mockIniFileConfig{ returnValue: "https://github.com/foo/bar.git" },
+			want:   "https://github.com/foo/bar",
+		},
+		{
+			name:   "GitHub CI runner (token authentication)",
+			gitCfg: &mockIniFileConfig{ returnValue: "https://x-access-token:ghp_1234567890@github.com/foo/bar.git" }, // #nosec G101 - false positive
+			want:   "https://github.com/foo/bar",
+		},
+		{
+			name:   "GitHub CI runner (standard checkout)",
+			gitCfg: &mockIniFileConfig{ returnValue: "https://github.com/foo/bar.git" },
 			want:   "https://github.com/foo/bar",
 		},
 		{
@@ -180,7 +208,12 @@ func TestGetRepoURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+			if tt.name == "GitHub CI environment variable set" {
+				t.Setenv("GITHUB_REPOSITORY", "foo/bar")
+			}
+			if tt.name == "GitHub CI environment variable set with trailing slash removal check" {
+				t.Setenv("GITHUB_REPOSITORY", "foo/bar/")
+			}
 			repGen := &reportGenerator{
 				fsys: &mockFS{ FS: tt.fsys },
 			}

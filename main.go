@@ -27,6 +27,7 @@ import (
 	"io"
 	"io/fs"
 	"maps"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -325,20 +326,34 @@ func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) err
 func (rg *reportGenerator) getRepoURL(ctx context.Context, gitConfig iniFileValueGetter) error {
 	if err := ctx.Err(); err != nil { return err }
 
+	if githubRepo := os.Getenv("GITHUB_REPOSITORY"); githubRepo != "" {
+		rg.repoURL = "https://github.com/" + githubRepo
+		return nil
+	}
+
 	gitRemoteURL, err := gitConfig.Value(`remote "origin"`, "url")
 	if err != nil { return err }
 
-	httpURL := gitRemoteURL
-	httpURL  = strings.TrimPrefix(httpURL, "ssh://")
-	httpURL  = strings.TrimPrefix(httpURL, "git://")
-	if idx  := strings.Index     (httpURL, "@"); idx != -1 { httpURL = httpURL[idx+1:] }
-	httpURL  = strings.Replace   (httpURL, ":", "/", 1)
+	if idx := strings.Index(gitRemoteURL, "@"); idx != -1 {
+		gitRemoteURL = gitRemoteURL[idx + 1:]
+	}
+
+	gitRemoteURL = strings.TrimPrefix(gitRemoteURL, "ssh://")
+	gitRemoteURL = strings.TrimPrefix(gitRemoteURL, "git://")
+
+	if !strings.HasPrefix(gitRemoteURL, "http://" ) &&
+	   !strings.HasPrefix(gitRemoteURL, "https://") {
+		gitRemoteURL = "https://" + strings.Replace(gitRemoteURL, ":", "/", 1)
+	}
+
+	u, err := url.Parse(gitRemoteURL)
+	if err != nil { return err }
+
+	httpURL := fmt.Sprintf("https://%s%s", u.Host, u.Path)
 	httpURL  = strings.TrimSuffix(httpURL, ".git")
 	httpURL  = strings.TrimSuffix(httpURL, "/")
 
-	if !strings.HasPrefix(httpURL, "http") { httpURL = "https://" + httpURL }
 	rg.repoURL = httpURL
-
 	return nil
 }
 
