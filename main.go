@@ -326,11 +326,6 @@ func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) err
 func (rg *reportGenerator) getRepoURL(ctx context.Context, gitConfig iniFileValueGetter) error {
 	if err := ctx.Err(); err != nil { return err }
 
-	if githubRepo := os.Getenv("GITHUB_REPOSITORY"); githubRepo != "" {
-		rg.repoURL = "https://github.com/" + githubRepo
-		return nil
-	}
-
 	gitRemoteURL, err := gitConfig.Value(`remote "origin"`, "url")
 	if err != nil { return err }
 

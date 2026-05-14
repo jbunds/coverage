@@ -159,6 +159,7 @@ func TestGetModName(t *testing.T) {
 }
 
 func TestGetRepoURL(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		gitCfg  *mockIniFileConfig
@@ -166,10 +167,6 @@ func TestGetRepoURL(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{
-			name: "GitHub CI environment variable set",
-			want: "https://github.com/foo/bar",
-		},
 		{
 			name:   "local SSH standard (SCP style)",
 			gitCfg: &mockIniFileConfig{ returnValue: "git@github.com:foo/bar.git" },
@@ -208,12 +205,7 @@ func TestGetRepoURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.name == "GitHub CI environment variable set" {
-				t.Setenv("GITHUB_REPOSITORY", "foo/bar")
-			}
-			if tt.name == "GitHub CI environment variable set with trailing slash removal check" {
-				t.Setenv("GITHUB_REPOSITORY", "foo/bar/")
-			}
+			t.Parallel()
 			repGen := &reportGenerator{
 				fsys: &mockFS{ FS: tt.fsys },
 			}
