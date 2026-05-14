@@ -12,6 +12,8 @@ github.com/jbunds/progress v1.0.6 h1:Fz1QtSxlqhMXrNKfyNqKkpsHW2HS0r/jwo5JO66s86E
 github.com/jbunds/progress v1.0.6/go.mod h1:Qx1Xgng7lhEe3rYiQ05FEpMwjDAquiDTKZNAdv/uEWA=
 github.com/jbunds/progress v1.0.7 h1:lFr9+iuGSTFlFFrvtoF1NzuOlGNjEdKFmhUcr5PYwm8=
 github.com/jbunds/progress v1.0.7/go.mod h1:Qx1Xgng7lhEe3rYiQ05FEpMwjDAquiDTKZNAdv/uEWA=
+github.com/jbunds/progress v1.0.8 h1:T27dR8Akcit0q60W1uvFR9Q1ZIOvMK5pVY4kQoIUdvw=
+github.com/jbunds/progress v1.0.8/go.mod h1:Qx1Xgng7lhEe3rYiQ05FEpMwjDAquiDTKZNAdv/uEWA=
 golang.org/x/mod v0.35.0 h1:Ww1D637e6Pg+Zb2KrWfHQUnH2dQRLBQyAtpr/haaJeM=
 golang.org/x/mod v0.35.0/go.mod h1:+GwiRhIInF8wPm+4AoT6L0FA1QWAad3OMdTRx4tFYlU=
 golang.org/x/sync v0.20.0 h1:e0PTpb7pjO8GAtTs2dQ6jYa5BWYlMuX047Dco/pItO4=
