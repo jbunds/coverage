@@ -121,7 +121,7 @@ See [jbunds/progress/.github/workflows/test-go.yml](https://github.com/jbunds/pr
 
 See [jbunds/progress/.github/workflows/pages.yml](https://github.com/jbunds/progress/blob/main/.github/workflows/pages.yml) for a working example.
 
-See [jbunds.github.io/coverage/](https://jbunds.github.io/coverage/) for an example HTML report uploaded to Pages, which is not particularly interesting since it consists of just the three Go source files which implement the module.
+See [jbunds.github.io/coverage/](https://jbunds.github.io/coverage/) or [jbunds.github.io/progress/](https://jbunds.github.io/progress/) for example HTML reports uploaded to Pages.
 
 The well-known and relatively large (500k+ LoC) [Kubernetes][k8s] project was chosen for the demo to better illustrate the features and performance.
 
