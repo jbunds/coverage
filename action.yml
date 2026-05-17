@@ -16,10 +16,6 @@ branding:
   color: blue
 
 inputs:
-  go-version:
-    description: 'Go version to use'
-    required:    false
-    default:     '1.26.2'
   go-mod:
     description: 'path to the root go.mod file'
     required:    false
@@ -45,8 +41,8 @@ runs:
       id:   setup_go
       uses: actions/setup-go@v6
       with:
-        cache:      false    # workaround https://github.com/actions/setup-go/issues/722
-        go-version: ${{ inputs.go-version }}
+        cache:           false # workaround https://github.com/actions/setup-go/issues/722
+        go-version-file: ${{ inputs.go-mod }}
 
     - name: coverage profile
       id:   coverage_profile
