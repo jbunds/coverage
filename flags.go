@@ -16,7 +16,7 @@ func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, e
 		fmt.Fprintln(fs.Output())
 	}
 	fs.StringVar(&goMod,        "gomod",        "", "path to the root go.mod file")
-	fs.StringVar(&coverProfile, "coverprofile", "", "path to Go test coverage profile file")
+	fs.StringVar(&coverProfile, "coverprofile", "", "path to the Go test coverage profile file")
 	fs.StringVar(&path,         "path",         "", "path where HTML files will be written")
 	if err := fs.Parse(args); err != nil {
 		return "", "", "", err

@@ -64,7 +64,7 @@ $ go run github.com/jbunds/coverage
 coverage usage:
 
   -coverprofile string
-    	path to Go test coverage profile file
+    	path to the Go test coverage profile file
   -gomod string
     	path to the root go.mod file
   -path string
