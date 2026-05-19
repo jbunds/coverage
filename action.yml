@@ -31,7 +31,7 @@ inputs:
 
 outputs:
   all:           # accessed downstream via ${{ fromJson(steps.coverage_report.outputs.all).report-pathname }} for example
-    description: JSON string containing all outputs from gwatts/go-coverage-action
+    description: JSON string containing all outputs published by gwatts/go-coverage-action
     value:       ${{ toJson(steps.coverage_profile.outputs) }}
 
 runs:

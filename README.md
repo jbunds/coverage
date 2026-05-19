@@ -79,45 +79,43 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
 
 1. The [`jbunds/coverage@v1`][action] reusable [GitHub Action][actions] generates the test coverage report and writes the files comprising the report to `coverage-report-path`. For example:
 
-```
-- uses: jbunds/coverage@v1
-  with:
-    go-version:           '1.26.2'           # optional; default is '1.26.2'
-    go-mod:               'go.mod'           # optional; default is 'go.mod'
-    coverage-threshold:   '50'               # optional; default is '0'
-    coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
-```
+   ```
+   - uses: jbunds/coverage@v1
+     with:
+       go-mod:               'go.mod'           # optional; default is 'go.mod'
+       coverage-threshold:   '50'               # optional; default is '0'
+       coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
+   ```
 
-The [`go-version`][action], [`go-mod`][action], [`coverage-threshold`][gwatts-gocov-outputs], and [`coverage-report-path`][workflow] parameters are optional.
+The [`go-mod`][action], [`coverage-threshold`][gwatts-gocov-outputs], and [`coverage-report-path`][workflow] parameters are optional.
 
 All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
 
-```
-${{ fromJson(steps.coverage_report.outputs.all).gcov-pathname    }}
-${{ fromJson(steps.coverage_report.outputs.all).report-pathname  }}
-${{ fromJson(steps.coverage_report.outputs.all).coverage-pct     }}
-${{ fromJson(steps.coverage_report.outputs.all).coverage-pct-1dp }}
-${{ fromJson(steps.coverage_report.outputs.all).meets-threshold  }}
-```
+   ```
+   ${{ fromJson(steps.coverage_report.outputs.all).gcov-pathname    }}
+   ${{ fromJson(steps.coverage_report.outputs.all).report-pathname  }}
+   ${{ fromJson(steps.coverage_report.outputs.all).coverage-pct     }}
+   ${{ fromJson(steps.coverage_report.outputs.all).coverage-pct-1dp }}
+   ${{ fromJson(steps.coverage_report.outputs.all).meets-threshold  }}
+   ```
 
-etc...
+etc.
 
 See [jbunds/progress/.github/workflows/test-go.yml](https://github.com/jbunds/progress/blob/main/.github/workflows/test-go.yml) for a working example.
 
 2. The [`jbunds/coverage/.github/workflows/pages.yml@v1`][workflow] reusable [GitHub Workflow][workflows] generates the test coverage report and also deploys it to [GitHub Pages][pages]. For example:
 
-```
-- uses: jbunds/coverage/.github/workflows/pages.yml@v1
-  permissions:
-    contents: write  # required by gwatts/go-coverage-action to execute `git push origin refs/notes/gocoverage`
-    pages:    write  # required by actions/deploy-pages
-    id-token: write  # required by actions/deploy-pages
-  with:
-    go-version:           '1.26.2'           # optional: default is '1.26.2'
-    go-mod:               'go.mod'           # optional; default is 'go.mod'
-    coverage-threshold:   '50'               # optional; default is '0'
-    coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
-```
+   ```
+   - uses: jbunds/coverage/.github/workflows/pages.yml@v1
+     permissions:
+       contents: write  # required by gwatts/go-coverage-action to execute `git push origin refs/notes/gocoverage`
+       pages:    write  # required by actions/deploy-pages
+       id-token: write  # required by actions/deploy-pages
+     with:
+       go-mod:               'go.mod'           # optional; default is 'go.mod'
+       coverage-threshold:   '50'               # optional; default is '0'
+       coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
+   ```
 
 See [jbunds/progress/.github/workflows/pages.yml](https://github.com/jbunds/progress/blob/main/.github/workflows/pages.yml) for a working example.
 
