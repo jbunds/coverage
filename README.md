@@ -101,7 +101,7 @@ All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`
 
 etc.
 
-See [jbunds/progress/.github/workflows/test-go.yml](https://github.com/jbunds/progress/blob/main/.github/workflows/test-go.yml) for a working example.
+See [`jbunds/progress/.github/workflows/test-go.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/test-go.yml) for a working example.
 
 2. The [`jbunds/coverage/.github/workflows/pages.yml@v1`][workflow] reusable [GitHub Workflow][workflows] generates the test coverage report and also deploys it to [GitHub Pages][pages]. For example:
 
@@ -117,7 +117,7 @@ See [jbunds/progress/.github/workflows/test-go.yml](https://github.com/jbunds/pr
        coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
    ```
 
-See [jbunds/progress/.github/workflows/pages.yml](https://github.com/jbunds/progress/blob/main/.github/workflows/pages.yml) for a working example.
+See [`jbunds/progress/.github/workflows/pages.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/pages.yml) for a working example.
 
 See [jbunds.github.io/coverage/](https://jbunds.github.io/coverage/) or [jbunds.github.io/progress/](https://jbunds.github.io/progress/) for example HTML reports uploaded to Pages.
 
