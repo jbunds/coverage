@@ -5,7 +5,7 @@ go 1.26.2
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/graniticio/inifile v0.0.0-20210325083046-86e94fdc8f99
-	github.com/jbunds/progress v1.0.12
+	github.com/jbunds/progress v1.0.13
 	golang.org/x/mod v0.36.0
 	golang.org/x/sync v0.20.0
 	golang.org/x/term v0.43.0
@@ -16,5 +16,6 @@ require (
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/mattn/go-runewidth v0.0.24 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	golang.org/x/sys v0.44.0 // indirect
 )
