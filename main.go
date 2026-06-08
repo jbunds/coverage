@@ -104,7 +104,7 @@ func (w *errorWriter) writeColor(s, color string) {
 // err returns the first I/O failure encountered during multiple sequential write operations
 func (w *errorWriter) err() error { return w.e }
 
-// Write satisfies the io.Writer interface, but it unused
+// Write satisfies the io.Writer interface, but is otherwise unused
 func (w *errorWriter) Write(p []byte) (int, error) {
 	if w.e != nil { return 0, w.e }
 	return w.w.Write(p)
@@ -685,9 +685,9 @@ func (rg *reportGenerator) writeTemplateFile(ctx context.Context, file string, t
 
 	outFile   := filepath.Clean(filepath.Join(rg.outRoot, filepath.Base(file)))
 	tmpl, err := template.ParseFS(rg.embeddedFiles, file)
-	if err != nil                                   { return fmt.Errorf("cannot parse %q: %w",     file, err) }
+	if                                   err != nil { return fmt.Errorf("cannot parse %q: %w",     file, err) }
 	f, err := rg.fsys.Create(ctx, outFile)
-	if err != nil                                   { return fmt.Errorf("cannot create %q: %w", outFile, err) }
+	if                                   err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
 	if err := tmpl.Execute(f, tmplVars); err != nil { return fmt.Errorf("cannot render template: %w",    err) }
 
 	return f.Close()
@@ -700,11 +700,11 @@ func (rg *reportGenerator) writeAncillaryFiles(ctx context.Context) error {
 	for _, file := range rg.ancillaryFiles {
 		outFile   := filepath.Clean(filepath.Join(rg.outRoot, filepath.Base(file)))
 		f, err    := rg.fsys.Create(ctx, outFile)
-		if err != nil                                        { return fmt.Errorf("cannot create %q: %w",     outFile, err) }
+		if                                        err != nil { return fmt.Errorf("cannot create %q: %w",     outFile, err) }
 		data, err := fs.ReadFile(rg.embeddedFiles, file)
-		if err != nil                                        { return fmt.Errorf("cannot read %q: %w",          file, err) }
+		if                                        err != nil { return fmt.Errorf("cannot read %q: %w",          file, err) }
 		if _, err := fmt.Fprint(f, string(data)); err != nil { return fmt.Errorf("cannot write file %q: %w", outFile, err) }
-		if err := f.Close(); err != nil { return fmt.Errorf("cannot close file %q: %w", outFile, err) }
+		if err := f.Close();                      err != nil { return fmt.Errorf("cannot close file %q: %w", outFile, err) }
 	}
 
 	return nil
@@ -714,7 +714,7 @@ func (rg *reportGenerator) writeAncillaryFiles(ctx context.Context) error {
 func filterArgs(args []string) []string {
 	for i, arg := range args {
 		if arg == "--" {
-			args = args[i+1:]
+			args = args[i + 1:]
 			break
 		}
 	}
