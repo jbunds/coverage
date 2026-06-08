@@ -69,27 +69,27 @@ const (
 	colorGreen = "\033[32m"
 )
 
-// stickyWriter is a wrapper interface used to enable sequential string writing with deferred error handling
+// stickyWriter is a wrapper interface used to enable sequential string writing with deferred error handling.
 type stickyWriter interface {
 	io.Writer
 	write(string)
 	err() error
 }
 
-// errorWriter tracks the first encountered I/O failure to allow multiple sequential writes without repetitive inline error checking
+// errorWriter tracks the first encountered I/O failure to allow multiple sequential writes without repetitive inline error checking.
 type errorWriter struct {
 	w        io.Writer
 	e        error
 	useColor bool
 }
 
-// write performs a sticky-error write
+// write performs a sticky-error write.
 func (w *errorWriter) write(s string) {
 	if w.e != nil { return }
 	_, w.e = io.WriteString(w.w, s)
 }
 
-// write performs a sticky-error write that optionally wraps the provided string in ANSI color codes
+// write performs a sticky-error write that optionally wraps the provided string in ANSI color codes.
 func (w *errorWriter) writeColor(s, color string) {
 	if w.e != nil { return }
 	if !w.useColor {
@@ -101,10 +101,10 @@ func (w *errorWriter) writeColor(s, color string) {
 	w.write(colorReset)
 }
 
-// err returns the first I/O failure encountered during multiple sequential write operations
+// err returns the first I/O failure encountered during multiple sequential write operations.
 func (w *errorWriter) err() error { return w.e }
 
-// Write satisfies the io.Writer interface, but is otherwise unused
+// Write satisfies the io.Writer interface, but is otherwise unused.
 func (w *errorWriter) Write(p []byte) (int, error) {
 	if w.e != nil { return 0, w.e }
 	return w.w.Write(p)
@@ -117,21 +117,19 @@ func newErrorWriter(w io.Writer) *errorWriter {
 	}
 }
 
-// coverage tracks per-file coverage
+// coverage tracks per-file coverage.
 type coverage struct {
 	covered int64
 	total   int64
 }
 
-// workUnit represents a unit of work to be performed: the generation of an HTML file for a Go source file's coverage profile
-// the main program utilizes all available CPU cores to process all workUnits concurrently
+// workUnit represents a unit of work to be performed: the generation of an HTML file for a Go source file's coverage profile.
 type workUnit struct {
 	profile *cover.Profile
 	outPath string
 }
 
-// reportGenerator orchestrates the generation of the HTML report
-// it stores state, simplifies method signatures, avoids copying values, and makes testing easier
+// reportGenerator orchestrates the generation of the HTML report.
 type reportGenerator struct {
 	fsys            writeFS
 	embeddedFiles   fs.FS
@@ -204,10 +202,10 @@ func (lfs *localFS) WriteFile(ctx context.Context, name string, data []byte, per
 	return os.WriteFile(name, data, perm) // expects callers pass filepath.Clean(name)
 }
 
-// wraps inifile.IniConfig.Value for test injection
+// wraps inifile.IniConfig.Value for test injection.
 type iniFileValueGetter interface { Value(string, string) (string, error) }
 
-// wraps packages.Load for test injection
+// wraps packages.Load for test injection.
 type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
 
 func main() {
@@ -235,7 +233,7 @@ func run() int {
 	}
 
 	fmt.Fprintf(os.Stderr, "processing %d source files...", len(profiles))
-	if !isTerm(os.Stderr) { fmt.Println() }
+	if !isTerm(os.Stderr) { fmt.Println() } // nolint:forbidigo
 
 	repGen := &reportGenerator{
 		fsys:           &localFS{},
@@ -309,7 +307,7 @@ func run() int {
 	return 0
 }
 
-// getModName reads the repo's root go.mod file to determine the name of the Go module
+// getModName reads the repo's root go.mod file to determine the name of the Go module.
 func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -322,7 +320,7 @@ func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) err
 	return nil
 }
 
-// getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML
+// getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML.
 func (rg *reportGenerator) getRepoURL(ctx context.Context, gitConfig iniFileValueGetter) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -352,7 +350,7 @@ func (rg *reportGenerator) getRepoURL(ctx context.Context, gitConfig iniFileValu
 	return nil
 }
 
-// getAllPkgPaths extracts all unique package paths from the coverage profile file for subsequent use in primePkgDirCache
+// getAllPkgPaths extracts all unique package paths from the coverage profile file for subsequent use in primePkgDirCache.
 func (rg *reportGenerator) getAllPkgPaths(ctx context.Context) ([]string, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
 
@@ -382,7 +380,7 @@ func (rg *reportGenerator) getAllPkgPaths(ctx context.Context) ([]string, error)
 	return allPaths, scanner.Err()
 }
 
-// primePkgDirCache primes rg.pkgDirCache for subsequent use in buildCovHTML
+// primePkgDirCache primes rg.pkgDirCache for subsequent use in buildCovHTML.
 func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLoader) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -410,7 +408,7 @@ func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLo
 	return nil
 }
 
-// writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the coverage profile file
+// writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the coverage profile file.
 func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput io.Writer) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -517,7 +515,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	return err
 }
 
-// buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage
+// buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage.
 func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath string) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -560,7 +558,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	return ew.err()
 }
 
-// writePreamble writes the preamble portion of the HTML content common to every Go source HTML file
+// writePreamble writes the preamble portion of the HTML content common to every Go source HTML file.
 func writePreamble(ew stickyWriter, cssRelPath, srcPath string) {
 	ew.write("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n")
 	ew.write("<link rel=\"stylesheet\" href=\"")
@@ -570,7 +568,7 @@ func writePreamble(ew stickyWriter, cssRelPath, srcPath string) {
 	ew.write("</title>\n</head>\n<body id=\"code\">\n<pre>\n")
 }
 
-// writePostamble writes the postamble portion of the HTML content common to every Go source HTML file
+// writePostamble writes the postamble portion of the HTML content common to every Go source HTML file.
 func writePostamble(ew stickyWriter) {
 	ew.write("</pre>\n<script>")
 	ew.write(`
@@ -589,7 +587,7 @@ window.addEventListener('message', (event) => {
 </html>`)
 }
 
-// printCoverage prints per-file coverage percentages to the specified destination (typically stdout)
+// printCoverage prints per-file coverage percentages to the specified destination (typically stdout).
 func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -652,7 +650,7 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 }
 
 // writeIndexHTML writes the index HTML file, which contains two template parameters
-// (ModName and ModURL), and hosts two iframes (directory tree & source code)
+// (ModName and ModURL), and hosts two iframes (directory tree & source code).
 func (rg *reportGenerator) writeIndexHTML(ctx context.Context, indexHTML string) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -666,7 +664,7 @@ func (rg *reportGenerator) writeIndexHTML(ctx context.Context, indexHTML string)
 	return rg.writeTemplateFile(ctx, indexHTML, data)
 }
 
-// writeStyleCSS writes the style.css file, which contains a single "MaxWidth" template parameter
+// writeStyleCSS writes the style.css file, which contains a single "MaxWidth" template parameter.
 func (rg *reportGenerator) writeStyleCSS(ctx context.Context, styleCSS string) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -679,7 +677,7 @@ func (rg *reportGenerator) writeStyleCSS(ctx context.Context, styleCSS string) e
 	return rg.writeTemplateFile(ctx, styleCSS, data)
 }
 
-// writeTemplateFile writes the specified template file
+// writeTemplateFile writes the specified template file.
 func (rg *reportGenerator) writeTemplateFile(ctx context.Context, file string, tmplVars any) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -693,7 +691,7 @@ func (rg *reportGenerator) writeTemplateFile(ctx context.Context, file string, t
 	return f.Close()
 }
 
-// writeAncillaryFiles writes the files required by the coverage report to the user-specified path
+// writeAncillaryFiles writes the files required by the coverage report to the user-specified path.
 func (rg *reportGenerator) writeAncillaryFiles(ctx context.Context) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -710,7 +708,7 @@ func (rg *reportGenerator) writeAncillaryFiles(ctx context.Context) error {
 	return nil
 }
 
-// filterArgs discards any arguments up to and including "--" (potentially useful for testing)
+// filterArgs discards any arguments up to and including "--".
 func filterArgs(args []string) []string {
 	for i, arg := range args {
 		if arg == "--" {
@@ -721,7 +719,7 @@ func filterArgs(args []string) []string {
 	return args
 }
 
-// isTerm determines if the specified writer is connected to a terminal
+// isTerm determines if the specified writer is connected to a terminal.
 func isTerm(v any) bool {
 	if testing.Testing() { return false }
 	if os.Getenv("GITHUB_ACTIONS") == "true" || // https://docs.github.com/actions/reference/workflows-and-actions/variables

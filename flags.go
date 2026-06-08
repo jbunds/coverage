@@ -1,13 +1,14 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"path/filepath"
 	"strings"
 )
 
-// flags parses command line flags
+// flags parses command line flags.
 func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, err error) {
 	// tests may call fs.SetOutput(); it is not called here
 	fs.Usage = func() {
@@ -23,15 +24,15 @@ func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, e
 	}
 	if goMod == "" {
 		fs.Usage()
-		return "", "", "", fmt.Errorf("no value specified for -gomod")
+		return "", "", "", errors.New("no value specified for -gomod")
 	}
 	if coverProfile == "" {
 		fs.Usage()
-		return "", "", "", fmt.Errorf("no value specified for -coverprofile")
+		return "", "", "", errors.New("no value specified for -coverprofile")
 	}
 	if path == "" {
 		fs.Usage()
-		return "", "", "", fmt.Errorf("no value specified for -path")
+		return "", "", "", errors.New("no value specified for -path")
 	}
 	if len(fs.Args()) > 0 {
 		fmt.Fprintf(fs.Output(), "ignored arguments: %s\n", strings.Join(fs.Args(), ", "))

@@ -66,7 +66,7 @@ func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writ
 	return int(tb.maxWidth.Add(10)), treeFile.Close() // +10 == len("100.0%") + 2ch (gap) to cohere with "margin-right: 10ch;" in tree.css
 }
 
-// genHTML recursively traverses the output directory to generate the nested <ul> and <li> HTML string representing the file coverage tree
+// genHTML recursively traverses the output directory to generate the nested <ul> and <li> HTML string representing the file coverage tree.
 func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (string, error) {
 	if err := ctx.Err(); err != nil { return "", err }
 

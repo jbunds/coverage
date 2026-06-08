@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"io/fs"
 	"strings"
@@ -21,7 +21,7 @@ import (
 type badWriter struct{}
 
 func (w *badWriter) Write(_ []byte) (int, error) {
-	return 0, fmt.Errorf("i refuse to write")
+	return 0, errors.New("i refuse to write")
 }
 
 type mockFS struct {
@@ -37,7 +37,7 @@ type mockFS struct {
 
 func (m *mockFS) Create(ctx context.Context, _ string) (io.WriteCloser, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
-	if m.createFails { return nil, fmt.Errorf("Create failed") }
+	if m.createFails { return nil, errors.New("Create failed") }
 	var w io.Writer
 	if m.badWriter {
 		w = &badWriter{}
@@ -61,13 +61,13 @@ func (m *mockFS) OpenWithContext(ctx context.Context, name string) (fs.File, err
 
 func (m *mockFS) ReadDir(ctx context.Context, dir string) ([]fs.DirEntry, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
-	if m.readDirFails { return nil, fmt.Errorf("ReadDir failed") }
+	if m.readDirFails { return nil, errors.New("ReadDir failed") }
 	return fs.ReadDir(m.FS, dir)
 }
 
 func (m *mockFS) MkdirAll(ctx context.Context, _ string, _ fs.FileMode) error {
 	if err := ctx.Err(); err != nil { return err }
-	if m.mkdirAllFails { return fmt.Errorf("MkdirAll failed") }
+	if m.mkdirAllFails { return errors.New("MkdirAll failed") }
 	return nil
 }
 
@@ -78,7 +78,7 @@ func (m *mockFS) ReadFile(ctx context.Context, name string) ([]byte, error) {
 
 func (m *mockFS) WriteFile(ctx context.Context, _ string, data []byte, _ fs.FileMode) error {
 	if err := ctx.Err(); err != nil { return err }
-	if m.writeFileFails { return fmt.Errorf("WriteFile failed") }
+	if m.writeFileFails { return errors.New("WriteFile failed") }
 	m.data = data
 	return nil
 }
@@ -98,7 +98,7 @@ type mockFile struct {
 }
 
 func (m *mockFile) Close() error {
-	if m.closeFails { return fmt.Errorf("Close failed") }
+	if m.closeFails { return errors.New("Close failed") }
 	return nil
 }
 
@@ -199,7 +199,7 @@ func TestGetRepoURL(t *testing.T) {
 		},
 		{
 			name:    "fails",
-			gitCfg:  &mockIniFileConfig{ err: fmt.Errorf("inifile.IniConfig.Value failed") },
+			gitCfg:  &mockIniFileConfig{ err: errors.New("inifile.IniConfig.Value failed") },
 			wantErr: true,
 		},
 	}
@@ -278,7 +278,7 @@ func TestPrimePkgDirCache(t *testing.T) {
 		pkgs := make([]*packages.Package, len(patterns))
 		for i, p := range patterns {
 			if strings.Contains(p, "this/will/fail") {
-				return nil, fmt.Errorf("packages.Load failed")
+				return nil, errors.New("packages.Load failed")
 			}
 			pkgs[i] = &packages.Package{
 				PkgPath: p,
