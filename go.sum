@@ -6,12 +6,16 @@ github.com/graniticio/inifile v0.0.0-20210325083046-86e94fdc8f99 h1:lCT1D689+U1h
 github.com/graniticio/inifile v0.0.0-20210325083046-86e94fdc8f99/go.mod h1:N64Ci9n9bjq7I8hT7kVicOOXsG+T9ytkkMN3zEXTel4=
 github.com/hashicorp/golang-lru/v2 v2.0.7 h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=
 github.com/hashicorp/golang-lru/v2 v2.0.7/go.mod h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=
+github.com/jbunds/progress v1.0.4 h1:UBk/AoLeZe10TZ0gM05aq7G25520CSEoV1vTo2oVdKk=
+github.com/jbunds/progress v1.0.4/go.mod h1:Qx1Xgng7lhEe3rYiQ05FEpMwjDAquiDTKZNAdv/uEWA=
 github.com/jbunds/progress v1.0.11 h1:YieF3onhlayX/Rr3aMoEwZ4cSXe4BEkXxDsw5ThBNMs=
 github.com/jbunds/progress v1.0.11/go.mod h1:fmj2pA/NRkLJRzwCayrwEYiQSH1FB8DSEpfDAtDNdFE=
 github.com/jbunds/progress v1.0.12 h1:VuvloSAYPen2hagAk1XAEzyy/amf68aFo+9yLda4we0=
 github.com/jbunds/progress v1.0.12/go.mod h1:C0HharKKcypQqclCo07jwwPRSpM+vJJ0qntmREldxvM=
 github.com/jbunds/progress v1.0.13 h1:XdQIK33VijCULOJB7zdfvD+KcEHtwE+PavXiesbnQmg=
 github.com/jbunds/progress v1.0.13/go.mod h1:Z9B8niGHt42hNG1ECDcNChvyBjHDkpYfORZhG3POXBo=
+github.com/jbunds/progress v1.0.14 h1:2hqZLwhox1VC74sgsLpc7h8qHNDj00VEvKiLosnu07c=
+github.com/jbunds/progress v1.0.14/go.mod h1:Z9B8niGHt42hNG1ECDcNChvyBjHDkpYfORZhG3POXBo=
 github.com/mattn/go-runewidth v0.0.24 h1:cpokDiIn0MGnhdHwuWnJBITySJ20QyNGnY2kR/ay2DU=
 github.com/mattn/go-runewidth v0.0.24/go.mod h1:XBkDxAl56ILZc9knddidhrOlY5R/pDhgLpndooCuJAs=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
