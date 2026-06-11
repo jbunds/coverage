@@ -8,7 +8,7 @@ require (
 	github.com/jbunds/progress v1.0.14
 	golang.org/x/mod v0.37.0
 	golang.org/x/sync v0.21.0
-	golang.org/x/term v0.43.0
+	golang.org/x/term v0.44.0
 	golang.org/x/tools v0.45.0
 )
 
@@ -17,5 +17,5 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/mattn/go-runewidth v0.0.24 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
 )
