@@ -51,7 +51,7 @@ type htmlBuilder struct {
 }
 
 // writeTreeHTML writes the tree HTML (tree.html) file.
-func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writer) (int, error) {
+func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writer, treeHTML string) (int, error) {
 	if err := ctx.Err(); err != nil { return 0, err }
 
 	html, err := tb.genHTML(ctx, progressOutput)

@@ -20,8 +20,13 @@ import (
 
 type badWriter struct{}
 
-func (w *badWriter) Write(_ []byte) (int, error) {
-	return 0, errors.New("i refuse to write")
+func (w *badWriter) Write(_ []byte) (int, error) { return 0, errors.New("i refuse to write") }
+
+type sliceWriter struct { data *[]byte }
+
+func (w *sliceWriter) Write(p []byte) (int, error) {
+	*w.data = append(*w.data, p...)
+	return len(p), nil
 }
 
 type mockFS struct {
@@ -81,15 +86,6 @@ func (m *mockFS) WriteFile(ctx context.Context, _ string, data []byte, _ fs.File
 	if m.writeFileFails { return errors.New("WriteFile failed") }
 	m.data = data
 	return nil
-}
-
-type sliceWriter struct {
-	data *[]byte
-}
-
-func (w *sliceWriter) Write(p []byte) (int, error) {
-	*w.data = append(*w.data, p...)
-	return len(p), nil
 }
 
 type mockFile struct {
@@ -457,7 +453,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				profiles:    tt.profiles,
 				pkgDirCache: tt.pkgDirCache,
 			}
-			err := repGen.writeCovHTMLFiles(t.Context(), io.Discard)
+			err := repGen.writeCovHTMLFiles(t.Context(), io.Discard, "css/style.css")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeCovHTMLFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
