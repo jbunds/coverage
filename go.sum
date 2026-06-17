@@ -6,8 +6,6 @@ github.com/graniticio/inifile v0.0.0-20210325083046-86e94fdc8f99 h1:lCT1D689+U1h
 github.com/graniticio/inifile v0.0.0-20210325083046-86e94fdc8f99/go.mod h1:N64Ci9n9bjq7I8hT7kVicOOXsG+T9ytkkMN3zEXTel4=
 github.com/hashicorp/golang-lru/v2 v2.0.7 h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=
 github.com/hashicorp/golang-lru/v2 v2.0.7/go.mod h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=
-github.com/jbunds/progress v1.0.14 h1:2hqZLwhox1VC74sgsLpc7h8qHNDj00VEvKiLosnu07c=
-github.com/jbunds/progress v1.0.14/go.mod h1:Z9B8niGHt42hNG1ECDcNChvyBjHDkpYfORZhG3POXBo=
 github.com/jbunds/progress v1.0.15 h1:zo+Ato95wHMNggUiS1rrSURdpS5036iZJEte7nGL8OE=
 github.com/jbunds/progress v1.0.15/go.mod h1:EB/+4X/nndjl6ozdbik3u5LO4Ou7GNyb3azW4U/WX/M=
 github.com/mattn/go-runewidth v0.0.24 h1:cpokDiIn0MGnhdHwuWnJBITySJ20QyNGnY2kR/ay2DU=
@@ -22,5 +20,5 @@ golang.org/x/sys v0.46.0 h1:noSf2Fq6F8DBgS+LysIkx7rIExoNHJsxOAtPp4rthXw=
 golang.org/x/sys v0.46.0/go.mod h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=
 golang.org/x/term v0.44.0 h1:0rLvDRCtNj0gZkyIXhCyOb2OAzEhLVqc4B+hrsBhrmc=
 golang.org/x/term v0.44.0/go.mod h1:7ze4MdzUzLXpSAoFP1H0bOI9aXDqveSvatT5vKcFh2Y=
-golang.org/x/tools v0.45.0 h1:18qN3FAooORvApf5XjCXgsuayZOEtXf6JK18I3+ONa8=
-golang.org/x/tools v0.45.0/go.mod h1:LuUGqqaXcXMEFEruIVJVm5mgDD8vww/z/SR1gQ4uE/0=
+golang.org/x/tools v0.46.0 h1:7jTurBkPZu4moS/Uy4OQT1M+QBlsj3wejyZwsT8Z7rk=
+golang.org/x/tools v0.46.0/go.mod h1:FrD85F8l+NWL+9XWBSyVSHO6Ne4jutsfIFba7AWQ5Ys=
