@@ -20,7 +20,7 @@ jobs:
     env:
       NPM_CONFIG_LOGLEVEL: verbose
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-node
       - run:  npm ci
       - run:  npx stylelint '**/*.css' --formatter verbose
