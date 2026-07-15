@@ -25,6 +25,6 @@ runs:
 
     - name: upload GitHub Pages artifact
       id:   upload_pages_artifact
-      uses: actions/upload-pages-artifact@v4
+      uses: actions/upload-pages-artifact@v5
       with:
         path: ${{ inputs.coverage-report-path }}
