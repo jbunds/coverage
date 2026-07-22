@@ -1,6 +1,12 @@
 {
-  "$schema":         "https://biomejs.dev",
-  "formatter":       { "enabled": false },
-  "organizeImports": { "enabled": false },
-  "linter":          { "enabled": true }
+  "$schema":   "https://biomejs.dev",
+  "formatter": { "enabled": false },
+  "linter":    { "enabled": true },
+   "assist":   {
+    "actions": {
+      "source": {
+        "organizeImports": "off"
+      }
+    }
+  }
 }
