@@ -7,7 +7,7 @@
 #      per these standard actions:
 #
 #        - actions/configure-pages@v6
-#        - actions/upload-pages-artifact@v4
+#        - actions/upload-pages-artifact@v5
 #
 #   3. deploys the Go test coverage HTML report to GitHub Pages
 #      via actions/deploy-pages@v5
