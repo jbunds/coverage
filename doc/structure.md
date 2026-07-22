@@ -1,16 +1,14 @@
 ```
 .
 ├── action.yml
+├── biome.json
 ├── css
 │   ├── style.css
 │   └── tree.css
 ├── demo
 │   ├── bunch.sh
 │   ├── demo.sh
-│   ├── eslint.config.js
 │   ├── helpers.js
-│   ├── package-lock.json
-│   ├── package.json
 │   └── render.js
 ├── doc
 │   ├── code_stats.md
@@ -28,17 +26,15 @@
 ├── LICENSE
 ├── main_test.go
 ├── main.go
-├── package-lock.json
 ├── package.json
 ├── README.md
 ├── screenshots
 │   ├── dark_theme.jpg
 │   └── light_theme.jpg
-├── stylelint.config.mjs
 ├── theme.png
 ├── tree_test.go
 ├── tree.go
 └── validate.js
 
-7 directories, 33 files
+7 directories, 29 files
 ```
