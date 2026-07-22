@@ -1,4 +1,4 @@
-name: CSS stylelint
+name: CSS Lint (Biome)
 
 on:
   push:
@@ -15,12 +15,9 @@ permissions: # https://docs.github.com/actions/reference/workflows-and-actions/w
   contents: read
 
 jobs:
-  stylelint:
-    runs-on: macos-latest # https://docs.github.com/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for--private-repositories
-    env:
-      NPM_CONFIG_LOGLEVEL: verbose
+  biome:
+    runs-on: ubuntu-latest # https://docs.github.com/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for--private-repositories
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-node
-      - run:  npm ci
-      - run:  npx stylelint '**/*.css' --formatter verbose
+      - uses: biomejs/setup-biome@v2
+      - run:  biome ci '**/*.css'

@@ -1,4 +1,4 @@
-name: JS ESLint
+name: JS Lint (Biome)
 
 on:
   workflow_dispatch: # allows this workflow to be manually triggered from the UI
@@ -9,18 +9,14 @@ on:
       - '**/*.js'
 
 jobs:
-  eslint:
-    runs-on: macos-latest
+  biome:
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v7
 
-    - uses: ./.github/actions/setup-node
-      with:
-        cache-dependency-path: demo/package-lock.json
+    - name: Setup Biome CLI
+      uses: biomejs/setup-biome@v2
 
-    - run:               npm ci
-      working-directory: demo
-
-    - run:               npx eslint --format json --stats | jq -r '.[].filePath'  # hack to get eslint to list the files it lints
-      working-directory: demo
+    - name: Run Biome
+      run:  biome ci validate.js demo/

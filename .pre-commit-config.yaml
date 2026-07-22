@@ -16,6 +16,12 @@ repos:
     rev:  v0.9.0
     hooks:
       - id: action-validator
+  - repo: https://github.com/biomejs/pre-commit
+    rev: v0.6.1
+    hooks:
+      - id:      biome-lint
+        files:   \.(?:css|js)$
+        exclude: ^css/style\.css$  # Biome chokes on the Go template syntax
   - repo: local
     hooks:
       - language:       system
@@ -25,13 +31,10 @@ repos:
         files:          \.go$|^go\.(?:mod|sum)$
         pass_filenames: false
         require_serial: true
-      - language: system
-        id:       eslint
-        name:     eslint
-        entry:    npx eslint --config demo/eslint.config.js --
-        files:    \.m?js$
-      - language: system
-        id:       stylelint
-        name:     stylelint
-        entry:    npx stylelint --formatter verbose --
-        files:    \.css$
+#      - language:                node
+#        id:                      action-validator
+#        name:                    action validator
+#        entry:                   node validate.js
+#        additional_dependencies: ['@action-validator/core@v0.9.0']
+#        files:                   \.ya?ml$
+#        pass_filenames:          false
