@@ -1,0 +1,6 @@
+{
+  "$schema":         "https://biomejs.dev",
+  "formatter":       { "enabled": false },
+  "organizeImports": { "enabled": false },
+  "linter":          { "enabled": true }
+}
