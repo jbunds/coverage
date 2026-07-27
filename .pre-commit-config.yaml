@@ -1,4 +1,4 @@
-# https://pre-commit.com
+# https://pre-commit.com/
 # https://github.com/pre-commit/pre-commit-hooks
 
 repos:
@@ -17,11 +17,12 @@ repos:
     hooks:
       - id: action-validator
   - repo: https://github.com/biomejs/pre-commit
-    rev: v0.6.1
+    rev: v2.5.5
     hooks:
-      - id:      biome-lint
-        files:   \.(?:css|js)$
-        exclude: ^css/style\.css$  # Biome chokes on the Go template syntax
+      - id:                      biome-lint
+        files:                   '\.(?:css|js)$'
+        exclude:                 '^css/style\.css$'  # Biome chokes on the Go template syntax
+        additional_dependencies: ['@biomejs/biome@2.5.5']
   - repo: local
     hooks:
       - language:       system
@@ -31,10 +32,3 @@ repos:
         files:          \.go$|^go\.(?:mod|sum)$
         pass_filenames: false
         require_serial: true
-#      - language:                node
-#        id:                      action-validator
-#        name:                    action validator
-#        entry:                   node validate.js
-#        additional_dependencies: ['@action-validator/core@v0.9.0']
-#        files:                   \.ya?ml$
-#        pass_filenames:          false
