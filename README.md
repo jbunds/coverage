@@ -2,7 +2,8 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) &nbsp;
 [![tests](https://github.com/jbunds/coverage/actions/workflows/test-go.yml/badge.svg)](https://github.com/jbunds/coverage/actions/workflows/test-go.yml) &nbsp;
 [![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jbunds/5a36403860174baeee62844ab96a77d9/raw/coverage.json)](https://github.com/jbunds/coverage/actions/workflows/test-go.yml) &nbsp;
-[![lint](https://github.com/jbunds/coverage/actions/workflows/lint-go.yml/badge.svg)](https://github.com/jbunds/coverage/actions/workflows/lint-go.yml)
+[![lint](https://github.com/jbunds/coverage/actions/workflows/lint-go.yml/badge.svg)](https://github.com/jbunds/coverage/actions/workflows/lint-go.yml) &nbsp;
+[![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev)
 
 [simple-tree]:          https://github.com/psnet/simple-tree
 [k8s]:                  https://github.com/kubernetes/kubernetes
