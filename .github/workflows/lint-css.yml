@@ -1,6 +1,7 @@
 name: CSS Lint (Biome)
 
 on:
+  workflow_dispatch: # allows this workflow to be manually triggered from the UI
   push:
     branches: [ 'main' ]
     paths:
@@ -9,7 +10,6 @@ on:
     branches: [ 'main' ]
     paths:
       - '**/*.css'
-  workflow_dispatch: # allows this workflow to be manually triggered from the UI
 
 permissions: # https://docs.github.com/actions/reference/workflows-and-actions/workflow-syntax#permissions
   contents: read
@@ -20,4 +20,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: biomejs/setup-biome@v2
-      - run:  biome ci '**/*.css'
+      - run:  biome ci --verbose
