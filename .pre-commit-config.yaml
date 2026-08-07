@@ -10,19 +10,23 @@ repos:
   - repo: https://github.com/golangci/golangci-lint   # https://github.com/golangci/golangci-lint/blob/main/.pre-commit-hooks.yaml
     rev:  v2.12.2
     hooks:
-      - id:    golangci-lint
-        entry: golangci-lint run --verbose            # or `go run github.com/golangci/golangci-lint/cmd/golangci-lint run`
+      - id:             golangci-lint
+        name:           golangci-lint run
+        entry:          golangci-lint run --verbose
+        language:       golang
+        types:          [go]
+        pass_filenames: false
   - repo: https://github.com/mpalmer/action-validator # https://github.com/mpalmer/action-validator#using-pre-commit
     rev:  v0.9.0
     hooks:
       - id: action-validator
   - repo: https://github.com/biomejs/pre-commit
-    rev: v2.5.5
+    rev: v2.5.7
     hooks:
       - id:                      biome-lint
         files:                   '\.(?:css|js)$'
         exclude:                 '^css/style\.css$'  # Biome chokes on the Go template syntax
-        additional_dependencies: ['@biomejs/biome@2.5.5']
+        additional_dependencies: ['@biomejs/biome@2.5.7']
   - repo: local
     hooks:
       - language:       system

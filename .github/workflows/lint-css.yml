@@ -20,4 +20,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: biomejs/setup-biome@v2
-      - run:  biome ci --verbose
+      - run:  biome ci --verbose .

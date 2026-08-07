@@ -6,13 +6,13 @@
     "lint": "biome ci validate.js demo/"
   },
   "dependencies": {
-    "@puppeteer/replay": "^4.0.2",
-    "ghost-cursor": "^1.4.2",
-    "puppeteer": "^25.3.0"
+    "@puppeteer/replay": "4.0.2",
+    "ghost-cursor": "1.4.2",
+    "puppeteer": "25.3.0"
   },
   "devDependencies": {
-    "@action-validator/cli": "^0.6.0",
-    "@action-validator/core": "^0.6.0",
-    "@biomejs/biome": "^2.5.5"
+    "@action-validator/cli": "0.6.0",
+    "@action-validator/core": "0.6.0",
+    "@biomejs/biome": "2.5.7"
   }
 }
