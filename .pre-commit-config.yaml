@@ -22,17 +22,17 @@ repos:
     rev:  v2.12.2
     hooks:
       - id:             golangci-lint
-        name:           golangci-lint run
+        name:           go lint
         entry:          golangci-lint run --verbose
         language:       golang
         types:          [go]
         pass_filenames: false
   - repo: local
     hooks:
-      - language:       system
-        id:             go-test
+      - id:             go-test
         name:           go test
         entry:          go test -v -race ./...
         files:          \.go$|^go\.(?:mod|sum)$
+        language:       system
         pass_filenames: false
         require_serial: true
