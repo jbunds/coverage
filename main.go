@@ -29,6 +29,7 @@ import (
 	"maps"
 	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"runtime"
@@ -245,30 +246,36 @@ func run() int {
 	}
 
 	var gitConfig *inifile.IniConfig
-	gitConfigPath := filepath.Join(filepath.Dir(goModFile), ".git", "config")
+
+	gitRoot, err := getGitRoot()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot find Git root: %v\n", err)
+		return 4
+	}
+	gitConfigPath := filepath.Join(gitRoot, ".git", "config")
 	if gitConfig, err = inifile.NewIniConfigFromPath(gitConfigPath); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot parse Git config file (%q): %v\n", gitConfigPath, err)
-		return 4
+		return 5
 	}
 
 	if err := repGen.getRepoURL(ctx, gitConfig); err != nil { // sets repGen.repoURL
 		fmt.Fprintf(os.Stderr, "cannot determine repo URL: %v\n", err)
-		return 5
+		return 6
 	}
 
 	if err := repGen.primePkgDirCache(ctx, packages.Load); err != nil { // sets repGen.pkgDirCache
 		fmt.Fprintf(os.Stderr, "cannot prime package directory cache: %v\n", err)
-		return 6
+		return 7
 	}
 
 	if err := repGen.writeCovHTMLFiles(ctx, os.Stderr, styleCSS); err != nil { // sets repGen.cov
 		fmt.Fprintf(os.Stderr, "cannot write HTML coverage files: %v\n", err)
-		return 7
+		return 8
 	}
 
 	if err := repGen.writeIndexHTML(ctx, indexHTML); err != nil { // requires repGen.modName
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", indexHTML, err)
-		return 8
+		return 9
 	}
 
 	tb := &treeBuilder{
@@ -280,22 +287,22 @@ func run() int {
 
 	if repGen.maxWidth, err = tb.writeTreeHTML(ctx, os.Stderr, treeHTML); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", treeHTML, err)
-		return 9
+		return 10
 	}
 
 	if err := repGen.writeStyleCSS(ctx, styleCSS); err != nil { // requires repGen.maxWidth
 		fmt.Fprintf(os.Stderr, "cannot write %s: %v\n", styleCSS, err)
-		return 10
+		return 11
 	}
 
 	if err := repGen.writeAncillaryFiles(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write ancillary files: %v\n", err)
-		return 11
+		return 12
 	}
 
 	if err := repGen.printCoverage(ctx, os.Stdout); err != nil { // requires repGen.cov
 		fmt.Fprintf(os.Stderr, "cannot print per-file coverage figures: %v\n", err)
-		return 12
+		return 13
 	}
 
 	return 0
@@ -312,6 +319,18 @@ func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) err
 	rg.modName = modFile.Module.Mod.Path
 
 	return nil
+}
+
+// getGitRoot locates the parent directory of the .git subdirectory.
+func getGitRoot() (string, error) {
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	out := new(bytes.Buffer)
+	cmd.Stdout = out
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(out.String()), nil
 }
 
 // getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML.
