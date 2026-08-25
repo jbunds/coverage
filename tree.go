@@ -70,8 +70,8 @@ func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writ
 func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (string, error) {
 	if err := ctx.Err(); err != nil { return "", err }
 
-	pkgRelRoot := strings.Split(tb.modName, "/")[0]     // module's top-level namspace
-	scanRoot   := filepath.Join(tb.outRoot, pkgRelRoot) // physical directory entry point for recursive scan
+	pkgRelRoot, _, _ := strings.Cut(tb.modName, "/")          // module's top-level namspace
+	scanRoot         := filepath.Join(tb.outRoot, pkgRelRoot) // physical directory entry point for recursive scan
 
 	entries, err := tb.fsys.ReadDir(ctx, scanRoot)
 	if err != nil { return "", err }
