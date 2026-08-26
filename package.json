@@ -13,6 +13,6 @@
   "devDependencies": {
     "@action-validator/cli": "0.6.0",
     "@action-validator/core": "0.6.0",
-    "@biomejs/biome": "2.5.8"
+    "@biomejs/biome": "2.5.10"
   }
 }
