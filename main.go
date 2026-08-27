@@ -158,12 +158,12 @@ func (lfs *localFS) OpenWithContext(ctx context.Context, name string) (fs.File, 
 }
 
 func (lfs *localFS) Open(name string) (fs.File, error) {
-	return os.Open(name) // #nosec G304 expects callers pass filepath.Clean(name)
+	return os.Open(filepath.Clean(name))
 }
 
 func (lfs *localFS) Create(ctx context.Context, name string) (io.WriteCloser, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
-	return os.Create(name) // #nosec G304 expects callers pass filepath.Clean(name)
+	return os.Create(filepath.Clean(name))
 }
 
 func (lfs *localFS) MkdirAll(ctx context.Context, path string, perm fs.FileMode) error {

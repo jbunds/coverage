@@ -185,7 +185,7 @@ func TestGetRepoURL(t *testing.T) {
 		},
 		{
 			name:   "GitHub CI runner (token authentication)",
-			gitCfg: &mockIniFileConfig{ returnValue: "https://x-access-token:ghp_1234567890@github.com/foo/bar.git" }, // #nosec G101 - false positive
+			gitCfg: &mockIniFileConfig{ returnValue: "https://x-access-token:ghp_1234567890@github.com/foo/bar.git" }, // #nosec G101 - false positive (hardcoded creds)
 			want:   "https://github.com/foo/bar",
 		},
 		{
