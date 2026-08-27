@@ -8,7 +8,7 @@
   "dependencies": {
     "@puppeteer/replay": "4.0.2",
     "ghost-cursor": "1.4.2",
-    "puppeteer": "25.7.0"
+    "puppeteer": "25.8.0"
   },
   "devDependencies": {
     "@action-validator/cli": "0.6.0",
