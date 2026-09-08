@@ -150,6 +150,7 @@ body {
   position:          relative;
   font-size:         medium;
   line-height:       1.5;
+  min-height:        1.5em;
   padding-left:      3.25rem;  /* 2.5rem gutter + 0.75rem gap */
   counter-increment: line;
 }
