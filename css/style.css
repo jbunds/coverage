@@ -135,3 +135,38 @@ a:hover {
   color:            var(--cov-miss);
   background-color: rgb(from var(--cov-miss-bg) r g b / 30%);
 }
+
+#code pre {
+  font-size: 0;  /* collapse the \n text nodes between block .line spans */
+}
+
+#code {
+  counter-reset: line;
+}
+
+#code .line {
+  display:           block;
+  position:          relative;
+  font-size:         medium;
+  line-height:       1.5;
+  padding-left:      3.25rem;  /* 2.5rem gutter + 0.75rem gap */
+  counter-increment: line;
+}
+
+#code .line::before {
+  content:      counter(line);
+  position:     absolute;
+  left:         0;
+  width:        2.5rem;  /* 2.5rem gutter */
+  text-align:   right;
+  opacity:      0.45;
+  border-right: 1px solid rgb(from var(--text-color) r g b / 20%);
+}
+
+#code:not(.line-numbers) .line {
+  padding-left: 0;
+}
+
+#code:not(.line-numbers) .line::before {
+  display: none;
+}

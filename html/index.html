@@ -12,6 +12,7 @@
 <div class="centered"><code><a href="{{ .ModURL }}">{{ .ModName }}</a></code></div>
 <div id="buttons" style="display: none; gap: 12px;">
   <button id="expand">expand</button>
+  <button id="lines">lines</button>
   <button id="theme">theme</button>
 </div>
 </header>
@@ -48,6 +49,24 @@
     expanded = !expanded;
     document.getElementById('expand').textContent = expanded ? 'collapse' : 'expand';
     document.getElementById('tree').contentWindow.postMessage({ type: 'EXPAND_OR_COLLAPSE', expanded: expanded }, '*');
+  });
+
+  const applyLineNumbers = (displayed) => {
+    document.documentElement.setAttribute('line-numbers', displayed ? '1' : '0');
+    try {
+      localStorage.setItem('line-numbers', displayed ? '1' : '0');
+    } catch (e) {}
+    document.getElementById('code').contentWindow.postMessage({ type: 'TOGGLE_LINE_NUMBERS', lineNumbers: displayed }, '*');
+  };
+
+  try {
+    const saved = localStorage.getItem('line-numbers');
+    applyLineNumbers(saved ? saved === '1' : true);
+	} catch (e) {}
+
+  document.getElementById('lines').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('line-numbers');
+    applyLineNumbers(current !== '1');
   });
 </script>
 </body>

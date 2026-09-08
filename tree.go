@@ -112,7 +112,7 @@ func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (s
 	if err := group.Wait(); err != nil { return "", err }
 
 	var sb strings.Builder
-	sb.WriteString("<ul class=\"tree\">\n")
+	sb.WriteString(`<ul class="tree">` + "\n")
 	for _, html := range results {
 		sb.WriteString(html)
 	}
@@ -208,11 +208,11 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 	}
 
 	pct     := strconv.FormatFloat(percent, 'f', 1, 64)
-	srcSpan := "<span class=\"src\"><a href=\"" + relHTMLPath + "\">" + srcBasename + "</a></span>"
-	covSpan := "<span class=\"cov\">" + pct + "%</span>"
+	srcSpan := `<span class="src"><a href="` + relHTMLPath + `">` + srcBasename + "</a></span>"
+	covSpan := `<span class="cov">` + pct + "%</span>"
 
 	return entryResult{
-		html:    strings.Repeat("  ", st.indent) + "<li><div class=\"tree-node\">" + srcSpan + " " + covSpan + "</div></li>\n",
+		html:    strings.Repeat("  ", st.indent) + `<li><div class="tree-node">` + srcSpan + " " + covSpan + "</div></li>\n",
 		covered: cov.covered,
 		total:   cov.total}, nil
 }
@@ -230,15 +230,15 @@ func (hb *htmlBuilder) buildHTML(ctx context.Context, subDirHTML string, dirCove
 	id     := hb.itemID
 	pct    := strconv.FormatFloat(percent, 'f', 1, 64)
 
-	return indent     + "<li>\n"                                                    +
-	       indent     + "  <input type=\"checkbox\" id=\"" + id + "\"/>\n"          +
-	       indent     + "  <div class=\"tree-node\">\n"                             +
-	       indent     + "    <label for=\"" + id + "\">" + hb.subDir + "</label>\n" +
-	       indent     + "    <span class=\"cov\">" + pct + "%</span>\n"             +
-	       indent     + "  </div>\n"                                                +
-	       indent     + "  <ul>\n"                                                  +
-	       subDirHTML                                                               +
-	       indent     + "  </ul>\n"                                                 +
+	return indent     + "<li>\n"                                                  +
+	       indent     + `  <input type="checkbox" id="` + id + `"/>` + "\n"       +
+	       indent     + `  <div class="tree-node">`  + "\n"                       +
+	       indent     + `    <label for="` + id + `">` + hb.subDir + "</label>\n" +
+	       indent     + `    <span class="cov">` + pct + "%</span>\n"             +
+	       indent     + "  </div>\n"                                              +
+	       indent     + "  <ul>\n"                                                +
+	       subDirHTML                                                             +
+	       indent     + "  </ul>\n"                                               +
 	       indent     + "</li>\n", nil
 }
 

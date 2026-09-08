@@ -530,55 +530,88 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage.
 func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath, styleCSS string) error {
-	if err := ctx.Err(); err != nil { return err }
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 
-	pkgPath  := filepath.Dir (profile.FileName)
+	pkgPath  := filepath.Dir( profile.FileName)
 	fileName := filepath.Base(profile.FileName)
 
 	src, err := rg.fsys.ReadFile(ctx, filepath.Join(rg.pkgDirCache[pkgPath], fileName))
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	cssPath := strings.Repeat("../", strings.Count(srcPath, "/")) + filepath.Base(styleCSS)
 	writePreamble(ew, cssPath, srcPath)
 
-	pos := 0
-	for _, b := range profile.Boundaries(src) {
-		chunk := src[pos:b.Offset]
-		if b.Start {
-			class := "miss"
-			if b.Count > 0 { class = "hit" }
-			if nl := bytes.LastIndexByte(chunk, '\n'); nl != -1 {
-				template.HTMLEscape(ew, chunk[:nl + 1])
-				ew.write(`<span class="`)
-				ew.write(class)
-				ew.write(`">`)
-				template.HTMLEscape(ew, chunk[nl + 1:])
-			} else {
-				template.HTMLEscape(ew, chunk)
-				ew.write(`<span class="`)
-				ew.write(class)
-				ew.write(`">`)
-			}
+	blocks := profile.Blocks // already sorted by (StartLine, StartCol)
+	bi     := 0              // current block index
+
+	lineStart := 0
+	lineNum   := 1
+	for lineStart < len(src) {
+		nl := bytes.IndexByte(src[lineStart:], '\n')
+		var lineEnd int
+		if nl == -1 {
+			lineEnd = len(src)
 		} else {
-			template.HTMLEscape(ew, chunk)
-			ew.write("</span>")
+			lineEnd = lineStart + nl + 1
 		}
-		pos = b.Offset
+
+		// advance past blocks that end before this line
+		for bi                 < len(blocks) &&
+		    blocks[bi].EndLine < lineNum     {
+			bi++
+		}
+
+		// determine class from the block covering this line
+		class := ""
+		if bi                   <  len(blocks)        &&
+		   blocks[bi].StartLine <= lineNum            &&
+		   lineNum              <= blocks[bi].EndLine {
+			if blocks[bi].Count > 0 {
+				class = "hit"
+			} else {
+				class = "miss"
+			}
+		}
+
+		ew.write(`<span class="line">`)
+		if class != "" {
+			ew.write(`<span class="`)
+			ew.write(class)
+			ew.write(`">`)
+		}
+		template.HTMLEscape(ew, src[lineStart:lineEnd])
+		if class != "" {
+			ew.write(`</span>`)
+		}
+		ew.write(`</span>`)
+
+		lineStart = lineEnd
+		lineNum++
 	}
 
-	template.HTMLEscape(ew, src[pos:])
 	writePostamble(ew)
 	return ew.err()
 }
 
 // writePreamble writes the preamble portion of the HTML content common to every Go source HTML file.
 func writePreamble(ew stickyWriter, cssRelPath, srcPath string) {
-	ew.write("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n")
-	ew.write("<link rel=\"stylesheet\" href=\"")
+	ew.write("<!DOCTYPE html>\n")
+	ew.write(`<html lang="en">` + "\n")
+	ew.write("<head>\n")
+	ew.write(`<meta charset="utf-8">` + "\n")
+	ew.write(`<link rel="stylesheet" href="`)
 	ew.write(cssRelPath)
-	ew.write("\" type=\"text/css\">\n<title>")
+	ew.write(`" type="text/css">` + "\n")
+	ew.write("<title>")
 	ew.write(srcPath)
-	ew.write("</title>\n</head>\n<body id=\"code\">\n<pre>\n")
+	ew.write("</title>\n")
+	ew.write("</head>\n")
+	ew.write(`<body id="code" class="line-numbers">` + "\n")
+	ew.write("<pre>\n")
 }
 
 // writePostamble writes the postamble portion of the HTML content common to every Go source HTML file.
@@ -594,6 +627,18 @@ try {
 
 window.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SET_THEME') document.documentElement.setAttribute('theme', event.data.theme);
+});
+
+try {
+  const parentLineNumbers = window.parent.document.documentElement.getAttribute('line-numbers');
+  if (parentLineNumbers === '0') document.body.classList.remove('line-numbers');
+  else document.body.classList.add('line-numbers');
+} catch (e) {
+  document.body.classList.add('line-numbers');
+}
+
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'TOGGLE_LINE_NUMBERS') document.body.classList.toggle('line-numbers', event.data.lineNumbers);
 });
 </script>
 </body>
