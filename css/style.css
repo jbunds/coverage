@@ -66,6 +66,13 @@ iframe {
   box-sizing: border-box;
 }
 
+.centered {
+  display:         flex;
+  justify-content: center;
+  font-size:       large;
+  font-weight:     bold;
+}
+
 a {
   display:         inline-block;
   color:           var(--text-color);
@@ -117,13 +124,15 @@ a:hover {
   font-family:      monospace;
 }
 
-#code { tab-size: 4 }
+pre {
+  margin:    0;
+  padding:   0;
+  tab-size:  4;
+  font-size: 0;  /* collapse the \n text nodes between block .line spans */
+}
 
-.centered {
-  display:         flex;
-  justify-content: center;
-  font-size:       large;
-  font-weight:     bold;
+body {
+  counter-reset: line;
 }
 
 .hit  {
@@ -136,16 +145,8 @@ a:hover {
   background-color: rgb(from var(--cov-miss-bg) r g b / 30%);
 }
 
-#code pre {
-  font-size: 0;  /* collapse the \n text nodes between block .line spans */
-}
-
-#code {
-  counter-reset: line;
-}
-
-#code .line {
-  display:           block;
+.line {
+  display:           flex;
   position:          relative;
   font-size:         medium;
   line-height:       1.5;
@@ -153,20 +154,20 @@ a:hover {
   counter-increment: line;
 }
 
-#code .line::before {
-  content:      counter(line);
+.line::before {
   position:     absolute;
   left:         0;
+  content:      counter(line);
   width:        2.5rem;  /* 2.5rem gutter */
   text-align:   right;
   opacity:      0.45;
   border-right: 1px solid rgb(from var(--text-color) r g b / 20%);
 }
 
-#code:not(.line-numbers) .line {
+body:not(.line-numbers) .line {
   padding-left: 0;
 }
 
-#code:not(.line-numbers) .line::before {
+body:not(.line-numbers) .line::before {
   display: none;
 }

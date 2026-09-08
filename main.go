@@ -577,7 +577,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 			}
 		}
 
-		ew.write(`<span class="line">`)
+		ew.write(`<div class="line">`)
 		if class != "" {
 			ew.write(`<span class="`)
 			ew.write(class)
@@ -587,7 +587,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 		if class != "" {
 			ew.write(`</span>`)
 		}
-		ew.write(`</span>`)
+		ew.write(`</div>`)
 
 		lineStart = lineEnd
 		lineNum++
