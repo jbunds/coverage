@@ -545,23 +545,22 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	cssPath := strings.Repeat("../", strings.Count(srcPath, "/")) + filepath.Base(styleCSS)
 	writePreamble(ew, cssPath, srcPath)
 
-	blocks := profile.Blocks // already sorted by (StartLine, StartCol)
-	bi     := 0              // current block index
-
-	lineStart := 0
-	lineNum   := 1
+	blocks    := profile.Blocks // already sorted by (StartLine, StartCol)
+	bi        := 0              // current block index
+	lineStart := 0              // byte offset of current line in src
+	lineNum   := 1              // 1-based line counter
 	for lineStart < len(src) {
-		nl := bytes.IndexByte(src[lineStart:], '\n')
-		var lineEnd int
-		if nl == -1 {
-			lineEnd = len(src)
+		nl := bytes.IndexByte(src[lineStart:], '\n') // locate the next newline
+		var lineEnd int                              // end of current line (+1 past the newline, or len(src))
+		if nl == -1 {                                // no newline between lineStart and the end of the src byte slice
+			lineEnd = len(src)                         // final byte of the source file is not a newline
 		} else {
-			lineEnd = lineStart + nl + 1
+			lineEnd = lineStart + nl + 1               // points past the newline so the next iteration starts at the first byte of the next line
 		}
 
 		// advance past blocks that end before this line
 		for bi                 < len(blocks) &&
-		    blocks[bi].EndLine < lineNum     {
+		    blocks[bi].EndLine < lineNum     { // walk the sorted block list in lockstep with the outer loop
 			bi++
 		}
 
@@ -583,11 +582,15 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 			ew.write(class)
 			ew.write(`">`)
 		}
-		template.HTMLEscape(ew, src[lineStart:lineEnd])
+		end := lineEnd
+		if end > lineStart && src[end - 1] == '\n' {
+			end-- // exclude trailing newline so opening and closing <div> and <span> tags are written to a single line
+		}
+		template.HTMLEscape(ew, src[lineStart:end])
 		if class != "" {
 			ew.write(`</span>`)
 		}
-		ew.write(`</div>`)
+		ew.write("</div>\n")
 
 		lineStart = lineEnd
 		lineNum++

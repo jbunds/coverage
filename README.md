@@ -132,7 +132,7 @@ The well-known and relatively large (500k+ LoC) [Kubernetes][k8s] project was ch
 
 #### But _Why?_
 
-The motivation for the `coverage` module was to create a relatively minimal alternative to the default HTML interface produced by `go tool cover -html <coverage profile filename> -o <html filename>`, with a simple and intuitive UI, and with minimal JavaScript (55 lines total as of this writing, to implement the functionality of the toggle buttons).
+The motivation for the `coverage` module was to create a relatively minimal alternative to the default HTML interface produced by `go tool cover -html <coverage profile filename> -o <html filename>`, with a simple and intuitive UI, and with minimal JavaScript (83 lines total as of this writing, to implement the functionality of the toggle buttons).
 
 ##### Prior Art
 
