@@ -576,15 +576,24 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 			}
 		}
 
+		end := lineEnd
+		if end > lineStart && src[end - 1] == '\n' {
+			end-- // exclude trailing newline so opening and closing <div> and <span> tags are written to a single line
+		}
+		// suppress class for comment-only and blank lines that fall within a block's line range
+		// see also https://github.com/golang/go/issues/22545
+		if class != "" {
+			trimmed := bytes.TrimSpace(src[lineStart:end])
+			if len(trimmed) == 0 || trimmed[0] == '/' {
+				class = ""
+			}
+		}
+
 		ew.write(`<div class="line">`)
 		if class != "" {
 			ew.write(`<span class="`)
 			ew.write(class)
 			ew.write(`">`)
-		}
-		end := lineEnd
-		if end > lineStart && src[end - 1] == '\n' {
-			end-- // exclude trailing newline so opening and closing <div> and <span> tags are written to a single line
 		}
 		template.HTMLEscape(ew, src[lineStart:end])
 		if class != "" {
