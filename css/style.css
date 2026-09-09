@@ -124,15 +124,16 @@ a:hover {
   font-family:      monospace;
 }
 
-pre {
-  margin:    0;
-  padding:   0;
-  tab-size:  4;
-  font-size: 0;  /* collapse the \n text nodes between block .line spans */
-}
-
-body {
-  counter-reset: line;
+.line {
+  display:           table;
+  position:          relative;
+  margin-left:       3.25rem;  /* 2.5rem gutter + 0.75rem gap */
+  tab-size:          4;
+  font-size:         medium;
+  line-height:       1.5;
+  min-height:        1.5em;
+  white-space:       pre;
+  counter-increment: line;
 }
 
 .hit  {
@@ -145,28 +146,20 @@ body {
   background-color: rgb(from var(--cov-miss-bg) r g b / 30%);
 }
 
-.line {
-  display:           flex;
-  position:          relative;
-  font-size:         medium;
-  line-height:       1.5;
-  min-height:        1.5em;
-  padding-left:      3.25rem;  /* 2.5rem gutter + 0.75rem gap */
-  counter-increment: line;
-}
-
 .line::before {
   position:     absolute;
-  left:         0;
+  left:         -3.25rem;
   content:      counter(line);
   width:        2.5rem;  /* 2.5rem gutter */
   text-align:   right;
+  color:        var(--text-color);
   opacity:      0.45;
   border-right: 1px solid rgb(from var(--text-color) r g b / 20%);
 }
 
 body:not(.line-numbers) .line {
-  padding-left: 0;
+  display:     block;
+  margin-left: 0;
 }
 
 body:not(.line-numbers) .line::before {

@@ -546,7 +546,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	writePreamble(ew, cssPath, srcPath)
 
 	blocks    := profile.Blocks // already sorted by (StartLine, StartCol)
-	bi        := 0              // current block index
+	bIdx      := 0              // current block index
 	lineStart := 0              // byte offset of current line in src
 	lineNum   := 1              // 1-based line counter
 	for lineStart < len(src) {
@@ -559,26 +559,61 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 		}
 
 		// advance past blocks that end before this line
-		for bi                 < len(blocks) &&
-		    blocks[bi].EndLine < lineNum     { // walk the sorted block list in lockstep with the outer loop
-			bi++
+		for bIdx                 < len(blocks) &&
+		    blocks[bIdx].EndLine < lineNum     { // walk the sorted block list in lockstep with the outer loop
+			bIdx++
 		}
 
-		// determine class from the block covering this line
-		class := ""
-		if bi                   <  len(blocks)        &&
-		   blocks[bi].StartLine <= lineNum            &&
-		   lineNum              <= blocks[bi].EndLine {
-			if blocks[bi].Count > 0 {
-				class = "hit"
-			} else {
-				class = "miss"
+		// determine coverage state by scanning all blocks touching this line
+		hasHit  := false
+		hasMiss := false
+
+		// scan loop forward from bIdx to evaluate all blocks relevant to lineNum
+		for i := bIdx; i < len(blocks); i++ {
+			block := blocks[i]
+
+			// blocks are sorted by StartLine, so stop scanning when a block starts past the current line
+			if block.StartLine > lineNum {
+				break
 			}
+
+			// determine if this block covers the current line
+			covers := false
+			if block.StartLine <= lineNum       &&
+			   lineNum         <= block.EndLine {
+				if lineNum == block.EndLine {
+					// blocks always end at the closing brace with position (EndLine, 1),
+					// so only count it if it extends past column 1
+					if block.EndCol > 1 {
+						covers = true
+					}
+				} else {
+					// this block completely spans this line, or starts on this line and ends on a later one
+					covers = true
+				}
+			}
+
+			// track coverage metrics across all overlapping blocks
+			if covers {
+				if block.Count > 0 {
+					hasHit  = true
+				} else {
+					hasMiss = true
+				}
+			}
+		}
+
+		// resolve the CSS class based on a conservative "any miss -> miss" policy
+		class := ""
+		if hasMiss {
+			class = "miss"
+		} else if hasHit {
+			class = "hit"
 		}
 
 		end := lineEnd
 		if end > lineStart && src[end - 1] == '\n' {
-			end-- // exclude trailing newline so opening and closing <div> and <span> tags are written to a single line
+			end-- // exclude trailing newline so paired <div> tags are written to a single line
 		}
 		// suppress class for comment-only and blank lines that fall within a block's line range
 		// see also https://github.com/golang/go/issues/22545
@@ -589,16 +624,12 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 			}
 		}
 
-		ew.write(`<div class="line">`)
 		if class != "" {
-			ew.write(`<span class="`)
-			ew.write(class)
-			ew.write(`">`)
+			ew.write(`<div class="line ` + class + `">`)
+		} else {
+			ew.write(`<div class="line">`)
 		}
 		template.HTMLEscape(ew, src[lineStart:end])
-		if class != "" {
-			ew.write(`</span>`)
-		}
 		ew.write("</div>\n")
 
 		lineStart = lineEnd
@@ -623,13 +654,11 @@ func writePreamble(ew stickyWriter, cssRelPath, srcPath string) {
 	ew.write("</title>\n")
 	ew.write("</head>\n")
 	ew.write(`<body id="code" class="line-numbers">` + "\n")
-	ew.write("<pre>\n")
 }
 
 // writePostamble writes the postamble portion of the HTML content common to every Go source HTML file.
 func writePostamble(ew stickyWriter) {
-	ew.write("</pre>\n<script>")
-	ew.write(`
+	ew.write(`<script>
 try {
   const parentTheme = window.parent.document.documentElement.getAttribute('theme');
   if (parentTheme) document.documentElement.setAttribute('theme', parentTheme);
