@@ -38,6 +38,7 @@ linters:
       exclude-functions:
         - fmt.Fprintf
         - fmt.Fprintln
+        - (*os.File).Close
     depguard:
       rules:
         production_whitelist:
@@ -79,6 +80,7 @@ linters:
           list-mode: strict
           files:
             - "$test"
+            - "!**/integration_test.go"
           allow:
             - bytes
             - context
@@ -92,3 +94,14 @@ linters:
             - github.com/jbunds/progress
             - golang.org/x/tools/cover
             - golang.org/x/tools/go/packages
+        integration_test_whitelist:
+          list-mode: strict
+          files:
+            - "**/integration_test.go"
+          allow:
+            - io
+            - os
+            - path/filepath
+            - testing
+            - github.com/google/go-cmp/cmp
+            - golang.org/x/tools/cover

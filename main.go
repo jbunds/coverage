@@ -154,7 +154,7 @@ type localFS struct{}
 
 func (lfs *localFS) OpenWithContext(ctx context.Context, name string) (fs.File, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
-	return lfs.Open(name) // expects callers pass filepath.Clean(name)
+	return lfs.Open(name)
 }
 
 func (lfs *localFS) Open(name string) (fs.File, error) {
@@ -168,22 +168,22 @@ func (lfs *localFS) Create(ctx context.Context, name string) (io.WriteCloser, er
 
 func (lfs *localFS) MkdirAll(ctx context.Context, path string, perm fs.FileMode) error {
 	if err := ctx.Err(); err != nil { return err }
-	return os.MkdirAll(path, perm) // expects callers pass filepath.Clean(path)
+	return os.MkdirAll(path, perm)
 }
 
 func (lfs *localFS) ReadDir(ctx context.Context, name string) ([]fs.DirEntry, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
-	return os.ReadDir(name) // expects callers pass filepath.Clean(name)
+	return os.ReadDir(name)
 }
 
 func (lfs *localFS) ReadFile(ctx context.Context, name string) ([]byte, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
-	return fs.ReadFile(lfs, name) // expects callers pass filepath.Clean(name)
+	return fs.ReadFile(lfs, name)
 }
 
 func (lfs *localFS) WriteFile(ctx context.Context, name string, data []byte, perm fs.FileMode) error {
 	if err := ctx.Err(); err != nil { return err }
-	return os.WriteFile(name, data, perm) // expects callers pass filepath.Clean(name)
+	return os.WriteFile(name, data, perm)
 }
 
 // wraps inifile.IniConfig.Value for test injection.
@@ -430,7 +430,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	dirsToCreate := make(map[string]struct{}) // exclude duplicate directories and keep the relatively heavy mkdir syscalls outside of the concurrent loop
 
 	for _, profile := range rg.profiles {
-		outPath := filepath.Clean(filepath.Join(rg.outRoot, profile.FileName + ".html"))
+		outPath := filepath.Join(rg.outRoot, profile.FileName + ".html")
 		units    = append(units, workUnit{
 			profile: profile,
 			outPath: outPath,
@@ -826,7 +826,7 @@ func (rg *reportGenerator) writeStyleCSS(ctx context.Context, styleCSS string) e
 func (rg *reportGenerator) writeTemplateFile(ctx context.Context, file string, tmplVars any) error {
 	if err := ctx.Err(); err != nil { return err }
 
-	outFile   := filepath.Clean(filepath.Join(rg.outRoot, filepath.Base(file)))
+	outFile   := filepath.Join(rg.outRoot, filepath.Base(file))
 	tmpl, err := template.ParseFS(rg.embeddedFiles, file)
 	if                                   err != nil { return fmt.Errorf("cannot parse %q: %w",     file, err) }
 	f, err := rg.fsys.Create(ctx, outFile)
@@ -841,7 +841,7 @@ func (rg *reportGenerator) writeAncillaryFiles(ctx context.Context) error {
 	if err := ctx.Err(); err != nil { return err }
 
 	for _, file := range rg.ancillaryFiles {
-		outFile   := filepath.Clean(filepath.Join(rg.outRoot, filepath.Base(file)))
+		outFile   := filepath.Join(rg.outRoot, filepath.Base(file))
 		f, err    := rg.fsys.Create(ctx, outFile)
 		if                                        err != nil { return fmt.Errorf("cannot create %q: %w",     outFile, err) }
 		data, err := fs.ReadFile(rg.embeddedFiles, file)

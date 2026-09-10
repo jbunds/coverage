@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../../style.css" type="text/css">
+<title>github.com/jbunds/coverage/main.go</title>
+</head>
+<body id="code" class="line-numbers">
+<div class="line">// Package main writes HTML files for each Go source file listed in the user-specified Go coverage profile file.</div>
+<div class="line">//</div>
+<div class="line">// This module also generates a directory tree HTML file rendered within an iframe of the index HTML file.</div>
+<div class="line">//</div>
+<div class="line">// The header portion of the index HTML file will also render two buttons if the browser&#39;s CORS policies allow it. These buttons are:</div>
+<div class="line">//</div>
+<div class="line">//   &#34;theme&#34;                  - toggles between two hardcoded &#34;light&#34; and &#34;dark&#34; themes</div>
+<div class="line">//   &#34;expand&#34; (or &#34;collapse&#34;) - toggles the opening (or closing) of all subdirectories rendered within the tree HTML document</div>
+<div class="line">//</div>
+<div class="line">// Note that the &#34;theme&#34; and &#34;expand&#34; / &#34;collapse&#34; buttons will not be rendered when the index page is loaded via the file:// scheme.</div>
+<div class="line">//</div>
+<div class="line">// A simple workaround is to instantiate an HTTP server to serve the HTML files, e.g.:</div>
+<div class="line">//</div>
+<div class="line">//   $ python3 -m http.server 8000</div>
+<div class="line">//</div>
+<div class="line">// and then load http://localhost:8000/ in a browser.</div>
+<div class="line">package main</div>
+<div class="line"></div>
+<div class="line">import (</div>
+<div class="line">	&#34;bufio&#34;</div>
+<div class="line">	&#34;bytes&#34;</div>
+<div class="line">	&#34;cmp&#34;</div>
+<div class="line">	&#34;context&#34;</div>
+<div class="line">	&#34;embed&#34;</div>
+<div class="line">	&#34;flag&#34;</div>
+<div class="line">	&#34;fmt&#34;</div>
+<div class="line">	&#34;io&#34;</div>
+<div class="line">	&#34;io/fs&#34;</div>
+<div class="line">	&#34;maps&#34;</div>
+<div class="line">	&#34;net/url&#34;</div>
+<div class="line">	&#34;os&#34;</div>
+<div class="line">	&#34;os/exec&#34;</div>
+<div class="line">	&#34;os/signal&#34;</div>
+<div class="line">	&#34;path/filepath&#34;</div>
+<div class="line">	&#34;runtime&#34;</div>
+<div class="line">	&#34;slices&#34;</div>
+<div class="line">	&#34;strconv&#34;</div>
+<div class="line">	&#34;strings&#34;</div>
+<div class="line">	&#34;sync/atomic&#34;</div>
+<div class="line">	&#34;syscall&#34;</div>
+<div class="line">	&#34;testing&#34;</div>
+<div class="line">	&#34;text/template&#34;</div>
+<div class="line"></div>
+<div class="line">	&#34;github.com/graniticio/inifile&#34;</div>
+<div class="line">	&#34;github.com/jbunds/progress&#34;</div>
+<div class="line">	&#34;golang.org/x/mod/modfile&#34;</div>
+<div class="line">	&#34;golang.org/x/sync/errgroup&#34;</div>
+<div class="line">	&#34;golang.org/x/term&#34;</div>
+<div class="line">	&#34;golang.org/x/tools/cover&#34;</div>
+<div class="line">	&#34;golang.org/x/tools/go/packages&#34;</div>
+<div class="line">)</div>
+<div class="line"></div>
+<div class="line">//go:embed html/* css/* img/*</div>
+<div class="line">var embeddedFiles embed.FS</div>
+<div class="line"></div>
+<div class="line">// stickyWriter is a wrapper interface used to enable sequential string writing with deferred error handling.</div>
+<div class="line">type stickyWriter interface {</div>
+<div class="line">	io.Writer</div>
+<div class="line">	write(string)</div>
+<div class="line">	err() error</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// errorWriter tracks the first encountered I/O failure to allow multiple sequential writes without repetitive inline error checking.</div>
+<div class="line">type errorWriter struct {</div>
+<div class="line">	w        io.Writer</div>
+<div class="line">	e        error</div>
+<div class="line">	useColor bool</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// write performs a sticky-error write.</div>
+<div class="line">func (w *errorWriter) write(s string) {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if w.e != nil </span>{ <span class="miss">return }</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">_, w.e = io.WriteString(w.w, s)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// write performs a sticky-error write that optionally wraps the provided string in ANSI color codes.</div>
+<div class="line">func (w *errorWriter) writeColor(s, color string) {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if w.e != nil </span>{ <span class="miss">return }</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">if !w.useColor </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">w.write(s)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		return</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	</span><span class="miss">w.write(color)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	w.write(s)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	w.write(&#34;\033[0m&#34;)</span> // reset attributes, styles, and colors to defaults</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// err returns the first I/O failure encountered during multiple sequential write operations.</div>
+<div class="line">func (w *errorWriter) err() error { <span class="hit">return w.e }</span></div>
+<div class="line"></div>
+<div class="line">// Write satisfies the io.Writer interface, but is otherwise unused.</div>
+<div class="line">func (w *errorWriter) Write(p []byte) (int, error) {</div>
+<div class="line"><span class="miss">	</span><span class="miss">if w.e != nil </span>{ <span class="miss">return 0, w.e }</span></div>
+<div class="line"><span class="miss">	</span><span class="miss">return w.w.Write(p)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func newErrorWriter(w io.Writer) *errorWriter {</div>
+<div class="line"><span class="hit">	</span><span class="hit">return &amp;errorWriter{</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		w:        w,</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		useColor: isTerm(w),</span></div>
+<div class="line">	}</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// coverage tracks per-file coverage.</div>
+<div class="line">type coverage struct {</div>
+<div class="line">	covered int64</div>
+<div class="line">	total   int64</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// workUnit represents a unit of work to be performed: the generation of an HTML file for a Go source file&#39;s coverage profile.</div>
+<div class="line">type workUnit struct {</div>
+<div class="line">	profile *cover.Profile</div>
+<div class="line">	outPath string</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// reportGenerator orchestrates the generation of the HTML report.</div>
+<div class="line">type reportGenerator struct {</div>
+<div class="line">	fsys            writeFS</div>
+<div class="line">	embeddedFiles   fs.FS</div>
+<div class="line">	modFile         string</div>
+<div class="line">	modName         string</div>
+<div class="line">	repoURL         string</div>
+<div class="line">	outRoot         string</div>
+<div class="line">	profilePath     string</div>
+<div class="line">	profiles        []*cover.Profile</div>
+<div class="line">	pkgDirCache     map[string]string // pkgDirCache maps canonical Go packages to their respective paths on disk</div>
+<div class="line">	cov             map[string]coverage</div>
+<div class="line">	totalCovered    atomic.Int64</div>
+<div class="line">	totalStatements atomic.Int64</div>
+<div class="line">	maxWidth        int</div>
+<div class="line">	ancillaryFiles  []string</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// wrappers to facilitate test injection</div>
+<div class="line"></div>
+<div class="line">// writeFS defines an interface that extends fs.FS with writing capabilities.</div>
+<div class="line">// This abstraction is necessary to allow for mocking the file system within</div>
+<div class="line">// unit tests, as the standard &#34;os&#34; package cannot be directly mocked.</div>
+<div class="line">type writeFS interface {</div>
+<div class="line">	fs.FS</div>
+<div class="line">	Create         (context.Context, string)                      (io.WriteCloser, error)</div>
+<div class="line">	MkdirAll       (context.Context, string,         fs.FileMode)                  error</div>
+<div class="line">	ReadDir        (context.Context, string)                      ([]fs.DirEntry,  error)</div>
+<div class="line">	ReadFile       (context.Context, string)                      ([]byte,         error)</div>
+<div class="line">	WriteFile      (context.Context, string, []byte, fs.FileMode)                  error</div>
+<div class="line">	OpenWithContext(context.Context, string)                      (fs.File,        error)</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// localFS provides a context-aware, concrete implementation of the writeFS</div>
+<div class="line">// interface by wrapping the standard &#34;os&#34; package. This allows the program</div>
+<div class="line">// to perform actual system operations in production while remaining easily</div>
+<div class="line">// testable via alternative interface implementations.</div>
+<div class="line">type localFS struct{}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) OpenWithContext(ctx context.Context, name string) (fs.File, error) {</div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := ctx.Err(); err != nil </span>{ <span class="miss">return nil, err }</span></div>
+<div class="line"><span class="miss">	</span><span class="miss">return lfs.Open(name)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) Open(name string) (fs.File, error) {</div>
+<div class="line"><span class="miss">	</span><span class="miss">return os.Open(filepath.Clean(name))</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) Create(ctx context.Context, name string) (io.WriteCloser, error) {</div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := ctx.Err(); err != nil </span>{ <span class="miss">return nil, err }</span></div>
+<div class="line"><span class="miss">	</span><span class="miss">return os.Create(filepath.Clean(name))</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) MkdirAll(ctx context.Context, path string, perm fs.FileMode) error {</div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"><span class="miss">	</span><span class="miss">return os.MkdirAll(path, perm)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) ReadDir(ctx context.Context, name string) ([]fs.DirEntry, error) {</div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := ctx.Err(); err != nil </span>{ <span class="miss">return nil, err }</span></div>
+<div class="line"><span class="miss">	</span><span class="miss">return os.ReadDir(name)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) ReadFile(ctx context.Context, name string) ([]byte, error) {</div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := ctx.Err(); err != nil </span>{ <span class="miss">return nil, err }</span></div>
+<div class="line"><span class="miss">	</span><span class="miss">return fs.ReadFile(lfs, name)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) WriteFile(ctx context.Context, name string, data []byte, perm fs.FileMode) error {</div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"><span class="miss">	</span><span class="miss">return os.WriteFile(name, data, perm)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// wraps inifile.IniConfig.Value for test injection.</div>
+<div class="line">type iniFileValueGetter interface { Value(string, string) (string, error) }</div>
+<div class="line"></div>
+<div class="line">// wraps packages.Load for test injection.</div>
+<div class="line">type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)</div>
+<div class="line"></div>
+<div class="line">func main() {</div>
+<div class="line"><span class="miss">	</span><span class="miss">os.Exit(run())</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func run() int {</div>
+<div class="line"><span class="miss">	</span><span class="miss">ctx, stop := signal.NotifyContext(context.Background(),</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		os.Interrupt,    // ctrl+c</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		syscall.SIGTERM, // standard kill signal</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		syscall.SIGHUP,  // terminal closed, SSH disconnection, etc</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	defer stop()</span></div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">var (</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		styleCSS       = &#34;css/style.css&#34;   // embedded template (.MaxWidth)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		indexHTML      = &#34;html/index.html&#34; // embedded template (.ModName)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		treeHTML       = &#34;tree.html&#34;       // generated by tree.go</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		ancillaryFiles = []string{</span></div>
+<div class="line"><span class="miss"></span><span class="miss">			&#34;css/tree.css&#34;,</span></div>
+<div class="line"><span class="miss"></span><span class="miss">			&#34;img/favicon.ico&#34;,</span></div>
+<div class="line"><span class="miss"></span><span class="miss">			&#34;img/go-blue-gradient.svg&#34;,</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		}</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	)</span></div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">goModFile, profilePath, outRoot, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	if err != nil </span>{</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot parse flags: %v\n&#34;, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 1</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">profiles, err := cover.ParseProfiles(profilePath)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	if err != nil </span>{</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot parse coverage profile file: %v\n&#34;, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 2</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;processing %d source files...&#34;, len(profiles))</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	if !isTerm(os.Stderr) </span>{ <span class="miss">fmt.Println() }</span> // nolint:forbidigo</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">repGen := &amp;reportGenerator{</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		fsys:           &amp;localFS{},</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		modFile:        filepath.Clean(goModFile),</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		outRoot:        filepath.Clean(outRoot),</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		profilePath:    filepath.Clean(profilePath),</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		profiles:       profiles,</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		embeddedFiles:  embeddedFiles,</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		ancillaryFiles: ancillaryFiles,</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := repGen.getModName(ctx, goModFile); err != nil </span>{ // sets repGen.modName</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot determine module name: %v\n&#34;, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 3</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">var gitConfig *inifile.IniConfig</span></div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">gitRoot, err := getGitRoot()</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	if err != nil </span>{</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot find Git root: %v\n&#34;, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 4</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	</span><span class="miss">gitConfigPath := filepath.Join(gitRoot, &#34;.git&#34;, &#34;config&#34;)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	if gitConfig, err = inifile.NewIniConfigFromPath(gitConfigPath); err != nil </span>{</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot parse Git config file (%q): %v\n&#34;, gitConfigPath, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 5</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := repGen.getRepoURL(ctx, gitConfig); err != nil </span>{ // sets repGen.repoURL</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot determine repo URL: %v\n&#34;, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 6</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := repGen.primePkgDirCache(ctx, packages.Load); err != nil </span>{ // sets repGen.pkgDirCache</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot prime package directory cache: %v\n&#34;, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 7</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := repGen.writeCovHTMLFiles(ctx, os.Stderr, styleCSS); err != nil </span>{ // sets repGen.cov</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot write HTML coverage files: %v\n&#34;, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 8</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := repGen.writeIndexHTML(ctx, indexHTML); err != nil </span>{ // requires repGen.modName</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot write %q: %v\n&#34;, indexHTML, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 9</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">tb := &amp;treeBuilder{</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		fsys:    &amp;localFS{},</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		modName: repGen.modName,</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		outRoot: filepath.Clean(outRoot),</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		cov:     repGen.cov,</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">if repGen.maxWidth, err = tb.writeTreeHTML(ctx, os.Stderr, treeHTML); err != nil </span>{</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot write %q: %v\n&#34;, treeHTML, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 10</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := repGen.writeStyleCSS(ctx, styleCSS); err != nil </span>{ // requires repGen.maxWidth</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot write %s: %v\n&#34;, styleCSS, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 11</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := repGen.writeAncillaryFiles(ctx); err != nil </span>{</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot write ancillary files: %v\n&#34;, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 12</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">if err := repGen.printCoverage(ctx, os.Stdout); err != nil </span>{ // requires repGen.cov</div>
+<div class="line"><span class="miss">		</span><span class="miss">fmt.Fprintf(os.Stderr, &#34;cannot print per-file coverage figures: %v\n&#34;, err)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		return 13</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	</span><span class="miss">return 0</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// getModName reads the repo&#39;s root go.mod file to determine the name of the Go module.</div>
+<div class="line">func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) error {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">goMod, err := rg.fsys.ReadFile(ctx, goModFile)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if err != nil                          </span>{ <span class="hit">return fmt.Errorf(&#34;cannot read %q: %w&#34;,  goModFile, err) }</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">modFile, err := modfile.Parse(goModFile, goMod, nil)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if err != nil || modFile.Module == nil </span>{ <span class="hit">return fmt.Errorf(&#34;cannot parse %q: %w&#34;, goModFile, err) }</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">rg.modName = modFile.Module.Mod.Path</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">return nil</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// getGitRoot locates the parent directory of the .git subdirectory.</div>
+<div class="line">func getGitRoot() (string, error) {</div>
+<div class="line"><span class="miss">	</span><span class="miss">cmd := exec.Command(&#34;git&#34;, &#34;rev-parse&#34;, &#34;--show-toplevel&#34;)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	out := new(bytes.Buffer)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	cmd.Stdout = out</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	err := cmd.Run()</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	if err != nil </span>{</div>
+<div class="line"><span class="miss">		</span><span class="miss">return &#34;&#34;, err</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	</span><span class="miss">return strings.TrimSpace(out.String()), nil</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML.</div>
+<div class="line">func (rg *reportGenerator) getRepoURL(ctx context.Context, gitConfig iniFileValueGetter) error {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">gitRemoteURL, err := gitConfig.Value(`remote &#34;origin&#34;`, &#34;url&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if err != nil </span>{ <span class="hit">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">if idx := strings.Index(gitRemoteURL, &#34;@&#34;); idx != -1 </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">gitRemoteURL = gitRemoteURL[idx + 1:]</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">gitRemoteURL = strings.TrimPrefix(gitRemoteURL, &#34;ssh://&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	gitRemoteURL = strings.TrimPrefix(gitRemoteURL, &#34;git://&#34;)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">if !strings.HasPrefix(gitRemoteURL, &#34;http://&#34; ) &amp;&amp;</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	   !strings.HasPrefix(gitRemoteURL, &#34;https://&#34;) </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">gitRemoteURL = &#34;https://&#34; + strings.Replace(gitRemoteURL, &#34;:&#34;, &#34;/&#34;, 1)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">u, err := url.Parse(gitRemoteURL)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">httpURL := fmt.Sprintf(&#34;https://%s%s&#34;, u.Host, u.Path)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	httpURL  = strings.TrimSuffix(httpURL, &#34;.git&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	httpURL  = strings.TrimSuffix(httpURL, &#34;/&#34;)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">rg.repoURL = httpURL</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	return nil</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// getAllPkgPaths extracts all unique package paths from the coverage profile file for subsequent use in primePkgDirCache.</div>
+<div class="line">func (rg *reportGenerator) getAllPkgPaths(ctx context.Context) ([]string, error) {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return nil, err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">f, err := rg.fsys.OpenWithContext(ctx, filepath.Clean(rg.profilePath))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if err != nil </span>{ <span class="hit">return nil, err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">defer func() </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">closeErr := f.Close()</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		if err == nil </span>{ <span class="hit">err = closeErr }</span></div>
+<div class="line">	}()</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">pkgSet  := make(map[string]struct{})</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	scanner := bufio.NewScanner(f)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	for scanner.Scan() </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">line := scanner.Text()</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		if strings.HasPrefix(line, &#34;mode:&#34;) </span>{ <span class="hit">continue</span> }</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		</span><span class="hit">parts := strings.Split(line, &#34;:&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		if len(parts) &lt; 2 </span>{ <span class="hit">continue</span> }</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		</span><span class="hit">pkgSet[filepath.Dir(parts[0])] = struct{}{}</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">allPaths := make([]string, 0, len(pkgSet))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	for p := range pkgSet </span>{ <span class="hit">allPaths = append(allPaths, p) }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">return allPaths, scanner.Err()</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// primePkgDirCache primes rg.pkgDirCache for subsequent use in buildCovHTML.</div>
+<div class="line">func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLoader) error {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">allPkgPaths, err := rg.getAllPkgPaths(ctx)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if err != nil </span>{ <span class="hit">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">cfg := &amp;packages.Config{</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		Mode:  packages.NeedFiles | packages.NeedModule | packages.NeedName,</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		Tests: false,</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		Dir:   filepath.Dir(rg.modFile),</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	</span><span class="hit">pkgs, err := pkgLoader(cfg, allPkgPaths...)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if err != nil </span>{ <span class="hit">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">tempCache := make(map[string]string)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">for _, pkg := range pkgs </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">if len(pkg.GoFiles) &gt; 0 </span>{</div>
+<div class="line"><span class="hit">			</span><span class="hit">tempCache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])</span></div>
+<div class="line">		}</div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">rg.pkgDirCache = tempCache</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">return nil</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the coverage profile file.</div>
+<div class="line">func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput io.Writer, styleCSS string) error {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">rg.cov        = make(map[string]coverage, len(rg.profiles))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	units        := make([]workUnit, 0, len(rg.profiles))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	dirsToCreate := make(map[string]struct{}) // exclude duplicate directories and keep the relatively heavy mkdir syscalls outside of the concurrent loop</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">for _, profile := range rg.profiles </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">outPath := filepath.Join(rg.outRoot, profile.FileName + &#34;.html&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		units    = append(units, workUnit{</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			profile: profile,</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			outPath: outPath,</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		})</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		dirsToCreate[filepath.Dir(outPath)] = struct{}{}</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">progDirs := progress.New(ctx, uint64(len(dirsToCreate)), progressOutput)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	defer progDirs.Close()</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">group, gCtx := errgroup.WithContext(ctx)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	group.SetLimit(runtime.NumCPU()) // saturate available CPU threads for maximum throughput while bounding concurrent syscalls</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">for dir := range dirsToCreate </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">if err := gCtx.Err(); err != nil </span>{ <span class="miss">break</span> } // group.Wait() below captures the error</div>
+<div class="line"><span class="hit">		</span><span class="hit">group.Go(func() error </span>{</div>
+<div class="line"><span class="hit">			</span><span class="hit">if err := rg.fsys.MkdirAll(gCtx, dir, 0700); err != nil </span>{</div>
+<div class="line"><span class="hit">				</span><span class="hit">return fmt.Errorf(&#34;cannot create directory %q: %w&#34;, dir, err)</span></div>
+<div class="line">			}</div>
+<div class="line"><span class="hit">			</span><span class="hit">progDirs.Report(1, &#34;created &#34; + dir)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			return nil</span></div>
+<div class="line">		})</div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := group.Wait(); err != nil </span>{ <span class="hit">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">progDirs.Close()</span></div>
+<div class="line">	</div>
+<div class="line">	// The total number of statements (cover.ProfileBlock.NumStmt) is used as a normalizing</div>
+<div class="line">	// proxy for work units to ensure the progress tracker accurately reflects the</div>
+<div class="line">	// computational effort required for files of vastly different sizes, e.g.:</div>
+<div class="line">	//</div>
+<div class="line">	//   k8s.io/kubernetes/pkg/kubelet/apis/config/register.go // contains    1 func def</div>
+<div class="line">	//   k8s.io/api/core/v1/generated.pb.go                    // contains 1692 func defs</div>
+<div class="line">	//</div>
+<div class="line">	// Since the global total of statements is not known a priori, dynamic discovery is</div>
+<div class="line">	// implemented whereby each worker goroutine calls AddTotal() as it parses a source</div>
+<div class="line">	// file&#39;s profiled blocks, allowing the progress tracker to refine its denominator</div>
+<div class="line">	// in real-time without requiring a separate pre-processing pass.</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">perFileCov := make([]coverage, len(units))</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">progFiles := progress.New(ctx, 0, progressOutput)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	defer progFiles.Close()</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">group, gCtx = errgroup.WithContext(ctx)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	group.SetLimit(runtime.NumCPU()) // saturate available CPU threads for maximum throughput while bounding memory used by concurrent HTML buffers</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">for i, unit := range units </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">if err := gCtx.Err(); err != nil </span>{ <span class="miss">break</span> } // group.Wait() below captures the error</div>
+<div class="line"><span class="hit">		</span><span class="hit">group.Go(func() error </span>{</div>
+<div class="line"></div>
+<div class="line"><span class="hit">			</span><span class="hit">var fileStatements, fileCovered int64</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			for _, block := range unit.profile.Blocks </span>{</div>
+<div class="line"><span class="hit">				</span><span class="hit">fileStatements += int64(block.NumStmt)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">				if block.Count &gt; 0 </span>{</div>
+<div class="line"><span class="hit">					</span><span class="hit">fileCovered += int64(block.NumStmt)</span></div>
+<div class="line">				}</div>
+<div class="line">			}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">			</span><span class="hit">progFiles.AddTotal(uint64(fileStatements))</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">			</span><span class="hit">var buf bytes.Buffer</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			ew := newErrorWriter(&amp;buf)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			if err := rg.buildCovHTML(gCtx, ew, unit.profile, unit.profile.FileName, styleCSS); err != nil </span>{</div>
+<div class="line"><span class="hit">				</span><span class="hit">return fmt.Errorf(&#34;cannot build HTML for %q: %w&#34;, unit.profile.FileName, err)</span></div>
+<div class="line">			}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">			</span><span class="hit">if err := rg.fsys.WriteFile(gCtx, unit.outPath, buf.Bytes(), 0600); err != nil </span>{</div>
+<div class="line"><span class="hit">				</span><span class="hit">return fmt.Errorf(&#34;cannot write HTML file for %q: %w&#34;, unit.profile.FileName, err)</span></div>
+<div class="line">			}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">			</span><span class="hit">progFiles.Report(float64(fileStatements), unit.profile.FileName)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">			</span><span class="hit">rg.totalCovered.Add(fileCovered)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			rg.totalStatements.Add(fileStatements)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">			</span><span class="hit">perFileCov[i] = coverage{</span></div>
+<div class="line"><span class="hit"></span><span class="hit">				covered: fileCovered,</span></div>
+<div class="line"><span class="hit"></span><span class="hit">				total:   fileStatements,</span></div>
+<div class="line">			}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">			</span><span class="hit">return nil</span></div>
+<div class="line">		})</div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">err := group.Wait()</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">progFiles.Close()</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">for i, cov := range perFileCov </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">rg.cov[units[i].profile.FileName] = cov</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">return err</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage.</div>
+<div class="line">func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath, styleCSS string) error {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{</div>
+<div class="line"><span class="miss">		</span><span class="miss">return err</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">pkgPath  := filepath.Dir( profile.FileName)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	fileName := filepath.Base(profile.FileName)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">src, err := rg.fsys.ReadFile(ctx, filepath.Join(rg.pkgDirCache[pkgPath], fileName))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if err != nil </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">return err</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">cssPath := strings.Repeat(&#34;../&#34;, strings.Count(srcPath, &#34;/&#34;)) + filepath.Base(styleCSS)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	writePreamble(ew, cssPath, srcPath)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">var buf bytes.Buffer</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	pos         := 0</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	activeClass := &#34;&#34;    // tracks the CSS class of the coverage block (&#34;hit&#34; or &#34;miss&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	spanIsOpen  := false // tracks if a &lt;span&gt; tag in the output buffer is currently open</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">for _, b := range profile.Boundaries(src) </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">chunk := src[pos:b.Offset]</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">		</span><span class="hit">if activeClass != &#34;&#34; &amp;&amp; len(chunk) &gt; 0 </span>{</div>
+<div class="line"><span class="hit">			</span><span class="hit">parts := bytes.Split(chunk, []byte(&#34;\n&#34;))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			for i, part := range parts </span>{</div>
+<div class="line"><span class="hit">				</span><span class="hit">if i &gt; 0 </span>{        // a newline was trasversed</div>
+<div class="line"><span class="hit">					</span><span class="hit">if spanIsOpen </span>{ // if a span is open, close it before emitting &#39;\n&#39;</div>
+<div class="line"><span class="hit">						</span><span class="hit">buf.WriteString(&#34;&lt;/span&gt;&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">						spanIsOpen = false</span></div>
+<div class="line">					}</div>
+<div class="line"><span class="hit">					</span><span class="hit">buf.WriteString(&#34;\n&#34;)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">					</span><span class="hit">if len(part) &gt; 0 </span>{ // reopen the span on the new line only if this line segment contains text</div>
+<div class="line"><span class="miss">						</span><span class="miss">buf.WriteString(`&lt;span class=&#34;`)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">						buf.WriteString(activeClass)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">						buf.WriteString(`&#34;&gt;`)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">						spanIsOpen = true</span></div>
+<div class="line">					}</div>
+<div class="line">				} else <span class="hit">if !spanIsOpen &amp;&amp; len(part) &gt; 0 </span>{ // if the span was closed by a previous empty line segment, reopen it if this part contains text</div>
+<div class="line"><span class="miss">					</span><span class="miss">buf.WriteString(`&lt;span class=&#34;`)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">					buf.WriteString(activeClass)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">					buf.WriteString(`&#34;&gt;`)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">					spanIsOpen = true</span></div>
+<div class="line">				}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">				</span><span class="hit">if len(part) &gt; 0 </span>{</div>
+<div class="line"><span class="hit">					</span><span class="hit">template.HTMLEscape(&amp;buf, part)</span></div>
+<div class="line">				}</div>
+<div class="line">			}</div>
+<div class="line">		} else {</div>
+<div class="line"><span class="hit">			</span><span class="hit">template.HTMLEscape(&amp;buf, chunk) // either no span is active, or the chunk is empty: output directly</span></div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line">		// handle boundary transitions</div>
+<div class="line"><span class="hit">		</span><span class="hit">if b.Start </span>{      // start of a coverage block</div>
+<div class="line"><span class="hit">			</span><span class="hit">if spanIsOpen </span>{ // if a span is already open, close it before switching blocks</div>
+<div class="line"><span class="miss">				</span><span class="miss">buf.WriteString(&#34;&lt;/span&gt;&#34;)</span></div>
+<div class="line">			}</div>
+<div class="line"><span class="hit">			</span><span class="hit">activeClass = &#34;miss&#34;</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			if b.Count &gt; 0 </span>{</div>
+<div class="line"><span class="hit">				</span><span class="hit">activeClass = &#34;hit&#34;</span></div>
+<div class="line">			}</div>
+<div class="line"><span class="hit">			</span><span class="hit">buf.WriteString(`&lt;span class=&#34;`)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			buf.WriteString(activeClass)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			buf.WriteString(`&#34;&gt;`)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			spanIsOpen = true</span></div>
+<div class="line">		} else {          // end of a coverage block</div>
+<div class="line"><span class="hit">			</span><span class="hit">if spanIsOpen </span>{ // close the open &lt;span&gt;</div>
+<div class="line"><span class="miss">				</span><span class="miss">buf.WriteString(&#34;&lt;/span&gt;&#34;)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">				spanIsOpen = false</span></div>
+<div class="line">			}</div>
+<div class="line"><span class="hit">			</span><span class="hit">activeClass = &#34;&#34;</span></div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		</span><span class="hit">pos = b.Offset</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line">	// handle the final remaining slice of the source file</div>
+<div class="line"><span class="hit">	</span><span class="hit">remaining := src[pos:]</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if activeClass != &#34;&#34; &amp;&amp; len(remaining) &gt; 0 </span>{</div>
+<div class="line"><span class="miss">		</span><span class="miss">parts := bytes.Split(remaining, []byte(&#34;\n&#34;))</span></div>
+<div class="line"><span class="miss"></span><span class="miss">		for i, part := range parts </span>{</div>
+<div class="line"><span class="miss">			</span><span class="miss">if i &gt; 0 </span>{</div>
+<div class="line"><span class="miss">				</span><span class="miss">if spanIsOpen </span>{</div>
+<div class="line"><span class="miss">					</span><span class="miss">buf.WriteString(&#34;&lt;/span&gt;&#34;)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">					spanIsOpen = false</span></div>
+<div class="line">				}</div>
+<div class="line"><span class="miss">				</span><span class="miss">buf.WriteString(&#34;\n&#34;)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">				if len(part) &gt; 0 </span>{</div>
+<div class="line"><span class="miss">					</span><span class="miss">buf.WriteString(`&lt;span class=&#34;`)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">					buf.WriteString(activeClass)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">					buf.WriteString(`&#34;&gt;`)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">					spanIsOpen = true</span></div>
+<div class="line">				}</div>
+<div class="line">			} else <span class="miss">if !spanIsOpen &amp;&amp; len(part) &gt; 0 </span>{</div>
+<div class="line"><span class="miss">				</span><span class="miss">buf.WriteString(`&lt;span class=&#34;`)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">				buf.WriteString(activeClass)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">				buf.WriteString(`&#34;&gt;`)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">				spanIsOpen = true</span></div>
+<div class="line">			}</div>
+<div class="line"><span class="miss">			</span><span class="miss">if len(part) &gt; 0 </span>{</div>
+<div class="line"><span class="miss">				</span><span class="miss">template.HTMLEscape(&amp;buf, part)</span></div>
+<div class="line">			}</div>
+<div class="line">		}</div>
+<div class="line">	} else {</div>
+<div class="line"><span class="hit">		</span><span class="hit">template.HTMLEscape(&amp;buf, remaining)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">if spanIsOpen </span>{ // safeguard</div>
+<div class="line"><span class="miss">		</span><span class="miss">buf.WriteString(&#34;&lt;/span&gt;&#34;)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">hitPrefix  := []byte(`&lt;span class=&#34;hit&#34;&gt;`)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	missPrefix := []byte(`&lt;span class=&#34;miss&#34;&gt;`)</span></div>
+<div class="line"></div>
+<div class="line">	// post-processing to prepend &lt;div class=&#34;line&#34;&gt; tags to every line of</div>
+<div class="line">	// source so the dynamic line counter CSS works as expected:</div>
+<div class="line">	//</div>
+<div class="line">  //   .line         { counter-increment: line }</div>
+<div class="line">	//   .line::before { content: counter(line)  }</div>
+<div class="line"><span class="hit">	</span><span class="hit">for i, line := range bytes.Split(bytes.TrimRight(buf.Bytes(), &#34;\n&#34;), []byte{&#39;\n&#39;}) </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">if i &gt; 0 </span>{ <span class="hit">ew.write(&#34;\n&#34;) }</span></div>
+<div class="line"><span class="hit">		</span><span class="hit">trimLen   := len(line) - len(bytes.TrimLeft(line, &#34; \t&#34;))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		leadingWS := line[:trimLen]</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		remainder := line[trimLen:]</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		ew.write(`&lt;div class=&#34;line&#34;&gt;`)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		switch </span>{</div>
+<div class="line">		case bytes.HasPrefix(remainder, hitPrefix):</div>
+<div class="line"><span class="hit">			</span><span class="hit">ew.write(`&lt;span class=&#34;hit&#34;&gt;`)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			ew.write(string(leadingWS))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			ew.write(`&lt;/span&gt;`)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			ew.write(string(remainder))</span></div>
+<div class="line">		case bytes.HasPrefix(remainder, missPrefix):</div>
+<div class="line"><span class="miss">			</span><span class="miss">ew.write(`&lt;span class=&#34;miss&#34;&gt;`)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">			ew.write(string(leadingWS))</span></div>
+<div class="line"><span class="miss"></span><span class="miss">			ew.write(`&lt;/span&gt;`)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">			ew.write(string(remainder))</span></div>
+<div class="line">		default:</div>
+<div class="line"><span class="hit">			</span><span class="hit">ew.write(string(line))</span></div>
+<div class="line">		}</div>
+<div class="line"><span class="hit">		</span><span class="hit">ew.write(`&lt;/div&gt;`)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">ew.write(&#34;\n&#34;)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">writePostamble(ew)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	return ew.err()</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writePreamble writes the preamble portion of the HTML content common to every Go source HTML file.</div>
+<div class="line">func writePreamble(ew stickyWriter, cssRelPath, srcPath string) {</div>
+<div class="line"><span class="hit">	</span><span class="hit">ew.write(&#34;&lt;!DOCTYPE html&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(`&lt;html lang=&#34;en&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(&#34;&lt;head&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(`&lt;meta charset=&#34;utf-8&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(`&lt;link rel=&#34;stylesheet&#34; href=&#34;`)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(cssRelPath)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(`&#34; type=&#34;text/css&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(&#34;&lt;title&gt;&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(srcPath)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(&#34;&lt;/title&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(&#34;&lt;/head&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(`&lt;body id=&#34;code&#34; class=&#34;line-numbers&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writePostamble writes the postamble portion of the HTML content common to every Go source HTML file.</div>
+<div class="line">func writePostamble(ew stickyWriter) {</div>
+<div class="line"><span class="hit">	</span><span class="hit">ew.write(`&lt;script&gt;</span></div>
+<div class="line"><span class="hit"></span><span class="hit">try {</span></div>
+<div class="line"><span class="hit"></span><span class="hit">  const parentTheme = window.parent.document.documentElement.getAttribute(&#39;theme&#39;);</span></div>
+<div class="line"><span class="hit"></span><span class="hit">  if (parentTheme) document.documentElement.setAttribute(&#39;theme&#39;, parentTheme);</span></div>
+<div class="line"><span class="hit"></span><span class="hit">} catch (e) {</span></div>
+<div class="line"><span class="hit"></span><span class="hit">  console.warn(&#39;direct parent access blocked by browser; waiting for postMessage&#39;);</span></div>
+<div class="line"><span class="hit"></span><span class="hit">}</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit"></span><span class="hit">window.addEventListener(&#39;message&#39;, (event) =&gt; {</span></div>
+<div class="line"><span class="hit"></span><span class="hit">  if (event.data &amp;&amp; event.data.type === &#39;SET_THEME&#39;) document.documentElement.setAttribute(&#39;theme&#39;, event.data.theme);</span></div>
+<div class="line"><span class="hit"></span><span class="hit">});</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit"></span><span class="hit">try {</span></div>
+<div class="line"><span class="hit"></span><span class="hit">  const parentLineNumbers = window.parent.document.documentElement.getAttribute(&#39;line-numbers&#39;);</span></div>
+<div class="line"><span class="hit"></span><span class="hit">  if (parentLineNumbers === &#39;0&#39;) document.body.classList.remove(&#39;line-numbers&#39;);</span></div>
+<div class="line"><span class="hit"></span><span class="hit">  else document.body.classList.add(&#39;line-numbers&#39;);</span></div>
+<div class="line"><span class="hit"></span><span class="hit">} catch (e) {</span></div>
+<div class="line"><span class="hit"></span><span class="hit">  document.body.classList.add(&#39;line-numbers&#39;);</span></div>
+<div class="line"><span class="hit"></span><span class="hit">}</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit"></span><span class="hit">window.addEventListener(&#39;message&#39;, (event) =&gt; {</span></div>
+<div class="line"><span class="hit"></span><span class="hit">  if (event.data &amp;&amp; event.data.type === &#39;TOGGLE_LINE_NUMBERS&#39;) document.body.classList.toggle(&#39;line-numbers&#39;, event.data.lineNumbers);</span></div>
+<div class="line"><span class="hit"></span><span class="hit">});</span></div>
+<div class="line"><span class="hit"></span><span class="hit">&lt;/script&gt;</span></div>
+<div class="line"><span class="hit"></span><span class="hit">&lt;/body&gt;</span></div>
+<div class="line"><span class="hit"></span><span class="hit">&lt;/html&gt;`)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// printCoverage prints per-file coverage percentages to the specified destination (typically stdout).</div>
+<div class="line">func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">keys       := slices.Collect(maps.Keys(rg.cov))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	maxPathLen := len(slices.MaxFunc(keys, func(a, b string) int </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">return cmp.Compare(len(a), len(b))</span></div>
+<div class="line">	}))</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">maxPathLen = max(maxPathLen, 5) // 5 == len(&#34;Total&#34;)</span></div>
+<div class="line"></div>
+<div class="line">	// TODO(jeff): allow users to chose how the rows rendered in the tree should be sorted;</div>
+<div class="line">	//             default should probably path-depth, then alphanumerically, just like here</div>
+<div class="line"><span class="hit">	</span><span class="hit">slices.SortFunc(keys, func(a, b string) int </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		if depthA != depthB </span>{ <span class="hit">return cmp.Compare(depthA, depthB) }</span> // sort by path depth</div>
+<div class="line"><span class="hit">		</span><span class="hit">return cmp.Compare(a, b)</span> // sort alphanumerically</div>
+<div class="line">	})</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">const (</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		colorGreen = &#34;\033[32m&#34;</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		colorRed   = &#34;\033[31m&#34;</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">divider := strings.Repeat(&#34;—&#34;, maxPathLen + 9) + &#34;\n&#34; // 9 == 2 spaces + len(&#34;100.00%&#34;)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">ew := newErrorWriter(w)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(&#34;File&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen - 4 + 1))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(&#34;Coverage\n&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(divider)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">for _, path := range keys </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">cov     := rg.cov[path]</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		percent := 0.0</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		if cov.total &gt; 0 </span>{</div>
+<div class="line"><span class="hit">			</span><span class="hit">percent = float64(cov.covered) / float64(cov.total) * 100</span></div>
+<div class="line">		}</div>
+<div class="line"><span class="hit">		</span><span class="hit">ew.write(path)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		ew.write(strings.Repeat(&#34; &#34;, maxPathLen - len(path) + 2))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		pct       := strconv.FormatFloat(percent, &#39;f&#39;, 2, 64)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		colorCode := colorGreen</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		if percent &lt; 50 </span>{ <span class="hit">colorCode = colorRed }</span></div>
+<div class="line"><span class="hit">		</span><span class="hit">ew.write(strings.Repeat(&#34; &#34;, 6 - len(pct)))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		ew.writeColor(pct + &#34;%&#34;, colorCode)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		ew.write(&#34;\n&#34;)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">totalPercent    := 0.0</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	totalCovered    := rg.totalCovered.Load()</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	totalStatements := rg.totalStatements.Load()</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if totalStatements &gt; 0 </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">totalPercent = float64(totalCovered) / float64(totalStatements) * 100</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">ew.write(divider)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(&#34;Total&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen - 5 + 2))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	totalPct  := strconv.FormatFloat(totalPercent, &#39;f&#39;, 2, 64)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	colorCode := colorGreen</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if totalPercent &lt; 50 </span>{ <span class="miss">colorCode = colorRed }</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">ew.write(strings.Repeat(&#34; &#34;, 6 - len(totalPct)))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.writeColor(totalPct + &#34;%&#34;, colorCode)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	ew.write(&#34;\n&#34;)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">return ew.err()</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writeIndexHTML writes the index HTML file, which contains two template parameters</div>
+<div class="line">// (ModName and ModURL), and hosts two iframes (directory tree &amp; source code).</div>
+<div class="line">func (rg *reportGenerator) writeIndexHTML(ctx context.Context, indexHTML string) error {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">data := struct{</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		ModName, ModURL string</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	}{</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		ModName: rg.modName,</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		ModURL:  rg.repoURL,</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">return rg.writeTemplateFile(ctx, indexHTML, data)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writeStyleCSS writes the style.css file, which contains a single &#34;MaxWidth&#34; template parameter.</div>
+<div class="line">func (rg *reportGenerator) writeStyleCSS(ctx context.Context, styleCSS string) error {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">data := struct{</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		MaxWidth int</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	}{</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		MaxWidth: rg.maxWidth,</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">return rg.writeTemplateFile(ctx, styleCSS, data)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writeTemplateFile writes the specified template file.</div>
+<div class="line">func (rg *reportGenerator) writeTemplateFile(ctx context.Context, file string, tmplVars any) error {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">outFile   := filepath.Join(rg.outRoot, filepath.Base(file))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	tmpl, err := template.ParseFS(rg.embeddedFiles, file)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if                                   err != nil </span>{ <span class="hit">return fmt.Errorf(&#34;cannot parse %q: %w&#34;,     file, err) }</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">f, err := rg.fsys.Create(ctx, outFile)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	if                                   err != nil </span>{ <span class="hit">return fmt.Errorf(&#34;cannot create %q: %w&#34;, outFile, err) }</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := tmpl.Execute(f, tmplVars); err != nil </span>{ <span class="hit">return fmt.Errorf(&#34;cannot render template: %w&#34;,    err) }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">return f.Close()</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writeAncillaryFiles writes the files required by the coverage report to the user-specified path.</div>
+<div class="line">func (rg *reportGenerator) writeAncillaryFiles(ctx context.Context) error {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">for _, file := range rg.ancillaryFiles </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">outFile   := filepath.Join(rg.outRoot, filepath.Base(file))</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		f, err    := rg.fsys.Create(ctx, outFile)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		if                                        err != nil </span>{ <span class="hit">return fmt.Errorf(&#34;cannot create %q: %w&#34;,     outFile, err) }</span></div>
+<div class="line"><span class="hit">		</span><span class="hit">data, err := fs.ReadFile(rg.embeddedFiles, file)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		if                                        err != nil </span>{ <span class="hit">return fmt.Errorf(&#34;cannot read %q: %w&#34;,          file, err) }</span></div>
+<div class="line"><span class="hit">		</span><span class="hit">if _, err := fmt.Fprint(f, string(data)); err != nil </span>{ <span class="hit">return fmt.Errorf(&#34;cannot write file %q: %w&#34;, outFile, err) }</span></div>
+<div class="line"><span class="hit">		</span><span class="hit">if err := f.Close();                      err != nil </span>{ <span class="hit">return fmt.Errorf(&#34;cannot close file %q: %w&#34;, outFile, err) }</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">return nil</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// filterArgs discards any arguments up to and including &#34;--&#34;.</div>
+<div class="line">func filterArgs(args []string) []string {</div>
+<div class="line"><span class="hit">	</span><span class="hit">for i, arg := range args </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">if arg == &#34;--&#34; </span>{</div>
+<div class="line"><span class="hit">			</span><span class="hit">args = args[i + 1:]</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			break</span></div>
+<div class="line">		}</div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	</span><span class="hit">return args</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// isTerm determines if the specified writer is connected to a terminal.</div>
+<div class="line">func isTerm(v any) bool {</div>
+<div class="line"><span class="hit">	</span><span class="hit">if testing.Testing() </span>{ <span class="hit">return false }</span></div>
+<div class="line"><span class="miss">	</span><span class="miss">if os.Getenv(&#34;GITHUB_ACTIONS&#34;) == &#34;true&#34; || // https://docs.github.com/actions/reference/workflows-and-actions/variables</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	   os.Getenv(&#34;CI&#34;            ) == &#34;true&#34; </span>{ <span class="miss">return false }</span></div>
+<div class="line"><span class="miss">	</span><span class="miss">fd := getFD(v)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">	if fd &lt; 0 </span>{ <span class="miss">return false }</span></div>
+<div class="line"><span class="miss">	</span><span class="miss">return term.IsTerminal(fd)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// getFD returns the file descriptor of the provided argument.</div>
+<div class="line">func getFD(w any) int {</div>
+<div class="line"><span class="miss">	</span><span class="miss">if f, ok := w.(interface{ Fd() uintptr }); ok </span>{ <span class="miss">return int(f.Fd()) }</span></div>
+<div class="line"><span class="miss">	</span><span class="miss">return -1</span></div>
+<div class="line">}</div>
+<script>
+try {
+  const parentTheme = window.parent.document.documentElement.getAttribute('theme');
+  if (parentTheme) document.documentElement.setAttribute('theme', parentTheme);
+} catch (e) {
+  console.warn('direct parent access blocked by browser; waiting for postMessage');
+}
+
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SET_THEME') document.documentElement.setAttribute('theme', event.data.theme);
+});
+
+try {
+  const parentLineNumbers = window.parent.document.documentElement.getAttribute('line-numbers');
+  if (parentLineNumbers === '0') document.body.classList.remove('line-numbers');
+  else document.body.classList.add('line-numbers');
+} catch (e) {
+  document.body.classList.add('line-numbers');
+}
+
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'TOGGLE_LINE_NUMBERS') document.body.classList.toggle('line-numbers', event.data.lineNumbers);
+});
+</script>
+</body>
+</html>
