@@ -1,4 +1,4 @@
-[![Go Version](https://img.shields.io/badge/go-%20v1.26.2-blue?logo=go)](https://github.com/jbunds/coverage/blob/main/go.mod) &nbsp;
+[![Go Version](https://img.shields.io/badge/go-%20v1.26.7-blue?logo=go)](https://github.com/jbunds/coverage/blob/main/go.mod) &nbsp;
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) &nbsp;
 [![tests](https://github.com/jbunds/coverage/actions/workflows/test-go.yml/badge.svg)](https://github.com/jbunds/coverage/actions/workflows/test-go.yml) &nbsp;
 [![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jbunds/5a36403860174baeee62844ab96a77d9/raw/coverage.json)](https://github.com/jbunds/coverage/actions/workflows/test-go.yml) &nbsp;
