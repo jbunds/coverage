@@ -51,14 +51,14 @@ jobs:
       - name: Go coverage report
         uses: jbunds/coverage@v1
         with:
-          go-mod:               ${{ inputs.go-mod               || go.mod          }}
-          coverage-threshold:   ${{ inputs.coverage-threshold   || 0               }}
-          coverage-report-path: ${{ inputs.coverage-report-path || coverage_report }}
+          go-mod:               ${{ inputs.go-mod               || 'go.mod'          }}
+          coverage-threshold:   ${{ inputs.coverage-threshold   || '0'               }}
+          coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
 
       - name: upload to GitHub Pages # https://jbunds.github.io/coverage/
         uses: jbunds/coverage/.github/actions/upload-pages@v1
         with:
-          coverage-report-path: ${{ inputs.coverage-report-path || coverage_report }}
+          coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
 
   deploy:
     runs-on: ubuntu-latest
