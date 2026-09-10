@@ -232,11 +232,11 @@ func run() int {
 
 	repGen := &reportGenerator{
 		fsys:           &localFS{},
-		embeddedFiles:  embeddedFiles,
 		modFile:        filepath.Clean(goModFile),
 		outRoot:        filepath.Clean(outRoot),
 		profilePath:    filepath.Clean(profilePath),
 		profiles:       profiles,
+		embeddedFiles:  embeddedFiles,
 		ancillaryFiles: ancillaryFiles,
 	}
 
@@ -545,96 +545,136 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	cssPath := strings.Repeat("../", strings.Count(srcPath, "/")) + filepath.Base(styleCSS)
 	writePreamble(ew, cssPath, srcPath)
 
-	blocks    := profile.Blocks // already sorted by (StartLine, StartCol)
-	bIdx      := 0              // current block index
-	lineStart := 0              // byte offset of current line in src
-	lineNum   := 1              // 1-based line counter
-	for lineStart < len(src) {
-		nl := bytes.IndexByte(src[lineStart:], '\n') // locate the next newline
-		var lineEnd int                              // end of current line (+1 past the newline, or len(src))
-		if nl == -1 {                                // no newline between lineStart and the end of the src byte slice
-			lineEnd = len(src)                         // final byte of the source file is not a newline
-		} else {
-			lineEnd = lineStart + nl + 1               // points past the newline so the next iteration starts at the first byte of the next line
-		}
+	var buf bytes.Buffer
+	pos         := 0
+	activeClass := ""    // tracks the CSS class of the coverage block ("hit" or "miss")
+	spanIsOpen  := false // tracks if a <span> tag in the output buffer is currently open
 
-		// advance past blocks that end before this line
-		for bIdx                 < len(blocks) &&
-		    blocks[bIdx].EndLine < lineNum     { // walk the sorted block list in lockstep with the outer loop
-			bIdx++
-		}
+	for _, b := range profile.Boundaries(src) {
+		chunk := src[pos:b.Offset]
 
-		// determine coverage state by scanning all blocks touching this line
-		hasHit  := false
-		hasMiss := false
-
-		// scan loop forward from bIdx to evaluate all blocks relevant to lineNum
-		for i := bIdx; i < len(blocks); i++ {
-			block := blocks[i]
-
-			// blocks are sorted by StartLine, so stop scanning when a block starts past the current line
-			if block.StartLine > lineNum {
-				break
-			}
-
-			// determine if this block covers the current line
-			covers := false
-			if block.StartLine <= lineNum       &&
-			   lineNum         <= block.EndLine {
-				if lineNum == block.EndLine {
-					// blocks always end at the closing brace with position (EndLine, 1),
-					// so only count it if it extends past column 1
-					if block.EndCol > 1 {
-						covers = true
+		if activeClass != "" && len(chunk) > 0 {
+			parts := bytes.Split(chunk, []byte("\n"))
+			for i, part := range parts {
+				if i > 0 {        // a newline was trasversed
+					if spanIsOpen { // if a span is open, close it before emitting '\n'
+						buf.WriteString("</span>")
+						spanIsOpen = false
 					}
-				} else {
-					// this block completely spans this line, or starts on this line and ends on a later one
-					covers = true
+					buf.WriteString("\n")
+
+					if len(part) > 0 { // reopen the span on the new line only if this line segment contains text
+						buf.WriteString(`<span class="`)
+						buf.WriteString(activeClass)
+						buf.WriteString(`">`)
+						spanIsOpen = true
+					}
+				} else if !spanIsOpen && len(part) > 0 { // if the span was closed by a previous empty line segment, reopen it if this part contains text
+					buf.WriteString(`<span class="`)
+					buf.WriteString(activeClass)
+					buf.WriteString(`">`)
+					spanIsOpen = true
+				}
+
+				if len(part) > 0 {
+					template.HTMLEscape(&buf, part)
 				}
 			}
-
-			// track coverage metrics across all overlapping blocks
-			if covers {
-				if block.Count > 0 {
-					hasHit  = true
-				} else {
-					hasMiss = true
-				}
-			}
-		}
-
-		// resolve the CSS class based on a conservative "any miss -> miss" policy
-		class := ""
-		if hasMiss {
-			class = "miss"
-		} else if hasHit {
-			class = "hit"
-		}
-
-		end := lineEnd
-		if end > lineStart && src[end - 1] == '\n' {
-			end-- // exclude trailing newline so paired <div> tags are written to a single line
-		}
-		// suppress class for comment-only and blank lines that fall within a block's line range
-		// see also https://github.com/golang/go/issues/22545
-		if class != "" {
-			trimmed := bytes.TrimSpace(src[lineStart:end])
-			if len(trimmed) == 0 || trimmed[0] == '/' {
-				class = ""
-			}
-		}
-
-		if class != "" {
-			ew.write(`<div class="line ` + class + `">`)
 		} else {
-			ew.write(`<div class="line">`)
+			template.HTMLEscape(&buf, chunk) // either no span is active, or the chunk is empty: output directly
 		}
-		template.HTMLEscape(ew, src[lineStart:end])
-		ew.write("</div>\n")
 
-		lineStart = lineEnd
-		lineNum++
+		// handle boundary transitions
+		if b.Start {      // start of a coverage block
+			if spanIsOpen { // if a span is already open, close it before switching blocks
+				buf.WriteString("</span>")
+			}
+			activeClass = "miss"
+			if b.Count > 0 {
+				activeClass = "hit"
+			}
+			buf.WriteString(`<span class="`)
+			buf.WriteString(activeClass)
+			buf.WriteString(`">`)
+			spanIsOpen = true
+		} else {          // end of a coverage block
+			if spanIsOpen { // close the open <span>
+				buf.WriteString("</span>")
+				spanIsOpen = false
+			}
+			activeClass = ""
+		}
+
+		pos = b.Offset
 	}
+
+	// handle the final remaining slice of the source file
+	remaining := src[pos:]
+	if activeClass != "" && len(remaining) > 0 {
+		parts := bytes.Split(remaining, []byte("\n"))
+		for i, part := range parts {
+			if i > 0 {
+				if spanIsOpen {
+					buf.WriteString("</span>")
+					spanIsOpen = false
+				}
+				buf.WriteString("\n")
+				if len(part) > 0 {
+					buf.WriteString(`<span class="`)
+					buf.WriteString(activeClass)
+					buf.WriteString(`">`)
+					spanIsOpen = true
+				}
+			} else if !spanIsOpen && len(part) > 0 {
+				buf.WriteString(`<span class="`)
+				buf.WriteString(activeClass)
+				buf.WriteString(`">`)
+				spanIsOpen = true
+			}
+			if len(part) > 0 {
+				template.HTMLEscape(&buf, part)
+			}
+		}
+	} else {
+		template.HTMLEscape(&buf, remaining)
+	}
+
+	if spanIsOpen { // safeguard
+		buf.WriteString("</span>")
+	}
+
+	hitPrefix  := []byte(`<span class="hit">`)
+	missPrefix := []byte(`<span class="miss">`)
+
+	// post-processing to prepend <div class="line"> tags to every line of
+	// source so the dynamic line counter CSS works as expected:
+	//
+  //   .line         { counter-increment: line }
+	//   .line::before { content: counter(line)  }
+	for i, line := range bytes.Split(bytes.TrimRight(buf.Bytes(), "\n"), []byte{'\n'}) {
+		if i > 0 { ew.write("\n") }
+		trimLen   := len(line) - len(bytes.TrimLeft(line, " \t"))
+		leadingWS := line[:trimLen]
+		remainder := line[trimLen:]
+		ew.write(`<div class="line">`)
+		switch {
+		case bytes.HasPrefix(remainder, hitPrefix):
+			ew.write(`<span class="hit">`)
+			ew.write(string(leadingWS))
+			ew.write(`</span>`)
+			ew.write(string(remainder))
+		case bytes.HasPrefix(remainder, missPrefix):
+			ew.write(`<span class="miss">`)
+			ew.write(string(leadingWS))
+			ew.write(`</span>`)
+			ew.write(string(remainder))
+		default:
+			ew.write(string(line))
+		}
+		ew.write(`</div>`)
+	}
+
+	ew.write("\n")
 
 	writePostamble(ew)
 	return ew.err()

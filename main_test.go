@@ -415,7 +415,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				`<div class="line">	// another line comment</div>`,
 				`<div class="line">	/* another block comment */</div>`,
 				`<div class="line"></div>`,
-				`<div class="line hit">	fmt.Println(&#34;hello world&#34;)</div>`,
+				`<div class="line"><span class="hit">	</span><span class="hit">fmt.Println(&#34;hello world&#34;)</span></div>`,
 				`<div class="line"></div>`,
 				`<div class="line">	// yet another line comment</div>`,
 				`<div class="line"></div>`,

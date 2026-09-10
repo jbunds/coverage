@@ -125,15 +125,22 @@ a:hover {
 }
 
 .line {
-  display:           table;
+  display:           block;
   position:          relative;
-  margin-left:       3.25rem;  /* 2.5rem gutter + 0.75rem gap */
+  margin-left:       3.25rem; /* 2.5rem gutter + 0.75rem gap */
   tab-size:          4;
   font-size:         medium;
   line-height:       1.5;
-  min-height:        1.5em;
-  white-space:       pre;
+  height:            1.5em;
+  white-space:       pre;     /* preserves all whitespace in the original source code */
   counter-increment: line;
+}
+
+.hit,
+.miss {
+  display:        inline-block;
+  height:         1.5em; /* matches the parent .line height to create a continuous block */
+  vertical-align: top;   /* anchors boxes to the ceiling to prevent baseline shifts on pure-whitespace spans */
 }
 
 .hit  {
@@ -150,15 +157,15 @@ a:hover {
   position:     absolute;
   left:         -3.25rem;
   content:      counter(line);
-  width:        2.5rem;  /* 2.5rem gutter */
+  width:        2.5rem; /* gutter */
   text-align:   right;
   color:        var(--text-color);
   opacity:      0.45;
   border-right: 1px solid rgb(from var(--text-color) r g b / 20%);
+  user-select:  none;   /* prevent line numbers from being selected while copying */
 }
 
 body:not(.line-numbers) .line {
-  display:     block;
   margin-left: 0;
 }
 
