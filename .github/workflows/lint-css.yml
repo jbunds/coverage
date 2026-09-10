@@ -3,11 +3,11 @@ name: CSS Lint (Biome)
 on:
   workflow_dispatch: # allows this workflow to be manually triggered from the UI
   push:
-    branches: [ 'main' ]
+    branches: [main]
     paths:
       - '**/*.css'
   pull_request:
-    branches: [ 'main' ]
+    branches: [main]
     paths:
       - '**/*.css'
 

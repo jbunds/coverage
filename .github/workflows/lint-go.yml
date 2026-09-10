@@ -5,11 +5,11 @@ name: Go lint
 
 on:
   push:
-    branches: [ 'main' ]
+    branches: [main]
     paths:
       - '**/*.go'
   pull_request:
-    branches: [ 'main' ]
+    branches: [main]
     paths:
       - '**/*.go'
   workflow_dispatch: # allows this workflow to be manually triggered from the UI

@@ -20,26 +20,26 @@ on:
     inputs:
       go-mod:
         type:        string
-        description: 'path to the root go.mod file'
+        description: path to the root go.mod file
         required:    false
-        default:     'go.mod'
+        default:     go.mod
       coverage-threshold:
         type:        string
-        description: 'coverage threshold percentage'
+        description: coverage threshold percentage
         required:    false
-        default:     '0'
+        default:     0
       coverage-report-path:
         type:        string
-        description: 'path to the root of the Go coverage report'
+        description: path to the root of the Go coverage report
         required:    false
-        default:     'coverage_report'
+        default:     coverage_report
   push:
-    branches: ['main']
+    branches: [main]
     paths:
       - '**/*.go'
 
 concurrency: # avoid races
-  group:              'pages'
+  group:              pages
   cancel-in-progress: false
 
 jobs:
@@ -49,17 +49,16 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Go coverage report
-        uses: "jbunds/coverage@v1"
+        uses: jbunds/coverage@v1
         with:
-          go-version-file:      ${{ inputs.go-mod               || 'go.mod'          }}
-          go-mod:               ${{ inputs.go-mod               || 'go.mod'          }}
-          coverage-threshold:   ${{ inputs.coverage-threshold   || '0'               }}
-          coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
+          go-mod:               ${{ inputs.go-mod               || go.mod          }}
+          coverage-threshold:   ${{ inputs.coverage-threshold   || 0               }}
+          coverage-report-path: ${{ inputs.coverage-report-path || coverage_report }}
 
       - name: upload to GitHub Pages # https://jbunds.github.io/coverage/
-        uses: "jbunds/coverage/.github/actions/upload-pages@v1"
+        uses: jbunds/coverage/.github/actions/upload-pages@v1
         with:
-          coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
+          coverage-report-path: ${{ inputs.coverage-report-path || coverage_report }}
 
   deploy:
     runs-on: ubuntu-latest
