@@ -20,12 +20,13 @@ func TestIntegrationTest(t *testing.T) {
 		profiles: profiles,
 	}
 
-	if err = rg.getModName(t.Context(), "go.mod"); err != nil { t.Fatal(err) }
+	if err := rg.getModName(t.Context(), "go.mod"); err != nil { t.Fatal(err) }
 
 	// hack to avoid calling writeStyleCSS which requires rg.embeddedFiles
-	if err = copyFile("css/style.css", filepath.Join(tmpDir, "style.css")); err != nil { t.Fatal(err) }
+	// the style.css file is copied purely as a convenience measure to aid in debugging CSS rendering errors
+	if err := copyFile("css/style.css", filepath.Join(tmpDir, "style.css")); err != nil { t.Fatal(err) }
 
-	if err := rg.writeCovHTMLFiles(t.Context(), io.Discard, "style.css");  err != nil { t.Fatal(err) }
+	if err := rg.writeCovHTMLFiles(t.Context(), io.Discard,   "style.css");  err != nil { t.Fatal(err) }
 
 	goldenFiles := []string{
 		"flags.go.html",
