@@ -127,12 +127,12 @@ a:hover {
 .line {
   display:           block;
   position:          relative;
-  margin-left:       3.25rem; /* 2.5rem gutter + 0.75rem gap */
+  margin-left:       3.5rem; /* 2.5rem gutter + 1rem gap */
   tab-size:          4;
   font-size:         medium;
   line-height:       1.5;
   height:            1.5em;
-  white-space:       pre;     /* preserves all whitespace in the original source code */
+  white-space:       pre;    /* preserves all whitespace in the original source code */
   counter-increment: line;
 }
 
@@ -155,7 +155,7 @@ a:hover {
 
 .line::before {
   position:     absolute;
-  left:         -3.25rem;
+  left:         -3.5rem;
   content:      counter(line);
   width:        2.5rem; /* gutter */
   text-align:   right;
@@ -166,7 +166,7 @@ a:hover {
 }
 
 body:not(.line-numbers) .line {
-  margin-left: 0;
+  margin-left: 0.25rem;
 }
 
 body:not(.line-numbers) .line::before {
