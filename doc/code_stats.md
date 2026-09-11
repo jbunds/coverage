@@ -9,67 +9,64 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Sat May  9 22:38:47 CEST 2026
+Fri Sep 11 02:04:35 CEST 2026
 ```
 
 ```
 $ scc --exclude-dir .git --include-ext go,css,js,mjs,yml,yaml --dryness --by-file --wide
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Language                              Files     Lines   Blanks  Comments     Code Complexity Complexity/Lines
+Language                    Files        Lines     Blanks   Comments         Code Complexity Complexity/Lines
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-YAML                                     12       436       51        36      349          0             0.00
-(ULOC)                                            275
+YAML                           11          481         48         35          398          0             0.00
+(ULOC)                                     313
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-.github/workflows/pages.yml                        82        7        13       62          0             0.00
-action.yml                                         64        7         8       49          0             0.00
-.github/workflows/test-go.yml                      50        9         1       40          0             0.00
-.pre-commit-config.yaml                            37        1         2       34          0             0.00
-.github/workflows/lint-go.yml                      35        7         2       26          0             0.00
-.github/actions/upload-pages/action.yml            30        5         6       19          0             0.00
-.github/workflows/lint-js.yml                      26        6         0       20          0             0.00
-.github/workflows/lint-css.yml                     26        3         0       23          0             0.00
-~rkflows/validate-actions-and-workflows.yml        24        2         0       22          0             0.00
-.golangci.yml                                      23        1         2       20          0             0.00
-.github/dependabot.yml                             20        1         1       18          0             0.00
-.github/actions/setup-node/action.yml              19        2         1       16          0             0.00
+.golangci.yml                              107          1          2          104          0             0.00
+.github/workflows/pages.yml                 76          7         13           56          0             0.00
+action.yml                                  60          7          8           45          0             0.00
+.github/workflows/test-go.yml               50          9          1           40          0             0.00
+.pre-commit-config.yaml                     38          1          2           35          0             0.00
+.github/workflows/lint-go.yml               35          7          2           26          0             0.00
+~/actions/upload-pages/action.yml           30          5          6           19          0             0.00
+~lidate-actions-and-workflows.yml           24          2          0           22          0             0.00
+.github/workflows/lint-css.yml              23          3          0           20          0             0.00
+.github/workflows/lint-js.yml               22          5          0           17          0             0.00
+.github/dependabot.yml                      16          1          1           14          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-CSS                                       6       768      114         3      651          0             0.00
-(ULOC)                                            168
+Go                              7        2,448        231         93        2,124        344            16.20
+(ULOC)                                   1,362
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-foo/style.css                                     137       18         0      119          0             0.00
-css/style.css                                     137       18         0      119          0             0.00
-out/style.css                                     137       18         0      119          0             0.00
-foo/tree.css                                      119       20         1       98          0             0.00
-css/tree.css                                      119       20         1       98          0             0.00
-out/tree.css                                      119       20         1       98          0             0.00
+main.go                                    881        142         74          665        183            27.52
+main_test.go                               787         26          2          759         55             7.25
+tree.go                                    284         45         13          226         55            24.34
+tree_test.go                               259          4          0          255          6             2.35
+flags_test.go                              143          3          0          140         15            10.71
+integration_test.go                         53          9          2           42         21            50.00
+flags.go                                    41          2          2           37          9            24.32
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Go                                        6      2191      214        85     1892        342           111.32
-(ULOC)                                           1219
+CSS                             5          760        106          2          652          0             0.00
+(ULOC)                                     197
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-main_test.go                                      738       32         2      704         85            12.07
-main.go                                           728      125        68      535        150            28.04
-tree.go                                           284       45        13      226         55            24.34
-tree_test.go                                      258        7         0      251         28            11.16
-flags_test.go                                     143        3         0      140         15            10.71
-flags.go                                           40        2         2       36          9            25.00
+style.css                                  174         22          0          152          0             0.00
+cover/style.css                            174         22          0          152          0             0.00
+css/style.css                              174         22          0          152          0             0.00
+cover/tree.css                             119         20          1           98          0             0.00
+css/tree.css                               119         20          1           98          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-JavaScript                                5       335       33        51      251          9            20.03
-(ULOC)                                            249
+JavaScript                      3          315         32         50          233         14             6.01
+(ULOC)                                     232
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-demo/render.js                                    188       24        39      125          0             0.00
-demo/helpers.js                                   109        5        11       93          7             7.53
-validate.js                                        19        3         0       16          2            12.50
-demo/eslint.config.js                              15        1         0       14          0             0.00
-stylelint.config.mjs                                4        0         1        3          0             0.00
+demo/render.js                             187         24         39          124          0             0.00
+demo/helpers.js                            109          5         11           93         12            12.90
+validate.js                                 19          3          0           16          2            12.50
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                                    29      3730      412       175     3143        351           131.34
+Total                          26        4,004        417        180        3,407        358            10.51
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Unique Lines of Code (ULOC)                      1904
-DRYness %                                        0.51
+Unique Lines of Code (ULOC)              2,097
+DRYness %                                 0.52
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $89,909
-Estimated Schedule Effort (organic) 5.51 months
-Estimated People Required (organic) 1.45
-Processed 113002 bytes, 0.113 megabytes (SI)
+Estimated Cost to Develop (organic) $97,866
+Estimated Schedule Effort (organic) 5.69 months
+Estimated People Required (organic) 1.53
+Processed 123,559 bytes, 0.124 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```
