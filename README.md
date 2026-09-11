@@ -134,6 +134,8 @@ The well-known and relatively large (500k+ LoC) [Kubernetes][k8s] project was ch
 
 The motivation for the `coverage` module was to create a relatively minimal alternative to the default HTML interface produced by `go tool cover -html <coverage profile filename> -o <html filename>`, with a simple and intuitive UI, and with minimal JavaScript (83 lines total as of this writing, to implement the functionality of the toggle buttons).
 
+[`r`'s opinion](https://github.com/golang/go/issues/25368#issuecomment-393720254)
+
 ##### Prior Art
 
 The CSS code was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it clearly still needs to be polished. But I am definitely _not_ a CSS expert, and it fulfills the required behavior as-is.

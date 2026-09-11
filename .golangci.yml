@@ -61,10 +61,12 @@ linters:
             - os
             - os/signal
             - path/filepath
+            - regexp
             - runtime
             - slices
             - strconv
             - strings
+            - sync
             - sync/atomic
             - syscall
             - testing
@@ -102,6 +104,7 @@ linters:
             - io
             - os
             - path/filepath
+            - strings
             - testing
             - github.com/google/go-cmp/cmp
             - golang.org/x/tools/cover

@@ -32,10 +32,12 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"testing"
@@ -550,6 +552,13 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	activeClass := ""    // tracks the CSS class of the coverage block ("hit" or "miss")
 	spanIsOpen  := false // tracks if a <span> tag in the output buffer is currently open
 
+	// TODO(jbunds): refactor and optimize the remainder of this method:
+	//
+	//   1. factor out duplicated code into reusable functions
+	//
+	//   2. devise an optimal processing algorithm that requires
+	//      the fewest possible passes over the source file
+
 	for _, b := range profile.Boundaries(src) {
 		chunk := src[pos:b.Offset]
 
@@ -608,7 +617,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 		pos = b.Offset
 	}
 
-	// handle the final remaining slice of the source file
+	// process the final slice of the source file
 	remaining := src[pos:]
 	if activeClass != "" && len(remaining) > 0 {
 		parts := bytes.Split(remaining, []byte("\n"))
@@ -643,33 +652,37 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 		buf.WriteString("</span>")
 	}
 
-	hitPrefix  := []byte(`<span class="hit">`)
-	missPrefix := []byte(`<span class="miss">`)
+	hitPrefix  := `<span class="hit">`
+	missPrefix := `<span class="miss">`
 
 	// post-processing to prepend <div class="line"> tags to every line of
-	// source so the dynamic line counter CSS works as expected:
+	// source so the dynamic line `counter-increment`-based CSS works
 	//
-  //   .line         { counter-increment: line }
-	//   .line::before { content: counter(line)  }
+	// this also works around certain `go tool cover` bugs such as
+	// https://github.com/golang/go/issues/22545
+	//
+	// TODO(jbunds); properly fix this ugly hack
 	for i, line := range bytes.Split(bytes.TrimRight(buf.Bytes(), "\n"), []byte{'\n'}) {
 		if i > 0 { ew.write("\n") }
+
 		trimLen   := len(line) - len(bytes.TrimLeft(line, " \t"))
-		leadingWS := line[:trimLen]
-		remainder := line[trimLen:]
+		leadingWS := string(line[:trimLen])
+		remainder := string(line[trimLen:])
+
 		ew.write(`<div class="line">`)
 		switch {
-		case bytes.HasPrefix(remainder, hitPrefix):
-			ew.write(`<span class="hit">`)
-			ew.write(string(leadingWS))
+		case strings.HasPrefix(remainder, hitPrefix):
+			ew.write(hitPrefix)
+			ew.write(leadingWS)
 			ew.write(`</span>`)
-			ew.write(string(remainder))
-		case bytes.HasPrefix(remainder, missPrefix):
-			ew.write(`<span class="miss">`)
-			ew.write(string(leadingWS))
+			ew.write(relocateClosingSpanTag(remainder))
+		case strings.HasPrefix(remainder, missPrefix):
+			ew.write(missPrefix)
+			ew.write(leadingWS)
 			ew.write(`</span>`)
-			ew.write(string(remainder))
+			ew.write(relocateClosingSpanTag(remainder))
 		default:
-			ew.write(string(line))
+			ew.write(relocateClosingSpanTag(string(line)))
 		}
 		ew.write(`</div>`)
 	}
@@ -678,6 +691,32 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 
 	writePostamble(ew)
 	return ew.err()
+}
+
+// nolint:gochecknoglobals // i will clean this up later
+var compiledPat = sync.OnceValue(func() *regexp.Regexp {
+	// 1. (.*?\S) -> code up to the last non-whitespace character
+	// 2. (\s*)   -> any trailing whitespace
+	// 3. /       -> 1st char of comment delimiter
+	// 4. (/[*])  -> 2nd char of comment delimiter ('/' or '*')
+	// 5. ([^<]+) -> comment text
+	// 6. </span> -> closing </span> tag
+	// 7. (.*)    -> rest of line
+	return regexp.MustCompile(`(.*?\S)(\s*)/(/|\*)([^<]+)</span>(.*)`)
+})
+
+func relocateClosingSpanTag(text string) string {
+	subs := compiledPat().FindStringSubmatch(text)
+	if len(subs) != 6 {
+		return text
+	}
+	return subs[1]   + // code up to the last non-whitespace character
+	       `</span>` + // closing </span> tag
+	       subs[2]   + // any trailing whitespace
+	       `/`       + // 1st char of comment delimiter
+	       subs[3]   + // 2nd char of comment delimiter ('/' or '*')
+	       subs[4]   + // comment text
+	       subs[5]     // rest of line
 }
 
 // writePreamble writes the preamble portion of the HTML content common to every Go source HTML file.

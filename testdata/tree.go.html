@@ -78,8 +78,8 @@
 <div class="line">func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (string, error) {</div>
 <div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return &#34;&#34;, err }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	</span><span class="hit">pkgRelRoot, _, _ := strings.Cut(tb.modName, &#34;/&#34;)          // module&#39;s top-level namspace</span></div>
-<div class="line"><span class="hit"></span><span class="hit">	scanRoot         := filepath.Join(tb.outRoot, pkgRelRoot) // physical directory entry point for recursive scan</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">pkgRelRoot, _, _ := strings.Cut(tb.modName, &#34;/&#34;)</span>          // module&#39;s top-level namespace</div>
+<div class="line"><span class="hit"></span><span class="hit">	scanRoot         := filepath.Join(tb.outRoot, pkgRelRoot)</span> // physical directory entry point for recursive scan</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	</span><span class="hit">entries, err := tb.fsys.ReadDir(ctx, scanRoot)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">	if err != nil </span>{ <span class="hit">return &#34;&#34;, err }</span></div>
@@ -93,7 +93,7 @@
 <div class="line"><span class="hit"></span><span class="hit">	remainingBudget := initialBudget</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	</span><span class="hit">group, gCtx := errgroup.WithContext(ctx)</span></div>
-<div class="line"><span class="hit"></span><span class="hit">	group.SetLimit(runtime.NumCPU()) // saturate available CPU threads for maximum throughput while bounding memory used by concurrent HTML buffers</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	group.SetLimit(runtime.NumCPU())</span> // saturate available CPU threads for maximum throughput while bounding memory used by concurrent HTML buffers</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	</span><span class="hit">for i, entry := range entries </span>{</div>
 <div class="line"><span class="hit">		</span><span class="hit">if err := gCtx.Err(); err != nil </span>{ <span class="miss">break</span> }</div>
@@ -137,13 +137,13 @@
 <div class="line"><span class="hit"></span><span class="hit">	isTargetFile := !isDir &amp;&amp; strings.HasSuffix(st.entry.Name(), &#34;.go.html&#34;)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	</span><span class="hit">if !isDir &amp;&amp; !isTargetFile </span>{</div>
-<div class="line"><span class="hit">		</span><span class="hit">st.prog.Report(st.budget, &#34;&#34;) // ensure progress ultimately adds up to 100% by consuming budget even if a file is not processed</span></div>
+<div class="line"><span class="hit">		</span><span class="hit">st.prog.Report(st.budget, &#34;&#34;)</span> // ensure progress ultimately adds up to 100% by consuming budget even if a file is not processed</div>
 <div class="line"><span class="hit"></span><span class="hit">		return entryResult{}, nil</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	</span><span class="hit">srcBasename := strings.TrimSuffix(st.entry.Name(), &#34;.html&#34;)  // basename of the subdirectory or source file</span></div>
-<div class="line"><span class="hit"></span><span class="hit">	pkgPath     := filepath.Join(st.parentPath, srcBasename)     // package-normalized path used as the key for coverage map lookup</span></div>
-<div class="line"><span class="hit"></span><span class="hit">	relHTMLPath := filepath.Join(st.parentPath, st.entry.Name()) // physical path relative to tb.outRoot</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">srcBasename := strings.TrimSuffix(st.entry.Name(), &#34;.html&#34;)</span>  // basename of the subdirectory or source file</div>
+<div class="line"><span class="hit"></span><span class="hit">	pkgPath     := filepath.Join(st.parentPath, srcBasename)</span>     // package-normalized path used as the key for coverage map lookup</div>
+<div class="line"><span class="hit"></span><span class="hit">	relHTMLPath := filepath.Join(st.parentPath, st.entry.Name())</span> // physical path relative to tb.outRoot</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	</span><span class="hit">width := int64(st.indent + len(srcBasename))</span></div>
 <div class="line"><span class="hit"></span><span class="hit">	if isDir </span>{ <span class="hit">width += 2 }</span> // account for the folder icon emoji</div>
@@ -169,7 +169,7 @@
 <div class="line"><span class="hit">			</span><span class="hit">for i, subDirEntry := range subDirEntries </span>{</div>
 <div class="line"><span class="hit">				</span><span class="hit">subDirBudget := childBudget</span></div>
 <div class="line"><span class="hit"></span><span class="hit">				if i == len(subDirEntries) - 1 </span>{</div>
-<div class="line"><span class="hit">					</span><span class="hit">subDirBudget = remainingBudget // the last child takes on the remainder</span></div>
+<div class="line"><span class="hit">					</span><span class="hit">subDirBudget = remainingBudget</span> // the last child takes on the remainder</div>
 <div class="line">				}</div>
 <div class="line"><span class="hit">				</span><span class="hit">remainingBudget -= subDirBudget</span></div>
 <div class="line"></div>
@@ -189,7 +189,7 @@
 <div class="line"><span class="hit"></span><span class="hit">				dirStatements += res.total</span></div>
 <div class="line">			}</div>
 <div class="line">		} else {</div>
-<div class="line"><span class="miss">			</span><span class="miss">st.prog.Report(st.budget, pkgPath) // inform the progress tracker that pkgPath has been processed</span></div>
+<div class="line"><span class="miss">			</span><span class="miss">st.prog.Report(st.budget, pkgPath)</span> // inform the progress tracker that pkgPath has been processed</div>
 <div class="line">		}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">		</span><span class="hit">hb := &amp;htmlBuilder{</span></div>
@@ -207,7 +207,7 @@
 <div class="line"><span class="hit"></span><span class="hit">			total:   dirStatements}, nil</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	</span><span class="hit">st.prog.Report(st.budget, pkgPath) // inform the progress tracker that pkgPath has been processed</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">st.prog.Report(st.budget, pkgPath)</span> // inform the progress tracker that pkgPath has been processed</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	</span><span class="hit">cov     := tb.cov[pkgPath]</span></div>
 <div class="line"><span class="hit"></span><span class="hit">	percent := 0.0</span></div>
