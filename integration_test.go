@@ -66,10 +66,8 @@ func TestIntegrationTest(t *testing.T) {
 			gotLines   := strings.Split(strings.TrimSuffix(string( got), "\n"), "\n")
 
 			if !cmp.Equal(wantLines, gotLines) {
-				if os.Getenv("GITHUB_ACTIONS") != "true" && // https://docs.github.com/actions/reference/workflows-and-actions/variables
-				   os.Getenv("CI"            ) != "true" {
-					cmd := exec.Command("meld", wantPath, gotPath) // #nosec G204
-					_ = cmd.Run()
+				if isTerm(os.Stdout) {
+					_ = exec.Command("meld", wantPath, gotPath).Run() // #nosec G204
 				}
 				var rep reporter
 				cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep))
