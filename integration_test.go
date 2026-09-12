@@ -13,6 +13,13 @@ import (
 	"golang.org/x/tools/cover"
 )
 
+// workflow required when modifying {flags,main,tree}.go:
+//
+//   go test -race -skip TestIntegrationTest -coverprofile cov.out ./...
+//   go run . -gomod go.mod -coverprofile cov.out -path cover
+//   cp cov.out testdata
+//   cp cover/github.com/jbunds/coverage/main.go.html testdata
+
 func TestIntegrationTest(t *testing.T) {
 	t.Parallel()
 

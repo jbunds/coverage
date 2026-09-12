@@ -352,9 +352,9 @@ github.com/jbunds/coverage/tree.go:140.2,141.11 5 8
 github.com/jbunds/coverage/tree.go:141.13,141.25 1 3
 github.com/jbunds/coverage/tree.go:142.2,142.6 1 8
 github.com/jbunds/coverage/tree.go:143.3,144.49 2 8
-github.com/jbunds/coverage/tree.go:144.51,144.56 1 2
-github.com/jbunds/coverage/tree.go:145.3,145.49 1 6
-github.com/jbunds/coverage/tree.go:145.51,145.56 1 6
+github.com/jbunds/coverage/tree.go:144.51,144.56 1 1
+github.com/jbunds/coverage/tree.go:145.3,145.49 1 7
+github.com/jbunds/coverage/tree.go:145.51,145.56 1 7
 github.com/jbunds/coverage/tree.go:148.2,148.11 1 8
 github.com/jbunds/coverage/tree.go:149.3,152.17 4 3
 github.com/jbunds/coverage/tree.go:152.19,152.46 1 1

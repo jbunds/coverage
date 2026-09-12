@@ -557,7 +557,7 @@
 <div class="line"></div>
 <div class="line"><span class="hit">	</span><span class="hit">var buf bytes.Buffer</span></div>
 <div class="line"><span class="hit"></span><span class="hit">	pos         := 0</span></div>
-<div class="line"><span class="hit"></span><span class="hit">	activeClass := &#34;&#34;</span>    // tracks the CSS class of the coverage block (&#34;hit&#34; or &#34;miss&#34;)</div>
+<div class="line"><span class="hit"></span><span class="hit">	activeClass := &#34;&#34;    // tracks the CSS class of the coverage block (&#34;hit&#34; or &#34;miss&#34;)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">	spanIsOpen  := false</span> // tracks if a &lt;span&gt; tag in the output buffer is currently open</div>
 <div class="line"></div>
 <div class="line">	// TODO(jbunds): refactor and optimize the remainder of this method:</div>
@@ -732,9 +732,9 @@
 <div class="line"><span class="hit">	</span><span class="hit">subs := spanShrinkPat().FindStringSubmatch(text)</span></div>
 <div class="line">	// ignore &#34;//&#34; and &#34;/*&#34; substrings nested within rune or string delimiters:</div>
 <div class="line"><span class="hit">	</span><span class="hit">if len(subs) != 6 || subs[2] == &#34;&#34;     &amp;&amp;</span>                                        // no trailing whitespace after the last non-whitespace char of source code</div>
-<div class="line"><span class="hit"></span><span class="hit">	   (strings.Contains(subs[1], &#34;&amp;#34;&#34;) &amp;&amp; strings.Contains(subs[4], &#34;&amp;#34;&#34;)) ||</span> // both tokens on either side of the comment delimiter contain &#34;</div>
-<div class="line"><span class="hit"></span><span class="hit">	   (strings.Contains(subs[1], &#34;&amp;#39;&#34;) &amp;&amp; strings.Contains(subs[4], &#34;&amp;#39;&#34;)) ||</span> // both tokens on either side of the comment delimiter contain &#39;</div>
-<div class="line"><span class="hit"></span><span class="hit">	   (strings.Contains(subs[1], &#34;&amp;#96;&#34;) &amp;&amp; strings.Contains(subs[4], &#34;&amp;#96;&#34;)) </span>{  // both tokens on either side of the comment delimiter contain `</div>
+<div class="line"><span class="hit"></span><span class="hit">	   (strings.Contains(subs[1], &#34;`&#34;    ) &amp;&amp; strings.Contains(subs[4], &#34;`&#34;    )) ||</span> // both tokens on either side of the comment delimiter contain `</div>
+<div class="line"><span class="hit"></span><span class="hit">	   (strings.Contains(subs[1], &#34;&amp;#34;&#34;) &amp;&amp; strings.Contains(subs[4], &#34;&amp;#34;&#34;)) || // both tokens on either side of the comment delimiter contain &#34;</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	   (strings.Contains(subs[1], &#34;&amp;#39;&#34;) &amp;&amp; strings.Contains(subs[4], &#34;&amp;#39;&#34;)) </span>{  // both tokens on either side of the comment delimiter contain &#39;</div>
 <div class="line"><span class="hit">		</span><span class="hit">return text</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="miss">	</span><span class="miss">return subs[1]   +</span> // HTML marked-up source code up to the last non-whitespace character</div>
@@ -816,7 +816,7 @@
 <div class="line"><span class="hit"></span><span class="hit">		colorRed   = &#34;\033[31m&#34;</span></div>
 <div class="line"><span class="hit"></span><span class="hit">	)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	</span><span class="hit">divider := strings.Repeat(&#34;—&#34;, maxPathLen + 9) + &#34;\n&#34;</span> // 9 == 2 spaces + len(&#34;100.00%&#34;)</div>
+<div class="line"><span class="hit">	</span><span class="hit">divider := strings.Repeat(&#34;—&#34;, maxPathLen + 9) + &#34;\n&#34; // 9 == 2 spaces + len(&#34;100.00%&#34;)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	</span><span class="hit">ew := newErrorWriter(w)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">	ew.write(&#34;File&#34;)</span></div>
