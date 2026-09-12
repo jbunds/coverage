@@ -676,29 +676,27 @@ func writeDivWrappedLines(ew stickyWriter, buf bytes.Buffer) {
 	// tags so the dynamic line `counter-increment`-based CSS functions
 	//
 	// TODO(jbunds); implement a proper fix
-	for i, line := range bytes.Split(bytes.TrimRight(buf.Bytes(), "\n"), []byte{'\n'}) {
-		if i > 0 { ew.write("\n") }
-
+	for line := range bytes.SplitSeq(bytes.TrimRight(buf.Bytes(), "\n"), []byte{'\n'}) {
 		trimLen   := len(line) - len(bytes.TrimLeft(line, " \t"))
-		leadingWS := string(line[:trimLen])
-		remainder := string(line[trimLen:])
+		leadingWS := string(line[:trimLen ])
+		remainder := string(line[ trimLen:])
 
 		ew.write(`<div class="line">`)
 		switch {
 		case strings.HasPrefix(remainder, hitSpan):
 			ew.write(hitSpan)
 			ew.write(leadingWS)
-			ew.write(`</span>`)
+			ew.write("</span>")
 			ew.write(shrinkSpans(remainder))
 		case strings.HasPrefix(remainder, missSpan):
 			ew.write(missSpan)
 			ew.write(leadingWS)
-			ew.write(`</span>`)
+			ew.write("</span>")
 			ew.write(shrinkSpans(remainder))
 		default:
 			ew.write(shrinkSpans(string(line)))
 		}
-		ew.write(`</div>`)
+		ew.write("</div>\n")
 	}
 	ew.write("\n")
 }
@@ -730,9 +728,9 @@ func shrinkSpans(text string) string {
 		return text
 	}
 	return subs[1]   + // HTML marked-up source code up to the last non-whitespace character
-	       `</span>` + // closing </span> tag
+	       "</span>" + // closing </span> tag
 	       subs[2]   + // any trailing whitespace
-	       `/`       + // 1st char of comment delimiter
+	       "/"       + // 1st char of comment delimiter
 	       subs[3]   + // 2nd char of comment delimiter ('/' or '*')
 	       subs[4]   + // comment text
 	       subs[5]     // rest of line

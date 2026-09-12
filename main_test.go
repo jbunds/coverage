@@ -420,6 +420,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				`<div class="line">	// yet another line comment</div>`,
 				`<div class="line"></div>`,
 				`<div class="line">}</div>`,
+				``,
 				`<script>`,
 				`try {`,
 				`  const parentTheme = window.parent.document.documentElement.getAttribute('theme');`,

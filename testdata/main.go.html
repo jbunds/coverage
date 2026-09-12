@@ -684,29 +684,27 @@
 <div class="line">	// tags so the dynamic line `counter-increment`-based CSS functions</div>
 <div class="line">	//</div>
 <div class="line">	// TODO(jbunds); implement a proper fix</div>
-<div class="line"><span class="hit">	</span><span class="hit">for i, line := range bytes.Split(bytes.TrimRight(buf.Bytes(), &#34;\n&#34;), []byte{&#39;\n&#39;}) </span>{</div>
-<div class="line"><span class="hit">		</span><span class="hit">if i &gt; 0 </span>{ <span class="hit">ew.write(&#34;\n&#34;) }</span></div>
-<div class="line"></div>
+<div class="line"><span class="hit">	</span><span class="hit">for line := range bytes.SplitSeq(bytes.TrimRight(buf.Bytes(), &#34;\n&#34;), []byte{&#39;\n&#39;}) </span>{</div>
 <div class="line"><span class="hit">		</span><span class="hit">trimLen   := len(line) - len(bytes.TrimLeft(line, &#34; \t&#34;))</span></div>
-<div class="line"><span class="hit"></span><span class="hit">		leadingWS := string(line[:trimLen])</span></div>
-<div class="line"><span class="hit"></span><span class="hit">		remainder := string(line[trimLen:])</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		leadingWS := string(line[:trimLen ])</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		remainder := string(line[ trimLen:])</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">		</span><span class="hit">ew.write(`&lt;div class=&#34;line&#34;&gt;`)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">		switch </span>{</div>
 <div class="line">		case strings.HasPrefix(remainder, hitSpan):</div>
 <div class="line"><span class="hit">			</span><span class="hit">ew.write(hitSpan)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">			ew.write(leadingWS)</span></div>
-<div class="line"><span class="hit"></span><span class="hit">			ew.write(`&lt;/span&gt;`)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			ew.write(&#34;&lt;/span&gt;&#34;)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">			ew.write(shrinkSpans(remainder))</span></div>
 <div class="line">		case strings.HasPrefix(remainder, missSpan):</div>
 <div class="line"><span class="miss">			</span><span class="miss">ew.write(missSpan)</span></div>
 <div class="line"><span class="miss"></span><span class="miss">			ew.write(leadingWS)</span></div>
-<div class="line"><span class="miss"></span><span class="miss">			ew.write(`&lt;/span&gt;`)</span></div>
+<div class="line"><span class="miss"></span><span class="miss">			ew.write(&#34;&lt;/span&gt;&#34;)</span></div>
 <div class="line"><span class="miss"></span><span class="miss">			ew.write(shrinkSpans(remainder))</span></div>
 <div class="line">		default:</div>
 <div class="line"><span class="hit">			</span><span class="hit">ew.write(shrinkSpans(string(line)))</span></div>
 <div class="line">		}</div>
-<div class="line"><span class="hit">		</span><span class="hit">ew.write(`&lt;/div&gt;`)</span></div>
+<div class="line"><span class="hit">		</span><span class="hit">ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="hit">	</span><span class="hit">ew.write(&#34;\n&#34;)</span></div>
 <div class="line">}</div>
@@ -738,9 +736,9 @@
 <div class="line"><span class="hit">		</span><span class="hit">return text</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="miss">	</span><span class="miss">return subs[1]   +</span> // HTML marked-up source code up to the last non-whitespace character</div>
-<div class="line"><span class="miss"></span><span class="miss">	       `&lt;/span&gt;` +</span> // closing &lt;/span&gt; tag</div>
+<div class="line"><span class="miss"></span><span class="miss">	       &#34;&lt;/span&gt;&#34; +</span> // closing &lt;/span&gt; tag</div>
 <div class="line"><span class="miss"></span><span class="miss">	       subs[2]   +</span> // any trailing whitespace</div>
-<div class="line"><span class="miss"></span><span class="miss">	       `/`       +</span> // 1st char of comment delimiter</div>
+<div class="line"><span class="miss"></span><span class="miss">	       &#34;/&#34;       +</span> // 1st char of comment delimiter</div>
 <div class="line"><span class="miss"></span><span class="miss">	       subs[3]   +</span> // 2nd char of comment delimiter (&#39;/&#39; or &#39;*&#39;)</div>
 <div class="line"><span class="miss"></span><span class="miss">	       subs[4]   +</span> // comment text</div>
 <div class="line"><span class="miss"></span><span class="miss">	       subs[5]</span>     // rest of line</div>
@@ -945,6 +943,7 @@
 <div class="line"><span class="miss">	</span><span class="miss">if f, ok := w.(interface{ Fd() uintptr }); ok </span>{ <span class="miss">return int(f.Fd()) }</span></div>
 <div class="line"><span class="miss">	</span><span class="miss">return -1</span></div>
 <div class="line">}</div>
+
 <script>
 try {
   const parentTheme = window.parent.document.documentElement.getAttribute('theme');
