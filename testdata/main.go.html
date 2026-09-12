@@ -168,7 +168,7 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func (lfs *localFS) Open(name string) (fs.File, error) {</div>
-<div class="line"><span class="miss">	</span><span class="miss">return os.Open(filepath.Clean(name))</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">return os.Open(filepath.Clean(name))</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func (lfs *localFS) Create(ctx context.Context, name string) (io.WriteCloser, error) {</div>
@@ -177,8 +177,8 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func (lfs *localFS) MkdirAll(ctx context.Context, path string, perm fs.FileMode) error {</div>
-<div class="line"><span class="miss">	</span><span class="miss">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
-<div class="line"><span class="miss">	</span><span class="miss">return os.MkdirAll(path, perm)</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">return os.MkdirAll(path, perm)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func (lfs *localFS) ReadDir(ctx context.Context, name string) ([]fs.DirEntry, error) {</div>
@@ -187,13 +187,13 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func (lfs *localFS) ReadFile(ctx context.Context, name string) ([]byte, error) {</div>
-<div class="line"><span class="miss">	</span><span class="miss">if err := ctx.Err(); err != nil </span>{ <span class="miss">return nil, err }</span></div>
-<div class="line"><span class="miss">	</span><span class="miss">return fs.ReadFile(lfs, name)</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return nil, err }</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">return fs.ReadFile(lfs, name)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func (lfs *localFS) WriteFile(ctx context.Context, name string, data []byte, perm fs.FileMode) error {</div>
-<div class="line"><span class="miss">	</span><span class="miss">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
-<div class="line"><span class="miss">	</span><span class="miss">return os.WriteFile(name, data, perm)</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">if err := ctx.Err(); err != nil </span>{ <span class="miss">return err }</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">return os.WriteFile(name, data, perm)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// wraps inifile.IniConfig.Value for test injection.</div>
@@ -581,10 +581,10 @@
 <div class="line"><span class="hit">					</span><span class="hit">buf.WriteString(&#34;\n&#34;)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">					</span><span class="hit">if len(part) &gt; 0 </span>{ // reopen the span on the new line only if this line segment contains text</div>
-<div class="line"><span class="miss">						</span><span class="miss">buf.WriteString(`&lt;span class=&#34;`)</span></div>
-<div class="line"><span class="miss"></span><span class="miss">						buf.WriteString(activeClass)</span></div>
-<div class="line"><span class="miss"></span><span class="miss">						buf.WriteString(`&#34;&gt;`)</span></div>
-<div class="line"><span class="miss"></span><span class="miss">						spanIsOpen = true</span></div>
+<div class="line"><span class="hit">						</span><span class="hit">buf.WriteString(`&lt;span class=&#34;`)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">						buf.WriteString(activeClass)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">						buf.WriteString(`&#34;&gt;`)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">						spanIsOpen = true</span></div>
 <div class="line">					}</div>
 <div class="line">				} else <span class="hit">if !spanIsOpen &amp;&amp; len(part) &gt; 0 </span>{ // if the span was closed by a previous empty line segment, reopen it if this part contains text</div>
 <div class="line"><span class="miss">					</span><span class="miss">buf.WriteString(`&lt;span class=&#34;`)</span></div>
@@ -616,8 +616,8 @@
 <div class="line"><span class="hit"></span><span class="hit">			spanIsOpen = true</span></div>
 <div class="line">		} else {          // end of a coverage block</div>
 <div class="line"><span class="hit">			</span><span class="hit">if spanIsOpen </span>{ // close the open &lt;span&gt;</div>
-<div class="line"><span class="miss">				</span><span class="miss">buf.WriteString(&#34;&lt;/span&gt;&#34;)</span></div>
-<div class="line"><span class="miss"></span><span class="miss">				spanIsOpen = false</span></div>
+<div class="line"><span class="hit">				</span><span class="hit">buf.WriteString(&#34;&lt;/span&gt;&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">				spanIsOpen = false</span></div>
 <div class="line">			}</div>
 <div class="line"><span class="hit">			</span><span class="hit">activeClass = &#34;&#34;</span></div>
 <div class="line">		}</div>
@@ -697,10 +697,10 @@
 <div class="line"><span class="hit"></span><span class="hit">			ew.write(&#34;&lt;/span&gt;&#34;)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">			ew.write(shrinkSpans(remainder))</span></div>
 <div class="line">		case strings.HasPrefix(remainder, missSpan):</div>
-<div class="line"><span class="miss">			</span><span class="miss">ew.write(missSpan)</span></div>
-<div class="line"><span class="miss"></span><span class="miss">			ew.write(leadingWS)</span></div>
-<div class="line"><span class="miss"></span><span class="miss">			ew.write(&#34;&lt;/span&gt;&#34;)</span></div>
-<div class="line"><span class="miss"></span><span class="miss">			ew.write(shrinkSpans(remainder))</span></div>
+<div class="line"><span class="hit">			</span><span class="hit">ew.write(missSpan)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			ew.write(leadingWS)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			ew.write(&#34;&lt;/span&gt;&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			ew.write(shrinkSpans(remainder))</span></div>
 <div class="line">		default:</div>
 <div class="line"><span class="hit">			</span><span class="hit">ew.write(shrinkSpans(string(line)))</span></div>
 <div class="line">		}</div>
@@ -735,13 +735,13 @@
 <div class="line"><span class="hit"></span><span class="hit">	   (strings.Contains(subs[1], &#34;&amp;#39;&#34;) &amp;&amp; strings.Contains(subs[4], &#34;&amp;#39;&#34;)) </span>{  // both tokens on either side of the comment delimiter contain &#39;</div>
 <div class="line"><span class="hit">		</span><span class="hit">return text</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="miss">	</span><span class="miss">return subs[1]   +</span> // HTML marked-up source code up to the last non-whitespace character</div>
-<div class="line"><span class="miss"></span><span class="miss">	       &#34;&lt;/span&gt;&#34; +</span> // closing &lt;/span&gt; tag</div>
-<div class="line"><span class="miss"></span><span class="miss">	       subs[2]   +</span> // any trailing whitespace</div>
-<div class="line"><span class="miss"></span><span class="miss">	       &#34;/&#34;       +</span> // 1st char of comment delimiter</div>
-<div class="line"><span class="miss"></span><span class="miss">	       subs[3]   +</span> // 2nd char of comment delimiter (&#39;/&#39; or &#39;*&#39;)</div>
-<div class="line"><span class="miss"></span><span class="miss">	       subs[4]   +</span> // comment text</div>
-<div class="line"><span class="miss"></span><span class="miss">	       subs[5]</span>     // rest of line</div>
+<div class="line"><span class="hit">	</span><span class="hit">return subs[1]   +</span> // HTML marked-up source code up to the last non-whitespace character</div>
+<div class="line"><span class="hit"></span><span class="hit">	       &#34;&lt;/span&gt;&#34; +</span> // closing &lt;/span&gt; tag</div>
+<div class="line"><span class="hit"></span><span class="hit">	       subs[2]   +</span> // any trailing whitespace</div>
+<div class="line"><span class="hit"></span><span class="hit">	       &#34;/&#34;       +</span> // 1st char of comment delimiter</div>
+<div class="line"><span class="hit"></span><span class="hit">	       subs[3]   +</span> // 2nd char of comment delimiter (&#39;/&#39; or &#39;*&#39;)</div>
+<div class="line"><span class="hit"></span><span class="hit">	       subs[4]   +</span> // comment text</div>
+<div class="line"><span class="hit"></span><span class="hit">	       subs[5]</span>     // rest of line</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// writePreamble writes the preamble portion of the HTML content common to every Go source HTML file.</div>
