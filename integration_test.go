@@ -13,19 +13,7 @@ import (
 	"golang.org/x/tools/cover"
 )
 
-// workflow required when modifying {flags,main,tree}.go:
-//
-//   go test -race -coverprofile cov.out -skip TestIntegrationTest ./...
-//   go run . -gomod go.mod -coverprofile cov.out -path cover
-//   cp cov.out testdata
-//   cp cover/github.com/jbunds/coverage/{flags,main,tree}.go.html testdata
-//
-//   go test -race -coverprofile cov.out ./...
-//   go run . -gomod go.mod -coverprofile cov.out -path cover
-//   cp cov.out testdata
-//   cp cover/github.com/jbunds/coverage/{flags,main,tree}.go.html testdata
-//
-// the changes to the testdata files should be reviewed before committing
+// integration_test.sh provides a convenience wrapper for this test
 
 func TestIntegrationTest(t *testing.T) {
 	t.Parallel()
@@ -46,8 +34,8 @@ func TestIntegrationTest(t *testing.T) {
 		name string
 	}{
 		{name: "flags.go"},
-		{name: "main.go"},
-		{name: "tree.go"},
+		{name: "main.go" },
+		{name: "tree.go" },
 	}
 
 	for _, tt := range tests {
