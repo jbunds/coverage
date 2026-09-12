@@ -705,13 +705,13 @@ func writeDivWrappedLines(ew stickyWriter, buf bytes.Buffer) {
 // https://blog.codinghorror.com/parsing-html-the-cthulhu-way/
 
 var spanShrinkPat = sync.OnceValue(func() *regexp.Regexp { // nolint:gochecknoglobals // i will clean this tech debt at a convenient time
-	// 1. (.*?\S) -> HTML marked-up source code up to the last non-whitespace character
-	// 2. (\s*)   -> any trailing whitespace
-	// 3. /       -> 1st char of comment delimiter
-	// 4. (/[*])  -> 2nd char of comment delimiter ('/' or '*')
-	// 5. ([^<]+) -> comment text
-	// 6. </span> -> closing </span> tag
-	// 7. (.*)    -> rest of line
+	// (.*?\S) -> HTML marked-up source code up to the last non-whitespace character
+	// (\s*)   -> any trailing whitespace
+	// /       -> 1st char of comment delimiter
+	// (/[*])  -> 2nd char of comment delimiter ('/' or '*')
+	// ([^<]+) -> comment text
+	// </span> -> closing </span> tag
+	// (.*)    -> rest of line
 	return regexp.MustCompile(`(.*?\S)(\s*)/(/|\*)([^<]+)</span>(.*)`)
 })
 
@@ -922,8 +922,8 @@ func filterArgs(args []string) []string {
 
 // isTerm determines if the specified writer is connected to a terminal.
 func isTerm(v any) bool {
-	if testing.Testing() { return false }
-	if os.Getenv("GITHUB_ACTIONS") == "true" || // https://docs.github.com/actions/reference/workflows-and-actions/variables
+	if testing.Testing()                     ||
+	   os.Getenv("GITHUB_ACTIONS") == "true" || // https://docs.github.com/actions/reference/workflows-and-actions/variables
 	   os.Getenv("CI"            ) == "true" { return false }
 	fd := getFD(v)
 	if fd < 0 { return false }

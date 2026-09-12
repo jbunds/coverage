@@ -15,6 +15,11 @@ import (
 
 // workflow required when modifying {flags,main,tree}.go:
 //
+//   go test -race -coverprofile cov.out -skip TestIntegrationTest ./...
+//   go run . -gomod go.mod -coverprofile cov.out -path cover
+//   cp cov.out testdata
+//   cp cover/github.com/jbunds/coverage/{flags,main,tree}.go.html testdata
+//
 //   go test -race -coverprofile cov.out ./...
 //   go run . -gomod go.mod -coverprofile cov.out -path cover
 //   cp cov.out testdata

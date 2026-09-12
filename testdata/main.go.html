@@ -713,13 +713,13 @@
 <div class="line">// https://blog.codinghorror.com/parsing-html-the-cthulhu-way/</div>
 <div class="line"></div>
 <div class="line">var spanShrinkPat = sync.OnceValue(func() *regexp.Regexp { // nolint:gochecknoglobals // i will clean this tech debt at a convenient time</div>
-<div class="line">	// 1. (.*?\S) -&gt; HTML marked-up source code up to the last non-whitespace character</div>
-<div class="line">	// 2. (\s*)   -&gt; any trailing whitespace</div>
-<div class="line">	// 3. /       -&gt; 1st char of comment delimiter</div>
-<div class="line">	// 4. (/[*])  -&gt; 2nd char of comment delimiter (&#39;/&#39; or &#39;*&#39;)</div>
-<div class="line">	// 5. ([^&lt;]+) -&gt; comment text</div>
-<div class="line">	// 6. &lt;/span&gt; -&gt; closing &lt;/span&gt; tag</div>
-<div class="line">	// 7. (.*)    -&gt; rest of line</div>
+<div class="line">	// (.*?\S) -&gt; HTML marked-up source code up to the last non-whitespace character</div>
+<div class="line">	// (\s*)   -&gt; any trailing whitespace</div>
+<div class="line">	// /       -&gt; 1st char of comment delimiter</div>
+<div class="line">	// (/[*])  -&gt; 2nd char of comment delimiter (&#39;/&#39; or &#39;*&#39;)</div>
+<div class="line">	// ([^&lt;]+) -&gt; comment text</div>
+<div class="line">	// &lt;/span&gt; -&gt; closing &lt;/span&gt; tag</div>
+<div class="line">	// (.*)    -&gt; rest of line</div>
 <div class="line"><span class="hit">	</span><span class="hit">return regexp.MustCompile(`(.*?\S)(\s*)/(/|\*)([^&lt;]+)&lt;/span&gt;(.*)`)</span></div>
 <div class="line">})</div>
 <div class="line"></div>
@@ -930,9 +930,9 @@
 <div class="line"></div>
 <div class="line">// isTerm determines if the specified writer is connected to a terminal.</div>
 <div class="line">func isTerm(v any) bool {</div>
-<div class="line"><span class="hit">	</span><span class="hit">if testing.Testing() </span>{ <span class="hit">return false }</span></div>
-<div class="line"><span class="miss">	</span><span class="miss">if os.Getenv(&#34;GITHUB_ACTIONS&#34;) == &#34;true&#34; ||</span> // https://docs.github.com/actions/reference/workflows-and-actions/variables</div>
-<div class="line"><span class="miss"></span><span class="miss">	   os.Getenv(&#34;CI&#34;            ) == &#34;true&#34; </span>{ <span class="miss">return false }</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">if testing.Testing()                     ||</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	   os.Getenv(&#34;GITHUB_ACTIONS&#34;) == &#34;true&#34; ||</span> // https://docs.github.com/actions/reference/workflows-and-actions/variables</div>
+<div class="line"><span class="hit"></span><span class="hit">	   os.Getenv(&#34;CI&#34;            ) == &#34;true&#34; </span>{ <span class="hit">return false }</span></div>
 <div class="line"><span class="miss">	</span><span class="miss">fd := getFD(v)</span></div>
 <div class="line"><span class="miss"></span><span class="miss">	if fd &lt; 0 </span>{ <span class="miss">return false }</span></div>
 <div class="line"><span class="miss">	</span><span class="miss">return term.IsTerminal(fd)</span></div>
