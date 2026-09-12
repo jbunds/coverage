@@ -101,6 +101,7 @@ linters:
           files:
             - "**/integration_test.go"
           allow:
+            - fmt
             - io
             - os
             - path/filepath

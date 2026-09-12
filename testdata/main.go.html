@@ -354,18 +354,18 @@
 <div class="line"><span class="hit">		</span><span class="hit">gitRemoteURL = gitRemoteURL[idx + 1:]</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	</span><span class="hit">gitRemoteURL = strings.TrimPrefix(gitRemoteURL, &#34;ssh:</span>//&#34;)</div>
-<div class="line"><span class="hit"></span><span class="hit">	gitRemoteURL = strings.TrimPrefix(gitRemoteURL, &#34;git:</span>//&#34;)</div>
+<div class="line"><span class="hit">	</span><span class="hit">gitRemoteURL = strings.TrimPrefix(gitRemoteURL, &#34;ssh://&#34;)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	gitRemoteURL = strings.TrimPrefix(gitRemoteURL, &#34;git://&#34;)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	</span><span class="hit">if !strings.HasPrefix(gitRemoteURL, &#34;http:</span>//&#34; ) &amp;&amp;</div>
-<div class="line"><span class="hit"></span><span class="hit">	   !strings.HasPrefix(gitRemoteURL, &#34;https:</span>//&#34;) {</div>
-<div class="line"><span class="hit">		</span><span class="hit">gitRemoteURL = &#34;https:</span>//&#34; + strings.Replace(gitRemoteURL, &#34;:&#34;, &#34;/&#34;, 1)</div>
+<div class="line"><span class="hit">	</span><span class="hit">if !strings.HasPrefix(gitRemoteURL, &#34;http://&#34; ) &amp;&amp;</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	   !strings.HasPrefix(gitRemoteURL, &#34;https://&#34;) </span>{</div>
+<div class="line"><span class="hit">		</span><span class="hit">gitRemoteURL = &#34;https://&#34; + strings.Replace(gitRemoteURL, &#34;:&#34;, &#34;/&#34;, 1)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	</span><span class="hit">u, err := url.Parse(gitRemoteURL)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">	if err != nil </span>{ <span class="miss">return err }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	</span><span class="hit">httpURL := fmt.Sprintf(&#34;https:</span>//%s%s&#34;, u.Host, u.Path)</div>
+<div class="line"><span class="hit">	</span><span class="hit">httpURL := fmt.Sprintf(&#34;https://%s%s&#34;, u.Host, u.Path)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">	httpURL  = strings.TrimSuffix(httpURL, &#34;.git&#34;)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">	httpURL  = strings.TrimSuffix(httpURL, &#34;/&#34;)</span></div>
 <div class="line"></div>
@@ -660,16 +660,30 @@
 <div class="line"><span class="miss">		</span><span class="miss">buf.WriteString(&#34;&lt;/span&gt;&#34;)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	</span><span class="hit">hitPrefix  := `&lt;span class=&#34;hit&#34;&gt;`</span></div>
-<div class="line"><span class="hit"></span><span class="hit">	missPrefix := `&lt;span class=&#34;miss&#34;&gt;`</span></div>
+<div class="line"><span class="hit">	</span><span class="hit">writeDivWrappedLines(ew, buf)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	writePostamble(ew)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	return ew.err()</span></div>
+<div class="line">}</div>
 <div class="line"></div>
-<div class="line">	// post-processing to prepend &lt;div class=&#34;line&#34;&gt; tags to every line of</div>
-<div class="line">	// source so the dynamic line `counter-increment`-based CSS works</div>
+<div class="line">// writeDivWrappedLines does the following:</div>
+<div class="line">//</div>
+<div class="line">//   1. shrinks the span of &#34;hit&#34; and &#34;miss&#34; &lt;span&gt; tags by pulling</div>
+<div class="line">//      closing &lt;/span&gt; tags from within inline comments to immediately</div>
+<div class="line">//      follow the last non-whitespace character preceeding the comment</div>
+<div class="line">//</div>
+<div class="line">//   2. wraps each line of source code within &lt;div class=&#34;line&#34;&gt;...&lt;/div&gt; tags</div>
+<div class="line">//</div>
+<div class="line">//   3. writes the output to the provided stickyWriter</div>
+<div class="line">func writeDivWrappedLines(ew stickyWriter, buf bytes.Buffer) {</div>
+<div class="line"><span class="hit">	</span><span class="hit">const (</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		hitSpan  = `&lt;span class=&#34;hit&#34;&gt;`</span></div>
+<div class="line"><span class="hit"></span><span class="hit">		missSpan = `&lt;span class=&#34;miss&#34;&gt;`</span></div>
+<div class="line"><span class="hit"></span><span class="hit">	)</span></div>
+<div class="line"></div>
+<div class="line">	// wrap each line of source code within &lt;div class=&#34;line&#34;&gt;...&lt;/div&gt;</div>
+<div class="line">	// tags so the dynamic line `counter-increment`-based CSS functions</div>
 <div class="line">	//</div>
-<div class="line">	// this also works around certain `go tool cover` bugs such as</div>
-<div class="line">	// https://github.com/golang/go/issues/22545</div>
-<div class="line">	//</div>
-<div class="line">	// TODO(jbunds); properly fix this ugly hack</div>
+<div class="line">	// TODO(jbunds); implement a proper fix</div>
 <div class="line"><span class="hit">	</span><span class="hit">for i, line := range bytes.Split(bytes.TrimRight(buf.Bytes(), &#34;\n&#34;), []byte{&#39;\n&#39;}) </span>{</div>
 <div class="line"><span class="hit">		</span><span class="hit">if i &gt; 0 </span>{ <span class="hit">ew.write(&#34;\n&#34;) }</span></div>
 <div class="line"></div>
@@ -679,30 +693,29 @@
 <div class="line"></div>
 <div class="line"><span class="hit">		</span><span class="hit">ew.write(`&lt;div class=&#34;line&#34;&gt;`)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">		switch </span>{</div>
-<div class="line">		case strings.HasPrefix(remainder, hitPrefix):</div>
-<div class="line"><span class="hit">			</span><span class="hit">ew.write(hitPrefix)</span></div>
+<div class="line">		case strings.HasPrefix(remainder, hitSpan):</div>
+<div class="line"><span class="hit">			</span><span class="hit">ew.write(hitSpan)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">			ew.write(leadingWS)</span></div>
 <div class="line"><span class="hit"></span><span class="hit">			ew.write(`&lt;/span&gt;`)</span></div>
-<div class="line"><span class="hit"></span><span class="hit">			ew.write(relocateClosingSpanTag(remainder))</span></div>
-<div class="line">		case strings.HasPrefix(remainder, missPrefix):</div>
-<div class="line"><span class="miss">			</span><span class="miss">ew.write(missPrefix)</span></div>
+<div class="line"><span class="hit"></span><span class="hit">			ew.write(shrinkSpans(remainder))</span></div>
+<div class="line">		case strings.HasPrefix(remainder, missSpan):</div>
+<div class="line"><span class="miss">			</span><span class="miss">ew.write(missSpan)</span></div>
 <div class="line"><span class="miss"></span><span class="miss">			ew.write(leadingWS)</span></div>
 <div class="line"><span class="miss"></span><span class="miss">			ew.write(`&lt;/span&gt;`)</span></div>
-<div class="line"><span class="miss"></span><span class="miss">			ew.write(relocateClosingSpanTag(remainder))</span></div>
+<div class="line"><span class="miss"></span><span class="miss">			ew.write(shrinkSpans(remainder))</span></div>
 <div class="line">		default:</div>
-<div class="line"><span class="hit">			</span><span class="hit">ew.write(relocateClosingSpanTag(string(line)))</span></div>
+<div class="line"><span class="hit">			</span><span class="hit">ew.write(shrinkSpans(string(line)))</span></div>
 <div class="line">		}</div>
 <div class="line"><span class="hit">		</span><span class="hit">ew.write(`&lt;/div&gt;`)</span></div>
 <div class="line">	}</div>
-<div class="line"></div>
 <div class="line"><span class="hit">	</span><span class="hit">ew.write(&#34;\n&#34;)</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	</span><span class="hit">writePostamble(ew)</span></div>
-<div class="line"><span class="hit"></span><span class="hit">	return ew.err()</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">var compiledPat = sync.OnceValue(func() *regexp.Regexp {</div>
-<div class="line">	// 1. (.*?\S) -&gt; code up to the last non-whitespace character</div>
+<div class="line">// https://stackoverflow.com/a/1732454 (the infamous Zalgo post)</div>
+<div class="line">// https://blog.codinghorror.com/parsing-html-the-cthulhu-way/</div>
+<div class="line"></div>
+<div class="line">var spanShrinkPat = sync.OnceValue(func() *regexp.Regexp { // nolint:gochecknoglobals // i will clean this tech debt at a convenient time</div>
+<div class="line">	// 1. (.*?\S) -&gt; HTML marked-up source code up to the last non-whitespace character</div>
 <div class="line">	// 2. (\s*)   -&gt; any trailing whitespace</div>
 <div class="line">	// 3. /       -&gt; 1st char of comment delimiter</div>
 <div class="line">	// 4. (/[*])  -&gt; 2nd char of comment delimiter (&#39;/&#39; or &#39;*&#39;)</div>
@@ -712,12 +725,19 @@
 <div class="line"><span class="hit">	</span><span class="hit">return regexp.MustCompile(`(.*?\S)(\s*)/(/|\*)([^&lt;]+)&lt;/span&gt;(.*)`)</span></div>
 <div class="line">})</div>
 <div class="line"></div>
-<div class="line">func relocateClosingSpanTag(text string) string {</div>
-<div class="line"><span class="hit">	</span><span class="hit">subs := compiledPat().FindStringSubmatch(text)</span></div>
-<div class="line"><span class="hit"></span><span class="hit">	if len(subs) != 6 </span>{</div>
+<div class="line">// shrinkSpans and the spanShrinkPat regexp above implement a makeshift</div>
+<div class="line">// kludge to work around certain bugs in the cover tool bundled with</div>
+<div class="line">// Go 1.26 and 1.27, e.g., https://github.com/golang/go/issues/22545</div>
+<div class="line">func shrinkSpans(text string) string {</div>
+<div class="line"><span class="hit">	</span><span class="hit">subs := spanShrinkPat().FindStringSubmatch(text)</span></div>
+<div class="line">	// ignore &#34;//&#34; and &#34;/*&#34; substrings nested within rune or string delimiters:</div>
+<div class="line"><span class="hit">	</span><span class="hit">if len(subs) != 6 || subs[2] == &#34;&#34;     &amp;&amp;</span>                                        // no trailing whitespace after the last non-whitespace char of source code</div>
+<div class="line"><span class="hit"></span><span class="hit">	   (strings.Contains(subs[1], &#34;&amp;#34;&#34;) &amp;&amp; strings.Contains(subs[4], &#34;&amp;#34;&#34;)) ||</span> // both tokens on either side of the comment delimiter contain &#34;</div>
+<div class="line"><span class="hit"></span><span class="hit">	   (strings.Contains(subs[1], &#34;&amp;#39;&#34;) &amp;&amp; strings.Contains(subs[4], &#34;&amp;#39;&#34;)) ||</span> // both tokens on either side of the comment delimiter contain &#39;</div>
+<div class="line"><span class="hit"></span><span class="hit">		 (strings.Contains(subs[1], &#34;&amp;#96;&#34;) &amp;&amp; strings.Contains(subs[4], &#34;&amp;#96;&#34;)) </span>{  // both tokens on either side of the comment delimiter contain `</div>
 <div class="line"><span class="hit">		</span><span class="hit">return text</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="miss">	</span><span class="miss">return subs[1]   +</span> // code up to the last non-whitespace character</div>
+<div class="line"><span class="miss">	</span><span class="miss">return subs[1]   +</span> // HTML marked-up source code up to the last non-whitespace character</div>
 <div class="line"><span class="miss"></span><span class="miss">	       `&lt;/span&gt;` +</span> // closing &lt;/span&gt; tag</div>
 <div class="line"><span class="miss"></span><span class="miss">	       subs[2]   +</span> // any trailing whitespace</div>
 <div class="line"><span class="miss"></span><span class="miss">	       `/`       +</span> // 1st char of comment delimiter</div>
