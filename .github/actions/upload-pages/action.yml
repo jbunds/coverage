@@ -1,20 +1,16 @@
 # https://docs.github.com/actions/reference/workflows-and-actions/metadata-syntax
 
-# reusable composite action which uses these standard actions
-# to upload a Go test coverage HTML report to GitHub Pages:
-#
-#   actions/configure-pages@v6 and
-#   actions/upload-pages-artifact@v4 
+# reusable composite action
 
-name:        upload Go test coverage HTML report to GitHub Pages
-description: uploads a Go test coverage HTML report to GitHub Pages
+name:        upload a Go test coverage HTML report to GitHub Pages
+description: upload a Go test coverage HTML report to GitHub Pages
 author:      jbunds
 
 inputs:
   coverage-report-path:
-    description: 'path to the root of the Go coverage report'
+    description: path to the root of the Go coverage report
     required:    false
-    default:     'coverage_report'
+    default:     coverage_report
 
 runs:
   using: composite
