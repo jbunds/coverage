@@ -18,7 +18,9 @@ import (
 //   go test -race -skip TestIntegrationTest -coverprofile cov.out ./...
 //   go run . -gomod go.mod -coverprofile cov.out -path cover
 //   cp cov.out testdata
-//   cp cover/github.com/jbunds/coverage/main.go.html testdata
+//   cp cover/github.com/jbunds/coverage/{flags,main,tree}.go.html testdata
+//
+// the changes to the testdata files should be reviewed before committing
 
 func TestIntegrationTest(t *testing.T) {
 	t.Parallel()
