@@ -652,16 +652,30 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 		buf.WriteString("</span>")
 	}
 
-	hitPrefix  := `<span class="hit">`
-	missPrefix := `<span class="miss">`
+	writeDivWrappedLines(ew, buf)
+	writePostamble(ew)
+	return ew.err()
+}
 
-	// post-processing to prepend <div class="line"> tags to every line of
-	// source so the dynamic line `counter-increment`-based CSS works
+// writeDivWrappedLines does the following:
+//
+//   1. shrinks the span of "hit" and "miss" <span> tags by pulling
+//      closing </span> tags from within inline comments to immediately
+//      follow the last non-whitespace character preceeding the comment
+//
+//   2. wraps each line of source code within <div class="line">...</div> tags
+//
+//   3. writes the output to the provided stickyWriter
+func writeDivWrappedLines(ew stickyWriter, buf bytes.Buffer) {
+	const (
+		hitSpan  = `<span class="hit">`
+		missSpan = `<span class="miss">`
+	)
+
+	// wrap each line of source code within <div class="line">...</div>
+	// tags so the dynamic line `counter-increment`-based CSS functions
 	//
-	// this also works around certain `go tool cover` bugs such as
-	// https://github.com/golang/go/issues/22545
-	//
-	// TODO(jbunds); properly fix this ugly hack
+	// TODO(jbunds); implement a proper fix
 	for i, line := range bytes.Split(bytes.TrimRight(buf.Bytes(), "\n"), []byte{'\n'}) {
 		if i > 0 { ew.write("\n") }
 
@@ -671,31 +685,29 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 
 		ew.write(`<div class="line">`)
 		switch {
-		case strings.HasPrefix(remainder, hitPrefix):
-			ew.write(hitPrefix)
+		case strings.HasPrefix(remainder, hitSpan):
+			ew.write(hitSpan)
 			ew.write(leadingWS)
 			ew.write(`</span>`)
-			ew.write(relocateClosingSpanTag(remainder))
-		case strings.HasPrefix(remainder, missPrefix):
-			ew.write(missPrefix)
+			ew.write(shrinkSpans(remainder))
+		case strings.HasPrefix(remainder, missSpan):
+			ew.write(missSpan)
 			ew.write(leadingWS)
 			ew.write(`</span>`)
-			ew.write(relocateClosingSpanTag(remainder))
+			ew.write(shrinkSpans(remainder))
 		default:
-			ew.write(relocateClosingSpanTag(string(line)))
+			ew.write(shrinkSpans(string(line)))
 		}
 		ew.write(`</div>`)
 	}
-
 	ew.write("\n")
-
-	writePostamble(ew)
-	return ew.err()
 }
 
-// nolint:gochecknoglobals // i will clean this up later
-var compiledPat = sync.OnceValue(func() *regexp.Regexp {
-	// 1. (.*?\S) -> code up to the last non-whitespace character
+// https://stackoverflow.com/a/1732454 (the infamous Zalgo post)
+// https://blog.codinghorror.com/parsing-html-the-cthulhu-way/
+
+var spanShrinkPat = sync.OnceValue(func() *regexp.Regexp { // nolint:gochecknoglobals // i will clean this tech debt at a convenient time
+	// 1. (.*?\S) -> HTML marked-up source code up to the last non-whitespace character
 	// 2. (\s*)   -> any trailing whitespace
 	// 3. /       -> 1st char of comment delimiter
 	// 4. (/[*])  -> 2nd char of comment delimiter ('/' or '*')
@@ -705,12 +717,19 @@ var compiledPat = sync.OnceValue(func() *regexp.Regexp {
 	return regexp.MustCompile(`(.*?\S)(\s*)/(/|\*)([^<]+)</span>(.*)`)
 })
 
-func relocateClosingSpanTag(text string) string {
-	subs := compiledPat().FindStringSubmatch(text)
-	if len(subs) != 6 {
+// shrinkSpans and the spanShrinkPat regexp above implement a makeshift
+// kludge to work around certain bugs in the cover tool bundled with
+// Go 1.26 and 1.27, e.g., https://github.com/golang/go/issues/22545
+func shrinkSpans(text string) string {
+	subs := spanShrinkPat().FindStringSubmatch(text)
+	// ignore "//" and "/*" substrings nested within rune or string delimiters:
+	if len(subs) != 6 || subs[2] == ""     &&                                        // no trailing whitespace after the last non-whitespace char of source code
+	   (strings.Contains(subs[1], "&#34;") && strings.Contains(subs[4], "&#34;")) || // both tokens on either side of the comment delimiter contain "
+	   (strings.Contains(subs[1], "&#39;") && strings.Contains(subs[4], "&#39;")) || // both tokens on either side of the comment delimiter contain '
+		 (strings.Contains(subs[1], "&#96;") && strings.Contains(subs[4], "&#96;")) {  // both tokens on either side of the comment delimiter contain `
 		return text
 	}
-	return subs[1]   + // code up to the last non-whitespace character
+	return subs[1]   + // HTML marked-up source code up to the last non-whitespace character
 	       `</span>` + // closing </span> tag
 	       subs[2]   + // any trailing whitespace
 	       `/`       + // 1st char of comment delimiter
