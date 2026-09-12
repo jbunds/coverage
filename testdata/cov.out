@@ -233,7 +233,7 @@ github.com/jbunds/coverage/main.go:701.3,701.21 1 18
 github.com/jbunds/coverage/main.go:703.2,703.16 1 2
 github.com/jbunds/coverage/main.go:717.2,718.1 1 1
 github.com/jbunds/coverage/main.go:724.2,725.1 2 18
-github.com/jbunds/coverage/main.go:726.2,729.79 2 18
+github.com/jbunds/coverage/main.go:726.2,729.80 2 18
 github.com/jbunds/coverage/main.go:730.3,731.1 1 18
 github.com/jbunds/coverage/main.go:732.2,738.16 1 0
 github.com/jbunds/coverage/main.go:743.2,755.1 12 2

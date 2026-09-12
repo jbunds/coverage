@@ -726,7 +726,7 @@ func shrinkSpans(text string) string {
 	if len(subs) != 6 || subs[2] == ""     &&                                        // no trailing whitespace after the last non-whitespace char of source code
 	   (strings.Contains(subs[1], "&#34;") && strings.Contains(subs[4], "&#34;")) || // both tokens on either side of the comment delimiter contain "
 	   (strings.Contains(subs[1], "&#39;") && strings.Contains(subs[4], "&#39;")) || // both tokens on either side of the comment delimiter contain '
-		 (strings.Contains(subs[1], "&#96;") && strings.Contains(subs[4], "&#96;")) {  // both tokens on either side of the comment delimiter contain `
+	   (strings.Contains(subs[1], "&#96;") && strings.Contains(subs[4], "&#96;")) {  // both tokens on either side of the comment delimiter contain `
 		return text
 	}
 	return subs[1]   + // HTML marked-up source code up to the last non-whitespace character
