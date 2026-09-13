@@ -55,15 +55,17 @@ linters:
             - errors
             - flag
             - fmt
+            - go/scanner
+            - go/token
             - io
             - maps
             - net/url
             - os
             - os/signal
             - path/filepath
-            - regexp
             - runtime
             - slices
+            - sort
             - strconv
             - strings
             - sync
@@ -88,9 +90,9 @@ linters:
             - context
             - errors
             - flag
+            - fmt
             - io
             - io/fs
-            - regexp
             - strings
             - testing
             - github.com/google/go-cmp/cmp
@@ -102,11 +104,9 @@ linters:
           files:
             - "**/integration_test.go"
           allow:
-            - fmt
             - io
             - os
             - path/filepath
-            - regexp
             - strings
             - testing
             - github.com/google/go-cmp/cmp

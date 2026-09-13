@@ -24,15 +24,17 @@ import (
 	"embed"
 	"flag"
 	"fmt"
+	"go/scanner"
+	"go/token"
 	"io"
 	"io/fs"
 	"maps"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -105,6 +107,11 @@ type coverage struct {
 	total   int64
 }
 
+// profileBlock maps a coverage profile range to its absolute byte offsets in the source file.
+type profileBlock struct {
+	startOffset, endOffset, count int
+}
+
 // workUnit represents a unit of work to be performed: the generation of an HTML file for a Go source file's coverage profile.
 type workUnit struct {
 	profile *cover.Profile
@@ -127,7 +134,6 @@ type reportGenerator struct {
 	totalStatements atomic.Int64        // module-wide total number of statements
 	maxWidth        int                 // the width of the tree iframe (grid-template-columns in style.css)
 	ancillaryFiles  []string            // static CSS, HTML, and image files required by the generated HTML
-	spanShrinkRe    *regexp.Regexp      // workaround for cmd/cover bugs like go.dev/issue/22545 & go.dev/issue/61403
 }
 
 // wrappers to facilitate test injection
@@ -188,17 +194,6 @@ func (lfs *localFS) WriteFile(ctx context.Context, name string, data []byte, per
 // wraps packages.Load for test injection.
 type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
 
-// spanShrinkPat matches HTML marked-up source code to post-process the generated HTML.
-//
-//   (.*?\S) -> HTML marked-up source code up to the last non-whitespace character
-//   (\s*)   -> any trailing whitespace
-//   /       -> 1st char of comment delimiter
-//   (/[*])  -> 2nd char of comment delimiter ('/' or '*')
-//   ([^<]+) -> comment text
-//   </span> -> closing </span> tag
-//   (.*)    -> rest of line
-const spanShrinkPat = `(.*?\S)(\s*)/(/|\*)([^<]+)</span>(.*)`
-
 func main() {
 	os.Exit(run())
 }
@@ -246,7 +241,6 @@ func run() int {
 		profiles:       profiles,
 		embeddedFiles:  embeddedFiles,
 		ancillaryFiles: ancillaryFiles,
-		spanShrinkRe:   regexp.MustCompile(spanShrinkPat),
 	}
 
 	if err := repGen.getModNameAndRepoURL(ctx, goModFile); err != nil { // sets repGen.modName and repGen.repoURL
@@ -478,6 +472,69 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	return err
 }
 
+// writeTokenFragment splits fragments across newlines and resolves absolute sub-line boundaries.
+func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, baseClass string, blocks []*profileBlock) {
+	lines          := bytes.SplitAfter(fragment, []byte("\n"))
+	relativeOffset := 0
+
+	for _, line := range lines {
+		if len(line) == 0 {
+			continue
+		}
+
+		hasNewline := bytes.HasSuffix(line, []byte("\n"))
+		content    := line
+		if hasNewline {
+			content = line[:len(line) - 1]
+		}
+
+		if len(content) > 0 {
+			class := baseClass
+			if class == "" {
+				// calculate the absolute position in the file for this whitespace line chunk
+				absStart := baseFileOffset + relativeOffset
+				absEnd   := absStart + len(content)
+				class     = coverClassForRange(absStart, absEnd, blocks)
+			}
+
+			if class != "" {
+				buf.WriteString(`<span class="`)
+				buf.WriteString(class)
+				buf.WriteString(`">`)
+				template.HTMLEscape(buf, content)
+				buf.WriteString("</span>")
+			} else {
+				template.HTMLEscape(buf, content)
+			}
+		}
+
+		if hasNewline {
+			buf.WriteByte('\n')
+		}
+		relativeOffset += len(line)
+	}
+}
+
+// coverClassForRange performs a logarithmic lookup over the sorted blocks slice
+// to determine the coverage state ("hit", "miss", or "") of a specific absolute 
+// byte offset window [start, end].
+//
+// Precondition: blocks must be sorted in ascending order by endOffset.
+func coverClassForRange(start, end int, blocks []*profileBlock) string {
+	idx := sort.Search(len(blocks), func(i int) bool {
+		return blocks[i].endOffset >= end
+	})
+	if idx   <  len(blocks)             &&
+	   start >= blocks[idx].startOffset &&
+	   end   <= blocks[idx].endOffset   {
+		if blocks[idx].count > 0 {
+			return "hit"
+		}
+		return "miss"
+	}
+	return ""
+}
+
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage.
 func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath, styleCSS string) error {
 	if err := ctx.Err(); err != nil {
@@ -495,203 +552,132 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	cssPath := strings.Repeat("../", strings.Count(srcPath, "/")) + filepath.Base(styleCSS)
 	writePreamble(ew, cssPath, srcPath)
 
-	// the following loop processes the src []byte slice by naïvely rangng over raw coverage
-	// boundaries, slicing src at Boundary.Offset points, and thus imparts a fundamental
-	// structural misalignment with the semantics introduced in go.dev/cl/726800, which
-	// deliberately excludes certain tokens (`{`) and non-executable sections of the code
-	// from coverage blocks, thus shifting statement end boundaries to the last byte of
-	// the executable token
-	//
-	// the shrinkSpans method makes a halfhearted attempt to resolve this misalignment by
-	// post-processing the output of the loop by relocating </span> tags written within
-	// comment text to abut the last non-whitespace character preceeding the "//" or "/*"
-	// comment delimter
-	//
-	// TODO(jbunds): implement a proper solution based on go/scanner to make the business
-	//               logic of interpreting coverage profiles token-aware; somethig like:
-	//
-	//   1. lex / tokenize the source with go/scanner.Scanner to demarcate the
-	//      boundaries of keywords, literals, operators, and comments
-	//
-	//   2. simultaneously range over the Go tokens and coverage boundaries
-	//
-	//   3. if a statement's coverage end boundary lands at the end of an executable
-	//      statement, but the scanner reveals the next token is, e.g., a closing {
-	//      or a trailing inline comment, defer injection of the closing </span> tag
-	//      until the end of the line or comment
+	buf  := new(bytes.Buffer)
+	scnr := new(scanner.Scanner)
+	fset := token.NewFileSet()
+	file := fset.AddFile(fileName, fset.Base(), len(src))
+	file.SetLinesForContent(src)
+	scnr.Init(file, src, nil, scanner.ScanComments)
 
-	var buf bytes.Buffer
-	pos         := 0
-	activeClass := ""    // tracks the CSS class of the coverage block ("hit" or "miss")
-	spanIsOpen  := false // tracks if a <span> tag in the output buffer is currently open
-
-	// TODO(jbunds): refactor and optimize the remainder of this method:
+	// it is assumed that the Go toolchain delivers profile.Blocks in sequential, ascending order
 	//
-	//   1. factor out duplicated code into reusable functions
-	//
-	//   2. devise an optimal processing algorithm that requires
-	//      the fewest possible passes over the source file
+	// the binary search algorithm in coverClassForRange() relies on this sorting invariant
 
-	for _, b := range profile.Boundaries(src) {
-		chunk := src[pos:b.Offset]
+	var blocks []*profileBlock
+	lineStarted := make(map[int]bool)
 
-		if activeClass != "" && len(chunk) > 0 {
-			parts := bytes.Split(chunk, []byte("\n"))
-			for i, part := range parts {
-				if i > 0 {        // a newline was trasversed
-					if spanIsOpen { // if a span is open, close it before emitting '\n'
-						buf.WriteString("</span>")
-						spanIsOpen = false
-					}
-					buf.WriteString("\n")
+	for _, block := range profile.Blocks {
+		startOffset  := 0
+		startLinePos := file.LineStart(block.StartLine) // LineStart expects a 1-indexed line number
+		if !lineStarted[block.StartLine] {
+			startOffset = file.Offset(startLinePos) // move the start offset of the first block on this line to column 1 where a <span> tag may be placed
+			lineStarted[block.StartLine] = true
+		} else {
+			startOffset = file.Offset(startLinePos) + (block.StartCol - 1)
+		}
 
-					if len(part) > 0 { // reopen the span on the new line only if this line segment contains text
-						buf.WriteString(`<span class="`)
-						buf.WriteString(activeClass)
-						buf.WriteString(`">`)
-						spanIsOpen = true
-					}
-				} else if !spanIsOpen && len(part) > 0 { // if the span was closed by a previous empty line segment, reopen it if this part contains text
-					buf.WriteString(`<span class="`)
-					buf.WriteString(activeClass)
-					buf.WriteString(`">`)
-					spanIsOpen = true
+		endLinePos := file.LineStart(block.EndLine)
+		endOffset  := file.Offset(endLinePos) + (block.EndCol - 1)
+
+		blocks = append(blocks, &profileBlock{
+			startOffset: startOffset,
+			endOffset:   endOffset,
+			count:       block.Count,
+		})
+	}
+
+	pendingBaseOffset := 0
+	pendingClass      := ""
+	pendingBuf        := new(bytes.Buffer)
+
+	flushPendingSpan := func() { // flush the accumulated token span to the main line-wrapped buffer
+		if pendingBuf.Len() > 0 {
+			writeTokenFragment(buf, pendingBuf.Bytes(), pendingBaseOffset, pendingClass, blocks)
+			pendingBuf.Reset()
+		}
+	}
+
+	lastOffset := 0
+
+	for {
+		pos, tok, lit := scnr.Scan()
+		if tok == token.EOF {
+			flushPendingSpan() // flush any remainder before breaking out of the loop
+			if lastOffset < len(src) {
+				writeTokenFragment(buf, src[lastOffset:], lastOffset, "", blocks)
+			}
+			break
+		}
+
+		startOffset := file.Offset(pos) // convert token.File-relative token.Pos into a byte offset in src to synchronize the profile and token streams
+		endOffset   := 0
+
+		if lit == "" && tok == token.COMMENT {
+			if startOffset + 2 <= len(src) &&
+			   string(src[startOffset:startOffset + 2]) == "//" { // line comment
+				endOffset = startOffset
+				for endOffset < len(src)   &&
+				    src[endOffset] != '\n' {
+					endOffset++
 				}
-
-				if len(part) > 0 {
-					template.HTMLEscape(&buf, part)
+			} else { // block comment
+				endOffset = startOffset
+				for endOffset < len(src) - 1 {
+					if src[endOffset    ] == '*' &&
+					   src[endOffset + 1] == '/' {
+						endOffset += 2
+						break
+					}
+					endOffset++
+				}
+				if endOffset == startOffset { // safeguard
+					endOffset = len(src)
 				}
 			}
 		} else {
-			template.HTMLEscape(&buf, chunk) // either no span is active, or the chunk is empty: output directly
+			endOffset = startOffset + len(lit)
 		}
 
-		// handle boundary transitions
-		if b.Start {      // start of a coverage block
-			if spanIsOpen { // if a span is already open, close it before switching blocks
-				buf.WriteString("</span>")
-			}
-			activeClass = "miss"
-			if b.Count > 0 { // TODO(jbunds): add a "title" attribute to serve as a tooltip using something like fmt.Sprintf(`title="%v"`, b.Count), as html.go does
-				activeClass = "hit"
-			}
-			buf.WriteString(`<span class="`)
-			buf.WriteString(activeClass)
-			buf.WriteString(`">`)
-			spanIsOpen = true
-		} else {          // end of a coverage block
-			if spanIsOpen { // close the open <span>
-				buf.WriteString("</span>")
-				spanIsOpen = false
-			}
-			activeClass = ""
+		if lit == "" && endOffset == startOffset {
+			continue // ignore virtual tokens (e.g., inserted artificial semicolons)
 		}
 
-		pos = b.Offset
-	}
+		coverClass := coverClassForRange(startOffset, endOffset, blocks)
 
-	// process the final slice of the source file
-	remaining := src[pos:]
-	if activeClass != "" && len(remaining) > 0 {
-		parts := bytes.Split(remaining, []byte("\n"))
-		for i, part := range parts {
-			if i > 0 {
-				if spanIsOpen {
-					buf.WriteString("</span>")
-					spanIsOpen = false
-				}
-				buf.WriteString("\n")
-				if len(part) > 0 {
-					buf.WriteString(`<span class="`)
-					buf.WriteString(activeClass)
-					buf.WriteString(`">`)
-					spanIsOpen = true
-				}
-			} else if !spanIsOpen && len(part) > 0 {
-				buf.WriteString(`<span class="`)
-				buf.WriteString(activeClass)
-				buf.WriteString(`">`)
-				spanIsOpen = true
-			}
-			if len(part) > 0 {
-				template.HTMLEscape(&buf, part)
+		// accumulate token bytes into the sliding window, capturing baseline tracking position before writing
+
+		if coverClass != pendingClass {
+			flushPendingSpan()
+			pendingClass = coverClass
+			if pendingClass != "" { // starting a covered block
+				pendingBaseOffset = min(startOffset, lastOffset) // anchor base offset to include any leading whitespace
 			}
 		}
-	} else {
-		template.HTMLEscape(&buf, remaining)
+
+		if pendingClass != "" { // inside a coverage block: sequentially buffer whitespace and token
+			if startOffset > lastOffset {
+				pendingBuf.Write( src[lastOffset:startOffset])
+			}
+			pendingBuf.Write(src[startOffset:endOffset])
+		} else {                // outside a coverage block: write directly to the main output buffer
+			if startOffset > lastOffset {
+				writeTokenFragment(buf, src[lastOffset:startOffset], lastOffset, "", blocks)
+			}
+			writeTokenFragment(buf, src[startOffset:endOffset], startOffset, "", blocks)
+		}
+
+		lastOffset = endOffset
 	}
 
-	if spanIsOpen { // safeguard
-		buf.WriteString("</span>")
-	}
-
-	rg.writeDivWrappedLines(ew, buf)
-	writePostamble(ew)
-	return ew.err()
-}
-
-// writeDivWrappedLines does the following:
-//
-//   1. shrinks the span of "hit" and "miss" <span> tags by pulling
-//      closing </span> tags from within inline comments to abut
-//      the last non-whitespace character preceeding the comment
-//
-//   2. wraps each line of source code within <div class="line">...</div> tags
-//
-//   3. writes the output to the provided stickyWriter
-func (rg *reportGenerator) writeDivWrappedLines(ew stickyWriter, buf bytes.Buffer) {
-	const (
-		hitSpan  = `<span class="hit">`
-		missSpan = `<span class="miss">`
-	)
-
-	// wrap each line of source code within <div class="line">...</div>
-	// tags so the dynamic line `counter-increment`-based CSS functions
 	for line := range bytes.SplitSeq(bytes.TrimRight(buf.Bytes(), "\n"), []byte{'\n'}) {
-		trimLen   := len(line) - len(bytes.TrimLeft(line, " \t"))
-		leadingWS := string(line[:trimLen ])
-		remainder := string(line[ trimLen:])
-
 		ew.write(`<div class="line">`)
-		switch {
-		case strings.HasPrefix(remainder, hitSpan):
-			ew.write(hitSpan)
-			ew.write(leadingWS)
-			ew.write("</span>")
-			ew.write(rg.shrinkSpans(remainder))
-		case strings.HasPrefix(remainder, missSpan):
-			ew.write(missSpan)
-			ew.write(leadingWS)
-			ew.write("</span>")
-			ew.write(rg.shrinkSpans(remainder))
-		default:
-			ew.write(rg.shrinkSpans(string(line)))
-		}
+		ew.write(string(line))
 		ew.write("</div>\n")
 	}
 	ew.write("\n")
-}
 
-// shrinkSpans is a makeshift kludge used to work around the fundamental structural misalignment
-// between cmd/cover semantics and the naïve source []byte slice ranging loop in buildCovHTML.
-func (rg *reportGenerator) shrinkSpans(text string) string {
-	// https://stackoverflow.com/a/1732454 (the infamous Zalgo post)
-	// https://blog.codinghorror.com/parsing-html-the-cthulhu-way/
-	subs := rg.spanShrinkRe.FindStringSubmatch(text)
-	// ignore "//" and "/*" substrings nested within rune or string delimiters:
-	if len(subs) != 6 || subs[2] == ""     &&                                        // no trailing whitespace after the last non-whitespace char of source code
-	   (strings.Contains(subs[1], "`"    ) && strings.Contains(subs[4], "`"    )) || // both tokens on either side of the comment delimiter contain `
-	   (strings.Contains(subs[1], "&#34;") && strings.Contains(subs[4], "&#34;")) || // both tokens on either side of the comment delimiter contain "
-	   (strings.Contains(subs[1], "&#39;") && strings.Contains(subs[4], "&#39;")) {  // both tokens on either side of the comment delimiter contain '
-		return text
-	}
-	return subs[1]   + // HTML marked-up source code up to the last non-whitespace character
-	       "</span>" + // closing </span> tag
-	       subs[2]   + // any trailing whitespace
-	       "/"       + // 1st char of comment delimiter
-	       subs[3]   + // 2nd char of comment delimiter ('/' or '*')
-	       subs[4]   + // comment text
-	       subs[5]     // rest of line
+	writePostamble(ew)
+	return ew.err()
 }
 
 // writePreamble writes the preamble portion of the HTML content common to every Go source HTML file.

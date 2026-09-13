@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -22,10 +20,9 @@ func TestIntegrationTest(t *testing.T) {
 	tmpDir        := t.TempDir()
 	profiles, err := cover.ParseProfiles("testdata/cov.out"); if err != nil { t.Fatal(err) }
 	rg            := &reportGenerator{
-		fsys:         new(localFS),
-		outRoot:      tmpDir,
-		profiles:     profiles,
-		spanShrinkRe: regexp.MustCompile(spanShrinkPat),
+		fsys:     new(localFS),
+		outRoot:  tmpDir,
+		profiles: profiles,
 	}
 
 	if err := rg.getModNameAndRepoURL(t.Context(), "go.mod"); err != nil { t.Fatal(err) }
@@ -64,25 +61,5 @@ func TestIntegrationTest(t *testing.T) {
 				t.Errorf("mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
 			}
 		})
-	}
-}
-
-type reporter struct{
-	path  cmp.Path
-	diffs []string
-}
-
-func (r *reporter) PushStep(ps cmp.PathStep) {
-	r.path = append(r.path, ps)
-}
-
-func (r *reporter) PopStep() {
-	r.path = r.path[:len(r.path) - 1]
-}
-
-func (r *reporter) Report(rs cmp.Result) {
-	if !rs.Equal() {
-		want, got := r.path.Last().Values() 
-			r.diffs = append(r.diffs, fmt.Sprintf("- %s\n+ %s", want, got))
 	}
 }

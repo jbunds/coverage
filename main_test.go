@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
-	"regexp"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -300,32 +300,38 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 			fsys: fstest.MapFS{
 				"foo/bar/baz.go": &fstest.MapFile{
 					Data: []byte(strings.Join([]string{
-						`package main`,
+						`package hello`,
 						``,
 						`import "fmt"`,
 						``,
 						`// line comment`,
-						`/* block comment */`,
 						``,
-						`func main() {`,
+						`/* block`,
+						`	comment */`,
+						``,
+						`func hello() {`,
 						``,
 						`	// another line comment`,
-						`	/* another block comment */`,
+						``,
+						`	/* another`,
+						`		block`,
+						`		comment */`,
 						``,
 						`	fmt.Println("hello world")`,
 						``,
 						`	// yet another line comment`,
-						``,
 						`}`,
 						``,
-					}, "\n"))}},
+					}, "\n")),
+				},
+			},
 			modName:     "foo",
 			pkgDirCache: map[string]string{ "foo/bar": "foo/bar" },
 			profiles:    []*cover.Profile{{
 				FileName:  "foo/bar/baz.go",
 				Blocks: []cover.ProfileBlock{{
-					StartLine: 13, StartCol: 2,
-					EndLine:   14, EndCol:   1,
+					StartLine: 18, StartCol: 2,
+					EndLine:   19, EndCol:   1,
 					NumStmt:    1, Count:    1,
 				}},
 			}},
@@ -338,22 +344,26 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				`<title>foo/bar/baz.go</title>`,
 				`</head>`,
 				`<body id="code" class="line-numbers">`,
-				`<div class="line">package main</div>`,
+				`<div class="line">package hello</div>`,
 				`<div class="line"></div>`,
 				`<div class="line">import &#34;fmt&#34;</div>`,
 				`<div class="line"></div>`,
 				`<div class="line">// line comment</div>`,
-				`<div class="line">/* block comment */</div>`,
 				`<div class="line"></div>`,
-				`<div class="line">func main() {</div>`,
+				`<div class="line">/* block</div>`,
+				`<div class="line">	comment */</div>`,
+				`<div class="line"></div>`,
+				`<div class="line">func hello() {</div>`,
 				`<div class="line"></div>`,
 				`<div class="line">	// another line comment</div>`,
-				`<div class="line">	/* another block comment */</div>`,
 				`<div class="line"></div>`,
-				`<div class="line"><span class="hit">	</span><span class="hit">fmt.Println(&#34;hello world&#34;)</span></div>`,
+				`<div class="line">	/* another</div>`,
+				`<div class="line">		block</div>`,
+				`<div class="line">		comment */</div>`,
+				`<div class="line"></div>`,
+				`<div class="line"><span class="hit">	fmt.Println(&#34;hello world&#34;)</span></div>`,
 				`<div class="line"></div>`,
 				`<div class="line">	// yet another line comment</div>`,
-				`<div class="line"></div>`,
 				`<div class="line">}</div>`,
 				``,
 				`<script>`,
@@ -416,14 +426,17 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				fsys:         mfs,
 				profiles:     tt.profiles,
 				pkgDirCache:  tt.pkgDirCache,
-				spanShrinkRe: regexp.MustCompile(spanShrinkPat),
 			}
 			err := repGen.writeCovHTMLFiles(t.Context(), io.Discard, "css/style.css")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeCovHTMLFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
+			wantLines := strings.Split(strings.TrimSuffix(string(tt.want ), "\n"), "\n")
+			gotLines  := strings.Split(strings.TrimSuffix(string(mfs.data), "\n"), "\n")
 			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
-				t.Errorf("writeCovHTMLFiles(%q) mismatch (-want +got):\n%s", tt.name, diff)
+				var rep reporter
+				cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep))
+				t.Errorf("writeCovHTMLFiles(%q) mismatch (-want +got):\n%s", tt.name, strings.Join(rep.diffs, "\n"))
 			}
 		})
 	}
@@ -720,5 +733,34 @@ func TestFilterArgs(t *testing.T) {
 				t.Errorf("filterArgs(%v) mismatch (-want +got):\n%s", tt.args, diff)
 			}
 		})
+	}
+}
+
+// custom cmp reporter which renders []string (line) diffs without truncation
+
+type reporter struct{
+	path  cmp.Path
+	diffs []string
+}
+
+func (r *reporter) PushStep(ps cmp.PathStep) {
+	r.path = append(r.path, ps)
+}
+
+func (r *reporter) PopStep() {
+	r.path = r.path[:len(r.path) - 1]
+}
+
+func (r *reporter) Report(rs cmp.Result) {
+	if !rs.Equal() {
+		want,    got    := r.path.Last().Values() 
+		wantStr, gotStr := "<missing>", "<missing>"
+		if want.IsValid() {
+			wantStr = fmt.Sprintf("%v", want.Interface())
+		}
+		if got.IsValid() {
+			gotStr = fmt.Sprintf("%v", got.Interface())
+		}
+		r.diffs = append(r.diffs, fmt.Sprintf("- %s\n+ %s", wantStr, gotStr))
 	}
 }
