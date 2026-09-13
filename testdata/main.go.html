@@ -502,7 +502,7 @@
 <div class="line">				// calculate the absolute position in the file for this whitespace line chunk</div>
 <div class="line"><span class="hit">				absStart := baseFileOffset + relativeOffset</span></div>
 <div class="line"><span class="hit">				absEnd   := absStart + len(content)</span></div>
-<div class="line"><span class="hit">				class     = coverClassForRange(absStart, absEnd, blocks)</span></div>
+<div class="line"><span class="hit">				class     = coverClass(absStart, absEnd, blocks)</span></div>
 <div class="line">			}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">			if class != &#34;&#34; {</span></div>
@@ -523,12 +523,12 @@
 <div class="line">	}</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// coverClassForRange performs a logarithmic lookup over the sorted blocks slice</div>
-<div class="line">// to determine the coverage state (&#34;hit&#34;, &#34;miss&#34;, or &#34;&#34;) of a specific absolute </div>
-<div class="line">// byte offset window [start, end].</div>
+<div class="line">// coverClass performs a logarithmic lookup over the sorted blocks slice</div>
+<div class="line">// to determine the coverage state (&#34;hit&#34;, &#34;miss&#34;, or &#34;&#34;) of a specified</div>
+<div class="line">// byte offset range [start, end].</div>
 <div class="line">//</div>
 <div class="line">// Precondition: blocks must be sorted in ascending order by endOffset.</div>
-<div class="line">func coverClassForRange(start, end int, blocks []*profileBlock) string<span class="hit"> {</span></div>
+<div class="line">func coverClass(start, end int, blocks []*profileBlock) string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	idx := sort.Search(len(blocks), func(i int) bool {</span></div>
 <div class="line"><span class="hit">		return blocks[i].endOffset &gt;= end</span></div>
 <div class="line">	})</div>
@@ -569,7 +569,7 @@
 <div class="line"></div>
 <div class="line">	// it is assumed that the Go toolchain delivers profile.Blocks in sequential, ascending order</div>
 <div class="line">	//</div>
-<div class="line">	// the binary search algorithm in coverClassForRange() relies on this sorting invariant</div>
+<div class="line">	// the binary search algorithm in coverClass() relies on this sorting invariant</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	var blocks []*profileBlock</span></div>
 <div class="line"><span class="hit">	lineStarted := make(map[int]bool)</span></div>
@@ -650,7 +650,7 @@
 <div class="line"><span class="hit">			continue</span> // ignore virtual tokens (e.g., inserted artificial semicolons)</div>
 <div class="line">		}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">		coverClass := coverClassForRange(startOffset, endOffset, blocks)</span></div>
+<div class="line"><span class="hit">		coverClass := coverClass(startOffset, endOffset, blocks)</span></div>
 <div class="line"></div>
 <div class="line">		// accumulate token bytes into the sliding window, capturing baseline tracking position before writing</div>
 <div class="line"></div>
@@ -682,7 +682,6 @@
 <div class="line"><span class="hit">		ew.write(string(line))</span></div>
 <div class="line"><span class="hit">		ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="hit">	ew.write(&#34;\n&#34;)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	writePostamble(ew)</span></div>
 <div class="line"><span class="hit">	return ew.err</span><span class="hit">()</span></div>
@@ -887,7 +886,6 @@
 <div class="line"><span class="miss">	if f, ok := w.(interface{ Fd() uintptr }); ok { return int(f.Fd</span><span class="miss">()) }</span></div>
 <div class="line"><span class="miss">	return -1</span></div>
 <div class="line">}</div>
-
 <script>
 try {
   const parentTheme = window.parent.document.documentElement.getAttribute('theme');

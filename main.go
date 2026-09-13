@@ -494,7 +494,7 @@ func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, 
 				// calculate the absolute position in the file for this whitespace line chunk
 				absStart := baseFileOffset + relativeOffset
 				absEnd   := absStart + len(content)
-				class     = coverClassForRange(absStart, absEnd, blocks)
+				class     = coverClass(absStart, absEnd, blocks)
 			}
 
 			if class != "" {
@@ -515,12 +515,12 @@ func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, 
 	}
 }
 
-// coverClassForRange performs a logarithmic lookup over the sorted blocks slice
-// to determine the coverage state ("hit", "miss", or "") of a specific absolute 
-// byte offset window [start, end].
+// coverClass performs a logarithmic lookup over the sorted blocks slice
+// to determine the coverage state ("hit", "miss", or "") of a specified
+// byte offset range [start, end].
 //
 // Precondition: blocks must be sorted in ascending order by endOffset.
-func coverClassForRange(start, end int, blocks []*profileBlock) string {
+func coverClass(start, end int, blocks []*profileBlock) string {
 	idx := sort.Search(len(blocks), func(i int) bool {
 		return blocks[i].endOffset >= end
 	})
@@ -561,7 +561,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 
 	// it is assumed that the Go toolchain delivers profile.Blocks in sequential, ascending order
 	//
-	// the binary search algorithm in coverClassForRange() relies on this sorting invariant
+	// the binary search algorithm in coverClass() relies on this sorting invariant
 
 	var blocks []*profileBlock
 	lineStarted := make(map[int]bool)
@@ -642,7 +642,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 			continue // ignore virtual tokens (e.g., inserted artificial semicolons)
 		}
 
-		coverClass := coverClassForRange(startOffset, endOffset, blocks)
+		coverClass := coverClass(startOffset, endOffset, blocks)
 
 		// accumulate token bytes into the sliding window, capturing baseline tracking position before writing
 
@@ -674,7 +674,6 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 		ew.write(string(line))
 		ew.write("</div>\n")
 	}
-	ew.write("\n")
 
 	writePostamble(ew)
 	return ew.err()
