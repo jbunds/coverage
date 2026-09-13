@@ -90,6 +90,7 @@ linters:
             - flag
             - io
             - io/fs
+            - regexp
             - strings
             - testing
             - github.com/google/go-cmp/cmp
@@ -105,6 +106,7 @@ linters:
             - io
             - os
             - path/filepath
+            - regexp
             - strings
             - testing
             - github.com/google/go-cmp/cmp

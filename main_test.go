@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"regexp"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -102,29 +103,22 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 	return m.writer.Write(p)
 }
 
-type mockIniFileConfig struct {
-	returnValue string
-	err         error
-}
-
-func (m *mockIniFileConfig) Value(_, _ string) (string, error) {
-	return m.returnValue, m.err
-}
-
 // tests
 
-func TestGetModName(t *testing.T) {
+func TestGetModNameAndRepoURL(t *testing.T) {
 	t.Parallel()
 	tests := []struct{
-		name     string
-		fsys     fs.FS
-		want     string
-		wantErr  bool
+		name        string
+		fsys        fs.FS
+		wantModName string
+		wantRepoURL string
+		wantErr     bool
 	}{
 		{
-			name: "succeeds",
-			fsys: fstest.MapFS{ "go.mod": &fstest.MapFile{ Data: []byte("module github.com/foo/bar") }},
-			want: "github.com/foo/bar",
+			name:        "succeeds",
+			fsys:        fstest.MapFS{ "go.mod": &fstest.MapFile{ Data: []byte("module github.com/foo/bar") }},
+			wantModName: "github.com/foo/bar",
+			wantRepoURL: "https://github.com/foo/bar",
 		},
 		{
 			name:    "cannot read go.mod",
@@ -143,74 +137,15 @@ func TestGetModName(t *testing.T) {
 			repGen := &reportGenerator{
 				fsys: &mockFS{ FS: tt.fsys },
 			}
-			err := repGen.getModName(t.Context(), "go.mod")
+			err := repGen.getModNameAndRepoURL(t.Context(), "go.mod")
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getModeName(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+				t.Errorf("getModNameAndRepoURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
-			if diff := cmp.Diff(tt.want, repGen.modName); diff != "" {
-				t.Errorf("getModName(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			if diff := cmp.Diff(tt.wantModName, repGen.modName); diff != "" {
+				t.Errorf("getModNameAndRepoURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
-		})
-	}
-}
-
-func TestGetRepoURL(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name    string
-		gitCfg  *mockIniFileConfig
-		fsys    fs.FS
-		want    string
-		wantErr bool
-	}{
-		{
-			name:   "local SSH standard (SCP style)",
-			gitCfg: &mockIniFileConfig{ returnValue: "git@github.com:foo/bar.git" },
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:   "local SSH standard (no extension)",
-			gitCfg: &mockIniFileConfig{ returnValue: "git@github.com:foo/bar" },
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:   "local SSH explicit protocol",
-			gitCfg: &mockIniFileConfig{ returnValue: "ssh://git@github.com:foo/bar.git" },
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:   "local HTTPS standard",
-			gitCfg: &mockIniFileConfig{ returnValue: "https://github.com/foo/bar.git" },
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:   "GitHub CI runner (token authentication)",
-			gitCfg: &mockIniFileConfig{ returnValue: "https://x-access-token:ghp_1234567890@github.com/foo/bar.git" }, // #nosec G101 - false positive (hardcoded creds)
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:   "GitHub CI runner (standard checkout)",
-			gitCfg: &mockIniFileConfig{ returnValue: "https://github.com/foo/bar.git" },
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:    "fails",
-			gitCfg:  &mockIniFileConfig{ err: errors.New("inifile.IniConfig.Value failed") },
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			repGen := &reportGenerator{
-				fsys: &mockFS{ FS: tt.fsys },
-			}
-			err := repGen.getRepoURL(t.Context(), tt.gitCfg)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getRepoURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-			}
-			if diff := cmp.Diff(tt.want, repGen.repoURL); diff != "" {
-				t.Errorf("getRepoURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			if diff := cmp.Diff(tt.wantRepoURL, repGen.repoURL); diff != "" {
+				t.Errorf("getModNameAndRepoURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}
@@ -478,9 +413,10 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				writeFileFails: tt.writeFileFails,
 			}
 			repGen := &reportGenerator{
-				fsys:        mfs,
-				profiles:    tt.profiles,
-				pkgDirCache: tt.pkgDirCache,
+				fsys:         mfs,
+				profiles:     tt.profiles,
+				pkgDirCache:  tt.pkgDirCache,
+				spanShrinkRe: regexp.MustCompile(spanShrinkPat),
 			}
 			err := repGen.writeCovHTMLFiles(t.Context(), io.Discard, "css/style.css")
 			if (err != nil) != tt.wantErr {
