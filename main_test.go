@@ -631,50 +631,50 @@ func TestPrintCoverage(t *testing.T) {
 	}
 }
 
-func TestWriteAncillaryFiles(t *testing.T) {
+func TestWriteStaticFiles(t *testing.T) {
 	t.Parallel()
 	tests := []struct{
-		name           string
-		embeddedFiles  fs.FS
-		ancillaryFiles []string
-		createFails    bool
-		closeFails     bool
-		badWriter      bool
-		wantErr        bool
-		want           string
+		name          string
+		embeddedFiles fs.FS
+		staticFiles   []string
+		createFails   bool
+		closeFails    bool
+		badWriter     bool
+		wantErr       bool
+		want          string
 	}{
 		{
-			name:           "succeeds",
-			embeddedFiles:  fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
-			ancillaryFiles: []string{"foo"},
-			want:           "bar",
+			name:          "succeeds",
+			embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
+			staticFiles:   []string{"foo"},
+			want:          "bar",
 		},
 		{
-			name:           "Create fails",
-			embeddedFiles:  fstest.MapFS{},
-			ancillaryFiles: []string{"foo"},
-			createFails:    true,
-			wantErr:        true,
+			name:          "Create fails",
+			embeddedFiles: fstest.MapFS{},
+			staticFiles:   []string{"foo"},
+			createFails:   true,
+			wantErr:       true,
 		},
 		{
-			name:           "ReadFile fails",
-			embeddedFiles:  fstest.MapFS{},
-			ancillaryFiles: []string{"foo"},
-			wantErr:        true,
+			name:          "ReadFile fails",
+			embeddedFiles: fstest.MapFS{},
+			staticFiles:   []string{"foo"},
+			wantErr:       true,
 		},
 		{
-			name:           "Close fails",
-			embeddedFiles:  fstest.MapFS{ "foo": &fstest.MapFile{}},
-			ancillaryFiles: []string{"foo"},
-			closeFails:     true,
-			wantErr:        true,
+			name:          "Close fails",
+			embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{}},
+			staticFiles:   []string{"foo"},
+			closeFails:    true,
+			wantErr:       true,
 		},
 		{
-			name:           "fmt.Fprint fails",
-			embeddedFiles:  fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
-			ancillaryFiles: []string{"foo"},
-			badWriter:      true,
-			wantErr:        true,
+			name:          "fmt.Fprint fails",
+			embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
+			staticFiles:   []string{"foo"},
+			badWriter:     true,
+			wantErr:       true,
 		},
 	}
 	for _, tt := range tests {
@@ -686,16 +686,16 @@ func TestWriteAncillaryFiles(t *testing.T) {
 				badWriter:   tt.badWriter,
 			}
 			repGen := &reportGenerator{
-				fsys:           mfs,
-				embeddedFiles:  tt.embeddedFiles,
-				ancillaryFiles: tt.ancillaryFiles,
+				fsys:          mfs,
+				embeddedFiles: tt.embeddedFiles,
+				staticFiles:   tt.staticFiles,
 			}
-			err := repGen.writeAncillaryFiles(t.Context())
+			err := repGen.writeStaticFiles(t.Context())
 			if (err != nil) != tt.wantErr {
-				t.Errorf("writeAncillaryFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+				t.Errorf("writeStaticFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
 			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
-				t.Errorf("writeAncillaryFiles(%q) mismatch (-want +got):\n%s", tt.name, diff)
+				t.Errorf("writeStaticFiles(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}
