@@ -20,12 +20,6 @@ ulimit -n 2048
 unset GOFLAGS
 unset CGO_LDFLAGS
 
-# hack/make-rules/test.sh variables
-
-export PARALLEL=4
-export KUBE_COVER=y
-export KUBE_COVER_REPORT_DIR="${PWD}/coverage"  # `make test` writes here
-
 # local variables
 #
 # note that GOCOVERDIR must be set:
@@ -36,6 +30,13 @@ export KUBE_COVER_REPORT_DIR="${PWD}/coverage"  # `make test` writes here
 
 export GOCOVERDIR="${PWD}/covdata"     # `make test` writes binary coverage profile files here
 export MERGED="${PWD}/covdata_merged"  # `go tool covdata merge` (below) writes here
+
+# hack/make-rules/test.sh variables
+
+export PARALLEL=4                                     # alias for `-p 4`
+export KUBE_COVER=y                                   # enabled coverage collection
+export KUBE_COVER_REPORT_DIR="${PWD}/coverage"        # `make test` writes here
+export KUBE_TEST_ARGS="-test.gocoverdir=$GOCOVERDIR"  # additional `go test` args
 
 rm    -rf "$GOCOVERDIR" "$MERGED" "$KUBE_COVER_REPORT_DIR"
 mkdir -p  "$GOCOVERDIR" "$MERGED" "$KUBE_COVER_REPORT_DIR"
