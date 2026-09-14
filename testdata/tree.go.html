@@ -58,7 +58,7 @@
 <div class="line">	subDir string</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// writeTreeHTML writes the tree HTML (tree.html) file.</div>
+<div class="line">// writeTreeHTML writes the tree HTML (tree.html) file and returns the width of the tree iframe used by the style.css &#34;template&#34;.</div>
 <div class="line">func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writer, treeHTML string) (int, error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return 0, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
@@ -87,9 +87,11 @@
 <div class="line"><span class="hit">	prog := progress.New(ctx, 0, progressOutput)</span></div>
 <div class="line"><span class="hit">	defer prog.Close()</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	results         := make([]string, len(entries))</span></div>
+<div class="line"><span class="hit">	var totalStatements, totalCovered atomic.Int64</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	results         := make([]entryResult, len(entries) + 2) // +2 pre-allocates slots for the rootTreeNode and its corresponding closing &lt;/li&gt; tag</span></div>
 <div class="line"><span class="hit">	initialBudget   := prog.InitialBudget()</span></div>
-<div class="line"><span class="hit">	budgetPerEntry  := initialBudget / float64(len(entries))</span></div>
+<div class="line"><span class="hit">	budgetPerEntry  := initialBudget / float64(len(entries)) // assumes len(entries) &gt; 0</span></div>
 <div class="line"><span class="hit">	remainingBudget := initialBudget</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	group, gCtx := errgroup.WithContext(ctx)</span></div>
@@ -106,23 +108,45 @@
 <div class="line"><span class="hit">			st := scanState{</span></div>
 <div class="line"><span class="hit">				parentPath: pkgRelRoot,</span></div>
 <div class="line"><span class="hit">				entry:      entry,</span></div>
-<div class="line"><span class="hit">				indent:     1,</span></div>
+<div class="line"><span class="hit">				indent:     3, // 2 levels of indentation are added by prepending rootTreeNode to results below</span></div>
 <div class="line"><span class="hit">				prog:       prog,</span></div>
 <div class="line"><span class="hit">				budget:     currentBudget</span><span class="hit">,</span></div>
 <div class="line">			}</div>
 <div class="line"><span class="hit">			res, err := tb.processEntry(gCtx, st)</span></div>
 <div class="line"><span class="hit">			if err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
-<div class="line"><span class="hit">			results[i] = res.html</span></div>
+<div class="line"><span class="hit">			results[i + 1]  = res</span></div>
+<div class="line"><span class="hit">			totalStatements.Add(res.total)</span></div>
+<div class="line"><span class="hit">			totalCovered.Add(res.covered)</span></div>
 <div class="line"><span class="hit">			return nil</span></div>
 <div class="line">		})</div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if err := group.Wait(); err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
+<div class="line"><span class="hit">	totStatements := totalStatements.Load()</span></div>
+<div class="line"><span class="hit">	totCovered    := totalCovered.Load()</span></div>
+<div class="line"><span class="hit">	aggregatePercent := &#34;0.0&#34;</span></div>
+<div class="line"><span class="hit">	if totStatements &gt; 0 {</span></div>
+<div class="line"><span class="hit">		aggregatePercent = strconv.FormatFloat(float64(totCovered) / float64(totStatements) * 100, &#39;f&#39;, 1, 64)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	rootTreeNode := entryResult{html: `  &lt;li&gt;</span></div>
+<div class="line"><span class="hit">    &lt;input type=&#34;checkbox&#34; id=&#34;tree-item-0&#34;/&gt;</span></div>
+<div class="line"><span class="hit">    &lt;div class=&#34;tree-node&#34;&gt;</span></div>
+<div class="line"><span class="hit">      &lt;label for=&#34;tree-item-0&#34;&gt;` + pkgRelRoot       + `&lt;/label&gt;</span></div>
+<div class="line"><span class="hit">      &lt;span class=&#34;cov&#34;&gt;`        + aggregatePercent + `%&lt;/span&gt;</span></div>
+<div class="line"><span class="hit">    &lt;/div&gt;</span></div>
+<div class="line"><span class="hit">    &lt;ul&gt;</span></div>
+<div class="line"><span class="hit">`}</span></div>
+<div class="line"></div>
+<div class="line">	// the first and last slots were pre-allocated when results was initialized</div>
+<div class="line"><span class="hit">	results[0               ] = rootTreeNode</span></div>
+<div class="line"><span class="hit">	results[len(entries) + 1] = entryResult{html: &#34;    &lt;/ul&gt;\n  &lt;/li&gt;\n&#34;}</span></div>
+<div class="line"></div>
 <div class="line"><span class="hit">	var sb strings.Builder</span></div>
 <div class="line"><span class="hit">	sb.WriteString(`&lt;ul class=&#34;tree&#34;&gt;` + &#34;\n&#34;)</span></div>
-<div class="line"><span class="hit">	for _, html := range results {</span></div>
-<div class="line"><span class="hit">		sb.WriteString(html)</span></div>
+<div class="line"><span class="hit">	for _, res := range results {</span></div>
+<div class="line"><span class="hit">		sb.WriteString(res.html)</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/ul&gt;\n&#34;)</span></div>
 <div class="line"></div>
@@ -160,7 +184,7 @@
 <div class="line"><span class="hit">		if err != nil { return entryResult{}, err</span><span class="hit"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">		var subDirSB strings.Builder</span></div>
-<div class="line"><span class="hit">		var dirCovered, dirStatements int64</span></div>
+<div class="line"><span class="hit">		var dirCovered, dirStatements atomic.Int64</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">		if len(subDirEntries) &gt; 0</span> { // split this subdir&#39;s budget up among its children</div>
 <div class="line"><span class="hit">			childBudget     := st.budget / float64(len(subDirEntries))</span></div>
@@ -185,8 +209,8 @@
 <div class="line"><span class="hit">				if err != nil</span><span class="miss"> { return entryResult{}, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">				subDirSB.WriteString(res.html)</span></div>
-<div class="line"><span class="hit">				dirCovered    += res.covered</span></div>
-<div class="line"><span class="hit">				dirStatements += res.total</span></div>
+<div class="line"><span class="hit">				dirCovered.Add(res.covered)</span></div>
+<div class="line"><span class="hit">				dirStatements.Add(res.total</span><span class="hit">)</span></div>
 <div class="line">			}</div>
 <div class="line">		} else<span class="miss"> {</span></div>
 <div class="line"><span class="miss">			st.prog.Report(st.budget, pkgPath) // inform the progress tracker that pkgPath has been processed</span></div>
@@ -198,13 +222,13 @@
 <div class="line"><span class="hit">			subDir: srcBasename</span><span class="hit">,</span></div>
 <div class="line">		}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">		html, err := hb.buildHTML(ctx, subDirSB.String(), dirCovered, dirStatements)</span></div>
+<div class="line"><span class="hit">		html, err := hb.buildHTML(ctx, subDirSB.String(), dirCovered.Load(), dirStatements.Load())</span></div>
 <div class="line"><span class="hit">		if err != nil</span><span class="miss"> { return entryResult{}, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">		return entryResult{</span></div>
 <div class="line"><span class="hit">			html:    html,</span></div>
-<div class="line"><span class="hit">			covered: dirCovered,</span></div>
-<div class="line"><span class="hit">			total:   dirStatements}, nil</span></div>
+<div class="line"><span class="hit">			covered: dirCovered.Load(),</span></div>
+<div class="line"><span class="hit">			total:   dirStatements.Load()}, nil</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	st.prog.Report(st.budget, pkgPath) // inform the progress tracker that pkgPath has been processed</span></div>
@@ -215,9 +239,8 @@
 <div class="line"><span class="hit">		percent = float64(cov.covered) / float64(cov.total) * 100</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	pct     := strconv.FormatFloat(percent, &#39;f&#39;, 1, 64)</span></div>
 <div class="line"><span class="hit">	srcSpan := `&lt;span class=&#34;src&#34;&gt;&lt;a href=&#34;` + relHTMLPath + `&#34;&gt;` + srcBasename + &#34;&lt;/a&gt;&lt;/span&gt;&#34;</span></div>
-<div class="line"><span class="hit">	covSpan := `&lt;span class=&#34;cov&#34;&gt;` + pct + &#34;%&lt;/span&gt;&#34;</span></div>
+<div class="line"><span class="hit">	covSpan := `&lt;span class=&#34;cov&#34;&gt;` + strconv.FormatFloat(percent, &#39;f&#39;, 1, 64) + &#34;%&lt;/span&gt;&#34;</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	return entryResult{</span></div>
 <div class="line"><span class="hit">		html:    strings.Repeat(&#34;  &#34;, st.indent) + `&lt;li&gt;&lt;div class=&#34;tree-node&#34;&gt;` + srcSpan + &#34; &#34; + covSpan + &#34;&lt;/div&gt;&lt;/li&gt;\n&#34;,</span></div>

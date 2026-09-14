@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"os/exec"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -105,20 +106,20 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 
 // tests
 
-func TestGetModNameAndRepoURL(t *testing.T) {
+func TestGetModName(t *testing.T) {
 	t.Parallel()
 	tests := []struct{
-		name        string
-		fsys        fs.FS
-		wantModName string
-		wantRepoURL string
-		wantErr     bool
+		name    string
+		fsys    fs.FS
+		want    string
+		wantErr bool
 	}{
 		{
-			name:        "succeeds",
-			fsys:        fstest.MapFS{ "go.mod": &fstest.MapFile{ Data: []byte("module github.com/foo/bar") }},
-			wantModName: "github.com/foo/bar",
-			wantRepoURL: "https://github.com/foo/bar",
+			name: "succeeds",
+			fsys: fstest.MapFS{ "go.mod": &fstest.MapFile{
+				Data: []byte("module github.com/foo/bar"),
+			}},
+			want: "github.com/foo/bar",
 		},
 		{
 			name:    "cannot read go.mod",
@@ -137,15 +138,83 @@ func TestGetModNameAndRepoURL(t *testing.T) {
 			repGen := &reportGenerator{
 				fsys: &mockFS{ FS: tt.fsys },
 			}
-			err := repGen.getModNameAndRepoURL(t.Context(), "go.mod")
+			err := repGen.getModName(t.Context(), "go.mod")
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getModNameAndRepoURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+				t.Errorf("getModName(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
-			if diff := cmp.Diff(tt.wantModName, repGen.modName); diff != "" {
-				t.Errorf("getModNameAndRepoURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			if diff := cmp.Diff(tt.want, repGen.modName); diff != "" {
+				t.Errorf("getModName(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantRepoURL, repGen.repoURL); diff != "" {
-				t.Errorf("getModNameAndRepoURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
+		})
+	}
+}
+
+type fakeRunner struct {
+	stdout,
+	stderr  string
+	err     error
+}
+
+func (f *fakeRunner) Run(cmd *exec.Cmd) error {
+	_, _ = io.WriteString(cmd.Stdout, f.stdout)
+	_, _ = io.WriteString(cmd.Stderr, f.stderr)
+	return f.err
+}
+
+func TestGetGitRemoteURL(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		runner  runner
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "local SSH standard (SCP style)",
+			runner: &fakeRunner{ stdout: "git@github.com:foo/bar.git" },
+			want:   "https://github.com/foo/bar",
+		},
+		{
+			name:   "local SSH standard (no extension)",
+			runner: &fakeRunner{ stdout: "git@github.com:foo/bar" },
+			want:   "https://github.com/foo/bar",
+		},
+		{
+			name:   "local SSH explicit protocol",
+			runner: &fakeRunner{ stdout: "ssh://git@github.com:foo/bar.git" },
+			want:   "https://github.com/foo/bar",
+		},
+		{
+			name:   "local HTTPS standard",
+			runner: &fakeRunner{ stdout: "https://github.com/foo/bar.git" },
+			want:   "https://github.com/foo/bar",
+		},
+		{
+			name:   "GitHub CI runner (token authentication)",
+			runner: &fakeRunner{ stdout: "https://x-access-token:ghp_1234567890@github.com/foo/bar.git" }, // #nosec G101 - false positive (hardcoded creds)
+			want:   "https://github.com/foo/bar",
+		},
+		{
+			name:   "GitHub CI runner (standard checkout)",
+			runner: &fakeRunner{ stdout: "https://github.com/foo/bar.git" },
+			want:   "https://github.com/foo/bar",
+		},
+		{
+			name:    "git config fails",
+			runner:  &fakeRunner{ err: errors.New("git config failed") },
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			repGen := &reportGenerator{}
+			err    := repGen.getGitRemoteURL(t.Context(), tt.runner)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getGitRemoteURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			}
+			if diff := cmp.Diff(tt.want, repGen.repoURL); diff != "" {
+				t.Errorf("getGitRemoteURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}

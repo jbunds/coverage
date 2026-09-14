@@ -50,7 +50,7 @@ type htmlBuilder struct {
 	subDir string
 }
 
-// writeTreeHTML writes the tree HTML (tree.html) file.
+// writeTreeHTML writes the tree HTML (tree.html) file and returns the width of the tree iframe used by the style.css "template".
 func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writer, treeHTML string) (int, error) {
 	if err := ctx.Err(); err != nil { return 0, err }
 
@@ -79,9 +79,11 @@ func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (s
 	prog := progress.New(ctx, 0, progressOutput)
 	defer prog.Close()
 
-	results         := make([]string, len(entries))
+	var totalStatements, totalCovered atomic.Int64
+
+	results         := make([]entryResult, len(entries) + 2) // +2 pre-allocates slots for the rootTreeNode and its corresponding closing </li> tag
 	initialBudget   := prog.InitialBudget()
-	budgetPerEntry  := initialBudget / float64(len(entries))
+	budgetPerEntry  := initialBudget / float64(len(entries)) // assumes len(entries) > 0
 	remainingBudget := initialBudget
 
 	group, gCtx := errgroup.WithContext(ctx)
@@ -98,23 +100,45 @@ func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (s
 			st := scanState{
 				parentPath: pkgRelRoot,
 				entry:      entry,
-				indent:     1,
+				indent:     3, // 2 levels of indentation are added by prepending rootTreeNode to results below
 				prog:       prog,
 				budget:     currentBudget,
 			}
 			res, err := tb.processEntry(gCtx, st)
 			if err != nil { return err }
-			results[i] = res.html
+			results[i + 1]  = res
+			totalStatements.Add(res.total)
+			totalCovered.Add(res.covered)
 			return nil
 		})
 	}
 
 	if err := group.Wait(); err != nil { return "", err }
 
+	totStatements := totalStatements.Load()
+	totCovered    := totalCovered.Load()
+	aggregatePercent := "0.0"
+	if totStatements > 0 {
+		aggregatePercent = strconv.FormatFloat(float64(totCovered) / float64(totStatements) * 100, 'f', 1, 64)
+	}
+
+	rootTreeNode := entryResult{html: `  <li>
+    <input type="checkbox" id="tree-item-0"/>
+    <div class="tree-node">
+      <label for="tree-item-0">` + pkgRelRoot       + `</label>
+      <span class="cov">`        + aggregatePercent + `%</span>
+    </div>
+    <ul>
+`}
+
+	// the first and last slots were pre-allocated when results was initialized
+	results[0               ] = rootTreeNode
+	results[len(entries) + 1] = entryResult{html: "    </ul>\n  </li>\n"}
+
 	var sb strings.Builder
 	sb.WriteString(`<ul class="tree">` + "\n")
-	for _, html := range results {
-		sb.WriteString(html)
+	for _, res := range results {
+		sb.WriteString(res.html)
 	}
 	sb.WriteString("</ul>\n")
 
@@ -152,7 +176,7 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 		if err != nil { return entryResult{}, err }
 
 		var subDirSB strings.Builder
-		var dirCovered, dirStatements int64
+		var dirCovered, dirStatements atomic.Int64
 
 		if len(subDirEntries) > 0 { // split this subdir's budget up among its children
 			childBudget     := st.budget / float64(len(subDirEntries))
@@ -177,8 +201,8 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 				if err != nil { return entryResult{}, err }
 
 				subDirSB.WriteString(res.html)
-				dirCovered    += res.covered
-				dirStatements += res.total
+				dirCovered.Add(res.covered)
+				dirStatements.Add(res.total)
 			}
 		} else {
 			st.prog.Report(st.budget, pkgPath) // inform the progress tracker that pkgPath has been processed
@@ -190,13 +214,13 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 			subDir: srcBasename,
 		}
 
-		html, err := hb.buildHTML(ctx, subDirSB.String(), dirCovered, dirStatements)
+		html, err := hb.buildHTML(ctx, subDirSB.String(), dirCovered.Load(), dirStatements.Load())
 		if err != nil { return entryResult{}, err }
 
 		return entryResult{
 			html:    html,
-			covered: dirCovered,
-			total:   dirStatements}, nil
+			covered: dirCovered.Load(),
+			total:   dirStatements.Load()}, nil
 	}
 
 	st.prog.Report(st.budget, pkgPath) // inform the progress tracker that pkgPath has been processed
@@ -207,9 +231,8 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 		percent = float64(cov.covered) / float64(cov.total) * 100
 	}
 
-	pct     := strconv.FormatFloat(percent, 'f', 1, 64)
 	srcSpan := `<span class="src"><a href="` + relHTMLPath + `">` + srcBasename + "</a></span>"
-	covSpan := `<span class="cov">` + pct + "%</span>"
+	covSpan := `<span class="cov">` + strconv.FormatFloat(percent, 'f', 1, 64) + "%</span>"
 
 	return entryResult{
 		html:    strings.Repeat("  ", st.indent) + `<li><div class="tree-node">` + srcSpan + " " + covSpan + "</div></li>\n",

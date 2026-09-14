@@ -25,7 +25,7 @@ func TestIntegrationTest(t *testing.T) {
 		profiles: profiles,
 	}
 
-	if err := rg.getModNameAndRepoURL(t.Context(), "go.mod"); err != nil { t.Fatal(err) }
+	if err := rg.getModName(t.Context(), "go.mod"); err != nil { t.Fatal(err) }
 
 	if err := rg.writeCovHTMLFiles(t.Context(), io.Discard, "style.css");  err != nil { t.Fatal(err) }
 

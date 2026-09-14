@@ -61,6 +61,7 @@ linters:
             - maps
             - net/url
             - os
+            - os/exec
             - os/signal
             - path/filepath
             - runtime
@@ -68,12 +69,10 @@ linters:
             - sort
             - strconv
             - strings
-            - sync
             - sync/atomic
             - syscall
             - testing
             - text/template
-            - github.com/graniticio/inifile
             - github.com/jbunds/progress
             - golang.org/x/mod/modfile
             - golang.org/x/sync/errgroup
@@ -93,6 +92,7 @@ linters:
             - fmt
             - io
             - io/fs
+            - os/exec
             - strings
             - testing
             - github.com/google/go-cmp/cmp
@@ -106,6 +106,7 @@ linters:
           allow:
             - io
             - os
+            - os/exec
             - path/filepath
             - strings
             - testing

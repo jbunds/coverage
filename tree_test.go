@@ -24,7 +24,7 @@ func TestWriteTreeHTML(t *testing.T) {
 		{
 			name: "succeeds",
 			fsys: fstest.MapFS{ "foo.go.html": &fstest.MapFile{} },
-			want: 17, // len("foo.go") == 6 + indent == 1 + 10 == 17
+			want: 19, // indent == 3 + len("foo.go") == 6 + 10 (to cohere with "margin-right: 10ch;" in tree.css) == 19
 		},
 		{
 			name:         "genHTML fails",
@@ -75,34 +75,43 @@ func TestGenHTML(t *testing.T) {
 		{
 			name: "succeeds",
 			fsys: fstest.MapFS{
-				"a.go.html":            &fstest.MapFile{},
-				"dir/b.go.html":        &fstest.MapFile{},
-				"dir/subdir/c.go.html": &fstest.MapFile{},
+				"foo/bar/a.go.html":            &fstest.MapFile{},
+				"foo/bar/dir/b.go.html":        &fstest.MapFile{},
+				"foo/bar/dir/subdir/c.go.html": &fstest.MapFile{},
 			},
 			cov: map[string]coverage{
-				"a.go":            {covered: 10, total: 10},
-				"dir/b.go":        {covered:  5, total: 10},
-				"dir/subdir/c.go": {covered:  0, total: 10},
+				"bar/a.go":            {covered: 10, total: 10},
+				"bar/dir/b.go":        {covered:  5, total: 10},
+				"bar/dir/subdir/c.go": {covered:  0, total: 10},
 			},
 			want: strings.Join([]string{
 				`<ul class="tree">`,
-				`  <li><div class="tree-node"><span class="src"><a href="a.go.html">a.go</a></span> <span class="cov">100.0%</span></div></li>`,
 				`  <li>`,
-				`    <input type="checkbox" id="tree-item-1"/>`,
+				`    <input type="checkbox" id="tree-item-0"/>`,
 				`    <div class="tree-node">`,
-				`      <label for="tree-item-1">dir</label>`,
-				`      <span class="cov">25.0%</span>`,
+				`      <label for="tree-item-0">bar</label>`,
+				`      <span class="cov">50.0%</span>`, // covered: 10 + 5 + 0 == 15; total: 10 + 10 + 10 == 30; 15 / 30 == 50
 				`    </div>`,
 				`    <ul>`,
-				`      <li><div class="tree-node"><span class="src"><a href="dir/b.go.html">b.go</a></span> <span class="cov">50.0%</span></div></li>`,
+				`      <li><div class="tree-node"><span class="src"><a href="bar/a.go.html">a.go</a></span> <span class="cov">100.0%</span></div></li>`,
 				`      <li>`,
-				`        <input type="checkbox" id="tree-item-2"/>`,
+				`        <input type="checkbox" id="tree-item-1"/>`,
 				`        <div class="tree-node">`,
-				`          <label for="tree-item-2">subdir</label>`,
-				`          <span class="cov">0.0%</span>`,
+				`          <label for="tree-item-1">dir</label>`,
+				`          <span class="cov">25.0%</span>`,
 				`        </div>`,
 				`        <ul>`,
-				`          <li><div class="tree-node"><span class="src"><a href="dir/subdir/c.go.html">c.go</a></span> <span class="cov">0.0%</span></div></li>`,
+				`          <li><div class="tree-node"><span class="src"><a href="bar/dir/b.go.html">b.go</a></span> <span class="cov">50.0%</span></div></li>`,
+				`          <li>`,
+				`            <input type="checkbox" id="tree-item-2"/>`,
+				`            <div class="tree-node">`,
+				`              <label for="tree-item-2">subdir</label>`,
+				`              <span class="cov">0.0%</span>`,
+				`            </div>`,
+				`            <ul>`,
+				`              <li><div class="tree-node"><span class="src"><a href="bar/dir/subdir/c.go.html">c.go</a></span> <span class="cov">0.0%</span></div></li>`,
+				`            </ul>`,
+				`          </li>`,
 				`        </ul>`,
 				`      </li>`,
 				`    </ul>`,
@@ -127,14 +136,19 @@ func TestGenHTML(t *testing.T) {
 			tb := &treeBuilder{
 				fsys:    mfs,
 				cov:     tt.cov,
-				outRoot: ".",
+				outRoot: "foo",
+				modName: "bar/baz",
 			}
 			got, err := tb.genHTML(t.Context(), io.Discard)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("genHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
+			wantLines := strings.Split(tt.want, "\n")
+			gotLines  := strings.Split(got, "\n")
 			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Errorf("genHTML(%q) mismatch (-want +got):\n%s", tt.name, diff)
+				var rep reporter
+				cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep))
+				t.Errorf("mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
 			}
 		})
 	}
