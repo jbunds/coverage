@@ -208,7 +208,7 @@ func TestGetRemoteURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			repGen := &reportGenerator{modName: "github.com/foo/bar"}
-			err    := repGen.getRemoteURL(t.Context(), tt.runner)
+			err    := repGen.getRemoteURL(t.Context(), "go.mod", tt.runner)
 			if err != nil {
 				t.Errorf("getRemoteURL(%q) returned unexpected error: %v", tt.name, err)
 			}
@@ -493,14 +493,15 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				fsys:         mfs,
 				profiles:     tt.profiles,
 				pkgDirCache:  tt.pkgDirCache,
+				styleCSSFile: "style.css",
 			}
-			err := repGen.writeCovHTMLFiles(t.Context(), io.Discard, "css/style.css")
+			err := repGen.writeCovHTMLFiles(t.Context(), io.Discard)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeCovHTMLFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
 			wantLines := strings.Split(strings.TrimSuffix(string(tt.want ), "\n"), "\n")
 			gotLines  := strings.Split(strings.TrimSuffix(string(mfs.data), "\n"), "\n")
-			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
+			if !cmp.Equal(wantLines, gotLines) {
 				var rep reporter
 				cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep))
 				t.Errorf("writeCovHTMLFiles(%q) mismatch (-want +got):\n%s", tt.name, strings.Join(rep.diffs, "\n"))
@@ -522,10 +523,12 @@ func TestWriteIndexHTML(t *testing.T) {
 	}{
 		{
 			name:          "succeeds",
-			embeddedFiles: fstest.MapFS{ "index.html": &fstest.MapFile{ Data: []byte("ModName: {{ .ModName }}, ModURL: {{ .ModURL }}") }},
+			embeddedFiles: fstest.MapFS{ "index.html": &fstest.MapFile{
+				Data: []byte("ModName: {{ .ModName }}, ModURL: {{ .ModURL }}, TreeHTML: {{ .TreeHTML }}"),
+			}},
 			modName:       "github.com/foo/bar",
 			repoURL:       "https://github.com/foo/bar",
-			want:          "ModName: github.com/foo/bar, ModURL: https://github.com/foo/bar",
+			want:          "ModName: github.com/foo/bar, ModURL: https://github.com/foo/bar, TreeHTML: foo",
 		},
 		{
 			name:          "template.ParseFS fails because index file does not exist",
@@ -549,60 +552,12 @@ func TestWriteIndexHTML(t *testing.T) {
 				repoURL:       tt.repoURL,
 				embeddedFiles: tt.embeddedFiles,
 			}
-			err := repGen.writeIndexHTML(t.Context(), "index.html")
+			err := repGen.writeIndexHTML(t.Context(), "index.html", "foo")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeIndexHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
 			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
 				t.Errorf("writeIndexHTML(%q) mismatch (-want +got):\n%s", tt.name, diff)
-			}
-		})
-	}
-}
-
-func TestWriteStyleCSS(t *testing.T) {
-	t.Parallel()
-	tests := []struct{
-		name          string
-		embeddedFiles fs.FS
-		createFails   bool
-		maxWidth      int
-		want          string
-		wantErr       bool
-	}{
-		{
-			name:          "succeeds",
-			embeddedFiles: fstest.MapFS{ "style.css": &fstest.MapFile{ Data: []byte("MaxWidth: {{ .MaxWidth }}") }},
-			maxWidth:      13,
-			want:          "MaxWidth: 13",
-		},
-		{
-			name:          "template.ParseFS fails because CSS file does not exist",
-			embeddedFiles: fstest.MapFS{},
-			wantErr:       true,
-		},
-		{
-			name:          "Create fails",
-			embeddedFiles: fstest.MapFS{ "style.css": &fstest.MapFile{} },
-			createFails:   true,
-			wantErr:       true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			mfs    := &mockFS{ createFails: tt.createFails }
-			repGen := &reportGenerator{
-				fsys:          mfs,
-				embeddedFiles: tt.embeddedFiles,
-				maxWidth:      tt.maxWidth,
-			}
-			err := repGen.writeStyleCSS(t.Context(), "style.css")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("writeStyleCSS(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-			}
-			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
-				t.Errorf("writeStyleCSS(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}

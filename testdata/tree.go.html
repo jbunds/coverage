@@ -30,7 +30,6 @@
 <div class="line">	outRoot  string</div>
 <div class="line">	cov      map[string]coverage</div>
 <div class="line">	counter  atomic.Int64</div>
-<div class="line">	maxWidth atomic.Int64</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// scanState captures the ephemeral, per-iteration state required for </div>
@@ -58,24 +57,9 @@
 <div class="line">	subDir string</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// writeTreeHTML writes the tree HTML (tree.html) file and returns the width of the tree iframe used by the style.css &#34;template&#34;.</div>
-<div class="line">func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writer, treeHTML string) (int, error<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return 0, err</span><span class="miss"> }</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	html, err := tb.genHTML(ctx, progressOutput)</span></div>
-<div class="line"><span class="hit">	if err != nil { return 0, err</span><span class="hit"> }</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	treeFile, err := tb.fsys.Create(ctx, filepath.Join(tb.outRoot, treeHTML))</span></div>
-<div class="line"><span class="hit">	if                                           err != nil { return 0, err</span><span class="hit"> }</span></div>
-<div class="line"><span class="hit">	if    err := preamble      (ctx,  treeFile); err != nil</span><span class="miss"> { return 0, err</span><span class="miss"> }</span></div>
-<div class="line"><span class="hit">	if _, err := io.WriteString(treeFile, html); err != nil</span><span class="miss"> { return 0, err</span><span class="miss"> }</span></div>
-<div class="line"><span class="hit">	if    err := postamble     (ctx,  treeFile); err != nil</span><span class="miss"> { return 0, err</span><span class="miss"> }</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	return int(tb.maxWidth.Add(13)), treeFile.Close</span>() // +13 != len(&#34;100.0%&#34;) + 2ch (gap) to cohere with &#34;margin-right: 10ch;&#34; in tree.css</div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// genHTML recursively traverses the output directory to generate the nested &lt;ul&gt; and &lt;li&gt; HTML string representing the file coverage tree.</div>
-<div class="line">func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (string, error<span class="hit">) {</span></div>
+<div class="line">// buildTreeHTML recursively traverses the output directory to generate the</div>
+<div class="line">// nested &lt;ul&gt; and &lt;li&gt; HTML string representing the file coverage tree.</div>
+<div class="line">func (tb *treeBuilder) buildTreeHTML(ctx context.Context, progressOutput io.Writer) (string, error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	modDomain, _, _ := strings.Cut(tb.modName, &#34;/&#34;)         // module&#39;s top-level namespace</span></div>
@@ -148,7 +132,7 @@
 <div class="line"><span class="hit">	for _, res := range results {</span></div>
 <div class="line"><span class="hit">		sb.WriteString(res.html)</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/ul&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/ul&gt;&#34;)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	return sb.String(), nil</span></div>
 <div class="line">}</div>
@@ -168,14 +152,6 @@
 <div class="line"><span class="hit">	srcBasename := strings.TrimSuffix(st.entry.Name(), &#34;.html&#34;)  // basename of the subdirectory or source file</span></div>
 <div class="line"><span class="hit">	pkgPath     := filepath.Join(st.parentPath, srcBasename)     // package-normalized path used as the key for coverage map lookup</span></div>
 <div class="line"><span class="hit">	relHTMLPath := filepath.Join(st.parentPath, st.entry.Name()) // physical path relative to tb.outRoot</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	width := int64(st.indent + len(srcBasename))</span></div>
-<div class="line"><span class="hit">	if isDir { width += 2</span> } // account for the folder icon emoji</div>
-<div class="line"><span class="hit">	for {</span></div>
-<div class="line"><span class="hit">		current := tb.maxWidth.Load()</span></div>
-<div class="line"><span class="hit">		if width &lt;= current                           { break</span> }</div>
-<div class="line"><span class="hit">		if tb.maxWidth.CompareAndSwap(current, width) { break</span> }</div>
-<div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if isDir {</span></div>
 <div class="line"><span class="hit">		itemID             := &#34;tree-item-&#34; + strconv.FormatInt(tb.counter.Add(1), 10)</span></div>
@@ -239,7 +215,7 @@
 <div class="line"><span class="hit">		percent = float64(cov.covered) / float64(cov.total) * 100</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	srcSpan := `&lt;span class=&#34;src&#34;&gt;&lt;a href=&#34;` + relHTMLPath + `&#34;&gt;` + srcBasename + &#34;&lt;/a&gt;&lt;/span&gt;&#34;</span></div>
+<div class="line"><span class="hit">	srcSpan := `&lt;span class=&#34;src&#34;&gt;&lt;a target=&#34;code&#34; href=&#34;` + relHTMLPath + `&#34;&gt;` + srcBasename + &#34;&lt;/a&gt;&lt;/span&gt;&#34;</span></div>
 <div class="line"><span class="hit">	covSpan := `&lt;span class=&#34;cov&#34;&gt;` + strconv.FormatFloat(percent, &#39;f&#39;, 1, 64) + &#34;%&lt;/span&gt;&#34;</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	return entryResult{</span></div>
@@ -271,47 +247,6 @@
 <div class="line"><span class="hit">	       subDirHTML                                                             +</span></div>
 <div class="line"><span class="hit">	       indent     + &#34;  &lt;/ul&gt;\n&#34;                                               +</span></div>
 <div class="line"><span class="hit">	       indent     + &#34;&lt;/li&gt;\n&#34;, nil</span></div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// preamble writes the preliminary portion of the tree HTML document.</div>
-<div class="line">func preamble(ctx context.Context, w io.Writer) error<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
-<div class="line"><span class="hit">	const content = `&lt;!DOCTYPE html&gt;</span></div>
-<div class="line"><span class="hit">&lt;html lang=&#34;en&#34;&gt;</span></div>
-<div class="line"><span class="hit">&lt;head&gt;</span></div>
-<div class="line"><span class="hit">&lt;meta charset=&#34;utf-8&#34;&gt;</span></div>
-<div class="line"><span class="hit">&lt;link rel=&#34;stylesheet&#34; href=&#34;style.css&#34; type=&#34;text/css&#34;&gt;</span></div>
-<div class="line"><span class="hit">&lt;link rel=&#34;stylesheet&#34; href=&#34;tree.css&#34;  type=&#34;text/css&#34;&gt;</span></div>
-<div class="line"><span class="hit">&lt;title&gt;Go source tree&lt;/title&gt;</span></div>
-<div class="line"><span class="hit">&lt;base target=&#34;code&#34;/&gt;</span></div>
-<div class="line"><span class="hit">&lt;/head&gt;</span></div>
-<div class="line"><span class="hit">&lt;body id=&#34;tree-body&#34;&gt;</span></div>
-<div class="line"><span class="hit">`</span></div>
-<div class="line"><span class="hit">	_, err := io.WriteString(w, content)</span></div>
-<div class="line"><span class="hit">	return err</span></div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// postamble writes the final portion of the tree HTML document.</div>
-<div class="line">func postamble(ctx context.Context, w io.Writer) error<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
-<div class="line"><span class="hit">	const content = `&lt;/body&gt;</span></div>
-<div class="line"><span class="hit">&lt;script&gt;</span></div>
-<div class="line"><span class="hit">try {</span></div>
-<div class="line"><span class="hit">  const parentTheme = window.parent.document.documentElement.getAttribute(&#39;theme&#39;);</span></div>
-<div class="line"><span class="hit">  if (parentTheme) document.documentElement.setAttribute(&#39;theme&#39;, parentTheme);</span></div>
-<div class="line"><span class="hit">} catch (e) {</span></div>
-<div class="line"><span class="hit">  console.warn(&#39;direct parent access blocked by browser; waiting for postMessage&#39;);</span></div>
-<div class="line"><span class="hit">}</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">window.addEventListener(&#39;message&#39;, (event) =&gt; {</span></div>
-<div class="line"><span class="hit">  if (!event.data) return;</span></div>
-<div class="line"><span class="hit">  if (event.data.type === &#39;SET_THEME&#39;) document.documentElement.setAttribute(&#39;theme&#39;, event.data.theme);</span></div>
-<div class="line"><span class="hit">  if (event.data.type === &#39;EXPAND_OR_COLLAPSE&#39;) document.querySelectorAll(&#39;.tree input[type=&#34;checkbox&#34;]&#39;).forEach(cb =&gt; cb.checked = event.data.expanded);</span></div>
-<div class="line"><span class="hit">});</span></div>
-<div class="line"><span class="hit">&lt;/script&gt;</span></div>
-<div class="line"><span class="hit">&lt;/html&gt;`</span></div>
-<div class="line"><span class="hit">	_, err := io.WriteString(w, content)</span></div>
-<div class="line"><span class="hit">	return err</span></div>
 <div class="line">}</div>
 <script>
 try {

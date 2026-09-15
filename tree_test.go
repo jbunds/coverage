@@ -11,58 +11,7 @@ import (
 	"github.com/jbunds/progress"
 )
 
-func TestWriteTreeHTML(t *testing.T) {
-	t.Parallel()
-	tests := []struct{
-		name         string
-		fsys         fs.FS
-		createFails  bool
-		readDirFails bool
-		want         int
-		wantErr      bool
-	}{
-		{
-			name: "succeeds",
-			fsys: fstest.MapFS{ "foo.go.html": &fstest.MapFile{} },
-			want: 22, // indent == 3 + len("foo.go") == 6 + 13 (???) (to cohere with "margin-right: 10ch;" in tree.css) == 22
-		},
-		{
-			name:         "genHTML fails",
-			fsys:         fstest.MapFS{},
-			readDirFails: true,
-			wantErr:      true,
-		},
-		{
-			name:        "Create fails",
-			fsys:        fstest.MapFS{ "bar.go.html": &fstest.MapFile{} },
-			createFails: true,
-			wantErr:     true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			mfs := &mockFS{
-				FS:           tt.fsys,
-				readDirFails: tt.readDirFails,
-				createFails:  tt.createFails,
-			}
-			tb := &treeBuilder{
-				fsys:    mfs,
-				outRoot: ".",
-			}
-			got, err := tb.writeTreeHTML(t.Context(), io.Discard, "tree.html")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("writeTreeHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-			}
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Errorf("writeTreeHTML(%q) mismatch (-want +got):\n%s", tt.name, diff)
-			}
-		})
-	}
-}
-
-func TestGenHTML(t *testing.T) {
+func TestBuildTreeHTML(t *testing.T) {
 	t.Parallel()
 	tests := []struct{
 		name         string
@@ -93,7 +42,7 @@ func TestGenHTML(t *testing.T) {
 				`      <span class="cov">50.0%</span>`, // covered: 10 + 5 + 0 == 15; total: 10 + 10 + 10 == 30; 15 / 30 == 50
 				`    </div>`,
 				`    <ul>`,
-				`      <li><div class="tree-node"><span class="src"><a href="bar/a.go.html">a.go</a></span> <span class="cov">100.0%</span></div></li>`,
+				`      <li><div class="tree-node"><span class="src"><a target="code" href="bar/a.go.html">a.go</a></span> <span class="cov">100.0%</span></div></li>`,
 				`      <li>`,
 				`        <input type="checkbox" id="tree-item-1"/>`,
 				`        <div class="tree-node">`,
@@ -101,7 +50,7 @@ func TestGenHTML(t *testing.T) {
 				`          <span class="cov">25.0%</span>`,
 				`        </div>`,
 				`        <ul>`,
-				`          <li><div class="tree-node"><span class="src"><a href="bar/dir/b.go.html">b.go</a></span> <span class="cov">50.0%</span></div></li>`,
+				`          <li><div class="tree-node"><span class="src"><a target="code" href="bar/dir/b.go.html">b.go</a></span> <span class="cov">50.0%</span></div></li>`,
 				`          <li>`,
 				`            <input type="checkbox" id="tree-item-2"/>`,
 				`            <div class="tree-node">`,
@@ -109,15 +58,14 @@ func TestGenHTML(t *testing.T) {
 				`              <span class="cov">0.0%</span>`,
 				`            </div>`,
 				`            <ul>`,
-				`              <li><div class="tree-node"><span class="src"><a href="bar/dir/subdir/c.go.html">c.go</a></span> <span class="cov">0.0%</span></div></li>`,
+				`              <li><div class="tree-node"><span class="src"><a target="code" href="bar/dir/subdir/c.go.html">c.go</a></span> <span class="cov">0.0%</span></div></li>`,
 				`            </ul>`,
 				`          </li>`,
 				`        </ul>`,
 				`      </li>`,
 				`    </ul>`,
 				`  </li>`,
-				`</ul>`,
-				``}, "\n"),
+				`</ul>`}, "\n"),
 		},
 		{
 			name:         "ReadDir fails",
@@ -139,13 +87,13 @@ func TestGenHTML(t *testing.T) {
 				outRoot: "foo",
 				modName: "bar/baz",
 			}
-			got, err := tb.genHTML(t.Context(), io.Discard)
+			got, err := tb.buildTreeHTML(t.Context(), io.Discard)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("genHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+				t.Errorf("buildTreeHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
 			wantLines := strings.Split(tt.want, "\n")
 			gotLines  := strings.Split(got, "\n")
-			if diff := cmp.Diff(tt.want, got); diff != "" {
+			if !cmp.Equal(wantLines, gotLines) {
 				var rep reporter
 				cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep))
 				t.Errorf("mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
@@ -211,62 +159,6 @@ func TestProcessEntry(t *testing.T) {
 			}
 			if diff := cmp.Diff(tt.want, got, cmp.AllowUnexported(entryResult{})); diff != "" {
 				t.Errorf("processEntry(%q) mismatch (-want +got):\n%s", tt.name, diff)
-			}
-		})
-	}
-}
-
-func TestPreamble(t *testing.T) {
-	t.Parallel()
-	tests := []struct{
-		name    string
-		writer  io.Writer
-		wantErr bool
-	}{
-		{
-			name:  "succeeds",
-			writer: io.Discard,
-		},
-		{
-			name:    "fails",
-			writer:  &badWriter{},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			err := preamble(t.Context(), tt.writer)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("preamble(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestPostamble(t *testing.T) {
-	t.Parallel()
-	tests := []struct{
-		name    string
-		writer  io.Writer
-		wantErr bool
-	}{
-		{
-			name:  "succeeds",
-			writer: io.Discard,
-		},
-		{
-			name:    "fails",
-			writer:  &badWriter{},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			err := postamble(t.Context(), tt.writer)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("postamble(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
 		})
 	}

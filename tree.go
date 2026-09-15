@@ -22,7 +22,6 @@ type treeBuilder struct {
 	outRoot  string
 	cov      map[string]coverage
 	counter  atomic.Int64
-	maxWidth atomic.Int64
 }
 
 // scanState captures the ephemeral, per-iteration state required for 
@@ -50,24 +49,9 @@ type htmlBuilder struct {
 	subDir string
 }
 
-// writeTreeHTML writes the tree HTML (tree.html) file and returns the width of the tree iframe used by the style.css "template".
-func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writer, treeHTML string) (int, error) {
-	if err := ctx.Err(); err != nil { return 0, err }
-
-	html, err := tb.genHTML(ctx, progressOutput)
-	if err != nil { return 0, err }
-
-	treeFile, err := tb.fsys.Create(ctx, filepath.Join(tb.outRoot, treeHTML))
-	if                                           err != nil { return 0, err }
-	if    err := preamble      (ctx,  treeFile); err != nil { return 0, err }
-	if _, err := io.WriteString(treeFile, html); err != nil { return 0, err }
-	if    err := postamble     (ctx,  treeFile); err != nil { return 0, err }
-
-	return int(tb.maxWidth.Add(13)), treeFile.Close() // +13 != len("100.0%") + 2ch (gap) to cohere with "margin-right: 10ch;" in tree.css
-}
-
-// genHTML recursively traverses the output directory to generate the nested <ul> and <li> HTML string representing the file coverage tree.
-func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (string, error) {
+// buildTreeHTML recursively traverses the output directory to generate the
+// nested <ul> and <li> HTML string representing the file coverage tree.
+func (tb *treeBuilder) buildTreeHTML(ctx context.Context, progressOutput io.Writer) (string, error) {
 	if err := ctx.Err(); err != nil { return "", err }
 
 	modDomain, _, _ := strings.Cut(tb.modName, "/")         // module's top-level namespace
@@ -140,7 +124,7 @@ func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (s
 	for _, res := range results {
 		sb.WriteString(res.html)
 	}
-	sb.WriteString("</ul>\n")
+	sb.WriteString("</ul>")
 
 	return sb.String(), nil
 }
@@ -160,14 +144,6 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 	srcBasename := strings.TrimSuffix(st.entry.Name(), ".html")  // basename of the subdirectory or source file
 	pkgPath     := filepath.Join(st.parentPath, srcBasename)     // package-normalized path used as the key for coverage map lookup
 	relHTMLPath := filepath.Join(st.parentPath, st.entry.Name()) // physical path relative to tb.outRoot
-
-	width := int64(st.indent + len(srcBasename))
-	if isDir { width += 2 } // account for the folder icon emoji
-	for {
-		current := tb.maxWidth.Load()
-		if width <= current                           { break }
-		if tb.maxWidth.CompareAndSwap(current, width) { break }
-	}
 
 	if isDir {
 		itemID             := "tree-item-" + strconv.FormatInt(tb.counter.Add(1), 10)
@@ -231,7 +207,7 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 		percent = float64(cov.covered) / float64(cov.total) * 100
 	}
 
-	srcSpan := `<span class="src"><a href="` + relHTMLPath + `">` + srcBasename + "</a></span>"
+	srcSpan := `<span class="src"><a target="code" href="` + relHTMLPath + `">` + srcBasename + "</a></span>"
 	covSpan := `<span class="cov">` + strconv.FormatFloat(percent, 'f', 1, 64) + "%</span>"
 
 	return entryResult{
@@ -263,45 +239,4 @@ func (hb *htmlBuilder) buildHTML(ctx context.Context, subDirHTML string, dirCove
 	       subDirHTML                                                             +
 	       indent     + "  </ul>\n"                                               +
 	       indent     + "</li>\n", nil
-}
-
-// preamble writes the preliminary portion of the tree HTML document.
-func preamble(ctx context.Context, w io.Writer) error {
-	if err := ctx.Err(); err != nil { return err }
-	const content = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<link rel="stylesheet" href="style.css" type="text/css">
-<link rel="stylesheet" href="tree.css"  type="text/css">
-<title>Go source tree</title>
-<base target="code"/>
-</head>
-<body id="tree-body">
-`
-	_, err := io.WriteString(w, content)
-	return err
-}
-
-// postamble writes the final portion of the tree HTML document.
-func postamble(ctx context.Context, w io.Writer) error {
-	if err := ctx.Err(); err != nil { return err }
-	const content = `</body>
-<script>
-try {
-  const parentTheme = window.parent.document.documentElement.getAttribute('theme');
-  if (parentTheme) document.documentElement.setAttribute('theme', parentTheme);
-} catch (e) {
-  console.warn('direct parent access blocked by browser; waiting for postMessage');
-}
-
-window.addEventListener('message', (event) => {
-  if (!event.data) return;
-  if (event.data.type === 'SET_THEME') document.documentElement.setAttribute('theme', event.data.theme);
-  if (event.data.type === 'EXPAND_OR_COLLAPSE') document.querySelectorAll('.tree input[type="checkbox"]').forEach(cb => cb.checked = event.data.expanded);
-});
-</script>
-</html>`
-	_, err := io.WriteString(w, content)
-	return err
 }

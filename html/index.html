@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <link rel="icon"       href="favicon.ico" type="image/vnd.microsoft.icon">
 <link rel="stylesheet" href="style.css"   type="text/css">
+<link rel="stylesheet" href="tree.css"    type="text/css">
 <title>Go test coverage // {{ .ModName }}</title>
 </head>
 <body id="index">
@@ -16,7 +17,11 @@
   <button id="theme">theme</button>
 </div>
 </header>
-<iframe id="tree" name="tree" src="tree.html"></iframe>
+<div id="tree">
+<div id="tree-body">
+{{ .TreeHTML }}
+</div>
+</div>
 <iframe id="code" name="code" src="code.html"></iframe>
 <script>
   if (window.location.protocol !== 'file:') {
@@ -48,7 +53,7 @@
   document.getElementById('expand').addEventListener('click', () => {
     expanded = !expanded;
     document.getElementById('expand').textContent = expanded ? 'collapse' : 'expand';
-    document.getElementById('tree').contentWindow.postMessage({ type: 'EXPAND_OR_COLLAPSE', expanded: expanded }, '*');
+    document.querySelectorAll('.tree input[type="checkbox"]').forEach(cb => cb.checked = expanded);
   });
 
   const applyLineNumbers = (displayed) => {
@@ -62,7 +67,7 @@
   try {
     const saved = localStorage.getItem('line-numbers');
     applyLineNumbers(saved ? saved === '1' : true);
-	} catch (e) {}
+  } catch (e) {}
 
   document.getElementById('lines').addEventListener('click', () => {
     const current = document.documentElement.getAttribute('line-numbers');

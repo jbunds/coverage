@@ -11,17 +11,13 @@
 }
 
 .tree ul { /* collapsed state */
-  height:       0;
-  opacity:      0;
-  overflow:     hidden;
-  transition:   all 0.1s ease;
+  display:      none;
   margin-left:  1ch;
   padding-left: 1ch;
 }
 
 .tree input:checked ~ ul { /* expanded state */
-  height:  auto;
-  opacity: 1;
+  display: block;
 }
 
 .tree li { /* layout for every row (folder or file) */
