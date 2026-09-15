@@ -215,7 +215,7 @@
 <div class="line"><span class="hit">		percent = float64(cov.covered) / float64(cov.total) * 100</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	srcSpan := `&lt;span class=&#34;src&#34;&gt;&lt;a target=&#34;code&#34; href=&#34;` + relHTMLPath + `&#34;&gt;` + srcBasename + &#34;&lt;/a&gt;&lt;/span&gt;&#34;</span></div>
+<div class="line"><span class="hit">	srcSpan := `&lt;span class=&#34;src&#34;&gt;&lt;a href=&#34;` + relHTMLPath + `&#34;&gt;` + srcBasename + &#34;&lt;/a&gt;&lt;/span&gt;&#34;</span></div>
 <div class="line"><span class="hit">	covSpan := `&lt;span class=&#34;cov&#34;&gt;` + strconv.FormatFloat(percent, &#39;f&#39;, 1, 64) + &#34;%&lt;/span&gt;&#34;</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	return entryResult{</span></div>

@@ -207,7 +207,7 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 		percent = float64(cov.covered) / float64(cov.total) * 100
 	}
 
-	srcSpan := `<span class="src"><a target="code" href="` + relHTMLPath + `">` + srcBasename + "</a></span>"
+	srcSpan := `<span class="src"><a href="` + relHTMLPath + `">` + srcBasename + "</a></span>"
 	covSpan := `<span class="cov">` + strconv.FormatFloat(percent, 'f', 1, 64) + "%</span>"
 
 	return entryResult{
