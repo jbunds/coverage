@@ -552,7 +552,7 @@
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	cssPath := strings.Repeat(&#34;../&#34;, strings.Count(srcPath, &#34;/&#34;)) + rg.styleCSSFile</span></div>
-<div class="line"><span class="hit">	writePreamble(ew, cssPath, srcPath)</span></div>
+<div class="line"><span class="hit">	writePreamble(ew, srcPath, cssPath)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	buf  := new(bytes.Buffer)</span></div>
 <div class="line"><span class="hit">	scnr := new(scanner.Scanner)</span></div>
@@ -683,13 +683,13 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// writePreamble writes the preamble portion of the HTML content common to every Go source HTML file.</div>
-<div class="line">func writePreamble(ew stickyWriter, cssRelPath, srcPath string<span class="hit">) {</span></div>
+<div class="line">func writePreamble(ew stickyWriter, srcPath, cssPath string<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;!DOCTYPE html&gt;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(`&lt;html lang=&#34;en&#34;&gt;` + &#34;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;head&gt;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(`&lt;meta charset=&#34;utf-8&#34;&gt;` + &#34;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(`&lt;link rel=&#34;stylesheet&#34; href=&#34;`)</span></div>
-<div class="line"><span class="hit">	ew.write(cssRelPath)</span></div>
+<div class="line"><span class="hit">	ew.write(cssPath)</span></div>
 <div class="line"><span class="hit">	ew.write(`&#34; type=&#34;text/css&#34;&gt;` + &#34;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;title&gt;&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(srcPath)</span></div>

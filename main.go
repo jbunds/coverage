@@ -544,7 +544,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	}
 
 	cssPath := strings.Repeat("../", strings.Count(srcPath, "/")) + rg.styleCSSFile
-	writePreamble(ew, cssPath, srcPath)
+	writePreamble(ew, srcPath, cssPath)
 
 	buf  := new(bytes.Buffer)
 	scnr := new(scanner.Scanner)
@@ -675,13 +675,13 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 }
 
 // writePreamble writes the preamble portion of the HTML content common to every Go source HTML file.
-func writePreamble(ew stickyWriter, cssRelPath, srcPath string) {
+func writePreamble(ew stickyWriter, srcPath, cssPath string) {
 	ew.write("<!DOCTYPE html>\n")
 	ew.write(`<html lang="en">` + "\n")
 	ew.write("<head>\n")
 	ew.write(`<meta charset="utf-8">` + "\n")
 	ew.write(`<link rel="stylesheet" href="`)
-	ew.write(cssRelPath)
+	ew.write(cssPath)
 	ew.write(`" type="text/css">` + "\n")
 	ew.write("<title>")
 	ew.write(srcPath)
