@@ -1,4 +1,4 @@
 <svg width="72" height="24" viewBox="0 0 80 30">
   <rect x="0"  y="0"  width="70" height="30" rx="4" ry="4" fill="#606060"/>
-	<text x="36" y="20" font-family="Arial" font-size="16" fill="white" text-anchor="middle">expand</text>
+  <text x="36" y="20" font-family="Arial" font-size="16" fill="white" text-anchor="middle">expand</text>
 </svg>
