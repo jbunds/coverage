@@ -533,6 +533,8 @@ func coverClass(blocks []*profileBlock, start, end int) string {
 func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath string) error {
 	if err := ctx.Err(); err != nil { return err }
 
+	// TODO(jbunds): refactor this method since it's ~140 lines long
+
 	pkgPath  := filepath.Dir( profile.FileName)
 	fileName := filepath.Base(profile.FileName)
 
@@ -594,14 +596,15 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	for {
 		pos, tok, lit := scnr.Scan()
 		if tok == token.EOF {
-			flushPendingSpan() // flush any remainder before breaking out of the loop
+			flushPendingSpan()
 			if lastOffset < len(src) {
 				writeTokenFragment(buf, src[lastOffset:], lastOffset, "", blocks)
 			}
 			break
 		}
 
-		startOffset := file.Offset(pos) // convert token.File-relative token.Pos into a byte offset in src to synchronize the profile and token streams
+		// synchronize the token and profile block streams
+		startOffset := file.Offset(pos) // convert token.File-relative token.Pos into a byte offset in src
 		endOffset   := 0
 
 		if lit == "" && tok == token.COMMENT {
@@ -733,12 +736,12 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 	slices.SortFunc(keys, func(a, b string) int {
 		depthA, depthB := strings.Count(a, "/"), strings.Count(b, "/")
 		if depthA != depthB { return cmp.Compare(depthA, depthB) } // sort by path depth
-		return cmp.Compare(a, b) // sort alphanumerically
+		return cmp.Compare(a, b)                                   // sort alphanumerically
 	})
 
 	const (
-		colorGreen = "\033[32m"
-		colorRed   = "\033[31m"
+		green = "\033[32m"
+		red   = "\033[31m"
 	)
 
 	divider := strings.Repeat("—", maxPathLen + 9) + "\n" // 9 == 2 spaces + len("100.00%")
@@ -758,8 +761,8 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 		ew.write(path)
 		ew.write(strings.Repeat(" ", maxPathLen - len(path) + 2))
 		pct       := strconv.FormatFloat(percent, 'f', 2, 64)
-		colorCode := colorGreen
-		if percent < 50 { colorCode = colorRed }
+		colorCode := green
+		if percent < 50 { colorCode = red }
 		ew.write(strings.Repeat(" ", 6 - len(pct)))
 		ew.writeColor(pct + "%", colorCode)
 		ew.write("\n")
@@ -776,8 +779,8 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 	ew.write("Total")
 	ew.write(strings.Repeat(" ", maxPathLen - 5 + 2))
 	totalPct  := strconv.FormatFloat(totalPercent, 'f', 2, 64)
-	colorCode := colorGreen
-	if totalPercent < 50 { colorCode = colorRed }
+	colorCode := green
+	if totalPercent < 50 { colorCode = red }
 	ew.write(strings.Repeat(" ", 6 - len(totalPct)))
 	ew.writeColor(totalPct + "%", colorCode)
 	ew.write("\n")

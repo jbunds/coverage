@@ -541,6 +541,8 @@
 <div class="line">func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath string) error<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
 <div class="line"></div>
+<div class="line">	// TODO(jbunds): refactor this method since it&#39;s ~140 lines long</div>
+<div class="line"></div>
 <div class="line"><span class="hit">	pkgPath  := filepath.Dir( profile.FileName)</span></div>
 <div class="line"><span class="hit">	fileName := filepath.Base(profile.FileName)</span></div>
 <div class="line"></div>
@@ -602,14 +604,15 @@
 <div class="line"><span class="hit">	for {</span></div>
 <div class="line"><span class="hit">		pos, tok, lit := scnr.Scan()</span></div>
 <div class="line"><span class="hit">		if tok == token.EOF {</span></div>
-<div class="line"><span class="hit">			flushPendingSpan() // flush any remainder before breaking out of the loop</span></div>
+<div class="line"><span class="hit">			flushPendingSpan()</span></div>
 <div class="line"><span class="hit">			if lastOffset &lt; len(src</span><span class="miss">) {</span></div>
 <div class="line"><span class="miss">				writeTokenFragment(buf, src[lastOffset:], lastOffset, &#34;&#34;, blocks)</span></div>
 <div class="line">			}</div>
 <div class="line"><span class="hit">			break</span></div>
 <div class="line">		}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">		startOffset := file.Offset(pos) // convert token.File-relative token.Pos into a byte offset in src to synchronize the profile and token streams</span></div>
+<div class="line">		// synchronize the token and profile block streams</div>
+<div class="line"><span class="hit">		startOffset := file.Offset(pos) // convert token.File-relative token.Pos into a byte offset in src</span></div>
 <div class="line"><span class="hit">		endOffset   := 0</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">		if lit == &#34;&#34; &amp;&amp; tok == token.COMMENT</span><span class="miss"> {</span></div>
@@ -741,12 +744,12 @@
 <div class="line"><span class="hit">	slices.SortFunc(keys, func(a, b string) int {</span></div>
 <div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
 <div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthA, depthB</span>) } // sort by path depth</div>
-<div class="line"><span class="hit">		return cmp.Compare(a, b</span>) // sort alphanumerically</div>
+<div class="line"><span class="hit">		return cmp.Compare(a, b</span>)                                   // sort alphanumerically</div>
 <div class="line">	})</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	const (</span></div>
-<div class="line"><span class="hit">		colorGreen = &#34;\033[32m&#34;</span></div>
-<div class="line"><span class="hit">		colorRed   = &#34;\033[31m&#34;</span></div>
+<div class="line"><span class="hit">		green = &#34;\033[32m&#34;</span></div>
+<div class="line"><span class="hit">		red   = &#34;\033[31m&#34;</span></div>
 <div class="line"><span class="hit">	)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	divider := strings.Repeat(&#34;—&#34;, maxPathLen + 9) + &#34;\n&#34; // 9 == 2 spaces + len(&#34;100.00%&#34;)</span></div>
@@ -766,8 +769,8 @@
 <div class="line"><span class="hit">		ew.write(path)</span></div>
 <div class="line"><span class="hit">		ew.write(strings.Repeat(&#34; &#34;, maxPathLen - len(path) + 2))</span></div>
 <div class="line"><span class="hit">		pct       := strconv.FormatFloat(percent, &#39;f&#39;, 2, 64)</span></div>
-<div class="line"><span class="hit">		colorCode := colorGreen</span></div>
-<div class="line"><span class="hit">		if percent &lt; 50 { colorCode = colorRed</span><span class="hit"> }</span></div>
+<div class="line"><span class="hit">		colorCode := green</span></div>
+<div class="line"><span class="hit">		if percent &lt; 50 { colorCode = red</span><span class="hit"> }</span></div>
 <div class="line"><span class="hit">		ew.write(strings.Repeat(&#34; &#34;, 6 - len(pct)))</span></div>
 <div class="line"><span class="hit">		ew.writeColor(pct + &#34;%&#34;, colorCode)</span></div>
 <div class="line"><span class="hit">		ew.write(&#34;\n&#34;</span><span class="hit">)</span></div>
@@ -784,8 +787,8 @@
 <div class="line"><span class="hit">	ew.write(&#34;Total&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen - 5 + 2))</span></div>
 <div class="line"><span class="hit">	totalPct  := strconv.FormatFloat(totalPercent, &#39;f&#39;, 2, 64)</span></div>
-<div class="line"><span class="hit">	colorCode := colorGreen</span></div>
-<div class="line"><span class="hit">	if totalPercent &lt; 50</span><span class="miss"> { colorCode = colorRed</span><span class="miss"> }</span></div>
+<div class="line"><span class="hit">	colorCode := green</span></div>
+<div class="line"><span class="hit">	if totalPercent &lt; 50</span><span class="miss"> { colorCode = red</span><span class="miss"> }</span></div>
 <div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, 6 - len(totalPct)))</span></div>
 <div class="line"><span class="hit">	ew.writeColor(totalPct + &#34;%&#34;, colorCode)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;\n&#34;)</span></div>
