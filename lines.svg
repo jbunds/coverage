@@ -1,0 +1,4 @@
+<svg width="60" height="24" viewBox="0 0 80 30">
+  <rect x="0"  y="0"  width="60" height="30" rx="4" ry="4" fill="#606060"/>
+	<text x="30" y="20" font-family="Arial" font-size="16" fill="white" text-anchor="middle">lines</text>
+</svg>
