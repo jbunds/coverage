@@ -91,7 +91,8 @@ a:hover {
   height:                100vh;
   margin:                0;
   grid-template-rows:    50px 1fr;
-  grid-template-columns: calc({{ .MaxWidth }}ch + 10px) 1fr;
+  /* TODO(jbunds): dynamically calculate and adjust the width of the first column each time a tree node is clicked */
+  grid-template-columns: calc({{ .MaxWidth }}ch) 1fr; /* grid-template-columns: auto??? 1fr; */
   background-color:      var(--bg-color);
   color:                 var(--text-color);
   font-family:           monospace;

@@ -1,4 +1,4 @@
-/* TODO(jeff): refactor, simplify, and encapsulate with finer resolution all CSS  */
+/* TODO(jeff): refactor, simplify, and encapsulate with more finely-grained CSS selectors */
 
 .tree input[type="checkbox"] { display: none }
 
@@ -10,7 +10,7 @@
   padding:    0;
 }
 
-.tree ul { /* toggle logic */
+.tree ul { /* collapsed state */
   height:       0;
   opacity:      0;
   overflow:     hidden;
@@ -19,11 +19,10 @@
   padding-left: 1ch;
 }
 
-.tree input:checked ~ ul {
+.tree input:checked ~ ul { /* expanded state */
   height:  auto;
   opacity: 1;
 }
-
 
 .tree li { /* layout for every row (folder or file) */
   position:    relative;
@@ -62,7 +61,7 @@
   user-select:    none;
   cursor:         pointer;
   vertical-align: middle;
-  margin-right:   10ch;
+  margin-right:   10ch; /* 10ch == len(folder emoji) == 1ch + len(" ") == 1ch (?) + len("100.0%") == 6ch + ??? */
   padding:        2px 4px;
 }
 
@@ -109,7 +108,7 @@ span.cov {
   position:    absolute;
   top:         50%;
   right:       10px;
-  width:       8ch;
+  width:       8ch; /* 8ch == len("100.0%") + 2ch gap */
   font-family: Menlo, monospace;
   font-size:   small;
   font-weight: normal;

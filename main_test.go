@@ -161,13 +161,12 @@ func (f *fakeRunner) Run(cmd *exec.Cmd) error {
 	return f.err
 }
 
-func TestGetGitRemoteURL(t *testing.T) {
+func TestGetRemoteURL(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name    string
 		runner  runner
 		want    string
-		wantErr bool
 	}{
 		{
 			name:   "local SSH standard (SCP style)",
@@ -202,19 +201,19 @@ func TestGetGitRemoteURL(t *testing.T) {
 		{
 			name:    "git config fails",
 			runner:  &fakeRunner{ err: errors.New("git config failed") },
-			wantErr: true,
+			want:    "https://github.com/foo/bar",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			repGen := &reportGenerator{}
-			err    := repGen.getGitRemoteURL(t.Context(), tt.runner)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getGitRemoteURL(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			repGen := &reportGenerator{modName: "github.com/foo/bar"}
+			err    := repGen.getRemoteURL(t.Context(), tt.runner)
+			if err != nil {
+				t.Errorf("getRemoteURL(%q) returned unexpected error: %v", tt.name, err)
 			}
 			if diff := cmp.Diff(tt.want, repGen.repoURL); diff != "" {
-				t.Errorf("getGitRemoteURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
+				t.Errorf("getRemoteURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}

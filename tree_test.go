@@ -24,7 +24,7 @@ func TestWriteTreeHTML(t *testing.T) {
 		{
 			name: "succeeds",
 			fsys: fstest.MapFS{ "foo.go.html": &fstest.MapFile{} },
-			want: 19, // indent == 3 + len("foo.go") == 6 + 10 (to cohere with "margin-right: 10ch;" in tree.css) == 19
+			want: 22, // indent == 3 + len("foo.go") == 6 + 13 (???) (to cohere with "margin-right: 10ch;" in tree.css) == 22
 		},
 		{
 			name:         "genHTML fails",

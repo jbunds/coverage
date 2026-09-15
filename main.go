@@ -193,8 +193,8 @@ func run() int {
 		return 3
 	}
 
-	if err := repGen.getGitRemoteURL(ctx, new(realRunner)); err != nil { // sets repGen.repoURL
-		fmt.Fprintf(os.Stderr, "cannot determine Git remote URL: %v\n", err)
+	if err := repGen.getRemoteURL(ctx, new(realRunner)); err != nil { // sets repGen.repoURL
+		fmt.Fprintf(os.Stderr, "cannot determine remote URL: %v\n", err)
 		return 4
 	}
 
@@ -256,8 +256,8 @@ func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) err
 	return nil
 }
 
-// getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML.
-func (rg *reportGenerator) getGitRemoteURL(ctx context.Context, runner runner) error {
+// getRepoURL converts a remote URL to an HTTP URL for subsequent use in writeIndexHTML.
+func (rg *reportGenerator) getRemoteURL(ctx context.Context, runner runner) error {
 	if err := ctx.Err(); err != nil { return err }
 
 	// handles custom import paths (vanity URLs) resolved via Go's HTML <meta> tag discovery mechanism:
@@ -273,24 +273,25 @@ func (rg *reportGenerator) getGitRemoteURL(ctx context.Context, runner runner) e
 	cmd.Stderr = &stderr
 
 	if err := runner.Run(cmd); err != nil {
-		return fmt.Errorf("%q failed: %w", cmd.String(), err)
+		rg.repoURL = "https://" + rg.modName // fallback to modName
+		return nil
 	}
 
-	gitRemoteURL := strings.TrimSpace(stdout.String())
+	remoteURL := strings.TrimSpace(stdout.String())
 
-	if idx := strings.Index(gitRemoteURL, "@"); idx != -1 {
-		gitRemoteURL = gitRemoteURL[idx + 1:]
+	if idx := strings.Index(remoteURL, "@"); idx != -1 {
+		remoteURL = remoteURL[idx + 1:]
 	}
 
-	gitRemoteURL = strings.TrimPrefix(gitRemoteURL, "ssh://")
-	gitRemoteURL = strings.TrimPrefix(gitRemoteURL, "git://")
+	remoteURL = strings.TrimPrefix(remoteURL, "ssh://")
+	remoteURL = strings.TrimPrefix(remoteURL, "git://")
 
-	if !strings.HasPrefix(gitRemoteURL, "http://" ) &&
-	   !strings.HasPrefix(gitRemoteURL, "https://") {
-		 gitRemoteURL = "https://" + strings.Replace(gitRemoteURL, ":", "/", 1)
+	if !strings.HasPrefix(remoteURL, "http://" ) &&
+	   !strings.HasPrefix(remoteURL, "https://") {
+		 remoteURL = "https://" + strings.Replace(remoteURL, ":", "/", 1)
 	}
 
-	u, err  := url.Parse(gitRemoteURL)
+	u, err  := url.Parse(remoteURL)
 	if err  != nil { return err }
 
 	httpURL := fmt.Sprintf("https://%s%s", u.Host, u.Path)

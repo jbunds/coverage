@@ -71,7 +71,7 @@
 <div class="line"><span class="hit">	if _, err := io.WriteString(treeFile, html); err != nil</span><span class="miss"> { return 0, err</span><span class="miss"> }</span></div>
 <div class="line"><span class="hit">	if    err := postamble     (ctx,  treeFile); err != nil</span><span class="miss"> { return 0, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	return int(tb.maxWidth.Add(10)), treeFile.Close</span>() // +10 == len(&#34;100.0%&#34;) + 2ch (gap) to cohere with &#34;margin-right: 10ch;&#34; in tree.css</div>
+<div class="line"><span class="hit">	return int(tb.maxWidth.Add(13)), treeFile.Close</span>() // +13 != len(&#34;100.0%&#34;) + 2ch (gap) to cohere with &#34;margin-right: 10ch;&#34; in tree.css</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// genHTML recursively traverses the output directory to generate the nested &lt;ul&gt; and &lt;li&gt; HTML string representing the file coverage tree.</div>

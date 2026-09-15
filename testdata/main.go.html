@@ -201,8 +201,8 @@
 <div class="line"><span class="miss">		return 3</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if err := repGen.getGitRemoteURL(ctx, new(realRunner)); err != nil</span> { // sets repGen.repoURL</div>
-<div class="line"><span class="miss">		fmt.Fprintf(os.Stderr, &#34;cannot determine Git remote URL: %v\n&#34;, err)</span></div>
+<div class="line"><span class="miss">	if err := repGen.getRemoteURL(ctx, new(realRunner)); err != nil</span> { // sets repGen.repoURL</div>
+<div class="line"><span class="miss">		fmt.Fprintf(os.Stderr, &#34;cannot determine remote URL: %v\n&#34;, err)</span></div>
 <div class="line"><span class="miss">		return 4</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
@@ -264,8 +264,8 @@
 <div class="line"><span class="hit">	return nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// getRepoURL converts a Git remote URL to an HTTP URL for subsequent use in writeIndexHTML.</div>
-<div class="line">func (rg *reportGenerator) getGitRemoteURL(ctx context.Context, runner runner) error<span class="hit"> {</span></div>
+<div class="line">// getRepoURL converts a remote URL to an HTTP URL for subsequent use in writeIndexHTML.</div>
+<div class="line">func (rg *reportGenerator) getRemoteURL(ctx context.Context, runner runner) error<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line">	// handles custom import paths (vanity URLs) resolved via Go&#39;s HTML &lt;meta&gt; tag discovery mechanism:</div>
@@ -281,24 +281,25 @@
 <div class="line"><span class="hit">	cmd.Stderr = &amp;stderr</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if err := runner.Run(cmd); err != nil {</span></div>
-<div class="line"><span class="hit">		return fmt.Errorf(&#34;%q failed: %w&#34;, cmd.String(), err)</span></div>
+<div class="line"><span class="hit">		rg.repoURL = &#34;https://&#34; + rg.modName // fallback to modName</span></div>
+<div class="line"><span class="hit">		return nil</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	gitRemoteURL := strings.TrimSpace(stdout.String())</span></div>
+<div class="line"><span class="hit">	remoteURL := strings.TrimSpace(stdout.String())</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	if idx := strings.Index(gitRemoteURL, &#34;@&#34;); idx != -1 {</span></div>
-<div class="line"><span class="hit">		gitRemoteURL = gitRemoteURL[idx + 1:]</span></div>
+<div class="line"><span class="hit">	if idx := strings.Index(remoteURL, &#34;@&#34;); idx != -1 {</span></div>
+<div class="line"><span class="hit">		remoteURL = remoteURL[idx + 1:]</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	gitRemoteURL = strings.TrimPrefix(gitRemoteURL, &#34;ssh://&#34;)</span></div>
-<div class="line"><span class="hit">	gitRemoteURL = strings.TrimPrefix(gitRemoteURL, &#34;git://&#34;)</span></div>
+<div class="line"><span class="hit">	remoteURL = strings.TrimPrefix(remoteURL, &#34;ssh://&#34;)</span></div>
+<div class="line"><span class="hit">	remoteURL = strings.TrimPrefix(remoteURL, &#34;git://&#34;)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	if !strings.HasPrefix(gitRemoteURL, &#34;http://&#34; ) &amp;&amp;</span></div>
-<div class="line"><span class="hit">	   !strings.HasPrefix(gitRemoteURL, &#34;https://&#34;) {</span></div>
-<div class="line"><span class="hit">		 gitRemoteURL = &#34;https://&#34; + strings.Replace(gitRemoteURL, &#34;:&#34;, &#34;/&#34;, 1)</span></div>
+<div class="line"><span class="hit">	if !strings.HasPrefix(remoteURL, &#34;http://&#34; ) &amp;&amp;</span></div>
+<div class="line"><span class="hit">	   !strings.HasPrefix(remoteURL, &#34;https://&#34;) {</span></div>
+<div class="line"><span class="hit">		 remoteURL = &#34;https://&#34; + strings.Replace(remoteURL, &#34;:&#34;, &#34;/&#34;, 1)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	u, err  := url.Parse(gitRemoteURL)</span></div>
+<div class="line"><span class="hit">	u, err  := url.Parse(remoteURL)</span></div>
 <div class="line"><span class="hit">	if err  != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	httpURL := fmt.Sprintf(&#34;https://%s%s&#34;, u.Host, u.Path)</span></div>
