@@ -40,7 +40,7 @@ Both iframes are hosted by a parent `index.html` file, and both HTML files can b
 When served via HTTP, buttons are available to:
 
 - ![expand](expand.svg) toggle between a fully-collapsed and fully-expanded source tree
-- ![lines](lines.svg) toggles showing or hiding a column of line numbers along the left side of the source code
+- &nbsp;![lines](lines.svg)&nbsp; toggles showing or hiding a column of line numbers along the left side of the source code
 - ![theme](theme.svg) toggle between **light** and **dark** themes
 
 See also [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jbunds/coverage) and [![Go Reference](https://pkg.go.dev/badge/github.com/jbunds/coverage.svg)](https://pkg.go.dev/github.com/jbunds/coverage)
