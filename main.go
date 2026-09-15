@@ -4,10 +4,11 @@
 //
 // The header portion of the index HTML file will also render two buttons if the browser's CORS policies allow it. These buttons are:
 //
-//   "theme"                  - toggles between two hardcoded "light" and "dark" themes
-//   "expand" (or "collapse") - toggles the opening (or closing) of all subdirectories rendered within the tree HTML document
+//   "expand" (or "collapse") - toggles opening (or closing) all subdirectories of the source tree
+//   "lines"                  - toggles showing or hiding a column of line numbers along the left side of the source code
+//   "theme"                  - toggles between "light" and "dark" themes
 //
-// Note that the "theme" and "expand" / "collapse" buttons will not be rendered when the index page is loaded via the file:// scheme.
+// Note that the "expand" / "collapse", "lines", and "theme" buttons will not be rendered when the index page is loaded via the file:// scheme.
 //
 // A simple workaround is to instantiate an HTTP server to serve the HTML files, e.g.:
 //
