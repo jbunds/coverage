@@ -176,7 +176,7 @@
 <div class="line"><span class="miss">		return 1</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line">	// TODO(jbunds): add an adapter to handle both legacy textfmt and binary coverage profiles</div>
+<div class="line">	// TODO(jbunds): (maybe?) add an adapter to handle both legacy textfmt and binary coverage profiles</div>
 <div class="line"><span class="miss">	profiles, err := cover.ParseProfiles(profilePath)</span></div>
 <div class="line"><span class="miss">	if err != nil {</span></div>
 <div class="line"><span class="miss">		fmt.Fprintf(os.Stderr, &#34;cannot parse coverage profile file: %v\n&#34;, err)</span></div>
@@ -355,15 +355,15 @@
 <div class="line"><span class="hit">	pkgs, err := pkgLoader(cfg, allPkgPaths...)</span></div>
 <div class="line"><span class="hit">	if err != nil { return err</span><span class="hit"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	tempCache := make(map[string]string)</span></div>
+<div class="line"><span class="hit">	cache := make(map[string]string)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	for _, pkg := range pkgs {</span></div>
 <div class="line"><span class="hit">		if len(pkg.GoFiles) &gt; 0 {</span></div>
-<div class="line"><span class="hit">			tempCache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])</span></div>
+<div class="line"><span class="hit">			cache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])</span></div>
 <div class="line">		}</div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	rg.pkgDirCache = tempCache</span></div>
+<div class="line"><span class="hit">	rg.pkgDirCache = cache</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	return nil</span></div>
 <div class="line">}</div>
@@ -518,11 +518,11 @@
 <div class="line">	}</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// coverClass performs a logarithmic lookup over the sorted blocks slice</div>
+<div class="line">// coverClass performs an O(log n) lookup over the sorted blocks slice</div>
 <div class="line">// to determine the coverage state (&#34;hit&#34;, &#34;miss&#34;, or &#34;&#34;) of a specified</div>
 <div class="line">// byte offset range [start, end].</div>
 <div class="line">//</div>
-<div class="line">// Precondition: blocks must be sorted in ascending order by endOffset.</div>
+<div class="line">// precondition: blocks must be sorted in ascending order by endOffset.</div>
 <div class="line">func coverClass(start, end int, blocks []*profileBlock) string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	idx := sort.Search(len(blocks), func(i int) bool {</span></div>
 <div class="line"><span class="hit">		return blocks[i].endOffset &gt;= end</span></div>
@@ -540,9 +540,7 @@
 <div class="line"></div>
 <div class="line">// buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage.</div>
 <div class="line">func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath, styleCSS string) error<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> {</span></div>
-<div class="line"><span class="miss">		return err</span></div>
-<div class="line">	}</div>
+<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	pkgPath  := filepath.Dir( profile.FileName)</span></div>
 <div class="line"><span class="hit">	fileName := filepath.Base(profile.FileName)</span></div>

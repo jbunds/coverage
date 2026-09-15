@@ -168,7 +168,7 @@ func run() int {
 		return 1
 	}
 
-	// TODO(jbunds): add an adapter to handle both legacy textfmt and binary coverage profiles
+	// TODO(jbunds): (maybe?) add an adapter to handle both legacy textfmt and binary coverage profiles
 	profiles, err := cover.ParseProfiles(profilePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cannot parse coverage profile file: %v\n", err)
@@ -347,15 +347,15 @@ func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLo
 	pkgs, err := pkgLoader(cfg, allPkgPaths...)
 	if err != nil { return err }
 
-	tempCache := make(map[string]string)
+	cache := make(map[string]string)
 
 	for _, pkg := range pkgs {
 		if len(pkg.GoFiles) > 0 {
-			tempCache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])
+			cache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])
 		}
 	}
 
-	rg.pkgDirCache = tempCache
+	rg.pkgDirCache = cache
 
 	return nil
 }
@@ -510,11 +510,11 @@ func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, 
 	}
 }
 
-// coverClass performs a logarithmic lookup over the sorted blocks slice
+// coverClass performs an O(log n) lookup over the sorted blocks slice
 // to determine the coverage state ("hit", "miss", or "") of a specified
 // byte offset range [start, end].
 //
-// Precondition: blocks must be sorted in ascending order by endOffset.
+// precondition: blocks must be sorted in ascending order by endOffset.
 func coverClass(start, end int, blocks []*profileBlock) string {
 	idx := sort.Search(len(blocks), func(i int) bool {
 		return blocks[i].endOffset >= end
@@ -532,9 +532,7 @@ func coverClass(start, end int, blocks []*profileBlock) string {
 
 // buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage.
 func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath, styleCSS string) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
+	if err := ctx.Err(); err != nil { return err }
 
 	pkgPath  := filepath.Dir( profile.FileName)
 	fileName := filepath.Base(profile.FileName)
