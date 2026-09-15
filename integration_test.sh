@@ -13,3 +13,5 @@ go test -race -coverprofile cov.out ./...
 go run . -gomod go.mod -coverprofile cov.out -path cover
 cp cov.out testdata
 cp cover/github.com/jbunds/coverage/{flags,main,tree}.go.html testdata
+
+rm -rf cover
