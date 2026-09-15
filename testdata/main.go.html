@@ -497,7 +497,7 @@
 <div class="line">				// calculate the absolute position in the file for this whitespace line chunk</div>
 <div class="line"><span class="hit">				absStart := baseFileOffset + relativeOffset</span></div>
 <div class="line"><span class="hit">				absEnd   := absStart + len(content)</span></div>
-<div class="line"><span class="hit">				class     = coverClass(absStart, absEnd, blocks)</span></div>
+<div class="line"><span class="hit">				class     = coverClass(blocks, absStart, absEnd)</span></div>
 <div class="line">			}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">			if class != &#34;&#34; {</span></div>
@@ -523,7 +523,7 @@
 <div class="line">// byte offset range [start, end].</div>
 <div class="line">//</div>
 <div class="line">// precondition: blocks must be sorted in ascending order by endOffset.</div>
-<div class="line">func coverClass(start, end int, blocks []*profileBlock) string<span class="hit"> {</span></div>
+<div class="line">func coverClass(blocks []*profileBlock, start, end int) string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	idx := sort.Search(len(blocks), func(i int) bool {</span></div>
 <div class="line"><span class="hit">		return blocks[i].endOffset &gt;= end</span></div>
 <div class="line">	})</div>
@@ -643,7 +643,7 @@
 <div class="line"><span class="hit">			continue</span> // ignore virtual tokens (e.g., inserted artificial semicolons)</div>
 <div class="line">		}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">		coverClass := coverClass(startOffset, endOffset, blocks)</span></div>
+<div class="line"><span class="hit">		coverClass := coverClass(blocks, startOffset, endOffset)</span></div>
 <div class="line"></div>
 <div class="line">		// accumulate token bytes into the sliding window, capturing baseline tracking position before writing</div>
 <div class="line"></div>

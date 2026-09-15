@@ -70,8 +70,8 @@ func (tb *treeBuilder) writeTreeHTML(ctx context.Context, progressOutput io.Writ
 func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (string, error) {
 	if err := ctx.Err(); err != nil { return "", err }
 
-	pkgRelRoot, _, _ := strings.Cut(tb.modName, "/")          // module's top-level namespace
-	scanRoot         := filepath.Join(tb.outRoot, pkgRelRoot) // physical directory entry point for recursive scan
+	modDomain, _, _ := strings.Cut(tb.modName, "/")         // module's top-level namespace
+	scanRoot        := filepath.Join(tb.outRoot, modDomain) // physical directory entry point for recursive scan
 
 	entries, err := tb.fsys.ReadDir(ctx, scanRoot)
 	if err != nil { return "", err }
@@ -98,7 +98,7 @@ func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (s
 		remainingBudget -= currentBudget
 		group.Go(func() error {
 			st := scanState{
-				parentPath: pkgRelRoot,
+				parentPath: modDomain,
 				entry:      entry,
 				indent:     3, // 2 levels of indentation are added by prepending rootTreeNode to results below
 				prog:       prog,
@@ -125,7 +125,7 @@ func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (s
 	rootTreeNode := entryResult{html: `  <li>
     <input type="checkbox" id="tree-item-0"/>
     <div class="tree-node">
-      <label for="tree-item-0">` + pkgRelRoot       + `</label>
+      <label for="tree-item-0">` + modDomain        + `</label>
       <span class="cov">`        + aggregatePercent + `%</span>
     </div>
     <ul>

@@ -78,8 +78,8 @@
 <div class="line">func (tb *treeBuilder) genHTML(ctx context.Context, progressOutput io.Writer) (string, error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	pkgRelRoot, _, _ := strings.Cut(tb.modName, &#34;/&#34;)          // module&#39;s top-level namespace</span></div>
-<div class="line"><span class="hit">	scanRoot         := filepath.Join(tb.outRoot, pkgRelRoot) // physical directory entry point for recursive scan</span></div>
+<div class="line"><span class="hit">	modDomain, _, _ := strings.Cut(tb.modName, &#34;/&#34;)         // module&#39;s top-level namespace</span></div>
+<div class="line"><span class="hit">	scanRoot        := filepath.Join(tb.outRoot, modDomain) // physical directory entry point for recursive scan</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	entries, err := tb.fsys.ReadDir(ctx, scanRoot)</span></div>
 <div class="line"><span class="hit">	if err != nil { return &#34;&#34;, err</span><span class="hit"> }</span></div>
@@ -106,7 +106,7 @@
 <div class="line"><span class="hit">		remainingBudget -= currentBudget</span></div>
 <div class="line"><span class="hit">		group.Go(func() error {</span></div>
 <div class="line"><span class="hit">			st := scanState{</span></div>
-<div class="line"><span class="hit">				parentPath: pkgRelRoot,</span></div>
+<div class="line"><span class="hit">				parentPath: modDomain,</span></div>
 <div class="line"><span class="hit">				entry:      entry,</span></div>
 <div class="line"><span class="hit">				indent:     3, // 2 levels of indentation are added by prepending rootTreeNode to results below</span></div>
 <div class="line"><span class="hit">				prog:       prog,</span></div>
@@ -133,7 +133,7 @@
 <div class="line"><span class="hit">	rootTreeNode := entryResult{html: `  &lt;li&gt;</span></div>
 <div class="line"><span class="hit">    &lt;input type=&#34;checkbox&#34; id=&#34;tree-item-0&#34;/&gt;</span></div>
 <div class="line"><span class="hit">    &lt;div class=&#34;tree-node&#34;&gt;</span></div>
-<div class="line"><span class="hit">      &lt;label for=&#34;tree-item-0&#34;&gt;` + pkgRelRoot       + `&lt;/label&gt;</span></div>
+<div class="line"><span class="hit">      &lt;label for=&#34;tree-item-0&#34;&gt;` + modDomain        + `&lt;/label&gt;</span></div>
 <div class="line"><span class="hit">      &lt;span class=&#34;cov&#34;&gt;`        + aggregatePercent + `%&lt;/span&gt;</span></div>
 <div class="line"><span class="hit">    &lt;/div&gt;</span></div>
 <div class="line"><span class="hit">    &lt;ul&gt;</span></div>

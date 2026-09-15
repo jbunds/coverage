@@ -489,7 +489,7 @@ func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, 
 				// calculate the absolute position in the file for this whitespace line chunk
 				absStart := baseFileOffset + relativeOffset
 				absEnd   := absStart + len(content)
-				class     = coverClass(absStart, absEnd, blocks)
+				class     = coverClass(blocks, absStart, absEnd)
 			}
 
 			if class != "" {
@@ -515,7 +515,7 @@ func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, 
 // byte offset range [start, end].
 //
 // precondition: blocks must be sorted in ascending order by endOffset.
-func coverClass(start, end int, blocks []*profileBlock) string {
+func coverClass(blocks []*profileBlock, start, end int) string {
 	idx := sort.Search(len(blocks), func(i int) bool {
 		return blocks[i].endOffset >= end
 	})
@@ -635,7 +635,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 			continue // ignore virtual tokens (e.g., inserted artificial semicolons)
 		}
 
-		coverClass := coverClass(startOffset, endOffset, blocks)
+		coverClass := coverClass(blocks, startOffset, endOffset)
 
 		// accumulate token bytes into the sliding window, capturing baseline tracking position before writing
 
