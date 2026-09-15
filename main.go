@@ -221,7 +221,7 @@ func run() int {
 		return 8
 	}
 
-	if err := repGen.writeIndexHTML(ctx, indexHTMLFile, treeHTML); err != nil { // requires repGen.modName
+	if err := repGen.writeIndexHTML(ctx, indexHTMLFile, treeHTML); err != nil { // requires repGen.modName, repGen.repoURL
 		fmt.Fprintf(os.Stderr, "cannot write %q: %v\n", indexHTMLFile, err)
 		return 7
 	}

@@ -57,8 +57,8 @@
 <div class="line">	subDir string</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// buildTreeHTML recursively traverses the output directory to generate the</div>
-<div class="line">// nested &lt;ul&gt; and &lt;li&gt; HTML string representing the file coverage tree.</div>
+<div class="line">// buildTreeHTML recursively traverses the output directory to build</div>
+<div class="line">// the nested &lt;ul&gt; and &lt;li&gt; HTML string representing the source tree.</div>
 <div class="line">func (tb *treeBuilder) buildTreeHTML(ctx context.Context, progressOutput io.Writer) (string, error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
 <div class="line"></div>

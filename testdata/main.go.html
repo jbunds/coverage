@@ -229,7 +229,7 @@
 <div class="line"><span class="miss">		return 8</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if err := repGen.writeIndexHTML(ctx, indexHTMLFile, treeHTML); err != nil</span> { // requires repGen.modName</div>
+<div class="line"><span class="miss">	if err := repGen.writeIndexHTML(ctx, indexHTMLFile, treeHTML); err != nil</span> { // requires repGen.modName, repGen.repoURL</div>
 <div class="line"><span class="miss">		fmt.Fprintf(os.Stderr, &#34;cannot write %q: %v\n&#34;, indexHTMLFile, err)</span></div>
 <div class="line"><span class="miss">		return 7</span></div>
 <div class="line">	}</div>

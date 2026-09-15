@@ -49,8 +49,8 @@ type htmlBuilder struct {
 	subDir string
 }
 
-// buildTreeHTML recursively traverses the output directory to generate the
-// nested <ul> and <li> HTML string representing the file coverage tree.
+// buildTreeHTML recursively traverses the output directory to build
+// the nested <ul> and <li> HTML string representing the source tree.
 func (tb *treeBuilder) buildTreeHTML(ctx context.Context, progressOutput io.Writer) (string, error) {
 	if err := ctx.Err(); err != nil { return "", err }
 
