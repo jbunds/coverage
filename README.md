@@ -140,3 +140,5 @@ The motivation behind the `coverage` module was to provide a richer UI than that
 ##### Prior Art
 
 The CSS code was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it clearly still needs to be polished. But I am definitely _not_ a CSS expert, and it fulfills the required behavior as-is.
+
+[go-better-html-coverage](https://github.com/chmouel/go-better-html-coverage)
