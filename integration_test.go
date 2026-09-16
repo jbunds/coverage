@@ -24,6 +24,7 @@ func TestIntegrationTest(t *testing.T) {
 		outRoot:      tmpDir,
 		profiles:     profiles,
 		styleCSSFile: "style.css",
+		childJSFile:  "child.js",
 	}
 
 	if err := rg.getModName(t.Context(), "go.mod"); err != nil { t.Fatal(err) }

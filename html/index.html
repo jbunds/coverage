@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <link rel="icon"       href="favicon.ico" type="image/vnd.microsoft.icon">
-<link rel="stylesheet" href="style.css"   type="text/css">
-<link rel="stylesheet" href="tree.css"    type="text/css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="tree.css">
 <title>Go test coverage // {{ .ModName }}</title>
 <base target="code"/>
 </head>
@@ -24,56 +24,6 @@
 </div>
 </div>
 <iframe id="code" name="code" src="code.html"></iframe>
-<script>
-  if (window.location.protocol !== 'file:') {
-    document.getElementById('buttons').style.display = 'flex';
-  }
-
-  const applyTheme = (theme) => {
-    document.documentElement.setAttribute('theme', theme);
-    try {
-      localStorage.setItem('user-theme', theme);
-    } catch (e) {}
-    document.querySelectorAll('iframe').forEach(frame => {
-      frame.contentWindow.postMessage({ type: 'SET_THEME', theme: theme }, '*');
-    });
-  };
-
-  try {
-    const saved = localStorage.getItem('user-theme');
-    if (saved) applyTheme(saved);
-  } catch (e) {}
-
-  document.getElementById('theme').addEventListener('click', () => {
-    const currentTheme = document.documentElement.getAttribute('theme');
-    const isDark       = currentTheme === 'dark' || (!currentTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    applyTheme(isDark ? 'light' : 'dark');
-  });
-
-  let expanded = false;
-  document.getElementById('expand').addEventListener('click', () => {
-    expanded = !expanded;
-    document.getElementById('expand').textContent = expanded ? 'collapse' : 'expand';
-    document.querySelectorAll('.tree input[type="checkbox"]').forEach(cb => cb.checked = expanded);
-  });
-
-  const applyLineNumbers = (displayed) => {
-    document.documentElement.setAttribute('line-numbers', displayed ? '1' : '0');
-    try {
-      localStorage.setItem('line-numbers', displayed ? '1' : '0');
-    } catch (e) {}
-    document.getElementById('code').contentWindow.postMessage({ type: 'TOGGLE_LINE_NUMBERS', lineNumbers: displayed }, '*');
-  };
-
-  try {
-    const saved = localStorage.getItem('line-numbers');
-    applyLineNumbers(saved ? saved === '1' : true);
-  } catch (e) {}
-
-  document.getElementById('lines').addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('line-numbers');
-    applyLineNumbers(current !== '1');
-  });
-</script>
+<script src="events.js"></script>
 </body>
 </html>

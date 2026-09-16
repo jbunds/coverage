@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<link rel="stylesheet" href="../../../style.css" type="text/css">
+<link rel="stylesheet" href="../../../style.css">
 <title>github.com/jbunds/coverage/main.go</title>
 </head>
 <body id="code" class="line-numbers">
@@ -61,7 +61,7 @@
 <div class="line">	&#34;golang.org/x/tools/go/packages&#34;</div>
 <div class="line">)</div>
 <div class="line"></div>
-<div class="line">//go:embed html/* css/* img/*</div>
+<div class="line">//go:embed html/* img/* css/* js/*</div>
 <div class="line">var embeddedFiles embed.FS</div>
 <div class="line"></div>
 <div class="line">// stickyWriter is a wrapper interface used to enable sequential string writing with deferred error handling.</div>
@@ -144,7 +144,8 @@
 <div class="line">	totalCovered    atomic.Int64        // module-wide total number of statements covered</div>
 <div class="line">	totalStatements atomic.Int64        // module-wide total number of statements</div>
 <div class="line">	staticFiles     []string            // static CSS, HTML, and image files required by the generated HTML</div>
-<div class="line">	styleCSSFile    string              // name of the CSS file used by index.html and generated source HTML files</div>
+<div class="line">	styleCSSFile    string              // name of the CSS file included by index.html and generated source HTML files</div>
+<div class="line">	childJSFile     string              // name of the JS file included by generated source HTML files that handles toggling the theme and line numbers</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func main<span class="miss">() {</span></div>
@@ -162,11 +163,13 @@
 <div class="line"><span class="miss">	var (</span></div>
 <div class="line"><span class="miss">		indexHTMLFile = &#34;html/index.html&#34; // embedded template (.ModName, .ModURL, .TreeHTML)</span></div>
 <div class="line"><span class="miss">		staticFiles   = []string{         // static files</span></div>
-<div class="line"><span class="miss">			&#34;css/style.css&#34;,</span></div>
-<div class="line"><span class="miss">			&#34;css/tree.css&#34;,</span></div>
 <div class="line"><span class="miss">			&#34;html/code.html&#34;,</span></div>
 <div class="line"><span class="miss">			&#34;img/favicon.ico&#34;,</span></div>
 <div class="line"><span class="miss">			&#34;img/go-blue-gradient.svg&#34;,</span></div>
+<div class="line"><span class="miss">			&#34;css/style.css&#34;,</span></div>
+<div class="line"><span class="miss">			&#34;css/tree.css&#34;,</span></div>
+<div class="line"><span class="miss">			&#34;js/events.js&#34;,</span></div>
+<div class="line"><span class="miss">			&#34;js/child.js&#34;,</span></div>
 <div class="line"><span class="miss">		}</span></div>
 <div class="line"><span class="miss">	)</span></div>
 <div class="line"></div>
@@ -194,7 +197,8 @@
 <div class="line"><span class="miss">		profiles:      profiles,</span></div>
 <div class="line"><span class="miss">		embeddedFiles: embeddedFiles,</span></div>
 <div class="line"><span class="miss">		staticFiles:   staticFiles,</span></div>
-<div class="line"><span class="miss">		styleCSSFile:  &#34;style.css&#34;</span><span class="miss">,</span></div>
+<div class="line"><span class="miss">		styleCSSFile:  &#34;style.css&#34;,</span></div>
+<div class="line"><span class="miss">		childJSFile:   &#34;child.js&#34;</span><span class="miss">,</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="miss">	if err := repGen.getModName(ctx, goModFile); err != nil</span> { // sets repGen.modName</div>
@@ -551,9 +555,6 @@
 <div class="line"><span class="hit">		return err</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	cssPath := strings.Repeat(&#34;../&#34;, strings.Count(srcPath, &#34;/&#34;)) + rg.styleCSSFile</span></div>
-<div class="line"><span class="hit">	writePreamble(ew, srcPath, cssPath)</span></div>
-<div class="line"></div>
 <div class="line"><span class="hit">	buf  := new(bytes.Buffer)</span></div>
 <div class="line"><span class="hit">	scnr := new(scanner.Scanner)</span></div>
 <div class="line"><span class="hit">	fset := token.NewFileSet()</span></div>
@@ -672,13 +673,20 @@
 <div class="line"><span class="hit">		lastOffset = endOffset</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
+<div class="line"><span class="hit">	relPath     := strings.Repeat(&#34;../&#34;, strings.Count(srcPath, &#34;/&#34;)) // relative paths support both http:// and file:// schemes</span></div>
+<div class="line"><span class="hit">	cssPath     := relPath + rg.styleCSSFile</span></div>
+<div class="line"><span class="hit">	childJSPath := relPath + rg.childJSFile</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	writePreamble(ew, srcPath, cssPath)</span></div>
+<div class="line"></div>
 <div class="line"><span class="hit">	for line := range bytes.SplitSeq(bytes.TrimRight(buf.Bytes(), &#34;\n&#34;), []byte{&#39;\n&#39;}) {</span></div>
 <div class="line"><span class="hit">		ew.write(`&lt;div class=&#34;line&#34;&gt;`)</span></div>
 <div class="line"><span class="hit">		ew.write(string(line))</span></div>
 <div class="line"><span class="hit">		ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	writePostamble(ew)</span></div>
+<div class="line"><span class="hit">	writePostamble(ew, childJSPath)</span></div>
+<div class="line"></div>
 <div class="line"><span class="hit">	return ew.err</span><span class="hit">()</span></div>
 <div class="line">}</div>
 <div class="line"></div>
@@ -690,7 +698,7 @@
 <div class="line"><span class="hit">	ew.write(`&lt;meta charset=&#34;utf-8&#34;&gt;` + &#34;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(`&lt;link rel=&#34;stylesheet&#34; href=&#34;`)</span></div>
 <div class="line"><span class="hit">	ew.write(cssPath)</span></div>
-<div class="line"><span class="hit">	ew.write(`&#34; type=&#34;text/css&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(`&#34;&gt;` + &#34;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;title&gt;&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(srcPath)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;/title&gt;\n&#34;)</span></div>
@@ -699,33 +707,12 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// writePostamble writes the postamble portion of the HTML content common to every Go source HTML file.</div>
-<div class="line">func writePostamble(ew stickyWriter<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	ew.write(`&lt;script&gt;</span></div>
-<div class="line"><span class="hit">try {</span></div>
-<div class="line"><span class="hit">  const parentTheme = window.parent.document.documentElement.getAttribute(&#39;theme&#39;);</span></div>
-<div class="line"><span class="hit">  if (parentTheme) document.documentElement.setAttribute(&#39;theme&#39;, parentTheme);</span></div>
-<div class="line"><span class="hit">} catch (e) {</span></div>
-<div class="line"><span class="hit">  console.warn(&#39;direct parent access blocked by browser; waiting for postMessage&#39;);</span></div>
-<div class="line"><span class="hit">}</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">window.addEventListener(&#39;message&#39;, (event) =&gt; {</span></div>
-<div class="line"><span class="hit">  if (event.data &amp;&amp; event.data.type === &#39;SET_THEME&#39;) document.documentElement.setAttribute(&#39;theme&#39;, event.data.theme);</span></div>
-<div class="line"><span class="hit">});</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">try {</span></div>
-<div class="line"><span class="hit">  const parentLineNumbers = window.parent.document.documentElement.getAttribute(&#39;line-numbers&#39;);</span></div>
-<div class="line"><span class="hit">  if (parentLineNumbers === &#39;0&#39;) document.body.classList.remove(&#39;line-numbers&#39;);</span></div>
-<div class="line"><span class="hit">  else document.body.classList.add(&#39;line-numbers&#39;);</span></div>
-<div class="line"><span class="hit">} catch (e) {</span></div>
-<div class="line"><span class="hit">  document.body.classList.add(&#39;line-numbers&#39;);</span></div>
-<div class="line"><span class="hit">}</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">window.addEventListener(&#39;message&#39;, (event) =&gt; {</span></div>
-<div class="line"><span class="hit">  if (event.data &amp;&amp; event.data.type === &#39;TOGGLE_LINE_NUMBERS&#39;) document.body.classList.toggle(&#39;line-numbers&#39;, event.data.lineNumbers);</span></div>
-<div class="line"><span class="hit">});</span></div>
-<div class="line"><span class="hit">&lt;/script&gt;</span></div>
-<div class="line"><span class="hit">&lt;/body&gt;</span></div>
-<div class="line"><span class="hit">&lt;/html&gt;`)</span></div>
+<div class="line">func writePostamble(ew stickyWriter, childJSPath string<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	ew.write(`&lt;script src=&#34;`)</span></div>
+<div class="line"><span class="hit">	ew.write(childJSPath) // DOM-dependent</span></div>
+<div class="line"><span class="hit">	ew.write(`&#34;&gt;&lt;/script&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;/body&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;/html&gt;&#34;)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// printCoverage prints per-file coverage percentages to the specified destination (typically stdout).</div>
@@ -871,29 +858,6 @@
 <div class="line"><span class="miss">	if f, ok := w.(interface{ Fd() uintptr }); ok { return int(f.Fd</span><span class="miss">()) }</span></div>
 <div class="line"><span class="miss">	return -1</span></div>
 <div class="line">}</div>
-<script>
-try {
-  const parentTheme = window.parent.document.documentElement.getAttribute('theme');
-  if (parentTheme) document.documentElement.setAttribute('theme', parentTheme);
-} catch (e) {
-  console.warn('direct parent access blocked by browser; waiting for postMessage');
-}
-
-window.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SET_THEME') document.documentElement.setAttribute('theme', event.data.theme);
-});
-
-try {
-  const parentLineNumbers = window.parent.document.documentElement.getAttribute('line-numbers');
-  if (parentLineNumbers === '0') document.body.classList.remove('line-numbers');
-  else document.body.classList.add('line-numbers');
-} catch (e) {
-  document.body.classList.add('line-numbers');
-}
-
-window.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'TOGGLE_LINE_NUMBERS') document.body.classList.toggle('line-numbers', event.data.lineNumbers);
-});
-</script>
+<script src="../../../child.js"></script>
 </body>
 </html>

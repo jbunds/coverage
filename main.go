@@ -53,7 +53,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-//go:embed html/* css/* img/*
+//go:embed html/* img/* css/* js/*
 var embeddedFiles embed.FS
 
 // stickyWriter is a wrapper interface used to enable sequential string writing with deferred error handling.
@@ -136,7 +136,8 @@ type reportGenerator struct {
 	totalCovered    atomic.Int64        // module-wide total number of statements covered
 	totalStatements atomic.Int64        // module-wide total number of statements
 	staticFiles     []string            // static CSS, HTML, and image files required by the generated HTML
-	styleCSSFile    string              // name of the CSS file used by index.html and generated source HTML files
+	styleCSSFile    string              // name of the CSS file included by index.html and generated source HTML files
+	childJSFile     string              // name of the JS file included by generated source HTML files that handles toggling the theme and line numbers
 }
 
 func main() {
@@ -154,11 +155,13 @@ func run() int {
 	var (
 		indexHTMLFile = "html/index.html" // embedded template (.ModName, .ModURL, .TreeHTML)
 		staticFiles   = []string{         // static files
-			"css/style.css",
-			"css/tree.css",
 			"html/code.html",
 			"img/favicon.ico",
 			"img/go-blue-gradient.svg",
+			"css/style.css",
+			"css/tree.css",
+			"js/events.js",
+			"js/child.js",
 		}
 	)
 
@@ -187,6 +190,7 @@ func run() int {
 		embeddedFiles: embeddedFiles,
 		staticFiles:   staticFiles,
 		styleCSSFile:  "style.css",
+		childJSFile:   "child.js",
 	}
 
 	if err := repGen.getModName(ctx, goModFile); err != nil { // sets repGen.modName
@@ -543,9 +547,6 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 		return err
 	}
 
-	cssPath := strings.Repeat("../", strings.Count(srcPath, "/")) + rg.styleCSSFile
-	writePreamble(ew, srcPath, cssPath)
-
 	buf  := new(bytes.Buffer)
 	scnr := new(scanner.Scanner)
 	fset := token.NewFileSet()
@@ -664,13 +665,20 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 		lastOffset = endOffset
 	}
 
+	relPath     := strings.Repeat("../", strings.Count(srcPath, "/")) // relative paths support both http:// and file:// schemes
+	cssPath     := relPath + rg.styleCSSFile
+	childJSPath := relPath + rg.childJSFile
+
+	writePreamble(ew, srcPath, cssPath)
+
 	for line := range bytes.SplitSeq(bytes.TrimRight(buf.Bytes(), "\n"), []byte{'\n'}) {
 		ew.write(`<div class="line">`)
 		ew.write(string(line))
 		ew.write("</div>\n")
 	}
 
-	writePostamble(ew)
+	writePostamble(ew, childJSPath)
+
 	return ew.err()
 }
 
@@ -682,7 +690,7 @@ func writePreamble(ew stickyWriter, srcPath, cssPath string) {
 	ew.write(`<meta charset="utf-8">` + "\n")
 	ew.write(`<link rel="stylesheet" href="`)
 	ew.write(cssPath)
-	ew.write(`" type="text/css">` + "\n")
+	ew.write(`">` + "\n")
 	ew.write("<title>")
 	ew.write(srcPath)
 	ew.write("</title>\n")
@@ -691,33 +699,12 @@ func writePreamble(ew stickyWriter, srcPath, cssPath string) {
 }
 
 // writePostamble writes the postamble portion of the HTML content common to every Go source HTML file.
-func writePostamble(ew stickyWriter) {
-	ew.write(`<script>
-try {
-  const parentTheme = window.parent.document.documentElement.getAttribute('theme');
-  if (parentTheme) document.documentElement.setAttribute('theme', parentTheme);
-} catch (e) {
-  console.warn('direct parent access blocked by browser; waiting for postMessage');
-}
-
-window.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SET_THEME') document.documentElement.setAttribute('theme', event.data.theme);
-});
-
-try {
-  const parentLineNumbers = window.parent.document.documentElement.getAttribute('line-numbers');
-  if (parentLineNumbers === '0') document.body.classList.remove('line-numbers');
-  else document.body.classList.add('line-numbers');
-} catch (e) {
-  document.body.classList.add('line-numbers');
-}
-
-window.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'TOGGLE_LINE_NUMBERS') document.body.classList.toggle('line-numbers', event.data.lineNumbers);
-});
-</script>
-</body>
-</html>`)
+func writePostamble(ew stickyWriter, childJSPath string) {
+	ew.write(`<script src="`)
+	ew.write(childJSPath) // DOM-dependent
+	ew.write(`"></script>` + "\n")
+	ew.write("</body>\n")
+	ew.write("</html>")
 }
 
 // printCoverage prints per-file coverage percentages to the specified destination (typically stdout).
