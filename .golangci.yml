@@ -39,6 +39,7 @@ linters:
         - fmt.Fprintf
         - fmt.Fprintln
         - (*os.File).Close
+        - (github.com/jbunds/coverage.rootHandle).Close
     depguard:
       rules:
         production_whitelist:

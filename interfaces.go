@@ -23,7 +23,14 @@ type writeFS interface {
 	ReadDir        (context.Context, string)                      ([]fs.DirEntry,  error)
 	ReadFile       (context.Context, string)                      ([]byte,         error)
 	WriteFile      (context.Context, string, []byte, fs.FileMode)                  error
+	OpenRoot       (context.Context, string)                      (rootHandle,     error)
 	OpenWithContext(context.Context, string)                      (fs.File,        error)
+}
+
+// rootHandle is the subset of *os.Root methods the SUT calls.
+type rootHandle interface {
+	io.Closer
+	Name() string
 }
 
 // localFS provides a context-aware, concrete implementation of the writeFS
@@ -31,6 +38,11 @@ type writeFS interface {
 // to perform actual system operations in production while remaining easily
 // testable via alternative interface implementations.
 type localFS struct{}
+
+func (lfs *localFS) OpenRoot(ctx context.Context, name string) (rootHandle, error ) {
+	if err := ctx.Err(); err != nil { return nil, err }
+	return os.OpenRoot(name)
+}
 
 func (lfs *localFS) OpenWithContext(ctx context.Context, name string) (fs.File, error) {
 	if err := ctx.Err(); err != nil { return nil, err }

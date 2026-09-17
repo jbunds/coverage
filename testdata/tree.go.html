@@ -27,7 +27,7 @@
 <div class="line">type treeBuilder struct {</div>
 <div class="line">	fsys     writeFS</div>
 <div class="line">	modName  string</div>
-<div class="line">	outRoot  string</div>
+<div class="line">	outRoot  rootHandle</div>
 <div class="line">	cov      map[string]coverage</div>
 <div class="line">	counter  atomic.Int64</div>
 <div class="line">}</div>
@@ -62,8 +62,8 @@
 <div class="line">func (tb *treeBuilder) buildTreeHTML(ctx context.Context, progressOutput io.Writer) (string, error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	modDomain, _, _ := strings.Cut(tb.modName, &#34;/&#34;)         // module&#39;s top-level namespace</span></div>
-<div class="line"><span class="hit">	scanRoot        := filepath.Join(tb.outRoot, modDomain) // physical directory entry point for recursive scan</span></div>
+<div class="line"><span class="hit">	modDomain, _, _ := strings.Cut(tb.modName, &#34;/&#34;)                // module&#39;s top-level namespace</span></div>
+<div class="line"><span class="hit">	scanRoot        := filepath.Join(tb.outRoot.Name(), modDomain) // physical directory entry point for recursive scan</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	entries, err := tb.fsys.ReadDir(ctx, scanRoot)</span></div>
 <div class="line"><span class="hit">	if err != nil { return &#34;&#34;, err</span><span class="hit"> }</span></div>
@@ -98,7 +98,7 @@
 <div class="line">			}</div>
 <div class="line"><span class="hit">			res, err := tb.processEntry(gCtx, st)</span></div>
 <div class="line"><span class="hit">			if err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
-<div class="line"><span class="hit">			results[i + 1]  = res</span></div>
+<div class="line"><span class="hit">			results[i + 1]  = *res</span></div>
 <div class="line"><span class="hit">			totalStatements.Add(res.total)</span></div>
 <div class="line"><span class="hit">			totalCovered.Add(res.covered)</span></div>
 <div class="line"><span class="hit">			return nil</span></div>
@@ -138,15 +138,15 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// processEntry recursively builds ordered HTML tree nodes and aggregates coverage metrics for individual files and directories.</div>
-<div class="line">func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryResult, error<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return entryResult{}, err</span><span class="miss"> }</span></div>
+<div class="line">func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (*entryResult, error<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return &amp;entryResult{}, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	isDir        := st.entry.IsDir()</span></div>
 <div class="line"><span class="hit">	isTargetFile := !isDir &amp;&amp; strings.HasSuffix(st.entry.Name(), &#34;.go.html&#34;)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if !isDir &amp;&amp; !isTargetFile {</span></div>
 <div class="line"><span class="hit">		st.prog.Report(st.budget, &#34;&#34;) // ensure progress ultimately adds up to 100% by consuming budget even if a file is not processed</span></div>
-<div class="line"><span class="hit">		return entryResult{}, nil</span></div>
+<div class="line"><span class="hit">		return &amp;entryResult{}, nil</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	srcBasename := strings.TrimSuffix(st.entry.Name(), &#34;.html&#34;)  // basename of the subdirectory or source file</span></div>
@@ -155,9 +155,9 @@
 <div class="line"></div>
 <div class="line"><span class="hit">	if isDir {</span></div>
 <div class="line"><span class="hit">		itemID             := &#34;tree-item-&#34; + strconv.FormatInt(tb.counter.Add(1), 10)</span></div>
-<div class="line"><span class="hit">		fullPath           := filepath.Join(tb.outRoot, relHTMLPath)</span></div>
+<div class="line"><span class="hit">		fullPath           := filepath.Join(tb.outRoot.Name(), relHTMLPath)</span></div>
 <div class="line"><span class="hit">		subDirEntries, err := tb.fsys.ReadDir(ctx, fullPath)</span></div>
-<div class="line"><span class="hit">		if err != nil { return entryResult{}, err</span><span class="hit"> }</span></div>
+<div class="line"><span class="hit">		if err != nil { return &amp;entryResult{}, err</span><span class="hit"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">		var subDirSB strings.Builder</span></div>
 <div class="line"><span class="hit">		var dirCovered, dirStatements atomic.Int64</span></div>
@@ -182,7 +182,7 @@
 <div class="line">				}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">				res, err := tb.processEntry(ctx, childState)</span></div>
-<div class="line"><span class="hit">				if err != nil</span><span class="miss"> { return entryResult{}, err</span><span class="miss"> }</span></div>
+<div class="line"><span class="hit">				if err != nil</span><span class="miss"> { return &amp;entryResult{}, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">				subDirSB.WriteString(res.html)</span></div>
 <div class="line"><span class="hit">				dirCovered.Add(res.covered)</span></div>
@@ -199,9 +199,9 @@
 <div class="line">		}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">		html, err := hb.buildHTML(ctx, subDirSB.String(), dirCovered.Load(), dirStatements.Load())</span></div>
-<div class="line"><span class="hit">		if err != nil</span><span class="miss"> { return entryResult{}, err</span><span class="miss"> }</span></div>
+<div class="line"><span class="hit">		if err != nil</span><span class="miss"> { return &amp;entryResult{}, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">		return entryResult{</span></div>
+<div class="line"><span class="hit">		return &amp;entryResult{</span></div>
 <div class="line"><span class="hit">			html:    html,</span></div>
 <div class="line"><span class="hit">			covered: dirCovered.Load(),</span></div>
 <div class="line"><span class="hit">			total:   dirStatements.Load()}, nil</span></div>
@@ -218,7 +218,7 @@
 <div class="line"><span class="hit">	srcSpan := `&lt;span class=&#34;src&#34;&gt;&lt;a href=&#34;` + relHTMLPath + `&#34;&gt;` + srcBasename + &#34;&lt;/a&gt;&lt;/span&gt;&#34;</span></div>
 <div class="line"><span class="hit">	covSpan := `&lt;span class=&#34;cov&#34;&gt;` + strconv.FormatFloat(percent, &#39;f&#39;, 1, 64) + &#34;%&lt;/span&gt;&#34;</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	return entryResult{</span></div>
+<div class="line"><span class="hit">	return &amp;entryResult{</span></div>
 <div class="line"><span class="hit">		html:    strings.Repeat(&#34;  &#34;, st.indent) + `&lt;li&gt;&lt;div class=&#34;tree-node&#34;&gt;` + srcSpan + &#34; &#34; + covSpan + &#34;&lt;/div&gt;&lt;/li&gt;\n&#34;,</span></div>
 <div class="line"><span class="hit">		covered: cov.covered,</span></div>
 <div class="line"><span class="hit">		total:   cov.total}, nil</span></div>

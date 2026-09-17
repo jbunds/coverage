@@ -17,7 +17,7 @@ import (
 func TestIntegrationTest(t *testing.T) {
 	t.Parallel()
 
-	tmpDir        := t.TempDir()
+	tmpDir, err   := os.OpenRoot(t.TempDir());                if err != nil { t.Fatal(err) }
 	profiles, err := cover.ParseProfiles("testdata/cov.out"); if err != nil { t.Fatal(err) }
 	rg            := &reportGenerator{
 		fsys:         new(localFS),
@@ -27,8 +27,7 @@ func TestIntegrationTest(t *testing.T) {
 		childJSFile:  "child.js",
 	}
 
-	if err := rg.getModName(t.Context(), "go.mod"); err != nil { t.Fatal(err) }
-
+	if err := rg.getModName(t.Context(), "go.mod");           err != nil { t.Fatal(err) }
 	if err := rg.writeCovHTMLFiles(t.Context(), io.Discard);  err != nil { t.Fatal(err) }
 
 	tests := []struct{
@@ -45,8 +44,8 @@ func TestIntegrationTest(t *testing.T) {
 
 			goldenFile := tt.name + ".html"
 
-			wantPath   := filepath.Join("testdata",         goldenFile)
-			gotPath    := filepath.Join(tmpDir, rg.modName, goldenFile)
+			wantPath   := filepath.Join("testdata",                goldenFile)
+			gotPath    := filepath.Join(tmpDir.Name(), rg.modName, goldenFile)
 
 			want, err  := os.ReadFile(wantPath); if err != nil { t.Fatal(err) } // #nosec G304
 			got,  err  := os.ReadFile( gotPath); if err != nil { t.Fatal(err) } // #nosec G304

@@ -18,106 +18,114 @@ func TestUsage(t *testing.T) {
 		wantCoverProfile string
 		wantPath         string
 		wantOut          string
+		wantNoBrowser    bool
 		err              string // zero value means no error expected (err113)
-	}{
-		{
-			name: "valid",
-			args: []string{
-				"-gomod",        "foo",
-				"-coverprofile", "bar",
-				"-path",         "baz",
-			},
-			wantGoMod:         "foo",
-			wantCoverProfile:  "bar",
-			wantPath:          "baz",
+	}{{
+		name: "valid",
+		args: []string{
+			"-gomod",        "foo",
+			"-coverprofile", "bar",
+			"-path",         "baz",
 		},
-		{
-			name:    "missing -gomod",
-			err:     "no value specified for -gomod",
-			wantOut: strings.Join([]string{
-				"missing -gomod usage:",
-				"",
-				"  -coverprofile string",
-				"    	path to the Go test coverage profile file",
-				"  -gomod string",
-				"    	path to the root go.mod file",
-				"  -path string",
-				"    	path where HTML files will be written",
-				"\n"}, "\n"),
+		wantGoMod:         "foo",
+		wantCoverProfile:  "bar",
+		wantPath:          "baz",
+	}, {
+		name:    "missing -gomod",
+		err:     "no value specified for -gomod",
+		wantOut: strings.Join([]string{
+			"missing -gomod usage:",
+			"",
+			"  -coverprofile string",
+			"    	path to the Go test coverage profile file",
+			"  -gomod string",
+			"    	path to the root go.mod file",
+			"  -n	suppress opening the browser",
+			"  -path string",
+			"    	path where HTML files will be written",
+			"\n"}, "\n"),
+	}, {
+		name:    "missing -coverprofile",
+		args:    []string{"-gomod", "foo"},
+		err:     "no value specified for -coverprofile",
+		wantOut: strings.Join([]string{
+			"missing -coverprofile usage:",
+			"",
+			"  -coverprofile string",
+			"    	path to the Go test coverage profile file",
+			"  -gomod string",
+			"    	path to the root go.mod file",
+			"  -n	suppress opening the browser",
+			"  -path string",
+			"    	path where HTML files will be written",
+			"\n"}, "\n"),
+	}, {
+		name:    "missing -path",
+		args:    []string{
+			"-gomod",        "foo",
+			"-coverprofile", "bar",
 		},
-		{
-			name:    "missing -coverprofile",
-			args:    []string{"-gomod", "foo"},
-			err:     "no value specified for -coverprofile",
-			wantOut: strings.Join([]string{
-				"missing -coverprofile usage:",
-				"",
-				"  -coverprofile string",
-				"    	path to the Go test coverage profile file",
-				"  -gomod string",
-				"    	path to the root go.mod file",
-				"  -path string",
-				"    	path where HTML files will be written",
-				"\n"}, "\n"),
+		err:     "no value specified for -path",
+		wantOut: strings.Join([]string{
+			"missing -path usage:",
+			"",
+			"  -coverprofile string",
+			"    	path to the Go test coverage profile file",
+			"  -gomod string",
+			"    	path to the root go.mod file",
+			"  -n	suppress opening the browser",
+			"  -path string",
+			"    	path where HTML files will be written",
+			"\n"}, "\n"),
+	}, {
+		name: "ignored args",
+		args: []string{
+			"-gomod",        "foo",
+			"-coverprofile", "bar",
+			"-path",         "baz",
+			"bug",
+			"boo",
 		},
-		{
-			name:    "missing -path",
-			args:    []string{
-				"-gomod",        "foo",
-				"-coverprofile", "bar",
-			},
-			err:     "no value specified for -path",
-			wantOut: strings.Join([]string{
-				"missing -path usage:",
-				"",
-				"  -coverprofile string",
-				"    	path to the Go test coverage profile file",
-				"  -gomod string",
-				"    	path to the root go.mod file",
-				"  -path string",
-				"    	path where HTML files will be written",
-				"\n"}, "\n"),
+		wantGoMod:        "foo",
+		wantCoverProfile: "bar",
+		wantPath:         "baz",
+		wantOut:          "ignored arguments: bug, boo\n",
+	}, {
+		name: "-n (supress opening browser) specified",
+		args: []string{
+			"-gomod",        "foo",
+			"-coverprofile", "bar",
+			"-path",         "baz",
+			"-n",
 		},
-		{
-			name: "ignored args",
-			args: []string{
-				"-gomod",        "foo",
-				"-coverprofile", "bar",
-				"-path",         "baz",
-				"bug",
-				"boo",
-			},
-			wantGoMod:        "foo",
-			wantCoverProfile: "bar",
-			wantPath:         "baz",
-			wantOut:          "ignored arguments: bug, boo\n",
-		},
-		{
-			name:    "invalid",
-			args:    []string{"-invalid"},
-			wantOut: strings.Join([]string{
-				"flag provided but not defined: -invalid",
-				"invalid usage:",
-				"",
-				"  -coverprofile string",
-				"    	path to the Go test coverage profile file",
-				"  -gomod string",
-				"    	path to the root go.mod file",
-				"  -path string",
-				"    	path where HTML files will be written",
-				"\n"}, "\n"),
-			err: "flag provided but not defined: -invalid",
-		},
-	}
+		wantGoMod:        "foo",
+		wantCoverProfile: "bar",
+		wantPath:         "baz",
+		wantNoBrowser:    true,
+	}, {
+		name:    "invalid",
+		args:    []string{"-invalid"},
+		wantOut: strings.Join([]string{
+			"flag provided but not defined: -invalid",
+			"invalid usage:",
+			"",
+			"  -coverprofile string",
+			"    	path to the Go test coverage profile file",
+			"  -gomod string",
+			"    	path to the root go.mod file",
+			"  -n	suppress opening the browser",
+			"  -path string",
+			"    	path where HTML files will be written",
+			"\n"}, "\n"),
+		err: "flag provided but not defined: -invalid",
+	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			gotOut := new(bytes.Buffer)
 			fs     := flag.NewFlagSet(tt.name, flag.ContinueOnError)
 			fs.SetOutput(gotOut)
-			var err error
-			var gotGoMod, gotCoverProfile, gotPath string
-			gotGoMod, gotCoverProfile, gotPath, err = flags(fs, tt.args)
+			gotGoMod, gotCoverProfile, gotPath, gotNoBrowser, err := flags(fs, tt.args)
 			if tt.err != "" {
 				if err == nil {
 					t.Errorf("flags(%q) did not fail", tt.name)
@@ -136,6 +144,9 @@ func TestUsage(t *testing.T) {
 				t.Errorf("flags(%q) coverProfile mismatch (-want +got):\n%s", tt.name, diff)
 			}
 			if diff := cmp.Diff(tt.wantPath, gotPath); diff != "" {
+				t.Errorf("flags(%q) path mismatch (-want +got):\n%s", tt.name, diff)
+			}
+			if diff := cmp.Diff(tt.wantNoBrowser, gotNoBrowser); diff != "" {
 				t.Errorf("flags(%q) path mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})

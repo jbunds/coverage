@@ -19,7 +19,7 @@ import (
 type treeBuilder struct {
 	fsys     writeFS
 	modName  string
-	outRoot  string
+	outRoot  rootHandle
 	cov      map[string]coverage
 	counter  atomic.Int64
 }
@@ -54,8 +54,8 @@ type htmlBuilder struct {
 func (tb *treeBuilder) buildTreeHTML(ctx context.Context, progressOutput io.Writer) (string, error) {
 	if err := ctx.Err(); err != nil { return "", err }
 
-	modDomain, _, _ := strings.Cut(tb.modName, "/")         // module's top-level namespace
-	scanRoot        := filepath.Join(tb.outRoot, modDomain) // physical directory entry point for recursive scan
+	modDomain, _, _ := strings.Cut(tb.modName, "/")                // module's top-level namespace
+	scanRoot        := filepath.Join(tb.outRoot.Name(), modDomain) // physical directory entry point for recursive scan
 
 	entries, err := tb.fsys.ReadDir(ctx, scanRoot)
 	if err != nil { return "", err }
@@ -90,7 +90,7 @@ func (tb *treeBuilder) buildTreeHTML(ctx context.Context, progressOutput io.Writ
 			}
 			res, err := tb.processEntry(gCtx, st)
 			if err != nil { return err }
-			results[i + 1]  = res
+			results[i + 1]  = *res
 			totalStatements.Add(res.total)
 			totalCovered.Add(res.covered)
 			return nil
@@ -130,15 +130,15 @@ func (tb *treeBuilder) buildTreeHTML(ctx context.Context, progressOutput io.Writ
 }
 
 // processEntry recursively builds ordered HTML tree nodes and aggregates coverage metrics for individual files and directories.
-func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryResult, error) {
-	if err := ctx.Err(); err != nil { return entryResult{}, err }
+func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (*entryResult, error) {
+	if err := ctx.Err(); err != nil { return &entryResult{}, err }
 
 	isDir        := st.entry.IsDir()
 	isTargetFile := !isDir && strings.HasSuffix(st.entry.Name(), ".go.html")
 
 	if !isDir && !isTargetFile {
 		st.prog.Report(st.budget, "") // ensure progress ultimately adds up to 100% by consuming budget even if a file is not processed
-		return entryResult{}, nil
+		return &entryResult{}, nil
 	}
 
 	srcBasename := strings.TrimSuffix(st.entry.Name(), ".html")  // basename of the subdirectory or source file
@@ -147,9 +147,9 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 
 	if isDir {
 		itemID             := "tree-item-" + strconv.FormatInt(tb.counter.Add(1), 10)
-		fullPath           := filepath.Join(tb.outRoot, relHTMLPath)
+		fullPath           := filepath.Join(tb.outRoot.Name(), relHTMLPath)
 		subDirEntries, err := tb.fsys.ReadDir(ctx, fullPath)
-		if err != nil { return entryResult{}, err }
+		if err != nil { return &entryResult{}, err }
 
 		var subDirSB strings.Builder
 		var dirCovered, dirStatements atomic.Int64
@@ -174,7 +174,7 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 				}
 
 				res, err := tb.processEntry(ctx, childState)
-				if err != nil { return entryResult{}, err }
+				if err != nil { return &entryResult{}, err }
 
 				subDirSB.WriteString(res.html)
 				dirCovered.Add(res.covered)
@@ -191,9 +191,9 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 		}
 
 		html, err := hb.buildHTML(ctx, subDirSB.String(), dirCovered.Load(), dirStatements.Load())
-		if err != nil { return entryResult{}, err }
+		if err != nil { return &entryResult{}, err }
 
-		return entryResult{
+		return &entryResult{
 			html:    html,
 			covered: dirCovered.Load(),
 			total:   dirStatements.Load()}, nil
@@ -210,7 +210,7 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (entryRes
 	srcSpan := `<span class="src"><a href="` + relHTMLPath + `">` + srcBasename + "</a></span>"
 	covSpan := `<span class="cov">` + strconv.FormatFloat(percent, 'f', 1, 64) + "%</span>"
 
-	return entryResult{
+	return &entryResult{
 		html:    strings.Repeat("  ", st.indent) + `<li><div class="tree-node">` + srcSpan + " " + covSpan + "</div></li>\n",
 		covered: cov.covered,
 		total:   cov.total}, nil
