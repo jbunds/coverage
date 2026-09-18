@@ -104,46 +104,40 @@ func TestProcessEntry(t *testing.T) {
 	tests := []struct{
 		name         string
 		src          string
-		filePath     string
-		file         *fstest.MapFile
-		covered      int64
-		total        int64
+		entryPoint   string
+		currentEntry fs.FileInfo
+		cov          map[string]coverage
 		fsys         fs.FS
 		entry        fs.DirEntry
 		readDirFails bool
 		want         *entryResult
 		wantErr      bool
 	}{{
-		name:     "succeeds",
-		src:      "foo/bar/baz.go",
-		filePath: "some/path/foo",
-		file:     &fstest.MapFile{},
-		covered:  17,
-		total:    53,
-		fsys:     fstest.MapFS{
-			"some/path/foo":                 &fstest.MapFile{Mode: fs.ModeDir},
-			"some/path/foo/bar":             &fstest.MapFile{Mode: fs.ModeDir},
-			"some/path/foo/bar/baz.go.html": &fstest.MapFile{},
-		},
-		want: &entryResult{
+		name:        "succeeds",
+		src:         "foo/bar/baz/boo.go",
+		entryPoint:  "foo",
+		fsys:        fstest.MapFS{"some/path/foo/bar/baz/boo.go.html": &fstest.MapFile{}}, // apparently behaves like mkdir -p
+		currentEntry: &mockFileInfo{mode: fs.ModeDir, name: "bar"},
+		cov:         map[string]coverage{"foo/bar/baz/boo.go": {covered: 17, total: 53}},
+		want:        &entryResult{
 			covered: 17,
 			total:   53,
 			html:    strings.Join([]string{
 				`  <li>`,
 				`    <input type="checkbox" id="tree-item-1"/>`,
 				`    <div class="tree-node">`,
-				`      <label for="tree-item-1">foo</label>`,
+				`      <label for="tree-item-1">bar</label>`,
 				`      <span class="cov">32.1%</span>`,
 				`    </div>`,
 				`    <ul>`,
 				`      <li>`,
 				`        <input type="checkbox" id="tree-item-2"/>`,
 				`        <div class="tree-node">`,
-				`          <label for="tree-item-2">bar</label>`,
+				`          <label for="tree-item-2">baz</label>`,
 				`          <span class="cov">32.1%</span>`,
 				`        </div>`,
 				`        <ul>`,
-				`          <li><div class="tree-node"><span class="src"><a href="foo/bar/baz.go.html">baz.go</a></span> <span class="cov">32.1%</span></div></li>`,
+				`          <li><div class="tree-node"><span class="src"><a href="foo/bar/baz/boo.go.html">boo.go</a></span> <span class="cov">32.1%</span></div></li>`,
 				`        </ul>`,
 				`      </li>`,
 				`    </ul>`,
@@ -151,16 +145,16 @@ func TestProcessEntry(t *testing.T) {
 				``}, "\n"),
 		},
 	}, {
-		name:     "neither DirEntry nor *.go.html file",
-		filePath: "file",
-		file:     &fstest.MapFile{},
-		fsys:     fstest.MapFS{"file": &fstest.MapFile{}},
-		want:     &entryResult{},
+		name:         "file is neither DirEntry nor *.go.html file",
+		entryPoint:   "some/path/file",
+		fsys:         fstest.MapFS{"some/path/file": &fstest.MapFile{}},
+		currentEntry: &mockFileInfo{},
+		want:         &entryResult{},
 	}, {
-		name:         "DirEntry but ReadDir fails",
-		filePath:     "dir",
-		file:         &fstest.MapFile{ Mode: fs.ModeDir },
-		fsys:         fstest.MapFS{"dir": &fstest.MapFile{Mode: fs.ModeDir}},
+		name:         "file is DirEntry but ReadDir fails",
+		entryPoint:   "some/path",
+		fsys:         fstest.MapFS{"some/path": &fstest.MapFile{Mode: fs.ModeDir}},
+		currentEntry: &mockFileInfo{mode: fs.ModeDir},
 		readDirFails: true,
 		want:         &entryResult{},
 		wantErr:      true,
@@ -168,30 +162,20 @@ func TestProcessEntry(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			cov        := make(map[string]coverage)
-			cov[tt.src] = coverage{
-				covered: tt.covered,
-				total:   tt.total,
-			}
 			mfs := &mockFS{
 				FS:           tt.fsys,
 				readDirFails: tt.readDirFails,
 			}
 			tb := &treeBuilder{
 				fsys:    mfs,
+				cov:     tt.cov,
 				outRoot: &mockRoot{name: "some/path"},
-				cov:     cov,
-			}
-			info, err := fs.Stat(mfs, tt.filePath)
-			if err != nil {
-				t.Errorf("fs.Stat failed unexpectedly: %v", err)
 			}
 			ctx  := t.Context()
-			prog := progress.New(ctx, 0, io.Discard)
-			t.Cleanup(func() { prog.Close() })
-			st := scanState{
-				parentPath: ".",
-				entry:      fs.FileInfoToDirEntry(info),
+			prog := progress.New(ctx, 0, io.Discard); t.Cleanup(func() { prog.Close() })
+			st   := scanState{
+				parentPath: tt.entryPoint,
+				entry:      fs.FileInfoToDirEntry(tt.currentEntry),
 				indent:     1,
 				prog:       prog,
 			}

@@ -96,6 +96,7 @@ linters:
             - os/exec
             - strings
             - testing
+            - time
             - github.com/google/go-cmp/cmp
             - github.com/jbunds/progress
             - golang.org/x/tools/cover

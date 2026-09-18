@@ -191,9 +191,9 @@ func run() int {
 		childJSFile:   "child.js",
 	}
 
-	info, err := os.Stat(outDir) // #nosec G703 -- outDir is operator-specified; protecting the operator from self-harm is beyond the scope of this program
+	info, err := repGen.fsys.Stat(outDir)
 	if err != nil || !info.IsDir() {
-		if err := repGen.fsys.MkdirAll(ctx, outDir, 0700); err != nil {
+		if err := repGen.fsys.MkdirAll(outDir, 0700); err != nil {
 			fmt.Fprintf(os.Stderr, "cannot create directory %q: %v", outDir, err)
 			return 3
 		}
@@ -210,7 +210,7 @@ func run() int {
 		return 5
 	}
 
-	if err := repGen.getRemoteURL(ctx, goModFile, new(realRunner)); err != nil { // sets repGen.repoURL
+	if err := repGen.getRemoteURL(ctx, new(realRunner), goModFile); err != nil { // sets repGen.repoURL
 		fmt.Fprintf(os.Stderr, "cannot determine remote URL: %v\n", err)
 		return 6
 	}
@@ -255,7 +255,7 @@ func run() int {
 
 	if !noBrowser {
 		// TODO(jbunds): add a method to run `python3 -m http.server -d repGen.outRoot.Name()`
-		if err := repGen.openHTML(filepath.Base(indexHTMLFile)); err != nil {
+		if err := repGen.openHTML(ctx, new(realRunner), filepath.Base(indexHTMLFile)); err != nil {
 			fmt.Fprintf(os.Stderr, "cannot open %q: %v\n", filepath.Base(indexHTMLFile), err)
 			return 13
 		}
@@ -268,7 +268,7 @@ func run() int {
 func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) error {
 	if err := ctx.Err(); err != nil { return err }
 
-	goMod, err := rg.fsys.ReadFile(ctx, goModFile)
+	goMod, err := rg.fsys.ReadFile(goModFile)
 	if err != nil                          { return fmt.Errorf("cannot read %q: %w",  goModFile, err) }
 	modFile, err := modfile.Parse(goModFile, goMod, nil)
 	if err != nil || modFile.Module == nil { return fmt.Errorf("cannot parse %q: %w", goModFile, err) }
@@ -278,7 +278,7 @@ func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) err
 }
 
 // getRepoURL converts a remote URL to an HTTP URL for subsequent use in writeIndexHTMLFile.
-func (rg *reportGenerator) getRemoteURL(ctx context.Context, goModFile string, runner runner) error {
+func (rg *reportGenerator) getRemoteURL(ctx context.Context, runner runner, goModFile string) error {
 	if err := ctx.Err(); err != nil { return err }
 
 	// handles custom import paths (vanity URLs) resolved via Go's HTML <meta> tag discovery mechanism:
@@ -289,7 +289,7 @@ func (rg *reportGenerator) getRemoteURL(ctx context.Context, goModFile string, r
 
 	var stdout, stderr bytes.Buffer
 
-	cmd       := exec.CommandContext(ctx, "git", "config", "--get", "remote.origin.url")
+	cmd       := exec.Command("git", "config", "--get", "remote.origin.url")
 	cmd.Dir    = filepath.Dir(goModFile)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -329,7 +329,7 @@ func (rg *reportGenerator) getRemoteURL(ctx context.Context, goModFile string, r
 func (rg *reportGenerator) getAllPkgPaths(ctx context.Context) ([]string, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
 
-	f, err := rg.fsys.OpenWithContext(ctx, filepath.Clean(rg.profilePath))
+	f, err := rg.fsys.Open(filepath.Clean(rg.profilePath))
 	if err != nil { return nil, err }
 
 	defer func() {
@@ -409,7 +409,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	for dir := range dirsToCreate {
 		if err := gCtx.Err(); err != nil { break } // group.Wait() below captures the error
 		group.Go(func() error {
-			if err := rg.fsys.MkdirAll(gCtx, dir, 0700); err != nil {
+			if err := rg.fsys.MkdirAll(dir, 0700); err != nil {
 				return fmt.Errorf("cannot create directory %q: %w", dir, err)
 			}
 			progDirs.Report(1, "created " + dir)
@@ -461,7 +461,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 				return fmt.Errorf("cannot build HTML for %q: %w", unit.profile.FileName, err)
 			}
 
-			if err := rg.fsys.WriteFile(gCtx, unit.outPath, buf.Bytes(), 0600); err != nil {
+			if err := rg.fsys.WriteFile(unit.outPath, buf.Bytes(), 0600); err != nil {
 				return fmt.Errorf("cannot write HTML file for %q: %w", unit.profile.FileName, err)
 			}
 
@@ -562,7 +562,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	pkgPath  := filepath.Dir( profile.FileName)
 	fileName := filepath.Base(profile.FileName)
 
-	src, err := rg.fsys.ReadFile(ctx, filepath.Join(rg.pkgDirCache[pkgPath], fileName))
+	src, err := rg.fsys.ReadFile(filepath.Join(rg.pkgDirCache[pkgPath], fileName))
 	if err != nil {
 		return err
 	}
@@ -820,7 +820,7 @@ func (rg *reportGenerator) writeTemplateFile(ctx context.Context, file string, t
 	outFile   := filepath.Join(rg.outRoot.Name(), filepath.Base(file))
 	tmpl, err := template.ParseFS(rg.embeddedFiles, file)
 	if                                   err != nil { return fmt.Errorf("cannot parse %q: %w",     file, err) }
-	f, err := rg.fsys.Create(ctx, outFile)
+	f, err := rg.fsys.Create(outFile)
 	if                                   err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
 	if err := tmpl.Execute(f, tmplVars); err != nil { return fmt.Errorf("cannot render template: %w",    err) }
 
@@ -833,7 +833,7 @@ func (rg *reportGenerator) writeStaticFiles(ctx context.Context) error {
 
 	for _, file := range rg.staticFiles {
 		outFile   := filepath.Join(rg.outRoot.Name(), filepath.Base(file))
-		f, err    := rg.fsys.Create(ctx, outFile)
+		f, err    := rg.fsys.Create(outFile)
 		if                                        err != nil { return fmt.Errorf("cannot create %q: %w",     outFile, err) }
 		data, err := fs.ReadFile(rg.embeddedFiles, file)
 		if                                        err != nil { return fmt.Errorf("cannot read %q: %w",          file, err) }
@@ -845,7 +845,9 @@ func (rg *reportGenerator) writeStaticFiles(ctx context.Context) error {
 }
 
 // openHTML opens the generated index.html file in the default browser.
-func (rg *reportGenerator) openHTML(indexHTMLFile string) error {
+func (rg *reportGenerator) openHTML(ctx context.Context, runner runner, indexHTMLFile string) error {
+	if err := ctx.Err(); err != nil { return err }
+
 	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), indexHTMLFile)) // file:// scheme
 	if err != nil {
 		return err
@@ -862,7 +864,7 @@ func (rg *reportGenerator) openHTML(indexHTMLFile string) error {
 	default:
 		return fmt.Errorf("unrecognized OS: %s", os)
 	}
-	return cmd.Run()
+	return runner.Run(cmd)
 }
 
 // filterArgs discards any arguments up to and including "--".

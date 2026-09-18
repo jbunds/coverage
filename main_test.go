@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +10,7 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -44,8 +44,7 @@ type mockFS struct {
 	data           []byte
 }
 
-func (m *mockFS) Create(ctx context.Context, _ string) (io.WriteCloser, error) {
-	if err := ctx.Err(); err != nil { return nil, err }
+func (m *mockFS) Create(_ string) (io.WriteCloser, error) {
 	if m.createFails { return nil, errors.New("Create failed") }
 	var w io.Writer
 	if m.badWriter {
@@ -59,8 +58,7 @@ func (m *mockFS) Create(ctx context.Context, _ string) (io.WriteCloser, error) {
 	}, nil
 }
 
-func (m *mockFS) OpenRoot(ctx context.Context, name string) (rootHandle, error) {
-	if err := ctx.Err(); err != nil { return nil, err }
+func (m *mockFS) OpenRoot(name string) (rootHandle, error) {
 	if m.openRootFails { return nil, errors.New("OpenRoot failed") }
 	m.root = &mockRoot{name: name}
 	return m.root, nil
@@ -70,34 +68,45 @@ func (m *mockFS) Open(name string) (fs.File, error) {
 	return m.FS.Open(name)
 }
 
-func (m *mockFS) OpenWithContext(ctx context.Context, name string) (fs.File, error) {
-	if err := ctx.Err(); err != nil { return nil, err }
+func (m *mockFS) OpenWithContext(name string) (fs.File, error) {
 	return m.Open(name)
 }
 
-func (m *mockFS) ReadDir(ctx context.Context, dir string) ([]fs.DirEntry, error) {
-	if err := ctx.Err(); err != nil { return nil, err }
+func (m *mockFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	if m.readDirFails { return nil, errors.New("ReadDir failed") }
-	return fs.ReadDir(m.FS, dir)
+	return fs.ReadDir(m.FS, name)
 }
 
-func (m *mockFS) MkdirAll(ctx context.Context, _ string, _ fs.FileMode) error {
-	if err := ctx.Err(); err != nil { return err }
+func (m *mockFS) MkdirAll(_ string, _ fs.FileMode) error {
 	if m.mkdirAllFails { return errors.New("MkdirAll failed") }
 	return nil
 }
 
-func (m *mockFS) ReadFile(ctx context.Context, name string) ([]byte, error) {
-	if err := ctx.Err(); err != nil { return nil, err }
-	return fs.ReadFile(m, name)
+func (m *mockFS) ReadFile(name string) ([]byte, error) {
+	return fs.ReadFile(m.FS, name)
 }
 
-func (m *mockFS) WriteFile(ctx context.Context, _ string, data []byte, _ fs.FileMode) error {
-	if err := ctx.Err(); err != nil { return err }
+func (m *mockFS) WriteFile(_ string, data []byte, _ fs.FileMode) error {
 	if m.writeFileFails { return errors.New("WriteFile failed") }
 	m.data = data
 	return nil
 }
+
+func (m *mockFS) Stat(name string) (fs.FileInfo, error) {
+	return fs.Stat(m.FS, name)
+}
+
+type mockFileInfo struct {
+	mode fs.FileMode
+	name string
+}
+
+func (m *mockFileInfo) Name()    string      { return m.name                   }
+func (m *mockFileInfo) Size()    int64       { return 0                        }
+func (m *mockFileInfo) Mode()    fs.FileMode { return m.mode                   }
+func (m *mockFileInfo) ModTime() time.Time   { return time.Time{}              }
+func (m *mockFileInfo) IsDir()   bool        { return m.mode & fs.ModeDir != 0 }
+func (m *mockFileInfo) Sys()     any         { return nil                      }
 
 type mockRoot struct {
 	name      string
@@ -231,7 +240,7 @@ func TestGetRemoteURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			repGen := &reportGenerator{modName: "github.com/foo/bar"}
-			err    := repGen.getRemoteURL(t.Context(), "go.mod", tt.runner)
+			err    := repGen.getRemoteURL(t.Context(), tt.runner, "go.mod")
 			if err != nil {
 				t.Errorf("getRemoteURL(%q) returned unexpected error: %v", tt.name, err)
 			}

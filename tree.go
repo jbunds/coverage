@@ -57,7 +57,7 @@ func (tb *treeBuilder) buildTreeHTML(ctx context.Context, progressOutput io.Writ
 	modDomain, _, _ := strings.Cut(tb.modName, "/")                // module's top-level namespace
 	scanRoot        := filepath.Join(tb.outRoot.Name(), modDomain) // physical directory entry point for recursive scan
 
-	entries, err := tb.fsys.ReadDir(ctx, scanRoot)
+	entries, err := tb.fsys.ReadDir(scanRoot)
 	if err != nil { return "", err }
 
 	prog := progress.New(ctx, 0, progressOutput)
@@ -84,7 +84,7 @@ func (tb *treeBuilder) buildTreeHTML(ctx context.Context, progressOutput io.Writ
 			st := scanState{
 				parentPath: modDomain,
 				entry:      entry,
-				indent:     3, // 2 levels of indentation are added by prepending rootTreeNode to results below
+				indent:     3, // 2 levels of indentation are added by wrapping results inside rootTreeNode below
 				prog:       prog,
 				budget:     currentBudget,
 			}
@@ -148,7 +148,7 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (*entryRe
 	if isDir {
 		itemID             := "tree-item-" + strconv.FormatInt(tb.counter.Add(1), 10)
 		fullPath           := filepath.Join(tb.outRoot.Name(), relHTMLPath)
-		subDirEntries, err := tb.fsys.ReadDir(ctx, fullPath)
+		subDirEntries, err := tb.fsys.ReadDir(fullPath)
 		if err != nil { return &entryResult{}, err }
 
 		var subDirSB strings.Builder

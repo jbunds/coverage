@@ -199,9 +199,9 @@
 <div class="line"><span class="miss">		childJSFile:   &#34;child.js&#34;</span><span class="miss">,</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	info, err := os.Stat(outDir) // #nosec G703 -- outDir is operator-specified; protecting the operator from self-harm is beyond the scope of this program</span></div>
+<div class="line"><span class="miss">	info, err := repGen.fsys.Stat(outDir)</span></div>
 <div class="line"><span class="miss">	if err != nil || !info.IsDir() {</span></div>
-<div class="line"><span class="miss">		if err := repGen.fsys.MkdirAll(ctx, outDir, 0700); err != nil {</span></div>
+<div class="line"><span class="miss">		if err := repGen.fsys.MkdirAll(outDir, 0700); err != nil {</span></div>
 <div class="line"><span class="miss">			fmt.Fprintf(os.Stderr, &#34;cannot create directory %q: %v&#34;, outDir, err)</span></div>
 <div class="line"><span class="miss">			return 3</span></div>
 <div class="line">		}</div>
@@ -218,7 +218,7 @@
 <div class="line"><span class="miss">		return 5</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if err := repGen.getRemoteURL(ctx, goModFile, new(realRunner)); err != nil</span> { // sets repGen.repoURL</div>
+<div class="line"><span class="miss">	if err := repGen.getRemoteURL(ctx, new(realRunner), goModFile); err != nil</span> { // sets repGen.repoURL</div>
 <div class="line"><span class="miss">		fmt.Fprintf(os.Stderr, &#34;cannot determine remote URL: %v\n&#34;, err)</span></div>
 <div class="line"><span class="miss">		return 6</span></div>
 <div class="line">	}</div>
@@ -263,7 +263,7 @@
 <div class="line"></div>
 <div class="line"><span class="miss">	if !noBrowser</span> {</div>
 <div class="line">		// TODO(jbunds): add a method to run `python3 -m http.server -d repGen.outRoot.Name()`</div>
-<div class="line"><span class="miss">		if err := repGen.openHTML(filepath.Base(indexHTMLFile)); err != nil {</span></div>
+<div class="line"><span class="miss">		if err := repGen.openHTML(ctx, new(realRunner), filepath.Base(indexHTMLFile)); err != nil {</span></div>
 <div class="line"><span class="miss">			fmt.Fprintf(os.Stderr, &#34;cannot open %q: %v\n&#34;, filepath.Base(indexHTMLFile), err)</span></div>
 <div class="line"><span class="miss">			return 13</span></div>
 <div class="line">		}</div>
@@ -276,7 +276,7 @@
 <div class="line">func (rg *reportGenerator) getModName(ctx context.Context, goModFile string) error<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	goMod, err := rg.fsys.ReadFile(ctx, goModFile)</span></div>
+<div class="line"><span class="hit">	goMod, err := rg.fsys.ReadFile(goModFile)</span></div>
 <div class="line"><span class="hit">	if err != nil                          { return fmt.Errorf(&#34;cannot read %q: %w&#34;,  goModFile, err</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">	modFile, err := modfile.Parse(goModFile, goMod, nil)</span></div>
 <div class="line"><span class="hit">	if err != nil || modFile.Module == nil { return fmt.Errorf(&#34;cannot parse %q: %w&#34;, goModFile, err</span><span class="hit">) }</span></div>
@@ -286,7 +286,7 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// getRepoURL converts a remote URL to an HTTP URL for subsequent use in writeIndexHTMLFile.</div>
-<div class="line">func (rg *reportGenerator) getRemoteURL(ctx context.Context, goModFile string, runner runner) error<span class="hit"> {</span></div>
+<div class="line">func (rg *reportGenerator) getRemoteURL(ctx context.Context, runner runner, goModFile string) error<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line">	// handles custom import paths (vanity URLs) resolved via Go&#39;s HTML &lt;meta&gt; tag discovery mechanism:</div>
@@ -297,7 +297,7 @@
 <div class="line"></div>
 <div class="line"><span class="hit">	var stdout, stderr bytes.Buffer</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	cmd       := exec.CommandContext(ctx, &#34;git&#34;, &#34;config&#34;, &#34;--get&#34;, &#34;remote.origin.url&#34;)</span></div>
+<div class="line"><span class="hit">	cmd       := exec.Command(&#34;git&#34;, &#34;config&#34;, &#34;--get&#34;, &#34;remote.origin.url&#34;)</span></div>
 <div class="line"><span class="hit">	cmd.Dir    = filepath.Dir(goModFile)</span></div>
 <div class="line"><span class="hit">	cmd.Stdout = &amp;stdout</span></div>
 <div class="line"><span class="hit">	cmd.Stderr = &amp;stderr</span></div>
@@ -337,7 +337,7 @@
 <div class="line">func (rg *reportGenerator) getAllPkgPaths(ctx context.Context) ([]string, error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return nil, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	f, err := rg.fsys.OpenWithContext(ctx, filepath.Clean(rg.profilePath))</span></div>
+<div class="line"><span class="hit">	f, err := rg.fsys.Open(filepath.Clean(rg.profilePath))</span></div>
 <div class="line"><span class="hit">	if err != nil { return nil, err</span><span class="hit"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	defer func() {</span></div>
@@ -417,7 +417,7 @@
 <div class="line"><span class="hit">	for dir := range dirsToCreate {</span></div>
 <div class="line"><span class="hit">		if err := gCtx.Err(); err != nil</span><span class="miss"> { break</span> } // group.Wait() below captures the error</div>
 <div class="line"><span class="hit">		group.Go(func() error {</span></div>
-<div class="line"><span class="hit">			if err := rg.fsys.MkdirAll(gCtx, dir, 0700); err != nil {</span></div>
+<div class="line"><span class="hit">			if err := rg.fsys.MkdirAll(dir, 0700); err != nil {</span></div>
 <div class="line"><span class="hit">				return fmt.Errorf(&#34;cannot create directory %q: %w&#34;, dir, err)</span></div>
 <div class="line">			}</div>
 <div class="line"><span class="hit">			progDirs.Report(1, &#34;created &#34; + dir)</span></div>
@@ -469,7 +469,7 @@
 <div class="line"><span class="hit">				return fmt.Errorf(&#34;cannot build HTML for %q: %w&#34;, unit.profile.FileName, err)</span></div>
 <div class="line">			}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">			if err := rg.fsys.WriteFile(gCtx, unit.outPath, buf.Bytes(), 0600); err != nil {</span></div>
+<div class="line"><span class="hit">			if err := rg.fsys.WriteFile(unit.outPath, buf.Bytes(), 0600); err != nil {</span></div>
 <div class="line"><span class="hit">				return fmt.Errorf(&#34;cannot write HTML file for %q: %w&#34;, unit.profile.FileName, err)</span></div>
 <div class="line">			}</div>
 <div class="line"></div>
@@ -570,7 +570,7 @@
 <div class="line"><span class="hit">	pkgPath  := filepath.Dir( profile.FileName)</span></div>
 <div class="line"><span class="hit">	fileName := filepath.Base(profile.FileName)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	src, err := rg.fsys.ReadFile(ctx, filepath.Join(rg.pkgDirCache[pkgPath], fileName))</span></div>
+<div class="line"><span class="hit">	src, err := rg.fsys.ReadFile(filepath.Join(rg.pkgDirCache[pkgPath], fileName))</span></div>
 <div class="line"><span class="hit">	if err != nil {</span></div>
 <div class="line"><span class="hit">		return err</span></div>
 <div class="line">	}</div>
@@ -828,7 +828,7 @@
 <div class="line"><span class="hit">	outFile   := filepath.Join(rg.outRoot.Name(), filepath.Base(file))</span></div>
 <div class="line"><span class="hit">	tmpl, err := template.ParseFS(rg.embeddedFiles, file)</span></div>
 <div class="line"><span class="hit">	if                                   err != nil { return fmt.Errorf(&#34;cannot parse %q: %w&#34;,     file, err</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">	f, err := rg.fsys.Create(ctx, outFile)</span></div>
+<div class="line"><span class="hit">	f, err := rg.fsys.Create(outFile)</span></div>
 <div class="line"><span class="hit">	if                                   err != nil { return fmt.Errorf(&#34;cannot create %q: %w&#34;, outFile, err</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">	if err := tmpl.Execute(f, tmplVars); err != nil { return fmt.Errorf(&#34;cannot render template: %w&#34;,    err</span><span class="hit">) }</span></div>
 <div class="line"></div>
@@ -841,7 +841,7 @@
 <div class="line"></div>
 <div class="line"><span class="hit">	for _, file := range rg.staticFiles {</span></div>
 <div class="line"><span class="hit">		outFile   := filepath.Join(rg.outRoot.Name(), filepath.Base(file))</span></div>
-<div class="line"><span class="hit">		f, err    := rg.fsys.Create(ctx, outFile)</span></div>
+<div class="line"><span class="hit">		f, err    := rg.fsys.Create(outFile)</span></div>
 <div class="line"><span class="hit">		if                                        err != nil { return fmt.Errorf(&#34;cannot create %q: %w&#34;,     outFile, err</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">		data, err := fs.ReadFile(rg.embeddedFiles, file)</span></div>
 <div class="line"><span class="hit">		if                                        err != nil { return fmt.Errorf(&#34;cannot read %q: %w&#34;,          file, err</span><span class="hit">) }</span></div>
@@ -853,7 +853,9 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// openHTML opens the generated index.html file in the default browser.</div>
-<div class="line">func (rg *reportGenerator) openHTML(indexHTMLFile string) error<span class="miss"> {</span></div>
+<div class="line">func (rg *reportGenerator) openHTML(ctx context.Context, runner runner, indexHTMLFile string) error<span class="miss"> {</span></div>
+<div class="line"><span class="miss">	if err := ctx.Err(); err != nil { return err</span><span class="miss"> }</span></div>
+<div class="line"></div>
 <div class="line"><span class="miss">	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), indexHTMLFile)) // file:// scheme</span></div>
 <div class="line"><span class="miss">	if err != nil {</span></div>
 <div class="line"><span class="miss">		return err</span></div>
@@ -870,7 +872,7 @@
 <div class="line">	default<span class="miss">:</span></div>
 <div class="line"><span class="miss">		return fmt.Errorf(&#34;unrecognized OS: %s&#34;, os</span><span class="miss">)</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="miss">	return cmd.Run</span><span class="miss">()</span></div>
+<div class="line"><span class="miss">	return runner.Run(cmd</span><span class="miss">)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// filterArgs discards any arguments up to and including &#34;--&#34;.</div>
