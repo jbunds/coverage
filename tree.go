@@ -180,7 +180,7 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (*entryRe
 				dirCovered.Add(res.covered)
 				dirStatements.Add(res.total)
 			}
-		} else {
+		} else { // this block should be unreachable since writeCovHTMLFiles should never create an empty subdir
 			st.prog.Report(st.budget, pkgPath) // inform the progress tracker that pkgPath has been processed
 		}
 
@@ -219,6 +219,9 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st scanState) (*entryRe
 // buildHTML builds an HTML string used to render a subdirectory in the tree.
 func (hb *htmlBuilder) buildHTML(ctx context.Context, subDirHTML string, dirCovered, dirStatements int64) (string, error) {
 	if err := ctx.Err(); err != nil { return "", err }
+
+	// this should never happen in practice since writeCovHTMLFiles should never create an empty subdir
+	if subDirHTML == "" { return "", nil } // never add empty nodes to the tree
 
 	percent := 0.0
 	if dirStatements > 0 {

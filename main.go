@@ -9,12 +9,6 @@
 //   "theme"                  - toggles between "light" and "dark" themes
 //
 // Note that the "expand" / "collapse", "lines", and "theme" buttons will not be rendered when the index page is loaded via the file:// scheme.
-//
-// A simple workaround is to instantiate an HTTP server to serve the HTML files, e.g.:
-//
-//   $ python3 -m http.server 8000
-//
-// and then load http://localhost:8000/ in a browser.
 package main
 
 import (
@@ -325,7 +319,8 @@ func (rg *reportGenerator) getRemoteURL(ctx context.Context, runner runner, goMo
 	return nil
 }
 
-// getAllPkgPaths extracts all unique package paths from the coverage profile file for subsequent use in primePkgDirCache.
+// getAllPkgPaths extracts all unique package paths from the
+// coverage profile file for subsequent use in primePkgDirCache.
 func (rg *reportGenerator) getAllPkgPaths(ctx context.Context) ([]string, error) {
 	if err := ctx.Err(); err != nil { return nil, err }
 
@@ -383,7 +378,8 @@ func (rg *reportGenerator) primePkgDirCache(ctx context.Context, pkgLoader pkgLo
 	return nil
 }
 
-// writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html file for each Go source file listed in the coverage profile file.
+// writeCovHTMLFiles calculates per-file coverage percentages and writes a
+// *.go.html file for each Go source file listed in the coverage profile file.
 func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput io.Writer) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -553,7 +549,8 @@ func coverClass(blocks []*profileBlock, start, end int) string {
 	return ""
 }
 
-// buildCovHTML builds the HTML content for a single *.go.html file, with green (covered) and red (uncovered) lines to indicate test coverage.
+// buildCovHTML builds the HTML content for a single *.go.html file, with
+// green (covered) and red (uncovered) lines to indicate test coverage.
 func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath string) error {
 	if err := ctx.Err(); err != nil { return err }
 
@@ -702,7 +699,8 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	return ew.err()
 }
 
-// writePreamble writes the preamble portion of the HTML content common to every Go source HTML file.
+// writePreamble writes the preamble portion of the
+// HTML content common to every Go source HTML file.
 func writePreamble(ew stickyWriter, srcPath, cssPath string) {
 	ew.write("<!DOCTYPE html>\n")
 	ew.write(`<html lang="en">` + "\n")
@@ -718,7 +716,8 @@ func writePreamble(ew stickyWriter, srcPath, cssPath string) {
 	ew.write(`<body id="code" class="line-numbers">` + "\n")
 }
 
-// writePostamble writes the postamble portion of the HTML content common to every Go source HTML file.
+// writePostamble writes the postamble portion of the
+// HTML content common to every Go source HTML file.
 func writePostamble(ew stickyWriter, childJSPath string) {
 	ew.write(`<script src="`)
 	ew.write(childJSPath) // DOM-dependent
@@ -727,7 +726,7 @@ func writePostamble(ew stickyWriter, childJSPath string) {
 	ew.write("</html>")
 }
 
-// printCoverage prints per-file coverage percentages to the specified destination (typically stdout).
+// printCoverage prints per-file coverage percentages to stdout.
 func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error {
 	if err := ctx.Err(); err != nil { return err }
 

@@ -188,8 +188,8 @@
 <div class="line"><span class="hit">				dirCovered.Add(res.covered)</span></div>
 <div class="line"><span class="hit">				dirStatements.Add(res.total</span><span class="hit">)</span></div>
 <div class="line">			}</div>
-<div class="line">		} else<span class="miss"> {</span></div>
-<div class="line"><span class="miss">			st.prog.Report(st.budget, pkgPath) // inform the progress tracker that pkgPath has been processed</span></div>
+<div class="line">		} else { // this block should be unreachable since writeCovHTMLFiles should never create an empty subdir</div>
+<div class="line"><span class="hit">			st.prog.Report(st.budget, pkgPath) // inform the progress tracker that pkgPath has been processed</span></div>
 <div class="line">		}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">		hb := &amp;htmlBuilder{</span></div>
@@ -227,6 +227,9 @@
 <div class="line">// buildHTML builds an HTML string used to render a subdirectory in the tree.</div>
 <div class="line">func (hb *htmlBuilder) buildHTML(ctx context.Context, subDirHTML string, dirCovered, dirStatements int64) (string, error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
+<div class="line"></div>
+<div class="line">	// this should never happen in practice since writeCovHTMLFiles should never create an empty subdir</div>
+<div class="line"><span class="hit">	if subDirHTML == &#34;&#34; { return &#34;&#34;, nil</span> } // never add empty nodes to the tree</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	percent := 0.0</span></div>
 <div class="line"><span class="hit">	if dirStatements &gt; 0 {</span></div>
