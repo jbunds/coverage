@@ -247,7 +247,7 @@ func run() int {
 		return 12
 	}
 
-	if !noBrowser {
+	if !noBrowser && isTerm(os.Stdout) {
 		// TODO(jbunds): add a method to run `python3 -m http.server -d repGen.outRoot.Name()`
 		if err := repGen.openHTML(ctx, new(realRunner), filepath.Base(indexHTMLFile)); err != nil {
 			fmt.Fprintf(os.Stderr, "cannot open %q: %v\n", filepath.Base(indexHTMLFile), err)

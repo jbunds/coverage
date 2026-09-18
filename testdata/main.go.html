@@ -255,7 +255,7 @@
 <div class="line"><span class="miss">		return 12</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if !noBrowser</span> {</div>
+<div class="line"><span class="miss">	if !noBrowser &amp;&amp; isTerm(os.Stdout</span>) {</div>
 <div class="line">		// TODO(jbunds): add a method to run `python3 -m http.server -d repGen.outRoot.Name()`</div>
 <div class="line"><span class="miss">		if err := repGen.openHTML(ctx, new(realRunner), filepath.Base(indexHTMLFile)); err != nil {</span></div>
 <div class="line"><span class="miss">			fmt.Fprintf(os.Stderr, &#34;cannot open %q: %v\n&#34;, filepath.Base(indexHTMLFile), err)</span></div>

@@ -55,6 +55,7 @@ runs:
       shell: bash
       run: |
         go run github.com/jbunds/coverage@latest \
+          -n \
           -gomod="${{ inputs.go-mod }}" \
           -coverprofile="${{ steps.coverage_profile.outputs.gocov-pathname }}" \
           -path="${{ inputs.coverage-report-path }}"
