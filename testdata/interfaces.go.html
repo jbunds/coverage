@@ -49,10 +49,10 @@
 <div class="line">	Stat     (string)                      (fs.FileInfo,    error)</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// localFS provides a concrete implementation of the writeFS interface</div>
-<div class="line">// by wrapping the standard &#34;os&#34; package. This allows the program to</div>
-<div class="line">// perform actual system operations in production while remaining</div>
-<div class="line">// easily testable via alternative interface implementations.</div>
+<div class="line">// localFS provides a concrete implementation of the writeFS</div>
+<div class="line">// interface by wrapping the standard &#34;os&#34; package. This allows</div>
+<div class="line">// the SUT to perform actual system operations while remaining</div>
+<div class="line">// easily testable via alternative implementations.</div>
 <div class="line">type localFS struct{}</div>
 <div class="line"></div>
 <div class="line">func (lfs *localFS) OpenRoot(name string) (rootHandle, error<span class="miss"> ) {</span></div>

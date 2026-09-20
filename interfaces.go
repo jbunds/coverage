@@ -41,10 +41,10 @@ type writeFS interface {
 	Stat     (string)                      (fs.FileInfo,    error)
 }
 
-// localFS provides a concrete implementation of the writeFS interface
-// by wrapping the standard "os" package. This allows the program to
-// perform actual system operations in production while remaining
-// easily testable via alternative interface implementations.
+// localFS provides a concrete implementation of the writeFS
+// interface by wrapping the standard "os" package. This allows
+// the SUT to perform actual system operations while remaining
+// easily testable via alternative implementations.
 type localFS struct{}
 
 func (lfs *localFS) OpenRoot(name string) (rootHandle, error ) {
