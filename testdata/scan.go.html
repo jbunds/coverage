@@ -198,8 +198,10 @@
 <div class="line">	// block comment: extend to closing */</div>
 <div class="line"><span class="miss">	end := startOffset</span></div>
 <div class="line"><span class="miss">	for end &lt; len(src) - 1 {</span></div>
-<div class="line"><span class="miss">		if src[end  ] == &#39;*&#39; &amp;&amp;</span></div>
-<div class="line"><span class="miss">		   src[end+1] == &#39;/&#39; { return end + 2</span><span class="miss"> }</span></div>
+<div class="line"><span class="miss">		if src[end    ] == &#39;*&#39; &amp;&amp;</span></div>
+<div class="line"><span class="miss">		   src[end + 1] == &#39;/&#39; {</span></div>
+<div class="line"><span class="miss">			return end + 2</span></div>
+<div class="line">		}</div>
 <div class="line"><span class="miss">		end</span><span class="miss">++</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="miss">	return len(src</span><span class="miss">)</span></div>

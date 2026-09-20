@@ -190,8 +190,10 @@ func tokenEndOffset(src []byte, startOffset int, lit string, tok token.Token) in
 	// block comment: extend to closing */
 	end := startOffset
 	for end < len(src) - 1 {
-		if src[end  ] == '*' &&
-		   src[end+1] == '/' { return end + 2 }
+		if src[end    ] == '*' &&
+		   src[end + 1] == '/' {
+			return end + 2
+		}
 		end++
 	}
 	return len(src)
