@@ -37,7 +37,7 @@ func TestIntegrationTest(t *testing.T) {
 		{name:  "flags.go"},
 		{name:   "main.go"},
 		{name:  "pages.go"},
-		// {name:   "scan.go"}, // TODO(jbunds): rectify TestIntegrationTest/scan.go test failure
+		{name:   "scan.go"}, // TODO(jbunds): rectify TestIntegrationTest/scan.go test failure
 		{name:   "tree.go"},
 	}
 

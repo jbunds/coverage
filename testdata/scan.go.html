@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../../style.css">
+<title>github.com/jbunds/coverage/scan.go</title>
+</head>
+<body id="code" class="line-numbers">
+<div class="line">package main</div>
+<div class="line"></div>
+<div class="line">import (</div>
+<div class="line">	&#34;bytes&#34;</div>
+<div class="line">	&#34;go/scanner&#34;</div>
+<div class="line">	&#34;go/token&#34;</div>
+<div class="line">	&#34;sort&#34;</div>
+<div class="line">	&#34;text/template&#34;</div>
+<div class="line"></div>
+<div class="line">	&#34;golang.org/x/tools/cover&#34;</div>
+<div class="line">)</div>
+<div class="line"></div>
+<div class="line">// profileBlock maps a coverage profile range to its absolute byte offsets in the source file.</div>
+<div class="line">type profileBlock struct {</div>
+<div class="line">	startOffset, endOffset, count int</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// scanAndAnnotate returns an HTML-annotated version of src, grouping consecutive</div>
+<div class="line">// tokens that share the same coverage class into a single span fragment.</div>
+<div class="line">func scanAndAnnotate(file *token.File, src []byte, blocks []*profileBlock) *bytes.Buffer<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	buf  := new(bytes.Buffer)</span></div>
+<div class="line"><span class="hit">	scnr := new(scanner.Scanner)</span></div>
+<div class="line"><span class="hit">	scnr.Init(file, src, nil, scanner.ScanComments)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	var (</span></div>
+<div class="line"><span class="hit">		pendingBaseOffset int</span></div>
+<div class="line"><span class="hit">		pendingClass      string</span></div>
+<div class="line"><span class="hit">		pendingBuf        bytes.Buffer</span></div>
+<div class="line"><span class="hit">		lastOffset        int</span></div>
+<div class="line"><span class="hit">	)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	flush := func() {</span></div>
+<div class="line"><span class="hit">		if pendingBuf.Len() &gt; 0 {</span></div>
+<div class="line"><span class="hit">			writeTokenFragment(buf, pendingBuf.Bytes(), pendingBaseOffset, pendingClass, blocks)</span></div>
+<div class="line"><span class="hit">			pendingBuf.Reset()</span></div>
+<div class="line">		}</div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	for {</span></div>
+<div class="line"><span class="hit">		pos, tok, lit := scnr.Scan()</span></div>
+<div class="line"><span class="hit">		if tok == token.EOF {</span></div>
+<div class="line"><span class="hit">			flush()</span></div>
+<div class="line"><span class="hit">			if lastOffset &lt; len(src</span><span class="miss">) {</span></div>
+<div class="line"><span class="miss">				writeTokenFragment(buf, src[lastOffset:], lastOffset, &#34;&#34;, blocks)</span></div>
+<div class="line">			}</div>
+<div class="line"><span class="hit">			break</span></div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		startOffset := file.Offset(pos)</span></div>
+<div class="line"><span class="hit">		endOffset := tokenEndOffset(src, startOffset, lit, tok)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">		if lit == &#34;&#34; &amp;&amp; endOffset == startOffset {</span></div>
+<div class="line"><span class="hit">			continue</span></div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		coverClass := coverClass(blocks, startOffset, endOffset)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">		if coverClass != pendingClass {</span></div>
+<div class="line"><span class="hit">			flush()</span></div>
+<div class="line"><span class="hit">			pendingClass = coverClass</span></div>
+<div class="line"><span class="hit">			if pendingClass != &#34;&#34; {</span></div>
+<div class="line"><span class="hit">				pendingBaseOffset = min(startOffset, lastOffset)</span></div>
+<div class="line">			}</div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		if pendingClass != &#34;&#34; {</span></div>
+<div class="line"><span class="hit">			if startOffset &gt; lastOffset {</span></div>
+<div class="line"><span class="hit">				pendingBuf.Write(src[lastOffset:startOffset])</span></div>
+<div class="line">			}</div>
+<div class="line"><span class="hit">			pendingBuf.Write(src[startOffset:endOffset</span><span class="hit">])</span></div>
+<div class="line">		} else<span class="hit"> {</span></div>
+<div class="line"><span class="hit">			if startOffset &gt; lastOffset {</span></div>
+<div class="line"><span class="hit">				writeTokenFragment(buf, src[lastOffset:startOffset], lastOffset, &#34;&#34;, blocks)</span></div>
+<div class="line">			}</div>
+<div class="line"><span class="hit">			writeTokenFragment(buf, src[startOffset:endOffset], startOffset, &#34;&#34;, blocks</span><span class="hit">)</span></div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		lastOffset = endOffset</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	return buf</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writeTokenFragment splits fragments across newlines and resolves absolute sub-line boundaries.</div>
+<div class="line">func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, baseClass string, blocks []*profileBlock<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	lines          := bytes.SplitAfter(fragment, []byte(&#34;\n&#34;))</span></div>
+<div class="line"><span class="hit">	relativeOffset := 0</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	for _, line := range lines {</span></div>
+<div class="line"><span class="hit">		if len(line) == 0 {</span></div>
+<div class="line"><span class="hit">			continue</span></div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		hasNewline := bytes.HasSuffix(line, []byte(&#34;\n&#34;))</span></div>
+<div class="line"><span class="hit">		content    := line</span></div>
+<div class="line"><span class="hit">		if hasNewline {</span></div>
+<div class="line"><span class="hit">			content = line[:len(line) - 1]</span></div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		if len(content) &gt; 0 {</span></div>
+<div class="line"><span class="hit">			class := baseClass</span></div>
+<div class="line"><span class="hit">			if class == &#34;&#34;</span> { // calculate the absolute position in the file for this whitespace line chunk</div>
+<div class="line"><span class="hit">				absStart := baseFileOffset + relativeOffset</span></div>
+<div class="line"><span class="hit">				absEnd   := absStart + len(content)</span></div>
+<div class="line"><span class="hit">				class     = coverClass(blocks, absStart, absEnd)</span></div>
+<div class="line">			}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">			if class != &#34;&#34; {</span></div>
+<div class="line"><span class="hit">				buf.WriteString(`&lt;span class=&#34;`)</span></div>
+<div class="line"><span class="hit">				buf.WriteString(class)</span></div>
+<div class="line"><span class="hit">				buf.WriteString(`&#34;&gt;`)</span></div>
+<div class="line"><span class="hit">				template.HTMLEscape(buf, content)</span></div>
+<div class="line"><span class="hit">				buf.WriteString(&#34;&lt;/span&gt;&#34;)</span></div>
+<div class="line">			} else<span class="hit"> {</span></div>
+<div class="line"><span class="hit">				template.HTMLEscape(buf, content)</span></div>
+<div class="line">			}</div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		if hasNewline {</span></div>
+<div class="line"><span class="hit">			buf.WriteByte(&#39;\n&#39;)</span></div>
+<div class="line">		}</div>
+<div class="line"><span class="hit">		relativeOffset += len(line</span><span class="hit">)</span></div>
+<div class="line">	}</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// coverClass performs an O(log n) lookup over the sorted blocks slice to determine the</div>
+<div class="line">// coverage state (&#34;hit&#34;, &#34;miss&#34;, or &#34;&#34;) of a specified byte offset range [start, end].</div>
+<div class="line">//</div>
+<div class="line">// precondition: blocks must be sorted in ascending order by endOffset.</div>
+<div class="line">func coverClass(blocks []*profileBlock, start, end int) string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	idx := sort.Search(len(blocks), func(i int) bool {</span></div>
+<div class="line"><span class="hit">		return blocks[i].endOffset &gt;= end</span></div>
+<div class="line">	})</div>
+<div class="line"><span class="hit">	if idx   &lt;  len(blocks)             &amp;&amp;</span></div>
+<div class="line"><span class="hit">	   start &gt;= blocks[idx].startOffset &amp;&amp;</span></div>
+<div class="line"><span class="hit">	   end   &lt;= blocks[idx].endOffset   {</span></div>
+<div class="line"><span class="hit">		if blocks[idx].count &gt; 0 {</span></div>
+<div class="line"><span class="hit">			return &#34;hit&#34;</span></div>
+<div class="line">		}</div>
+<div class="line"><span class="hit">		return &#34;miss&#34;</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	return &#34;&#34;</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// computeBlockOffsets converts cover.ProfileBlock line/column positions to byte offsets.</div>
+<div class="line">//</div>
+<div class="line">// The first block on a given line starts at the line&#39;s beginning rather than at its</div>
+<div class="line">// StartCol, since the `go tool cover` reports the column of the first token on the line.</div>
+<div class="line">func computeBlockOffsets(file *token.File, blocks []cover.ProfileBlock) (out []*profileBlock<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	lineStarted := make(map[int]bool)</span></div>
+<div class="line"><span class="hit">	out          = make([]*profileBlock, 0, len(blocks))</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	for _, b := range blocks {</span></div>
+<div class="line"><span class="hit">		startOffset := 0</span></div>
+<div class="line"><span class="hit">		if !lineStarted[b.StartLine] {</span></div>
+<div class="line"><span class="hit">			startOffset = file.Offset(file.LineStart(b.StartLine))</span></div>
+<div class="line"><span class="hit">			lineStarted[b.StartLine] = true</span></div>
+<div class="line">		} else<span class="hit"> {</span></div>
+<div class="line"><span class="hit">			startOffset = file.Offset(file.LineStart(b.StartLine)) + (b.StartCol - 1)</span></div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		endOffset := file.Offset(file.LineStart(b.EndLine)) + (b.EndCol - 1)</span></div>
+<div class="line"><span class="hit">		out = append(out, &amp;profileBlock{</span></div>
+<div class="line"><span class="hit">			startOffset: startOffset,</span></div>
+<div class="line"><span class="hit">			endOffset:   endOffset,</span></div>
+<div class="line"><span class="hit">			count:       b.Count</span><span class="hit">,</span></div>
+<div class="line"><span class="hit">		})</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	return</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// tokenEndOffset returns the byte offset immediately past the end of the token.</div>
+<div class="line">//</div>
+<div class="line">// In practice, the scanner always returns a non-empty literal for all token types,</div>
+<div class="line">// so this is simply startOffset + len(lit).</div>
+<div class="line">//</div>
+<div class="line">// The manual comment-scanning branches below are defensive and should never execute.</div>
+<div class="line">func tokenEndOffset(src []byte, startOffset int, lit string, tok token.Token) int {</div>
+<div class="line">	// startOffset + len(lit) // stable behavior since Go 1.0</div>
+<div class="line"><span class="hit">	if lit != &#34;&#34; || tok != token.COMMENT {</span></div>
+<div class="line"><span class="hit">		return startOffset + len(lit)</span></div>
+<div class="line">	}</div>
+<div class="line">	// line comment: extend to (but not including) newline</div>
+<div class="line"><span class="miss">	if startOffset + 2 &lt;= len(src) &amp;&amp;</span></div>
+<div class="line"><span class="miss">	   src[startOffset    ] == &#39;/&#39; &amp;&amp;</span></div>
+<div class="line"><span class="miss">	   src[startOffset + 1] == &#39;/&#39; {</span></div>
+<div class="line"><span class="miss">		end := startOffset</span></div>
+<div class="line"><span class="miss">		for end &lt; len(src) &amp;&amp; src[end] != &#39;\n&#39; { end</span><span class="miss">++ }</span></div>
+<div class="line"><span class="miss">		return end</span></div>
+<div class="line">	}</div>
+<div class="line">	// block comment: extend to closing */</div>
+<div class="line"><span class="miss">	end := startOffset</span></div>
+<div class="line"><span class="miss">	for end &lt; len(src) - 1 {</span></div>
+<div class="line"><span class="miss">		if src[end  ] == &#39;*&#39; &amp;&amp;</span></div>
+<div class="line"><span class="miss">		   src[end+1] == &#39;/&#39; { return end + 2</span><span class="miss"> }</span></div>
+<div class="line"><span class="miss">		end</span><span class="miss">++</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	return len(src</span><span class="miss">)</span></div>
+<div class="line">}</div>
+<script src="../../../child.js"></script>
+</body>
+</html>
