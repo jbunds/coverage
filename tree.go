@@ -16,7 +16,7 @@ import (
 )
 
 // treeBuilder manages the global configuration, coverage data, and
-// and atomic counters used to create the directory tree HTML.
+// atomic counters used to create the directory tree HTML fragment.
 type treeBuilder struct {
 	fsys     writeFS
 	modName  string
@@ -43,7 +43,7 @@ type entryResult struct {
 	total   uint64
 }
 
-// htmlBuilder stores the state used to render the navigable directory tree (tree.html).
+// htmlBuilder stores the state used to render the navigable source tree HTML.
 type htmlBuilder struct {
 	indent int
 	itemID string
@@ -78,6 +78,8 @@ func (tb *treeBuilder) buildTree(ctx context.Context, progressOutput io.Writer) 
 // scanEntries processes each entry in a directory, collecting the resulting
 // tree nodes and aggregating their statement and coverage counts.
 func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modDomain string, entries []fs.DirEntry) ([]*entryResult, uint64, uint64) {
+	if err := ctx.Err(); err != nil { return nil, 0, 0 }
+
 	results := make([]*entryResult, len(entries))
 
 	if len(entries) < 1 { return results, 0, 0 }

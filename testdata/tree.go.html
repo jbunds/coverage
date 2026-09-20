@@ -24,7 +24,7 @@
 <div class="line">)</div>
 <div class="line"></div>
 <div class="line">// treeBuilder manages the global configuration, coverage data, and</div>
-<div class="line">// and atomic counters used to create the directory tree HTML.</div>
+<div class="line">// atomic counters used to create the directory tree HTML fragment.</div>
 <div class="line">type treeBuilder struct {</div>
 <div class="line">	fsys     writeFS</div>
 <div class="line">	modName  string</div>
@@ -51,7 +51,7 @@
 <div class="line">	total   uint64</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// htmlBuilder stores the state used to render the navigable directory tree (tree.html).</div>
+<div class="line">// htmlBuilder stores the state used to render the navigable source tree HTML.</div>
 <div class="line">type htmlBuilder struct {</div>
 <div class="line">	indent int</div>
 <div class="line">	itemID string</div>
@@ -86,6 +86,8 @@
 <div class="line">// scanEntries processes each entry in a directory, collecting the resulting</div>
 <div class="line">// tree nodes and aggregating their statement and coverage counts.</div>
 <div class="line">func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modDomain string, entries []fs.DirEntry) ([]*entryResult, uint64, uint64<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return nil, 0, 0</span><span class="miss"> }</span></div>
+<div class="line"></div>
 <div class="line"><span class="hit">	results := make([]*entryResult, len(entries))</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if len(entries) &lt; 1</span><span class="miss"> { return results, 0, 0</span><span class="miss"> }</span></div>
