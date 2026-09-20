@@ -3,6 +3,8 @@
 ├── LICENSE
 ├── README.md
 ├── action.yml
+├── assets.go
+├── assets_test.go
 ├── biome.json
 ├── css
 │   ├── style.css
@@ -14,7 +16,10 @@
 │   └── render.js
 ├── doc
 │   ├── code_stats.md
-│   └── structure.md
+│   ├── expand.svg
+│   ├── lines.svg
+│   ├── structure.md
+│   └── theme.svg
 ├── flags.go
 ├── flags_test.go
 ├── go.mod
@@ -28,21 +33,32 @@
 ├── integration_test.go
 ├── integration_test.sh
 ├── interfaces.go
+├── js
+│   ├── child.js
+│   └── events.js
 ├── main.go
 ├── main_test.go
 ├── package.json
+├── pages.go
+├── pages_test.go
+├── scan.go
 ├── screenshots
 │   ├── dark_theme.jpg
 │   └── light_theme.jpg
 ├── testdata
+│   ├── assets.go.html
 │   ├── cov.out
 │   ├── flags.go.html
+│   ├── interfaces.go.html
 │   ├── main.go.html
+│   ├── pages.go.html
+│   ├── scan.go.html
 │   └── tree.go.html
-├── theme.png
+├── tests.sh
 ├── tree.go
 ├── tree_test.go
+├── untree.sh
 └── validate.js
 
-8 directories, 36 files
+9 directories, 51 files
 ```
