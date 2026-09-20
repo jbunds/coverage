@@ -336,6 +336,7 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 	return ew.err()
 }
 
+// writeRow writes a single padded, color-coded (green ≥ 50%, red below) coverage row.
 func (rg *reportGenerator) writeRow(ew *errorWriter, path string, percent float64, maxPathLen int) {
 	const (
 		green = "\033[32m"

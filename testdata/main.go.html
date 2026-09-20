@@ -344,6 +344,7 @@
 <div class="line"><span class="hit">	return ew.err</span><span class="hit">()</span></div>
 <div class="line">}</div>
 <div class="line"></div>
+<div class="line">// writeRow writes a single padded, color-coded (green ≥ 50%, red below) coverage row.</div>
 <div class="line">func (rg *reportGenerator) writeRow(ew *errorWriter, path string, percent float64, maxPathLen int<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	const (</span></div>
 <div class="line"><span class="hit">		green = &#34;\033[32m&#34;</span></div>
