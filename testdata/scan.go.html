@@ -181,7 +181,7 @@
 <div class="line">// In practice, the scanner always returns a non-empty literal for all token types,</div>
 <div class="line">// so this is simply startOffset + len(lit).</div>
 <div class="line">//</div>
-<div class="line">// The manual comment-scanning branches below are defensive and should never execute.</div>
+<div class="line">// The comment-scanning branches below are defensive and should never execute.</div>
 <div class="line">func tokenEndOffset(src []byte, startOffset int, lit string, tok token.Token) int {</div>
 <div class="line">	// startOffset + len(lit) // stable behavior since Go 1.0</div>
 <div class="line"><span class="hit">	if lit != &#34;&#34; || tok != token.COMMENT {</span></div>

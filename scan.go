@@ -173,7 +173,7 @@ func computeBlockOffsets(file *token.File, blocks []cover.ProfileBlock) (out []*
 // In practice, the scanner always returns a non-empty literal for all token types,
 // so this is simply startOffset + len(lit).
 //
-// The manual comment-scanning branches below are defensive and should never execute.
+// The comment-scanning branches below are defensive and should never execute.
 func tokenEndOffset(src []byte, startOffset int, lit string, tok token.Token) int {
 	// startOffset + len(lit) // stable behavior since Go 1.0
 	if lit != "" || tok != token.COMMENT {
