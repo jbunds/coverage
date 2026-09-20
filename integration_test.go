@@ -33,12 +33,13 @@ func TestIntegrationTest(t *testing.T) {
 	tests := []struct{
 		name string
 	}{
-		{name: "assets.go"},
-		{name:  "flags.go"},
-		{name:   "main.go"},
-		{name:  "pages.go"},
-		{name:   "scan.go"}, // TODO(jbunds): rectify TestIntegrationTest/scan.go test failure
-		{name:   "tree.go"},
+		{name:     "assets.go"},
+		{name:      "flags.go"},
+		{name: "interfaces.go"},
+		{name:       "main.go"},
+		{name:      "pages.go"},
+		{name:       "scan.go"},
+		{name:       "tree.go"},
 	}
 
 	for _, tt := range tests {

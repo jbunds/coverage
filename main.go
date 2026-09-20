@@ -102,8 +102,7 @@ func run() int {
 
 	if err := repGen.primePkgDirCache(ctx, packages.Load); err != nil { return fatal(7, "cannot prime package directory cache: %v\n", err) }
 
-//	if err := repGen.writeCovHTMLFiles(ctx, os.Stderr); err != nil { return fatal(8, "cannot write HTML coverage files: %v\n", err) }
-	if err := repGen.writeCovHTMLFiles(ctx, io.Discard); err != nil { return fatal(8, "cannot write HTML coverage files: %v\n", err) }
+	if err := repGen.writeCovHTMLFiles(ctx, os.Stderr); err != nil { return fatal(8, "cannot write HTML coverage files: %v\n", err) }
 
 	tb := &treeBuilder{
 		fsys:    &localFS{},
@@ -113,14 +112,13 @@ func run() int {
 	}
 
 	var treeHTML string
-//	if treeHTML, err = tb.buildTree(ctx, os.Stderr); err != nil { return fatal(9, "cannot build tree HTML: %v\n", err) }
-	if treeHTML, err = tb.buildTree(ctx, io.Discard); err != nil { return fatal(9, "cannot build tree HTML: %v\n", err) }
+	if treeHTML, err = tb.buildTree(ctx, os.Stderr); err != nil { return fatal(9, "cannot build tree HTML: %v\n", err) }
 
 	if err := repGen.writeIndexHTMLFile(ctx, indexHTMLFile, treeHTML); err != nil { return fatal(10, "cannot write %q: %v\n", indexHTMLFile, err) }
 
 	if err := repGen.writeStaticFiles(); err != nil { return fatal(11, "cannot write static files: %v\n", err) }
 
-//	if err := repGen.printCoverage(ctx, os.Stdout); err != nil { return fatal(12, "cannot print per-file coverage figures: %v\n", err) }
+	if err := repGen.printCoverage(ctx, os.Stdout); err != nil { return fatal(12, "cannot print per-file coverage figures: %v\n", err) }
 
 	// TODO(jbunds): add a method to run `python3 -m http.server -d repGen.outRoot.Name()`
 
@@ -308,11 +306,6 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 		return cmp.Compare(a, b)                                   // sort alphanumerically
 	})
 
-	const (
-		green = "\033[32m"
-		red   = "\033[31m"
-	)
-
 	divider := strings.Repeat("—", maxPathLen + 9) + "\n" // 9 == 2 spaces + len("100.00%")
 
 	ew := newErrorWriter(w)
@@ -327,14 +320,7 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 		if cov.total > 0 {
 			percent = float64(cov.covered) / float64(cov.total) * 100
 		}
-		ew.write(path)
-		ew.write(strings.Repeat(" ", maxPathLen - len(path) + 2))
-		pct       := strconv.FormatFloat(percent, 'f', 2, 64)
-		colorCode := green
-		if percent < 50 { colorCode = red }
-		ew.write(strings.Repeat(" ", 6 - len(pct)))
-		ew.writeColor(pct + "%", colorCode)
-		ew.write("\n")
+		rg.writeRow(ew, path, percent, maxPathLen)
 	}
 
 	totalPercent    := 0.0
@@ -345,16 +331,24 @@ func (rg *reportGenerator) printCoverage(ctx context.Context, w io.Writer) error
 	}
 
 	ew.write(divider)
-	ew.write("Total")
-	ew.write(strings.Repeat(" ", maxPathLen - 5 + 2))
-	totalPct  := strconv.FormatFloat(totalPercent, 'f', 2, 64)
-	colorCode := green
-	if totalPercent < 50 { colorCode = red }
-	ew.write(strings.Repeat(" ", 6 - len(totalPct)))
-	ew.writeColor(totalPct + "%", colorCode)
-	ew.write("\n")
+	rg.writeRow(ew, "Total", totalPercent, maxPathLen)
 
 	return ew.err()
+}
+
+func (rg *reportGenerator) writeRow(ew *errorWriter, path string, percent float64, maxPathLen int) {
+	const (
+		green = "\033[32m"
+		red   = "\033[31m"
+	)
+	ew.write(path)
+	ew.write(strings.Repeat(" ", maxPathLen-len(path)+2))
+	pct       := strconv.FormatFloat(percent, 'f', 2, 64)
+	colorCode := green
+	if percent < 50 { colorCode = red }
+	ew.write(strings.Repeat(" ", 6-len(pct)))
+	ew.writeColor(pct+"%", colorCode)
+	ew.write("\n")
 }
 
 // maybeOpenHTML opens the generated index.html file in the

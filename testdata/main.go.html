@@ -110,8 +110,7 @@
 <div class="line"></div>
 <div class="line"><span class="miss">	if err := repGen.primePkgDirCache(ctx, packages.Load); err != nil { return fatal(7, &#34;cannot prime package directory cache: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
-<div class="line">//	if err := repGen.writeCovHTMLFiles(ctx, os.Stderr); err != nil { return fatal(8, &#34;cannot write HTML coverage files: %v\n&#34;, err) }</div>
-<div class="line"><span class="miss">	if err := repGen.writeCovHTMLFiles(ctx, io.Discard); err != nil { return fatal(8, &#34;cannot write HTML coverage files: %v\n&#34;, err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := repGen.writeCovHTMLFiles(ctx, os.Stderr); err != nil { return fatal(8, &#34;cannot write HTML coverage files: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	tb := &amp;treeBuilder{</span></div>
 <div class="line"><span class="miss">		fsys:    &amp;localFS{},</span></div>
@@ -121,14 +120,13 @@
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="miss">	var treeHTML string</span></div>
-<div class="line">//	if treeHTML, err = tb.buildTree(ctx, os.Stderr); err != nil { return fatal(9, &#34;cannot build tree HTML: %v\n&#34;, err) }</div>
-<div class="line"><span class="miss">	if treeHTML, err = tb.buildTree(ctx, io.Discard); err != nil { return fatal(9, &#34;cannot build tree HTML: %v\n&#34;, err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if treeHTML, err = tb.buildTree(ctx, os.Stderr); err != nil { return fatal(9, &#34;cannot build tree HTML: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	if err := repGen.writeIndexHTMLFile(ctx, indexHTMLFile, treeHTML); err != nil { return fatal(10, &#34;cannot write %q: %v\n&#34;, indexHTMLFile, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	if err := repGen.writeStaticFiles(); err != nil { return fatal(11, &#34;cannot write static files: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
-<div class="line">//	if err := repGen.printCoverage(ctx, os.Stdout); err != nil { return fatal(12, &#34;cannot print per-file coverage figures: %v\n&#34;, err) }</div>
+<div class="line"><span class="miss">	if err := repGen.printCoverage(ctx, os.Stdout); err != nil { return fatal(12, &#34;cannot print per-file coverage figures: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line">	// TODO(jbunds): add a method to run `python3 -m http.server -d repGen.outRoot.Name()`</div>
 <div class="line"></div>
@@ -316,11 +314,6 @@
 <div class="line"><span class="hit">		return cmp.Compare(a, b</span>)                                   // sort alphanumerically</div>
 <div class="line">	})</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	const (</span></div>
-<div class="line"><span class="hit">		green = &#34;\033[32m&#34;</span></div>
-<div class="line"><span class="hit">		red   = &#34;\033[31m&#34;</span></div>
-<div class="line"><span class="hit">	)</span></div>
-<div class="line"></div>
 <div class="line"><span class="hit">	divider := strings.Repeat(&#34;—&#34;, maxPathLen + 9) + &#34;\n&#34; // 9 == 2 spaces + len(&#34;100.00%&#34;)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	ew := newErrorWriter(w)</span></div>
@@ -335,14 +328,7 @@
 <div class="line"><span class="hit">		if cov.total &gt; 0 {</span></div>
 <div class="line"><span class="hit">			percent = float64(cov.covered) / float64(cov.total) * 100</span></div>
 <div class="line">		}</div>
-<div class="line"><span class="hit">		ew.write(path)</span></div>
-<div class="line"><span class="hit">		ew.write(strings.Repeat(&#34; &#34;, maxPathLen - len(path) + 2))</span></div>
-<div class="line"><span class="hit">		pct       := strconv.FormatFloat(percent, &#39;f&#39;, 2, 64)</span></div>
-<div class="line"><span class="hit">		colorCode := green</span></div>
-<div class="line"><span class="hit">		if percent &lt; 50 { colorCode = red</span><span class="hit"> }</span></div>
-<div class="line"><span class="hit">		ew.write(strings.Repeat(&#34; &#34;, 6 - len(pct)))</span></div>
-<div class="line"><span class="hit">		ew.writeColor(pct + &#34;%&#34;, colorCode)</span></div>
-<div class="line"><span class="hit">		ew.write(&#34;\n&#34;</span><span class="hit">)</span></div>
+<div class="line"><span class="hit">		rg.writeRow(ew, path, percent, maxPathLen</span><span class="hit">)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	totalPercent    := 0.0</span></div>
@@ -353,16 +339,24 @@
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	ew.write(divider)</span></div>
-<div class="line"><span class="hit">	ew.write(&#34;Total&#34;)</span></div>
-<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen - 5 + 2))</span></div>
-<div class="line"><span class="hit">	totalPct  := strconv.FormatFloat(totalPercent, &#39;f&#39;, 2, 64)</span></div>
-<div class="line"><span class="hit">	colorCode := green</span></div>
-<div class="line"><span class="hit">	if totalPercent &lt; 50</span><span class="miss"> { colorCode = red</span><span class="miss"> }</span></div>
-<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, 6 - len(totalPct)))</span></div>
-<div class="line"><span class="hit">	ew.writeColor(totalPct + &#34;%&#34;, colorCode)</span></div>
-<div class="line"><span class="hit">	ew.write(&#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	rg.writeRow(ew, &#34;Total&#34;, totalPercent, maxPathLen)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	return ew.err</span><span class="hit">()</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (rg *reportGenerator) writeRow(ew *errorWriter, path string, percent float64, maxPathLen int<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	const (</span></div>
+<div class="line"><span class="hit">		green = &#34;\033[32m&#34;</span></div>
+<div class="line"><span class="hit">		red   = &#34;\033[31m&#34;</span></div>
+<div class="line"><span class="hit">	)</span></div>
+<div class="line"><span class="hit">	ew.write(path)</span></div>
+<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen-len(path)+2))</span></div>
+<div class="line"><span class="hit">	pct       := strconv.FormatFloat(percent, &#39;f&#39;, 2, 64)</span></div>
+<div class="line"><span class="hit">	colorCode := green</span></div>
+<div class="line"><span class="hit">	if percent &lt; 50 { colorCode = red</span><span class="hit"> }</span></div>
+<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, 6-len(pct)))</span></div>
+<div class="line"><span class="hit">	ew.writeColor(pct+&#34;%&#34;, colorCode)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;\n&#34;</span><span class="hit">)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// maybeOpenHTML opens the generated index.html file in the</div>

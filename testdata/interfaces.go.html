@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../../style.css">
+<title>github.com/jbunds/coverage/interfaces.go</title>
+</head>
+<body id="code" class="line-numbers">
+<div class="line">package main</div>
+<div class="line"></div>
+<div class="line">import (</div>
+<div class="line">	&#34;io&#34;</div>
+<div class="line">	&#34;io/fs&#34;</div>
+<div class="line">	&#34;os&#34;</div>
+<div class="line">	&#34;os/exec&#34;</div>
+<div class="line">	&#34;path/filepath&#34;</div>
+<div class="line"></div>
+<div class="line">	&#34;golang.org/x/tools/go/packages&#34;</div>
+<div class="line">)</div>
+<div class="line"></div>
+<div class="line">// wrappers to facilitate test injection</div>
+<div class="line"></div>
+<div class="line">// rootHandle is the subset of *os.Root methods the SUT calls.</div>
+<div class="line">type rootHandle interface {</div>
+<div class="line">	io.Closer</div>
+<div class="line">	Name() string</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)</div>
+<div class="line"></div>
+<div class="line">type runner interface { Run(*exec.Cmd) error }</div>
+<div class="line"></div>
+<div class="line">type realRunner struct{}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">func (*realRunner) Run(cmd *exec.Cmd) error { return cmd.Run</span><span class="miss">() }</span></div>
+<div class="line"></div>
+<div class="line">// writeFS defines an interface that extends fs.FS with writing capabilities.</div>
+<div class="line">// This abstraction is necessary to allow for mocking the file system within</div>
+<div class="line">// unit tests, as the standard &#34;os&#34; package cannot be directly mocked.</div>
+<div class="line">type writeFS interface {</div>
+<div class="line">	fs.FS</div>
+<div class="line">	Create   (string)                      (io.WriteCloser, error)</div>
+<div class="line">	MkdirAll (string,         fs.FileMode)                  error</div>
+<div class="line">	ReadDir  (string)                      ([]fs.DirEntry,  error)</div>
+<div class="line">	ReadFile (string)                      ([]byte,         error)</div>
+<div class="line">	WriteFile(string, []byte, fs.FileMode)                  error</div>
+<div class="line">	OpenRoot (string)                      (rootHandle,     error)</div>
+<div class="line">	Open     (string)                      (fs.File,        error)</div>
+<div class="line">	Stat     (string)                      (fs.FileInfo,    error)</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// localFS provides a concrete implementation of the writeFS interface</div>
+<div class="line">// by wrapping the standard &#34;os&#34; package. This allows the program to</div>
+<div class="line">// perform actual system operations in production while remaining</div>
+<div class="line">// easily testable via alternative interface implementations.</div>
+<div class="line">type localFS struct{}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) OpenRoot(name string) (rootHandle, error<span class="miss"> ) {</span></div>
+<div class="line"><span class="miss">	return os.OpenRoot(name)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) Open(name string) (fs.File, error<span class="miss">) {</span></div>
+<div class="line"><span class="miss">	return os.Open(filepath.Clean(name))</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) Create(name string) (io.WriteCloser, error<span class="miss">) {</span></div>
+<div class="line"><span class="miss">	return os.Create(filepath.Clean(name))</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) MkdirAll(path string, perm fs.FileMode) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return os.MkdirAll(path, perm)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) ReadDir(name string) ([]fs.DirEntry, error<span class="miss">) {</span></div>
+<div class="line"><span class="miss">	return os.ReadDir(name)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) ReadFile(name string) ([]byte, error<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	return os.ReadFile(name) // #nosec G304 -- all input is either operator-specified or generated herein</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return os.WriteFile(name, data, perm)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (lfs *localFS) Stat(name string) (fs.FileInfo, error<span class="miss">) {</span></div>
+<div class="line"><span class="miss">	return os.Stat(name)</span></div>
+<div class="line">}</div>
+<script src="../../../child.js"></script>
+</body>
+</html>
