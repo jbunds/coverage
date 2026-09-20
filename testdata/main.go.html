@@ -114,14 +114,15 @@
 <div class="line"><span class="miss">		cov:     repGen.cov</span><span class="miss">,</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	indexHTMLFile := &#34;html/index.html&#34; // embedded template (.ModName, .ModURL, .TreeHTML)</span></div>
+<div class="line"><span class="miss">	indexHTMLFile     := &#34;html/index.html&#34; // embedded template (.ModName, .ModURL, .TreeHTML)</span></div>
+<div class="line"><span class="miss">	indexHTMLFilename := filepath.Base(indexHTMLFile)</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	var treeHTML string</span></div>
-<div class="line"><span class="miss">	if treeHTML, err = tb.buildTree(ctx, os.Stderr);                         err != nil { return fatal( 9, &#34;cannot build tree HTML: %v\n&#34;,                       err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := repGen.writeIndexHTMLFile(indexHTMLFile, treeHTML);            err != nil { return fatal(10, &#34;cannot write %q: %v\n&#34;,               indexHTMLFile, err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := repGen.writeStaticFiles();                                     err != nil { return fatal(11, &#34;cannot write static files: %v\n&#34;,                    err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := repGen.printCoverage(os.Stdout);                               err != nil { return fatal(12, &#34;cannot print per-file coverage figures: %v\n&#34;,       err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := repGen.maybeOpenHTML(filepath.Base(indexHTMLFile), noBrowser); err != nil { return fatal(13, &#34;cannot open %q: %v\n&#34;, filepath.Base(indexHTMLFile), err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if treeHTML, err = tb.buildTree(ctx, os.Stderr);              err != nil { return fatal( 9, &#34;cannot build tree HTML: %v\n&#34;,                 err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := repGen.writeIndexHTMLFile(indexHTMLFile, treeHTML); err != nil { return fatal(10, &#34;cannot write %q: %v\n&#34;, indexHTMLFile,         err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := repGen.writeStaticFiles();                          err != nil { return fatal(11, &#34;cannot write static files: %v\n&#34;,              err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := repGen.printCoverage(os.Stdout);                    err != nil { return fatal(12, &#34;cannot print per-file coverage figures: %v\n&#34;, err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := repGen.maybeOpenHTML(indexHTMLFilename, noBrowser); err != nil { return fatal(13, &#34;cannot open %q: %v\n&#34;,  indexHTMLFilename,     err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	return 0</span></div>
 <div class="line">}</div>
