@@ -73,6 +73,7 @@ coverage usage:
     	path to the Go test coverage profile file
   -gomod string
     	path to the root go.mod file
+  -n	suppress opening the browser
   -path string
     	path where HTML files will be written
 ```
