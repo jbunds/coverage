@@ -152,3 +152,33 @@ func TestUsage(t *testing.T) {
 		})
 	}
 }
+
+func TestFilterArgs(t *testing.T) {
+	t.Parallel()
+	tests := []struct{
+		name string
+		args []string
+		want []string
+	}{{
+		name: "no extra args",
+		args: []string{"-gomod", "foo", "-coverfile", "bar", "-path", "baz"},
+		want: []string{"-gomod", "foo", "-coverfile", "bar", "-path", "baz"},
+	}, {
+		name: "extra args",
+		args: []string{"-gomod", "foo", "-coverfile", "bar", "-path", "baz", "--", "boo", "hoo"},
+		want: []string{"boo", "hoo"},
+	}, {
+		name: "invalid args",
+		args: []string{"foo", "bar", "--", "baz", "boo"},
+		want: []string{"baz", "boo"},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := filterArgs(tt.args)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("filterArgs(%v) mismatch (-want +got):\n%s", tt.args, diff)
+			}
+		})
+	}
+}

@@ -60,6 +60,7 @@ linters:
             - go/token
             - io
             - maps
+            - math
             - net/url
             - os
             - os/exec
@@ -93,6 +94,7 @@ linters:
             - fmt
             - io
             - io/fs
+            - math
             - os/exec
             - strings
             - testing

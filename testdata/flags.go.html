@@ -46,7 +46,18 @@
 <div class="line"><span class="hit">	if len(fs.Args()) &gt; 0 {</span></div>
 <div class="line"><span class="hit">		fmt.Fprintf(fs.Output(), &#34;ignored arguments: %s\n&#34;, strings.Join(fs.Args(), &#34;, &#34;))</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="hit">	return goMod, coverProfile, path, noBrowser, nil</span></div>
+<div class="line"><span class="hit">	return</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// filterArgs discards any arguments up to and including &#34;--&#34;.</div>
+<div class="line">func filterArgs(args []string) []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	for i, arg := range args {</span></div>
+<div class="line"><span class="hit">		if arg == &#34;--&#34; {</span></div>
+<div class="line"><span class="hit">			args = args[i + 1:]</span></div>
+<div class="line"><span class="hit">			break</span></div>
+<div class="line">		}</div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	return args</span></div>
 <div class="line">}</div>
 <script src="../../../child.js"></script>
 </body>

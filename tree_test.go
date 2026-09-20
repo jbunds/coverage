@@ -3,15 +3,17 @@ package main
 import (
 	"io"
 	"io/fs"
+	"math"
 	"strings"
 	"testing"
 	"testing/fstest"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jbunds/progress"
 )
 
-func TestBuildTreeHTML(t *testing.T) {
+func TestBuildTree(t *testing.T) {
 	t.Parallel()
 	tests := []struct{
 		name         string
@@ -84,9 +86,9 @@ func TestBuildTreeHTML(t *testing.T) {
 				outRoot: &mockRoot{name: "some/path"},
 				modName: "bar/baz",
 			}
-			got, err := tb.buildTreeHTML(t.Context(), io.Discard)
+			got, err := tb.buildTree(t.Context(), io.Discard)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("buildTreeHTML(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+				t.Errorf("buildTree(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
 			wantLines := strings.Split(tt.want, "\n")
 			gotLines  := strings.Split(got, "\n")
@@ -212,7 +214,7 @@ func TestProcessEntry(t *testing.T) {
 			}
 			ctx  := t.Context()
 			prog := progress.New(ctx, 0, io.Discard); t.Cleanup(func() { prog.Close() })
-			st   := scanState{
+			st   := &scanState{
 				parentPath: tt.initialDir,
 				entry:      fs.FileInfoToDirEntry(tt.initialDirEntry),
 				prog:       prog,
@@ -225,5 +227,114 @@ func TestProcessEntry(t *testing.T) {
 				t.Errorf("processEntry(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
+	}
+}
+
+func TestProcessFile(t *testing.T) {
+	t.Parallel()
+	tb   := &treeBuilder{}
+	prog := progress.New(t.Context(), 0, io.Discard)
+	st   := &scanState{
+		prog:       prog,
+		parentPath: "foo",
+		entry:      fs.FileInfoToDirEntry(&mockFileInfo{name: "bar.go"}),
+	}
+	want := &entryResult{
+		html: `<li><div class="tree-node"><span class="src"><a href="foo/bar.go">bar.go</a></span> <span class="cov">0.0%</span></div></li>` + "\n",
+	}
+	got, err := tb.processFile(st, "packagePath", "bar.go")
+	if err != nil { t.Fatal(err) }
+	if diff := cmp.Diff(want, got, cmp.AllowUnexported(entryResult{})); diff != "" {
+		t.Errorf("processFile() mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestSplitBudget(t *testing.T) {
+	t.Parallel()
+	tests := []struct{
+		name    string
+		total   float64
+		entries int
+		want    []float64
+	}{{
+		name:    "exact split",
+		total:   10,
+		entries:  2,
+		want:    []float64{5, 5},
+	}, {
+		name:    "single entry absorbs all",
+		total:   10,
+		entries:  1,
+		want:    []float64{10},
+	}, {
+		name:    "zero entries returns empty slice",
+		total:   10,
+		entries:  0,
+		want:    []float64{},
+	}, {
+		name:    "zero total",
+		total:   0,
+		entries: 3,
+		want:    []float64{0, 0, 0},
+	}, {
+		name:    "remainder absorbed by last entry",
+		total:   10,
+		entries:  3,
+		want:    []float64{10.0 / 3.0, 10.0 / 3.0, 10.0 - 2.0 * (10.0 / 3.0)},
+	}, {
+		name:    "large n",
+		total:      1,
+		entries: 1000,
+		want: func() []float64 {
+			per := 1.0 / 1000.0
+			s   := make([]float64, 1000)
+			for i := range s { s[i] = per }
+			s[999] = 1.0 - 999.0 * per
+			return s
+		}(),
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := splitBudget(tt.total, tt.entries)
+			// relative tolerance of 1e-13 covers the ~100-ULP cancellation gap at small magnitudes
+			if diff := cmp.Diff(tt.want, got, cmpopts.EquateApprox(1e-13, 0)); diff != "" {
+				t.Errorf("splitBudget() mismatch (-want +got):\n%s", diff)
+			}
+			if tt.entries < 1 { return }
+			// invariant: sum must equal total (when n > 0)
+			tol := float64(tt.entries) * (math.Nextafter(tt.total, math.Inf(1)) - tt.total)
+			var sum float64
+			for _, v := range got { sum += v }
+			if math.Abs(sum - tt.total) > tol {
+				t.Errorf("sum = %v, want %v", sum, tt.total)
+			}
+		})
+	}
+}
+
+func TestBuildSubDirHTML(t *testing.T) {
+	t.Parallel()
+	subDirHTML := "subdirectory HTML"
+	wantLines  := []string{
+		"<li>",
+		`  <input type="checkbox" id="3"/>`,
+		`  <div class="tree-node">`,
+		`    <label for="3">foo</label>`,
+		`    <span class="cov">33.3%</span>`,
+		`  </div>`,
+		`  <ul>`,
+		subDirHTML,
+		`  </ul>`,
+		`</li>`,
+		``,
+	}
+	hb       := &htmlBuilder{itemID: "3", subDir: "foo"}
+	got      := hb.buildSubDirHTML(subDirHTML + "\n", 1, 3)
+	gotLines := strings.Split(got, "\n")
+	if !cmp.Equal(wantLines, gotLines) {
+		var rep reporter
+		cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep))
+		t.Errorf("mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
 	}
 }

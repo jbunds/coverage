@@ -38,5 +38,16 @@ func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, n
 	if len(fs.Args()) > 0 {
 		fmt.Fprintf(fs.Output(), "ignored arguments: %s\n", strings.Join(fs.Args(), ", "))
 	}
-	return goMod, coverProfile, path, noBrowser, nil
+	return
+}
+
+// filterArgs discards any arguments up to and including "--".
+func filterArgs(args []string) []string {
+	for i, arg := range args {
+		if arg == "--" {
+			args = args[i + 1:]
+			break
+		}
+	}
+	return args
 }

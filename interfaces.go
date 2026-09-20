@@ -12,6 +12,20 @@ import (
 
 // wrappers to facilitate test injection
 
+// rootHandle is the subset of *os.Root methods the SUT calls.
+type rootHandle interface {
+	io.Closer
+	Name() string
+}
+
+type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
+
+type runner interface { Run(*exec.Cmd) error }
+
+type realRunner struct{}
+
+func (*realRunner) Run(cmd *exec.Cmd) error { return cmd.Run() }
+
 // writeFS defines an interface that extends fs.FS with writing capabilities.
 // This abstraction is necessary to allow for mocking the file system within
 // unit tests, as the standard "os" package cannot be directly mocked.
@@ -25,12 +39,6 @@ type writeFS interface {
 	OpenRoot (string)                      (rootHandle,     error)
 	Open     (string)                      (fs.File,        error)
 	Stat     (string)                      (fs.FileInfo,    error)
-}
-
-// rootHandle is the subset of *os.Root methods the SUT calls.
-type rootHandle interface {
-	io.Closer
-	Name() string
 }
 
 // localFS provides a concrete implementation of the writeFS interface
@@ -69,18 +77,4 @@ func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error 
 
 func (lfs *localFS) Stat(name string) (fs.FileInfo, error) {
 	return os.Stat(name)
-}
-
-// wraps packages.Load for test injection.
-type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
-
-// wraps exec.Cmd and exec.Run for test injection.
-type runner interface {
-	Run(*exec.Cmd) error
-}
-
-type realRunner struct{}
-
-func (*realRunner) Run(cmd *exec.Cmd) error {
-	return cmd.Run()
 }

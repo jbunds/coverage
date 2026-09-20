@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../../style.css">
+<title>github.com/jbunds/coverage/pages.go</title>
+</head>
+<body id="code" class="line-numbers">
+<div class="line">package main</div>
+<div class="line"></div>
+<div class="line">import (</div>
+<div class="line">	&#34;bytes&#34;</div>
+<div class="line">	&#34;context&#34;</div>
+<div class="line">	&#34;fmt&#34;</div>
+<div class="line">	&#34;go/token&#34;</div>
+<div class="line">	&#34;io&#34;</div>
+<div class="line">	&#34;path/filepath&#34;</div>
+<div class="line">	&#34;runtime&#34;</div>
+<div class="line">	&#34;strings&#34;</div>
+<div class="line">	&#34;text/template&#34;</div>
+<div class="line"></div>
+<div class="line">	&#34;github.com/jbunds/progress&#34;</div>
+<div class="line">	&#34;golang.org/x/sync/errgroup&#34;</div>
+<div class="line">	&#34;golang.org/x/tools/cover&#34;</div>
+<div class="line">)</div>
+<div class="line"></div>
+<div class="line">// stickyWriter is a wrapper interface used to enable sequential string writing with deferred error handling.</div>
+<div class="line">type stickyWriter interface {</div>
+<div class="line">	io.Writer</div>
+<div class="line">	write(string)</div>
+<div class="line">	err() error</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// errorWriter tracks the first encountered I/O failure to allow multiple sequential writes without repetitive inline error checking.</div>
+<div class="line">type errorWriter struct {</div>
+<div class="line">	w        io.Writer</div>
+<div class="line">	e        error</div>
+<div class="line">	useColor bool</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// write performs a sticky-error write.</div>
+<div class="line">func (w *errorWriter) write(s string<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	if w.e != nil</span><span class="miss"> { return</span><span class="miss"> }</span></div>
+<div class="line"><span class="hit">	_, w.e = io.WriteString(w.w, s</span><span class="hit">)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// write performs a sticky-error write that optionally wraps the provided string in ANSI color codes.</div>
+<div class="line">func (w *errorWriter) writeColor(s, color string<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	if w.e != nil</span><span class="miss"> { return</span><span class="miss"> }</span></div>
+<div class="line"><span class="hit">	if !w.useColor {</span></div>
+<div class="line"><span class="hit">		w.write(s)</span></div>
+<div class="line"><span class="hit">		return</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	w.write(color)</span></div>
+<div class="line"><span class="miss">	w.write(s)</span></div>
+<div class="line"><span class="miss">	w.write(&#34;\033[0m&#34;</span>) // reset attributes, styles, and colors to defaults</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// err returns the first I/O failure encountered during multiple sequential write operations.</div>
+<div class="line"><span class="hit">func (w *errorWriter) err() error { return w.e</span><span class="hit"> }</span></div>
+<div class="line"></div>
+<div class="line">// Write satisfies the io.Writer interface, but is otherwise unused.</div>
+<div class="line">func (w *errorWriter) Write(p []byte) (int, error<span class="miss">) {</span></div>
+<div class="line"><span class="miss">	if w.e != nil { return 0, w.e</span><span class="miss"> }</span></div>
+<div class="line"><span class="miss">	return w.w.Write(p</span><span class="miss">)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func newErrorWriter(w io.Writer) *errorWriter<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return &amp;errorWriter{</span></div>
+<div class="line"><span class="hit">		w:        w,</span></div>
+<div class="line"><span class="hit">		useColor: isTerm(w</span><span class="hit">),</span></div>
+<div class="line">	}</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// workUnit represents a unit of work to be performed: the generation</div>
+<div class="line">// of an HTML file for a Go source file&#39;s coverage profile.</div>
+<div class="line">type workUnit struct {</div>
+<div class="line">	profile *cover.Profile</div>
+<div class="line">	outPath string</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html</div>
+<div class="line">// file for each Go source file listed in the coverage profile file.</div>
+<div class="line">func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput io.Writer) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	rg.cov = make(map[string]coverage, len(rg.profiles))</span></div>
+<div class="line"><span class="hit">	units, dirs := rg.buildWorkUnits()</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	if err := rg.createDirs(ctx, dirs, progressOutput); err != nil {</span></div>
+<div class="line"><span class="hit">		return err</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	perFileCov, err := rg.genHTMLFiles(ctx, units, progressOutput)</span></div>
+<div class="line"><span class="hit">	if err != nil {</span></div>
+<div class="line"><span class="hit">		return err</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	for i, cov := range perFileCov {</span></div>
+<div class="line"><span class="hit">		rg.cov[units[i].profile.FileName] = cov</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	return nil</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// buildWorkUnits creates one work unit per coverage profile and collects</div>
+<div class="line">// the set of output directories that must exist before writing.</div>
+<div class="line">func (rg *reportGenerator) buildWorkUnits() (units []workUnit, dirs map[string]struct<span class="hit">{}) {</span></div>
+<div class="line"><span class="hit">	units = make([]workUnit, 0, len(rg.profiles))</span></div>
+<div class="line"><span class="hit">	dirs  = make(map[string]struct{})</span></div>
+<div class="line"><span class="hit">	for _, profile := range rg.profiles {</span></div>
+<div class="line"><span class="hit">		outPath := filepath.Join(rg.outRoot.Name(), profile.FileName + &#34;.html&#34;)</span></div>
+<div class="line"><span class="hit">		units    = append(units, workUnit{profile: profile, outPath: outPath})</span></div>
+<div class="line"><span class="hit">		dirs[filepath.Dir(outPath)] = struct{}{}</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	return</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// createDirs creates all required output directories concurrently, bounded by NumCPU.</div>
+<div class="line">func (rg *reportGenerator) createDirs(ctx context.Context, dirs map[string]struct{}, progressOutput io.Writer) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	prog := progress.New(ctx, uint64(len(dirs)), progressOutput)</span></div>
+<div class="line"><span class="hit">	defer prog.Close()</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	group, gCtx := errgroup.WithContext(ctx)</span></div>
+<div class="line"><span class="hit">	group.SetLimit(runtime.NumCPU())</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	for dir := range dirs {</span></div>
+<div class="line"><span class="hit">		if err := gCtx.Err(); err != nil</span><span class="miss"> {</span></div>
+<div class="line"><span class="miss">			break</span></div>
+<div class="line">		}</div>
+<div class="line"><span class="hit">		group.Go(func() error {</span></div>
+<div class="line"><span class="hit">			if err := rg.fsys.MkdirAll(dir, 0700); err != nil {</span></div>
+<div class="line"><span class="hit">				return fmt.Errorf(&#34;cannot create directory %q: %w&#34;, dir, err)</span></div>
+<div class="line">			}</div>
+<div class="line"><span class="hit">			prog.Report(1, &#34;created &#34; + dir)</span></div>
+<div class="line"><span class="hit">			return nil</span></div>
+<div class="line">		})</div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	return group.Wait</span><span class="hit">()</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// genHTMLFiles processes all work units concurrently (bounded by NumCPU),</div>
+<div class="line">// writing one HTML file per unit and returning per-file coverage counts.</div>
+<div class="line">func (rg *reportGenerator) genHTMLFiles(ctx context.Context, units []workUnit, progressOutput io.Writer) ([]coverage, error<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	perFileCov := make([]coverage, len(units))</span></div>
+<div class="line"><span class="hit">	prog       := progress.New(ctx, 0, progressOutput)</span></div>
+<div class="line"><span class="hit">	defer prog.Close()</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	group, gCtx := errgroup.WithContext(ctx)</span></div>
+<div class="line"><span class="hit">	group.SetLimit(runtime.NumCPU())</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	for i, unit := range units {</span></div>
+<div class="line"><span class="hit">		if err := gCtx.Err(); err != nil</span><span class="miss"> {</span></div>
+<div class="line"><span class="miss">			break</span></div>
+<div class="line">		}</div>
+<div class="line"><span class="hit">		group.Go(func() error {</span></div>
+<div class="line"><span class="hit">			return rg.processUnit(gCtx, prog, i, unit, perFileCov)</span></div>
+<div class="line">		})</div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	return perFileCov, group.Wait</span><span class="hit">()</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// processUnit builds and writes the coverage HTML for a single work unit,</div>
+<div class="line">// reports progress, and updates the aggregate coverage atomics.</div>
+<div class="line">func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progress, i int, unit workUnit, perFileCov []coverage) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	fileStatements, fileCovered := countStatements(unit.profile.Blocks)</span></div>
+<div class="line"><span class="hit">	prog.AddTotal(uint64(fileStatements))</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	var buf bytes.Buffer</span></div>
+<div class="line"><span class="hit">	ew := newErrorWriter(&amp;buf)</span></div>
+<div class="line"><span class="hit">	if err := rg.buildCovHTML(ctx, ew, unit.profile, unit.profile.FileName); err != nil {</span></div>
+<div class="line"><span class="hit">		return fmt.Errorf(&#34;cannot build HTML for %q: %w&#34;, unit.profile.FileName, err)</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	if err := rg.fsys.WriteFile(unit.outPath, buf.Bytes(), 0600); err != nil {</span></div>
+<div class="line"><span class="hit">		return fmt.Errorf(&#34;cannot write HTML file for %q: %w&#34;, unit.outPath, err)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	prog.Report(float64(fileStatements), unit.profile.FileName)</span></div>
+<div class="line"><span class="hit">	rg.totalCovered.Add(fileCovered)</span></div>
+<div class="line"><span class="hit">	rg.totalStatements.Add(fileStatements)</span></div>
+<div class="line"><span class="hit">	perFileCov[i] = coverage{covered: fileCovered, total: fileStatements}</span></div>
+<div class="line"><span class="hit">	return nil</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// buildCovHTML builds the HTML content for a single *.go.html file, with</div>
+<div class="line">// green (covered) and red (uncovered) lines to indicate test coverage.</div>
+<div class="line">func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath string) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	pkgPath  := filepath.Dir( profile.FileName)</span></div>
+<div class="line"><span class="hit">	fileName := filepath.Base(profile.FileName)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	src, err := rg.fsys.ReadFile(filepath.Join(rg.pkgDirCache[pkgPath], fileName))</span></div>
+<div class="line"><span class="hit">	if err != nil {</span></div>
+<div class="line"><span class="hit">		return err</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	fset := token.NewFileSet()</span></div>
+<div class="line"><span class="hit">	file := fset.AddFile(fileName, fset.Base(), len(src))</span></div>
+<div class="line"><span class="hit">	file.SetLinesForContent(src)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	blocks := computeBlockOffsets(file, profile.Blocks)</span></div>
+<div class="line"><span class="hit">	buf    := scanAndAnnotate(file, src, blocks)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	relPath := strings.Repeat(&#34;../&#34;, strings.Count(srcPath, &#34;/&#34;))</span></div>
+<div class="line"><span class="hit">	writePreamble(ew, srcPath, relPath + rg.styleCSSFilename)</span></div>
+<div class="line"><span class="hit">	for line := range bytes.SplitSeq(bytes.TrimRight(buf.Bytes(), &#34;\n&#34;), []byte{&#39;\n&#39;}) {</span></div>
+<div class="line"><span class="hit">		ew.write(`&lt;div class=&#34;line&#34;&gt;`)</span></div>
+<div class="line"><span class="hit">		ew.write(string(line))</span></div>
+<div class="line"><span class="hit">		ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	writePostamble(ew, relPath + rg.childJSFilename)</span></div>
+<div class="line"><span class="hit">	return ew.err</span><span class="hit">()</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writePreamble writes the preamble portion of the</div>
+<div class="line">// HTML content common to every Go source HTML file.</div>
+<div class="line">func writePreamble(ew stickyWriter, srcPath, cssPath string<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;!DOCTYPE html&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(`&lt;html lang=&#34;en&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;head&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(`&lt;meta charset=&#34;utf-8&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(`&lt;link rel=&#34;stylesheet&#34; href=&#34;`)</span></div>
+<div class="line"><span class="hit">	ew.write(cssPath)</span></div>
+<div class="line"><span class="hit">	ew.write(`&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;title&gt;&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(srcPath)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;/title&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;/head&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(`&lt;body id=&#34;code&#34; class=&#34;line-numbers&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writePostamble writes the postamble portion of the</div>
+<div class="line">// HTML content common to every Go source HTML file.</div>
+<div class="line">func writePostamble(ew stickyWriter, childJSPath string<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	ew.write(`&lt;script src=&#34;`)</span></div>
+<div class="line"><span class="hit">	ew.write(childJSPath) // DOM-dependent</span></div>
+<div class="line"><span class="hit">	ew.write(`&#34;&gt;&lt;/script&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;/body&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;/html&gt;&#34;)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writeIndexHTMLFile writes the index HTML file, which contains three template parameters (ModName, ModURL,</div>
+<div class="line">// and TreeHTML), and hosts one iframe within which the generated source code HTML files are rendered.</div>
+<div class="line">func (rg *reportGenerator) writeIndexHTMLFile(ctx context.Context, indexHTMLFile, treeHTML string) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	data := struct{</span></div>
+<div class="line"><span class="hit">		ModName,</span></div>
+<div class="line"><span class="hit">		ModURL,</span></div>
+<div class="line"><span class="hit">		TreeHTML  string</span></div>
+<div class="line"><span class="hit">	}{</span></div>
+<div class="line"><span class="hit">		ModName:  rg.modName,</span></div>
+<div class="line"><span class="hit">		ModURL:   rg.repoURL,</span></div>
+<div class="line"><span class="hit">		TreeHTML: treeHTML</span><span class="hit">,</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	return rg.writeTemplateFile(ctx, indexHTMLFile, data</span><span class="hit">)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writeTemplateFile writes the specified template file.</div>
+<div class="line">func (rg *reportGenerator) writeTemplateFile(ctx context.Context, file string, tmplVars any) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	outFile   := filepath.Join(rg.outRoot.Name(), filepath.Base(file))</span></div>
+<div class="line"><span class="hit">	tmpl, err := template.ParseFS(rg.embeddedFiles, file)</span></div>
+<div class="line"><span class="hit">	if                                   err != nil { return fmt.Errorf(&#34;cannot parse %q: %w&#34;,     file, err</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">	f, err := rg.fsys.Create(outFile)</span></div>
+<div class="line"><span class="hit">	if                                   err != nil { return fmt.Errorf(&#34;cannot create %q: %w&#34;, outFile, err</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">	if err := tmpl.Execute(f, tmplVars); err != nil { return fmt.Errorf(&#34;cannot render template: %w&#34;,    err</span><span class="hit">) }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	return f.Close</span><span class="hit">()</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// countStatements returns the total and covered statement counts.</div>
+<div class="line">// A block is covered if its Count is greater than zero.</div>
+<div class="line">func countStatements(blocks []cover.ProfileBlock) (total, covered uint64<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	for _, b := range blocks {</span></div>
+<div class="line"><span class="hit">		total += toUint64(b.NumStmt)</span></div>
+<div class="line"><span class="hit">		if b.Count &gt; 0 {</span></div>
+<div class="line"><span class="hit">			covered += toUint64(b.NumStmt)</span></div>
+<div class="line">		}</div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	return</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// toUint64 safely casts an int to a uint64 by guarding against overflow when n is negative.</div>
+<div class="line">func toUint64(n int) uint64<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	if n &lt; 0</span><span class="miss"> { return 0</span> } // satisfy the gosec linter&#39;s overflow conversion check (G115)</div>
+<div class="line"><span class="hit">	return uint64(n</span><span class="hit">)</span></div>
+<div class="line">}</div>
+<script src="../../../child.js"></script>
+</body>
+</html>
