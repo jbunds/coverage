@@ -347,7 +347,7 @@
 <div class="line">// maybeOpenHTML opens the generated index.html file in the</div>
 <div class="line">// default browser when stdout is a TTY and -n is not set.</div>
 <div class="line">func (rg *reportGenerator) maybeOpenHTML(indexHTMLFile string, noBrowser bool) error<span class="miss"> {</span></div>
-<div class="line"><span class="miss">	if noBrowser || isTerm(os.Stdout) { return nil</span><span class="miss"> }</span></div>
+<div class="line"><span class="miss">	if noBrowser || !isTerm(os.Stdout) { return nil</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), indexHTMLFile)) // file:// scheme</span></div>
 <div class="line"><span class="miss">	if err != nil {</span></div>
