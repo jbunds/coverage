@@ -190,7 +190,7 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 				repoURL:       tt.repoURL,
 				embeddedFiles: tt.embeddedFiles,
 			}
-			gotErr := repGen.writeIndexHTMLFile(t.Context(), "index.html", "foo")
+			gotErr := repGen.writeIndexHTMLFile("index.html", "foo")
 			if tt.wantErr == nil && gotErr != nil {
 				t.Fatalf("unexpected error: %v", gotErr)
 			}
@@ -243,7 +243,7 @@ func TestWriteTemplateFile(t *testing.T) {
 				outRoot:       &mockRoot{name: "some/path"},
 				embeddedFiles: tt.embeddedFiles,
 			}
-			err := repGen.writeTemplateFile(t.Context(), tt.fileName, tt.tmplData)
+			err := repGen.writeTemplateFile(tt.fileName, tt.tmplData)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeTemplateFile(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}

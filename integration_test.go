@@ -20,14 +20,14 @@ func TestIntegrationTest(t *testing.T) {
 	tmpDir, err   := os.OpenRoot(t.TempDir());                if err != nil { t.Fatal(err) }
 	profiles, err := cover.ParseProfiles("testdata/cov.out"); if err != nil { t.Fatal(err) }
 	rg            := &reportGenerator{
-		fsys:             new(localFS),
+		fsys:             &localFS{},
 		outRoot:          tmpDir,
 		profiles:         profiles,
 		styleCSSFilename: "style.css",
 		childJSFilename:  "child.js",
 	}
 
-	if err := rg.getModName(t.Context(), "go.mod");           err != nil { t.Fatal(err) }
+	if err := rg.getModName("go.mod");                        err != nil { t.Fatal(err) }
 	if err := rg.writeCovHTMLFiles(t.Context(), io.Discard);  err != nil { t.Fatal(err) }
 
 	tests := []struct{

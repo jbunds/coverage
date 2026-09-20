@@ -233,9 +233,7 @@ func writePostamble(ew stickyWriter, childJSPath string) {
 
 // writeIndexHTMLFile writes the index HTML file, which contains three template parameters (ModName, ModURL,
 // and TreeHTML), and hosts one iframe within which the generated source code HTML files are rendered.
-func (rg *reportGenerator) writeIndexHTMLFile(ctx context.Context, indexHTMLFile, treeHTML string) error {
-	if err := ctx.Err(); err != nil { return err }
-
+func (rg *reportGenerator) writeIndexHTMLFile(indexHTMLFile, treeHTML string) error {
 	data := struct{
 		ModName,
 		ModURL,
@@ -246,13 +244,11 @@ func (rg *reportGenerator) writeIndexHTMLFile(ctx context.Context, indexHTMLFile
 		TreeHTML: treeHTML,
 	}
 
-	return rg.writeTemplateFile(ctx, indexHTMLFile, data)
+	return rg.writeTemplateFile(indexHTMLFile, data)
 }
 
 // writeTemplateFile writes the specified template file.
-func (rg *reportGenerator) writeTemplateFile(ctx context.Context, file string, tmplVars any) error {
-	if err := ctx.Err(); err != nil { return err }
-
+func (rg *reportGenerator) writeTemplateFile(file string, tmplVars any) error {
 	outFile   := filepath.Join(rg.outRoot.Name(), filepath.Base(file))
 	tmpl, err := template.ParseFS(rg.embeddedFiles, file)
 	if                                   err != nil { return fmt.Errorf("cannot parse %q: %w",     file, err) }

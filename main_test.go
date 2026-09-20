@@ -169,7 +169,7 @@ func TestGetModName(t *testing.T) {
 			repGen := &reportGenerator{
 				fsys: &mockFS{ FS: tt.fsys },
 			}
-			err := repGen.getModName(t.Context(), "go.mod")
+			err := repGen.getModName("go.mod")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getModName(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -291,7 +291,7 @@ func TestGetAllPkgPaths(t *testing.T) {
 				profilePath: tt.profilePath,
 				fsys:        &mockFS{ FS: tt.fsys },
 			}
-			got, err := repGen.getAllPkgPaths(t.Context())
+			got, err := repGen.getAllPkgPaths()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getAllPkgPaths(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -369,7 +369,7 @@ func TestPrimePkgDirCache(t *testing.T) {
 				profilePath: tt.profilePath,
 				fsys:        &mockFS{ FS: tt.fsys },
 			}
-			err := repGen.primePkgDirCache(t.Context(), mockPkgLoader)
+			err := repGen.primePkgDirCache(mockPkgLoader)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("primePkgDirCache(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -417,7 +417,7 @@ func TestPrintCoverage(t *testing.T) {
 			repGen.totalCovered.Store(tt.totalCovered)
 			repGen.totalStatements.Store(tt.totalStatements)
 			got := new(bytes.Buffer)
-			err := repGen.printCoverage(t.Context(), got)
+			err := repGen.printCoverage(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("printCoverage(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
