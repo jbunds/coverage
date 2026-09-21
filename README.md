@@ -134,7 +134,7 @@ The well-known and relatively large (500k+ LoC) [Kubernetes][k8s] project was ch
 
 #### But _Why?_
 
-The motivation behind the `coverage` module was to provide a richer UI than that produced by `go tool cover -html`, with minimal JavaScript ([46 lines](https://github.com/jbunds/coverage/tree/main/js) in total as of this writing, all of which is either trivial button event-listener boilerplate used to toggle CSS selectors, or theme and line numbers user preference persistence).
+The motivation behind the `coverage` module was to provide a richer UI than that produced by `go tool cover -html`, with minimal JavaScript ([45 lines](https://github.com/jbunds/coverage/tree/main/js) in total as of this writing, all of which is either trivial button event-listener boilerplate used to toggle CSS selectors, or theme and line numbers user preference persistence).
 
 [`r`'s opinion](https://go.dev/issue/25368#issuecomment-393720254)
 

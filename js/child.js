@@ -1,7 +1,6 @@
 try {
   const parent = window.parent.document.documentElement;
-  if (parent.getAttribute('theme'))
-    document.documentElement.setAttribute('theme', parent.getAttribute('theme'));
+  if (parent.getAttribute('theme')) document.documentElement.setAttribute('theme', parent.getAttribute('theme'));
   document.body.classList.toggle('line-numbers', parent.getAttribute('line-numbers') !== '0');
 } catch {
   console.warn('direct parent access blocked by browser; awaiting postMessage');
