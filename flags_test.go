@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestUsage(t *testing.T) {
+func TestFlags(t *testing.T) {
 	t.Parallel()
 	tests := []struct{
 		name             string

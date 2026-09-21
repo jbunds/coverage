@@ -40,7 +40,7 @@ func TestBuildTree(t *testing.T) {
 			`    <input type="checkbox" id="tree-item-0"/>`,
 			`    <div class="tree-node">`,
 			`      <label for="tree-item-0">bar</label>`,
-			`      <span class="cov">50.0%</span>`, // covered: 10 + 5 + 0 == 15; total: 10 + 10 + 10 == 30; 15 / 30 == 50
+			`      <span class="cov">50.0%</span>`, // covered: 10 + 5 + 0 == 15; total: 10 + 10 + 10 == 30; 15 / 30 == 50.0%
 			`    </div>`,
 			`    <ul>`,
 			`      <li><div class="tree-node"><span class="src"><a href="bar/a.go.html">a.go</a></span> <span class="cov">100.0%</span></div></li>`,
@@ -48,7 +48,7 @@ func TestBuildTree(t *testing.T) {
 			`        <input type="checkbox" id="tree-item-1"/>`,
 			`        <div class="tree-node">`,
 			`          <label for="tree-item-1">dir</label>`,
-			`          <span class="cov">25.0%</span>`,
+			`          <span class="cov">25.0%</span>`, // covered: 5 + 0 == 5; total: 10 + 10 == 20; 5 / 20 == 25.0%
 			`        </div>`,
 			`        <ul>`,
 			`          <li><div class="tree-node"><span class="src"><a href="bar/dir/b.go.html">b.go</a></span> <span class="cov">50.0%</span></div></li>`,
@@ -56,7 +56,7 @@ func TestBuildTree(t *testing.T) {
 			`            <input type="checkbox" id="tree-item-2"/>`,
 			`            <div class="tree-node">`,
 			`              <label for="tree-item-2">subdir</label>`,
-			`              <span class="cov">0.0%</span>`,
+			`              <span class="cov">0.0%</span>`, // covered: 0; total: 10; 0 / 10 == 0.0%
 			`            </div>`,
 			`            <ul>`,
 			`              <li><div class="tree-node"><span class="src"><a href="bar/dir/subdir/c.go.html">c.go</a></span> <span class="cov">0.0%</span></div></li>`,
@@ -92,9 +92,8 @@ func TestBuildTree(t *testing.T) {
 			}
 			wantLines := strings.Split(tt.want, "\n")
 			gotLines  := strings.Split(got, "\n")
-			if !cmp.Equal(wantLines, gotLines) {
-				var rep reporter
-				cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep))
+			var rep reporter
+			if !cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep)) {
 				t.Errorf("mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
 			}
 		})
@@ -190,14 +189,12 @@ func TestProcessEntry(t *testing.T) {
 		initialDir:      "some/path/file",
 		initialDirEntry: &mockFileInfo{},
 		fsys:            fstest.MapFS{"some/path/file": &fstest.MapFile{}},
-		want:            &entryResult{},
 	}, {
 		name:            "entry is DirEntry but ReadDir fails",
 		initialDir:      "some/path/dir",
 		initialDirEntry: &mockFileInfo{mode: fs.ModeDir},
 		fsys:            fstest.MapFS{"some/path/dir": &fstest.MapFile{Mode: fs.ModeDir}},
 		readDirFails:    true,
-		want:            &entryResult{},
 		wantErr:         true,
 	}}
 	for _, tt := range tests {
@@ -313,11 +310,52 @@ func TestSplitBudget(t *testing.T) {
 	}
 }
 
+func TestBuildTreeHTML(t *testing.T) {
+	t.Parallel()
+	tests := []struct{
+		name         string
+		entryResults []*entryResult
+		total        uint64
+		covered      uint64
+		wantLines    []string
+	}{{
+		name:         "foo",
+		entryResults: []*entryResult{{html: "bar\n",}},
+		covered: 3,
+		total:   5,
+		wantLines: []string{
+			`<ul class="tree">`,
+			`  <li>`,
+			`    <input type="checkbox" id="tree-item-0"/>`,
+			`    <div class="tree-node">`,
+			`      <label for="tree-item-0">foo</label>`,
+			`      <span class="cov">60.0%</span>`,
+			`    </div>`,
+			`    <ul>`,
+			`bar`,
+			`    </ul>`,
+			`  </li>`,
+			`</ul>`,
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got      := buildTreeHTML("foo", tt.entryResults, tt.total, tt.covered)
+			gotLines := strings.Split(got, "\n")
+			var rep reporter
+			if !cmp.Equal(tt.wantLines, gotLines, cmp.Reporter(&rep)) {
+				t.Errorf("buildTreeHTML() mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
+			}
+		})
+	}
+}
+
 func TestBuildSubDirHTML(t *testing.T) {
 	t.Parallel()
 	subDirHTML := "subdirectory HTML"
 	wantLines  := []string{
-		"<li>",
+		`<li>`,
 		`  <input type="checkbox" id="3"/>`,
 		`  <div class="tree-node">`,
 		`    <label for="3">foo</label>`,
@@ -332,9 +370,8 @@ func TestBuildSubDirHTML(t *testing.T) {
 	hb       := &htmlBuilder{itemID: "3", subDir: "foo"}
 	got      := hb.buildSubDirHTML(subDirHTML + "\n", 1, 3)
 	gotLines := strings.Split(got, "\n")
-	if !cmp.Equal(wantLines, gotLines) {
-		var rep reporter
-		cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep))
-		t.Errorf("mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
+	var rep reporter
+	if !cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep)) {
+		t.Errorf("buildSubDirHTML() mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
 	}
 }

@@ -67,22 +67,21 @@ func (tb *treeBuilder) buildTree(ctx context.Context, progressOutput io.Writer) 
 	prog := progress.New(ctx, 0, progressOutput)
 	defer prog.Close()
 
-	results, totStatements, totCovered := tb.scanEntries(ctx, prog, modDomain, entries)
-	if err := ctx.Err(); err != nil {
-		return "", err
-	}
+	// TODO(jbunds): calculate aggregate coverage percentage purely from results
+	results, totStatements, totCovered, err := tb.scanEntries(ctx, prog, modDomain, entries)
+	if err != nil { return "", err }
 
 	return buildTreeHTML(modDomain, results, totStatements, totCovered), nil
 }
 
 // scanEntries processes each entry in a directory, collecting the resulting
 // tree nodes and aggregating their statement and coverage counts.
-func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modDomain string, entries []fs.DirEntry) ([]*entryResult, uint64, uint64) {
-	if err := ctx.Err(); err != nil { return nil, 0, 0 }
+func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modDomain string, entries []fs.DirEntry) ([]*entryResult, uint64, uint64, error) {
+	if err := ctx.Err(); err != nil { return nil, 0, 0, err }
+
+	if len(entries) < 1 { return nil, 0, 0, nil }
 
 	results := make([]*entryResult, len(entries))
-
-	if len(entries) < 1 { return results, 0, 0 }
 
 	var totalStatements, totalCovered atomic.Uint64
 	budgets := splitBudget(prog.InitialBudget(), len(entries))
@@ -110,22 +109,23 @@ func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress,
 	}
 
 	if err := group.Wait(); err != nil {
-		return nil, 0, 0
+		return nil, 0, 0, err
 	}
-	return results, totalStatements.Load(), totalCovered.Load()
+
+	return results, totalStatements.Load(), totalCovered.Load(), nil
 }
 
 // processEntry recursively builds ordered HTML tree nodes and aggregates
 // coverage metrics for individual files and subdirectories.
 func (tb *treeBuilder) processEntry(ctx context.Context, st *scanState) (*entryResult, error) {
-	if err := ctx.Err(); err != nil { return &entryResult{}, err }
+	if err := ctx.Err(); err != nil { return nil, err }
 
 	isDir        := st.entry.IsDir()
 	isTargetFile := !isDir && strings.HasSuffix(st.entry.Name(), ".go.html")
 
 	if !isDir && !isTargetFile {
 		st.prog.Report(st.budget, "")
-		return &entryResult{}, nil
+		return nil, nil
 	}
 
 	srcBasename := strings.TrimSuffix(st.entry.Name(), ".html")
@@ -140,14 +140,14 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st *scanState) (*entryR
 // processDir renders a <li> tree-node for a directory, with nested <li> nodes for
 // its subdirectories and source files, including aggregated coverage percentage.
 func (tb *treeBuilder) processDir(ctx context.Context, st *scanState, pkgPath, srcBasename string) (*entryResult, error) {
-	if err := ctx.Err(); err != nil { return &entryResult{}, err }
+	if err := ctx.Err(); err != nil { return nil, err }
 
 	itemID   := "tree-item-" + strconv.FormatUint(tb.counter.Add(1), 10)
 	fullPath := filepath.Join(tb.outRoot.Name(), st.parentPath, st.entry.Name())
 
 	subDirEntries, err := tb.fsys.ReadDir(fullPath)
 	if err != nil {
-		return &entryResult{}, err
+		return nil, err
 	}
 
 	var subDirSB strings.Builder
@@ -165,7 +165,7 @@ func (tb *treeBuilder) processDir(ctx context.Context, st *scanState, pkgPath, s
 			}
 			res, err := tb.processEntry(ctx, childState)
 			if err != nil {
-				return &entryResult{}, err
+				return nil, err
 			}
 			subDirSB.WriteString(res.html)
 			dirCovered.Add(res.covered)
@@ -208,10 +208,11 @@ func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (
 // buildTreeHTML wraps the top-level entry results in the outermost <ul>, with
 // the module name as the root label and the aggregate coverage percentage.
 func buildTreeHTML(modDomain string, results []*entryResult, totalStatements, totalCovered uint64) string {
+	// TODO(jbunds): calculate aggregate coverage percentage purely via the results argument
 	aggregatePercent := "0.0"
 	if totalStatements > 0 {
 		aggregatePercent = strconv.FormatFloat(
-			float64(totalCovered)/float64(totalStatements)*100, 'f', 1, 64)
+			float64(totalCovered) / float64(totalStatements) * 100, 'f', 1, 64)
 	}
 
 	var sb strings.Builder

@@ -57,13 +57,12 @@ func TestIntegrationTest(t *testing.T) {
 			wantLines  := strings.Split(strings.TrimSuffix(string(want), "\n"), "\n")
 			gotLines   := strings.Split(strings.TrimSuffix(string( got), "\n"), "\n")
 
-			if !cmp.Equal(wantLines, gotLines) {
+			var rep reporter
+			if !cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep)) {
+				t.Errorf("mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
 				if isTerm(os.Stdout) {
 					_ = exec.Command("meld", wantPath, gotPath).Run() // #nosec G204
 				}
-				var rep reporter
-				cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep))
-				t.Errorf("mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
 			}
 		})
 	}

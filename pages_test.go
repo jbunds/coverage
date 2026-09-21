@@ -137,9 +137,8 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 			}
 			wantLines := strings.Split(strings.TrimSuffix(string(tt.want ), "\n"), "\n")
 			gotLines  := strings.Split(strings.TrimSuffix(string(mfs.data), "\n"), "\n")
-			if !cmp.Equal(wantLines, gotLines) {
-				var rep reporter
-				cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep))
+			var rep reporter
+			if !cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep)) {
 				t.Errorf("writeCovHTMLFiles(%q) mismatch (-want +got):\n%s", tt.name, strings.Join(rep.diffs, "\n"))
 			}
 		})
