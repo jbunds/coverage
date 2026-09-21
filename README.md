@@ -60,6 +60,8 @@ See also [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jbun
 
 ![dark theme][dark theme]
 
+The well-known and relatively large (5.35M+ LoC) [Kubernetes][k8s] project was chosen for the demo to illustrate the features and performance.
+
 ---
 
 #### CLI Usage
@@ -95,9 +97,9 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
        coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
    ```
 
-The [`go-mod`][action], [`coverage-threshold`][gwatts-gocov-outputs], and [`coverage-report-path`][workflow] parameters are optional.
+   The [`go-mod`][action], [`coverage-threshold`][gwatts-gocov-outputs], and [`coverage-report-path`][workflow] parameters are optional.
 
-All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
+   All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
 
    ```
    ${{ fromJson(steps.coverage_report.outputs.all).gcov-pathname    }}
@@ -107,9 +109,9 @@ All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`
    ${{ fromJson(steps.coverage_report.outputs.all).meets-threshold  }}
    ```
 
-etc.
+   etc.
 
-See [`jbunds/progress/.github/workflows/test-go.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/test-go.yml) for a working example.
+   See [`jbunds/progress/.github/workflows/test-go.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/test-go.yml) for a working example.
 
 2. The [`jbunds/coverage/.github/workflows/pages.yml@v1`][workflow] reusable [GitHub Workflow][workflows] generates the test coverage report and also deploys it to [GitHub Pages][pages]. For example:
 
@@ -125,11 +127,9 @@ See [`jbunds/progress/.github/workflows/test-go.yml`](https://github.com/jbunds/
        coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
    ```
 
-See [`jbunds/progress/.github/workflows/pages.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/pages.yml) for a working example.
+   See [`jbunds/progress/.github/workflows/pages.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/pages.yml) for a working example.
 
-See [jbunds.github.io/coverage/](https://jbunds.github.io/coverage/) or [jbunds.github.io/progress/](https://jbunds.github.io/progress/) for example HTML reports uploaded to Pages.
-
-The well-known and relatively large (500k+ LoC) [Kubernetes][k8s] project was chosen for the demo to better illustrate the features and performance.
+   See [jbunds.github.io/coverage/](https://jbunds.github.io/coverage/) or [jbunds.github.io/progress/](https://jbunds.github.io/progress/) for example HTML reports uploaded to Pages.
 
 ---
 
