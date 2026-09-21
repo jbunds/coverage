@@ -1,4 +1,4 @@
-if (window.location.protocol !== 'file:') document.getElementById('buttons').style.display = 'flex';
+if (window.location.protocol !== 'file:') document.getElementById('buttons').classList.add('visible');
 
 const store = {
   get(key, fallback) { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } },

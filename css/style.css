@@ -57,7 +57,10 @@ header {
   font-family:           system-ui, Arial, Helvetica, sans-serif;
 }
 
-img { padding-right: 2px }
+img {
+  height:        12px;
+  padding-right:  2px;
+}
 
 iframe {
   width:         100%;
@@ -101,9 +104,12 @@ a:hover {
 }
 
 #buttons {
-  display:      flex;
+  display:      none;
   justify-self: end;
+  gap:          12px;
 }
+
+#buttons.visible { display: flex; }
 
 #tree { /* <iframe id="tree"> */
   background-color: var(--bg-color);
