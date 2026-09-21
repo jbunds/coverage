@@ -22,7 +22,7 @@
 
 Drop-in replacement for `go tool cover -html`.
 
-The `coverage` Go module renders an HTML file for each `*.go` source file listed in the specified Go test coverage profile file (typically created per an invocation of `go test -coverprofile <filename>`).
+The `coverage` Go module renders an HTML file for each `*.go` source file listed in the specified Go test coverage profile file (typically created per an invocation of `go test -coverprofile`).
 
 The program expects the specification of three flags with corresponding arguments (see [usage](#cli-usage) below):
 
@@ -34,9 +34,9 @@ The program expects the specification of three flags with corresponding argument
 
 The generated HTML files are marked up to identify which lines are covered by tests ($\color{seagreen}{\text{green}}$), and which lines are not ($\color{red}{\text{red}}$). Each HTML file is written to the specified path (per the `-path` flag) following the same directory structure as the source from which the coverage profile file (per the `-coverprofile` flag) was created.
 
-The program then creates a `tree.html` file which provides a navigable view of the source rendered as a directory tree within an iframe on the left, where each node is either a subdirectory (`📁 <subdirectory>`) or a source file (`<source file>.go`). Clicking on a subdirectory node expands its contents, and clicking on a source file node renders the marked up source in the iframe to the right of the directory tree.
+The program then renders an `index.html` file to the specified path which provides a navigable view of the source rendered as a directory tree on the left, where each node is either a subdirectory (`📁 <subdirectory>`) or a source file (`<source file>.go`). Clicking on a subdirectory node expands its contents, and clicking on a source file node renders the marked up source in a child iframe positioned to the right of the directory tree.
 
-Both iframes are hosted by a parent `index.html` file, and both HTML files can be inspected in a browser, either directly via the `file://` scheme, or via an HTTP server using the `http://` scheme.
+The rendered HTML files can be viewed in a browser, either directly via the `file://` scheme, or via an HTTP server using the `http://` scheme.
 
 When served via HTTP, buttons are available to:
 
