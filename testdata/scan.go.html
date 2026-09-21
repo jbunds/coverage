@@ -31,9 +31,9 @@
 <div class="line"><span class="hit">	scnr.Init(file, src, nil, scanner.ScanComments)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	var (</span></div>
-<div class="line"><span class="hit">		pendingBaseOffset int</span></div>
-<div class="line"><span class="hit">		pendingClass      string</span></div>
 <div class="line"><span class="hit">		pendingBuf        bytes.Buffer</span></div>
+<div class="line"><span class="hit">		pendingClass      string</span></div>
+<div class="line"><span class="hit">		pendingBaseOffset int</span></div>
 <div class="line"><span class="hit">		lastOffset        int</span></div>
 <div class="line"><span class="hit">	)</span></div>
 <div class="line"></div>
@@ -55,9 +55,10 @@
 <div class="line">		}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">		startOffset := file.Offset(pos)</span></div>
-<div class="line"><span class="hit">		endOffset := tokenEndOffset(src, startOffset, lit, tok)</span></div>
+<div class="line"><span class="hit">		endOffset   := tokenEndOffset(src, startOffset, lit, tok)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">		if lit == &#34;&#34; &amp;&amp; endOffset == startOffset {</span></div>
+<div class="line"><span class="hit">		if lit       == &#34;&#34;          &amp;&amp;</span></div>
+<div class="line"><span class="hit">		   endOffset == startOffset {</span></div>
 <div class="line"><span class="hit">			continue</span></div>
 <div class="line">		}</div>
 <div class="line"></div>
@@ -94,9 +95,7 @@
 <div class="line"><span class="hit">	relativeOffset := 0</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	for _, line := range lines {</span></div>
-<div class="line"><span class="hit">		if len(line) == 0 {</span></div>
-<div class="line"><span class="hit">			continue</span></div>
-<div class="line">		}</div>
+<div class="line"><span class="hit">		if len(line) == 0 { continue</span> }</div>
 <div class="line"></div>
 <div class="line"><span class="hit">		hasNewline := bytes.HasSuffix(line, []byte(&#34;\n&#34;))</span></div>
 <div class="line"><span class="hit">		content    := line</span></div>
@@ -160,10 +159,10 @@
 <div class="line"><span class="hit">	for _, b := range blocks {</span></div>
 <div class="line"><span class="hit">		startOffset := 0</span></div>
 <div class="line"><span class="hit">		if !lineStarted[b.StartLine] {</span></div>
-<div class="line"><span class="hit">			startOffset = file.Offset(file.LineStart(b.StartLine))</span></div>
+<div class="line"><span class="hit">			startOffset              = file.Offset(file.LineStart(b.StartLine))</span></div>
 <div class="line"><span class="hit">			lineStarted[b.StartLine] = true</span></div>
 <div class="line">		} else<span class="hit"> {</span></div>
-<div class="line"><span class="hit">			startOffset = file.Offset(file.LineStart(b.StartLine)) + (b.StartCol - 1)</span></div>
+<div class="line"><span class="hit">			startOffset              = file.Offset(file.LineStart(b.StartLine)) + (b.StartCol - 1)</span></div>
 <div class="line">		}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">		endOffset := file.Offset(file.LineStart(b.EndLine)) + (b.EndCol - 1)</span></div>
@@ -178,21 +177,23 @@
 <div class="line"></div>
 <div class="line">// tokenEndOffset returns the byte offset immediately past the end of the token.</div>
 <div class="line">//</div>
-<div class="line">// In practice, the scanner always returns a non-empty literal for all token types,</div>
-<div class="line">// so this is simply startOffset + len(lit).</div>
+<div class="line">// In practice, the scanner always returns a non-empty literal for</div>
+<div class="line">// all token types, so this is simply startOffset + len(lit).</div>
 <div class="line">//</div>
 <div class="line">// The comment-scanning branches below are defensive and should never execute.</div>
-<div class="line">func tokenEndOffset(src []byte, startOffset int, lit string, tok token.Token) int {</div>
-<div class="line">	// startOffset + len(lit) // stable behavior since Go 1.0</div>
-<div class="line"><span class="hit">	if lit != &#34;&#34; || tok != token.COMMENT {</span></div>
-<div class="line"><span class="hit">		return startOffset + len(lit)</span></div>
+<div class="line">func tokenEndOffset(src []byte, startOffset int, lit string, tok token.Token) int<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	if lit != &#34;&#34;            ||</span></div>
+<div class="line"><span class="hit">	   tok != token.COMMENT {</span></div>
+<div class="line"><span class="hit">		return startOffset + len(lit) // stable behavior since Go 1.0</span></div>
 <div class="line">	}</div>
 <div class="line">	// line comment: extend to (but not including) newline</div>
 <div class="line"><span class="miss">	if startOffset + 2 &lt;= len(src) &amp;&amp;</span></div>
 <div class="line"><span class="miss">	   src[startOffset    ] == &#39;/&#39; &amp;&amp;</span></div>
 <div class="line"><span class="miss">	   src[startOffset + 1] == &#39;/&#39; {</span></div>
 <div class="line"><span class="miss">		end := startOffset</span></div>
-<div class="line"><span class="miss">		for end &lt; len(src) &amp;&amp; src[end] != &#39;\n&#39; { end</span><span class="miss">++ }</span></div>
+<div class="line"><span class="miss">		for end &lt; len(src) &amp;&amp; src[end] != &#39;\n&#39; {</span></div>
+<div class="line"><span class="miss">			end++</span></div>
+<div class="line">		}</div>
 <div class="line"><span class="miss">		return end</span></div>
 <div class="line">	}</div>
 <div class="line">	// block comment: extend to closing */</div>

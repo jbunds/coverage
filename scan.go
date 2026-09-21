@@ -23,9 +23,9 @@ func scanAndAnnotate(file *token.File, src []byte, blocks []*profileBlock) *byte
 	scnr.Init(file, src, nil, scanner.ScanComments)
 
 	var (
-		pendingBaseOffset int
-		pendingClass      string
 		pendingBuf        bytes.Buffer
+		pendingClass      string
+		pendingBaseOffset int
 		lastOffset        int
 	)
 
@@ -47,9 +47,10 @@ func scanAndAnnotate(file *token.File, src []byte, blocks []*profileBlock) *byte
 		}
 
 		startOffset := file.Offset(pos)
-		endOffset := tokenEndOffset(src, startOffset, lit, tok)
+		endOffset   := tokenEndOffset(src, startOffset, lit, tok)
 
-		if lit == "" && endOffset == startOffset {
+		if lit       == ""          &&
+		   endOffset == startOffset {
 			continue
 		}
 
@@ -86,9 +87,7 @@ func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, 
 	relativeOffset := 0
 
 	for _, line := range lines {
-		if len(line) == 0 {
-			continue
-		}
+		if len(line) == 0 { continue }
 
 		hasNewline := bytes.HasSuffix(line, []byte("\n"))
 		content    := line
@@ -152,10 +151,10 @@ func computeBlockOffsets(file *token.File, blocks []cover.ProfileBlock) (out []*
 	for _, b := range blocks {
 		startOffset := 0
 		if !lineStarted[b.StartLine] {
-			startOffset = file.Offset(file.LineStart(b.StartLine))
+			startOffset              = file.Offset(file.LineStart(b.StartLine))
 			lineStarted[b.StartLine] = true
 		} else {
-			startOffset = file.Offset(file.LineStart(b.StartLine)) + (b.StartCol - 1)
+			startOffset              = file.Offset(file.LineStart(b.StartLine)) + (b.StartCol - 1)
 		}
 
 		endOffset := file.Offset(file.LineStart(b.EndLine)) + (b.EndCol - 1)
@@ -170,21 +169,23 @@ func computeBlockOffsets(file *token.File, blocks []cover.ProfileBlock) (out []*
 
 // tokenEndOffset returns the byte offset immediately past the end of the token.
 //
-// In practice, the scanner always returns a non-empty literal for all token types,
-// so this is simply startOffset + len(lit).
+// In practice, the scanner always returns a non-empty literal for
+// all token types, so this is simply startOffset + len(lit).
 //
 // The comment-scanning branches below are defensive and should never execute.
 func tokenEndOffset(src []byte, startOffset int, lit string, tok token.Token) int {
-	// startOffset + len(lit) // stable behavior since Go 1.0
-	if lit != "" || tok != token.COMMENT {
-		return startOffset + len(lit)
+	if lit != ""            ||
+	   tok != token.COMMENT {
+		return startOffset + len(lit) // stable behavior since Go 1.0
 	}
 	// line comment: extend to (but not including) newline
 	if startOffset + 2 <= len(src) &&
 	   src[startOffset    ] == '/' &&
 	   src[startOffset + 1] == '/' {
 		end := startOffset
-		for end < len(src) && src[end] != '\n' { end++ }
+		for end < len(src) && src[end] != '\n' {
+			end++
+		}
 		return end
 	}
 	// block comment: extend to closing */
