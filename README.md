@@ -1,5 +1,5 @@
 [![Go Version](https://img.shields.io/badge/go-%20v1.27.1-blue?logo=go)](https://github.com/jbunds/coverage/blob/main/go.mod)
-[![SCC LoC](https://sloc.xyz/github/jbunds/coverage/)](https://github.com/jbunds/coverage)
+[![SCC LoC](https://sloc.xyz/github/jbunds/coverage/)](https://github.com/jbunds/coverage/blob/main/doc/code_stats.md)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![tests](https://github.com/jbunds/coverage/actions/workflows/test-go.yml/badge.svg)](https://github.com/jbunds/coverage/actions/workflows/test-go.yml)
 [![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jbunds/5a36403860174baeee62844ab96a77d9/raw/coverage.json)](https://github.com/jbunds/coverage/actions/workflows/test-go.yml)
