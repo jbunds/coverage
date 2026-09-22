@@ -170,18 +170,11 @@ func (tb *treeBuilder) processDir(ctx context.Context, st *scanState, pkgPath, s
 		st.prog.Report(st.budget, pkgPath)
 	}
 
-	// TODO(jbunds): change buildSubDirHTML() so it mutates res.html in place
-	//
-	//               the final three lines of this method then become:
-	//
-	//   res := &entryResult{html: subDirSB.String(), covered: dirCovered.Load(), total: dirStatements.Load()}
-	//   hb.buildSubDirHTML(res)
-	//   return res, nil
+	res := &entryResult{html: subDirSB.String(), covered: dirCovered.Load(), total: dirStatements.Load()}
+	hb  := &htmlBuilder{indent: st.indent, itemID: itemID, subDir: srcBasename}
+	hb.buildSubDirHTML(res)
 
-	hb   := &htmlBuilder{indent: st.indent, itemID: itemID, subDir: srcBasename}
-	html := hb.buildSubDirHTML(subDirSB.String(), dirCovered.Load(), dirStatements.Load())
-
-	return &entryResult{html: html, covered: dirCovered.Load(), total: dirStatements.Load()}, nil
+	return res, nil
 }
 
 // processFile renders a single <li> tree-node for a Go source file, including its coverage percentage.
@@ -248,26 +241,20 @@ func buildTreeHTML(modDomain string, results []*entryResult) string {
 	return sb.String()
 }
 
-// buildSubDirHTML wraps pre-rendered child nodes in a <li> tree-node for
-// a subdirectory, with its name and aggregated coverage percentage.
-func (hb *htmlBuilder) buildSubDirHTML(subDirHTML string, dirCovered, dirStatements uint64) string {
-	// TODO(jbunds): change signature to buildSubDirHTML(res *entryResult) { ... } and mutate res.html in place:
-	//
-	//               s/subDirHTML/res.html/g
-	//               s/dirStatements/res.total/g
-	//               s/dirCovered/res.covered/g
-	//
-	//               res.html = sb.String()
-	if subDirHTML == "" { return "" }
+// buildSubDirHTML wraps pre-rendered child nodes in a <li> subdirectory
+// tree-node, with its name and aggregated coverage percentage.
+func (hb *htmlBuilder) buildSubDirHTML(res *entryResult) {
+	if res.html == "" { return }
 
 	percent := 0.0
-	if dirStatements > 0 {
-		percent = float64(dirCovered) / float64(dirStatements) * 100
+	if res.total > 0 {
+		percent = float64(res.covered) / float64(res.total) * 100
 	}
 
 	indent := strings.Repeat("  ", hb.indent)
 
 	var sb strings.Builder
+
 	sb.WriteString(indent)
 	sb.WriteString("<li>\n")
 	sb.WriteString(indent)
@@ -290,12 +277,13 @@ func (hb *htmlBuilder) buildSubDirHTML(subDirHTML string, dirCovered, dirStateme
 	sb.WriteString("  </div>\n")
 	sb.WriteString(indent)
 	sb.WriteString("  <ul>\n")
-	sb.WriteString(subDirHTML)
+	sb.WriteString(res.html)
 	sb.WriteString(indent)
 	sb.WriteString("  </ul>\n")
 	sb.WriteString(indent)
 	sb.WriteString("</li>\n")
-	return sb.String()
+
+	res.html = sb.String()
 }
 
 // splitBudget divides a progress budget into n child allocations,

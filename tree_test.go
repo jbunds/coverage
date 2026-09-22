@@ -353,7 +353,8 @@ func TestBuildTreeHTML(t *testing.T) {
 
 func TestBuildSubDirHTML(t *testing.T) {
 	t.Parallel()
-	subDirHTML := "subdirectory HTML"
+	subDirHTML := "subdirectory HTML\n"
+	res        := &entryResult{html: subDirHTML, covered: 1, total: 3}
 	wantLines  := []string{
 		`<li>`,
 		`  <input type="checkbox" id="3"/>`,
@@ -362,13 +363,14 @@ func TestBuildSubDirHTML(t *testing.T) {
 		`    <span class="cov">33.3%</span>`,
 		`  </div>`,
 		`  <ul>`,
-		subDirHTML,
+		strings.TrimRight(subDirHTML, "\n"),
 		`  </ul>`,
 		`</li>`,
 		``,
 	}
 	hb       := &htmlBuilder{itemID: "3", subDir: "foo"}
-	got      := hb.buildSubDirHTML(subDirHTML + "\n", 1, 3)
+	hb.buildSubDirHTML(res)
+	got      := res.html
 	gotLines := strings.Split(got, "\n")
 	var rep reporter
 	if !cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep)) {
