@@ -24,7 +24,8 @@ type runner interface { Run(*exec.Cmd) error }
 
 type realRunner struct{}
 
-func (*realRunner) Run(cmd *exec.Cmd) error { return cmd.Run() }
+func (*realRunner) Run  (cmd *exec.Cmd) error { return cmd.Run()   }
+func (*realRunner) Start(cmd *exec.Cmd) error { return cmd.Start() }
 
 // writeFS defines an interface that extends fs.FS with writing capabilities.
 // This abstraction is necessary to allow for mocking the file system within
@@ -68,7 +69,7 @@ func (lfs *localFS) ReadDir(name string) ([]fs.DirEntry, error) {
 }
 
 func (lfs *localFS) ReadFile(name string) ([]byte, error) {
-	return os.ReadFile(name) // #nosec G304 -- all input is either operator-specified or generated herein
+	return os.ReadFile(name) // #nosec G304 -- all input is either user-specified or generated herein
 }
 
 func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error {

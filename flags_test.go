@@ -11,6 +11,7 @@ import (
 
 func TestFlags(t *testing.T) {
 	t.Parallel()
+	usage := getUsage(t)
 	tests := []struct{
 		name             string
 		args             []string
@@ -19,6 +20,7 @@ func TestFlags(t *testing.T) {
 		wantPath         string
 		wantOut          string
 		wantNoBrowser    bool
+		wantHTTPServer   bool
 		err              string // zero value means no error expected (err113)
 	}{{
 		name: "valid",
@@ -33,32 +35,12 @@ func TestFlags(t *testing.T) {
 	}, {
 		name:    "missing -gomod",
 		err:     "no value specified for -gomod",
-		wantOut: strings.Join([]string{
-			"missing -gomod usage:",
-			"",
-			"  -coverprofile string",
-			"    	path to the Go test coverage profile file",
-			"  -gomod string",
-			"    	path to the root go.mod file",
-			"  -n	suppress opening the browser",
-			"  -path string",
-			"    	path where HTML files will be written",
-			"\n"}, "\n"),
+		wantOut: "missing -gomod usage:\n" + usage,
 	}, {
 		name:    "missing -coverprofile",
 		args:    []string{"-gomod", "foo"},
 		err:     "no value specified for -coverprofile",
-		wantOut: strings.Join([]string{
-			"missing -coverprofile usage:",
-			"",
-			"  -coverprofile string",
-			"    	path to the Go test coverage profile file",
-			"  -gomod string",
-			"    	path to the root go.mod file",
-			"  -n	suppress opening the browser",
-			"  -path string",
-			"    	path where HTML files will be written",
-			"\n"}, "\n"),
+		wantOut: "missing -coverprofile usage:\n" + usage,
 	}, {
 		name:    "missing -path",
 		args:    []string{
@@ -66,17 +48,7 @@ func TestFlags(t *testing.T) {
 			"-coverprofile", "bar",
 		},
 		err:     "no value specified for -path",
-		wantOut: strings.Join([]string{
-			"missing -path usage:",
-			"",
-			"  -coverprofile string",
-			"    	path to the Go test coverage profile file",
-			"  -gomod string",
-			"    	path to the root go.mod file",
-			"  -n	suppress opening the browser",
-			"  -path string",
-			"    	path where HTML files will be written",
-			"\n"}, "\n"),
+		wantOut: "missing -path usage:\n" + usage,
 	}, {
 		name: "ignored args",
 		args: []string{
@@ -91,7 +63,7 @@ func TestFlags(t *testing.T) {
 		wantPath:         "baz",
 		wantOut:          "ignored arguments: bug, boo\n",
 	}, {
-		name: "-n (supress opening browser) specified",
+		name: "-n set",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
@@ -103,20 +75,25 @@ func TestFlags(t *testing.T) {
 		wantPath:         "baz",
 		wantNoBrowser:    true,
 	}, {
+		name: "-s set",
+		args: []string{
+			"-gomod",        "foo",
+			"-coverprofile", "bar",
+			"-path",         "baz",
+			"-s",
+		},
+		wantGoMod:        "foo",
+		wantCoverProfile: "bar",
+		wantPath:         "baz",
+		wantHTTPServer:   true,
+	}, {
 		name:    "invalid",
 		args:    []string{"-invalid"},
 		wantOut: strings.Join([]string{
 			"flag provided but not defined: -invalid",
 			"invalid usage:",
-			"",
-			"  -coverprofile string",
-			"    	path to the Go test coverage profile file",
-			"  -gomod string",
-			"    	path to the root go.mod file",
-			"  -n	suppress opening the browser",
-			"  -path string",
-			"    	path where HTML files will be written",
-			"\n"}, "\n"),
+			usage,
+		}, "\n"),
 		err: "flag provided but not defined: -invalid",
 	}}
 	for _, tt := range tests {
@@ -125,7 +102,7 @@ func TestFlags(t *testing.T) {
 			gotOut := new(bytes.Buffer)
 			fs     := flag.NewFlagSet(tt.name, flag.ContinueOnError)
 			fs.SetOutput(gotOut)
-			gotGoMod, gotCoverProfile, gotPath, gotNoBrowser, err := flags(fs, tt.args)
+			gotGoMod, gotCoverProfile, gotPath, gotNoBrowser, gotHTTPServer, err := flags(fs, tt.args)
 			if tt.err != "" {
 				if err == nil {
 					t.Errorf("flags(%q) did not fail", tt.name)
@@ -147,7 +124,10 @@ func TestFlags(t *testing.T) {
 				t.Errorf("flags(%q) path mismatch (-want +got):\n%s", tt.name, diff)
 			}
 			if diff := cmp.Diff(tt.wantNoBrowser, gotNoBrowser); diff != "" {
-				t.Errorf("flags(%q) path mismatch (-want +got):\n%s", tt.name, diff)
+				t.Errorf("flags(%q) noBrowser mismatch (-want +got):\n%s", tt.name, diff)
+			}
+			if diff := cmp.Diff(tt.wantHTTPServer, gotHTTPServer); diff != "" {
+				t.Errorf("flags(%q) httpServer mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}
@@ -181,4 +161,15 @@ func TestFilterArgs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func getUsage(t *testing.T) string {
+	t.Helper()
+	buf := new(bytes.Buffer)
+	fs  := flag.NewFlagSet("test", flag.ContinueOnError)
+	fs.SetOutput(buf)
+	if _, _, _, _, _, err := flags(fs, []string{"-invalid"}); err == nil {
+		t.Fatal("flags() unexpectedly succeeded")
+	}
+	return strings.SplitN(buf.String(), "\n", 3)[2]
 }

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<link rel="icon"       href="../../../favicon.ico" type="image/vnd.microsoft.icon">
 <link rel="stylesheet" href="../../../style.css">
 <title>github.com/jbunds/coverage/interfaces.go</title>
 </head>
@@ -32,7 +33,8 @@
 <div class="line"></div>
 <div class="line">type realRunner struct{}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">func (*realRunner) Run(cmd *exec.Cmd) error { return cmd.Run</span><span class="miss">() }</span></div>
+<div class="line"><span class="miss">func (*realRunner) Run  (cmd *exec.Cmd) error { return cmd.Run</span><span class="miss">()   }</span></div>
+<div class="line"><span class="miss">func (*realRunner) Start(cmd *exec.Cmd) error { return cmd.Start</span><span class="miss">() }</span></div>
 <div class="line"></div>
 <div class="line">// writeFS defines an interface that extends fs.FS with writing capabilities.</div>
 <div class="line">// This abstraction is necessary to allow for mocking the file system within</div>
@@ -76,7 +78,7 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func (lfs *localFS) ReadFile(name string) ([]byte, error<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	return os.ReadFile(name) // #nosec G304 -- all input is either operator-specified or generated herein</span></div>
+<div class="line"><span class="hit">	return os.ReadFile(name) // #nosec G304 -- all input is either user-specified or generated herein</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error<span class="hit"> {</span></div>

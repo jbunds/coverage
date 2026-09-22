@@ -14,29 +14,21 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"cmp"
 	"context"
 	"embed"
 	"flag"
 	"fmt"
-	"io"
 	"io/fs"
-	"maps"
 	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
-	"slices"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"syscall"
-	"testing"
 
 	"golang.org/x/mod/modfile"
-	"golang.org/x/term"
 	"golang.org/x/tools/cover"
 	"golang.org/x/tools/go/packages"
 )
@@ -65,6 +57,7 @@ type reportGenerator struct {
 	totalCovered     atomic.Uint64       // module-wide total number of statements covered
 	totalStatements  atomic.Uint64       // module-wide total number of statements
 	staticFiles      []string            // static CSS, HTML, and image files required by the generated HTML
+	iconFilename     string              // name of the icon file included by index.html and generated source HTML files
 	styleCSSFilename string              // name of the CSS file included by index.html and generated source HTML files
 	childJSFilename  string              // name of the JS file included by generated source HTML files that handles toggling the theme and line numbers
 }
@@ -81,7 +74,11 @@ func run() int {
 	)
 	defer stop()
 
-	goModFile, profilePath, outDir, noBrowser, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))
+	goModFile,
+		profilePath,
+		outDir,
+		noBrowser,
+		httpServer, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))
 	if err != nil { return fatal(1, "cannot parse flags: %v\n", err) }
 
 	profiles, err := cover.ParseProfiles(profilePath) // TODO(jbunds): (maybe?) add an adapter to handle both legacy textfmt and binary coverage profiles
@@ -110,11 +107,11 @@ func run() int {
 	indexHTMLFilename := filepath.Base(indexHTMLFile)
 
 	var treeHTML string
-	if treeHTML, err = tb.buildTree(ctx, os.Stderr);              err != nil { return fatal( 9, "cannot build tree HTML: %v\n",                 err) }
-	if err := repGen.writeIndexHTMLFile(indexHTMLFile, treeHTML); err != nil { return fatal(10, "cannot write %q: %v\n", indexHTMLFile,         err) }
-	if err := repGen.writeStaticFiles();                          err != nil { return fatal(11, "cannot write static files: %v\n",              err) }
-	if err := repGen.printCoverage(os.Stdout);                    err != nil { return fatal(12, "cannot print per-file coverage figures: %v\n", err) }
-	if err := repGen.maybeOpenHTML(indexHTMLFilename, noBrowser); err != nil { return fatal(13, "cannot open %q: %v\n",  indexHTMLFilename,     err) }
+	if treeHTML, err = tb.buildTree(ctx, os.Stderr);                             err != nil { return fatal( 9, "cannot build tree HTML: %v\n",         err) }
+	if err := repGen.writeIndexHTMLFile(indexHTMLFile, treeHTML);                err != nil { return fatal(10, "cannot write %q: %v\n", indexHTMLFile, err) }
+	if err := repGen.writeStaticFiles();                                         err != nil { return fatal(11, "cannot write static files: %v\n",      err) }
+	if err := repGen.printCoverage(os.Stdout);                                   err != nil { return fatal(12, "cannot print per-file coverage: %v\n", err) }
+	if err := repGen.maybeOpenBrowser(indexHTMLFilename, noBrowser, httpServer); err != nil { return fatal(13, "cannot open browser: %v\n",            err) }
 
 	return 0
 }
@@ -132,6 +129,7 @@ func newReportGenerator(goModFile, profilePath string, profiles []*cover.Profile
 		profilePath:      filepath.Clean(profilePath),
 		profiles:         profiles,
 		embeddedFiles:    embeddedFiles,
+		iconFilename:     "favicon.ico",
 		childJSFilename:  "child.js",
 		styleCSSFilename: "style.css",
 		staticFiles:      []string{
@@ -271,109 +269,4 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader) error {
 	rg.pkgDirCache = cache
 
 	return nil
-}
-
-// printCoverage prints per-file coverage percentages to stdout.
-func (rg *reportGenerator) printCoverage(w io.Writer) error {
-	keys       := slices.Collect(maps.Keys(rg.cov))
-	maxPathLen := len(slices.MaxFunc(keys, func(a, b string) int {
-		return cmp.Compare(len(a), len(b))
-	}))
-
-	maxPathLen = max(maxPathLen, 5) // 5 == len("Total")
-
-	// TODO(jeff): allow users to chose how the rows rendered in the tree should be sorted;
-	//             default should probably path-depth, then alphanumerically, just like here
-	slices.SortFunc(keys, func(a, b string) int {
-		depthA, depthB := strings.Count(a, "/"), strings.Count(b, "/")
-		if depthA != depthB { return cmp.Compare(depthA, depthB) } // sort by path depth
-		return cmp.Compare(a, b)                                   // sort alphanumerically
-	})
-
-	divider := strings.Repeat("—", maxPathLen + 9) + "\n" // 9 == 2 spaces + len("100.00%")
-
-	ew := newErrorWriter(w)
-	ew.write("File")
-	ew.write(strings.Repeat(" ", maxPathLen - 4 + 1))
-	ew.write("Coverage\n")
-	ew.write(divider)
-
-	for _, path := range keys {
-		cov     := rg.cov[path]
-		percent := 0.0
-		if cov.total > 0 {
-			percent = float64(cov.covered) / float64(cov.total) * 100
-		}
-		rg.writeRow(ew, path, percent, maxPathLen)
-	}
-
-	totalPercent    := 0.0
-	totalCovered    := rg.totalCovered.Load()
-	totalStatements := rg.totalStatements.Load()
-	if totalStatements > 0 {
-		totalPercent = float64(totalCovered) / float64(totalStatements) * 100
-	}
-
-	ew.write(divider)
-	rg.writeRow(ew, "Total", totalPercent, maxPathLen)
-
-	return ew.err()
-}
-
-// writeRow writes a single padded, color-coded (green ≥ 50%, red below) coverage row.
-func (rg *reportGenerator) writeRow(ew *errorWriter, path string, percent float64, maxPathLen int) {
-	const (
-		green = "\033[32m"
-		red   = "\033[31m"
-	)
-	ew.write(path)
-	ew.write(strings.Repeat(" ", maxPathLen-len(path)+2))
-	pct       := strconv.FormatFloat(percent, 'f', 2, 64)
-	colorCode := green
-	if percent < 50 { colorCode = red }
-	ew.write(strings.Repeat(" ", 6-len(pct)))
-	ew.writeColor(pct+"%", colorCode)
-	ew.write("\n")
-}
-
-// maybeOpenHTML opens the generated index.html file in the
-// default browser when stdout is a TTY and -n is not set.
-func (rg *reportGenerator) maybeOpenHTML(indexHTMLFile string, noBrowser bool) error {
-	if noBrowser || !isTerm(os.Stdout) { return nil }
-
-	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), indexHTMLFile)) // file:// scheme
-	if err != nil {
-		return err
-	}
-
-	// TODO(jbunds): add a method to run `python3 -m http.server -d repGen.outRoot.Name()`
-
-	var cmd *exec.Cmd
-	switch os := runtime.GOOS; os {
-	case "darwin":
-		cmd = exec.Command("open",         absPath) // #nosec G204 G702 - no shell (no injection); absPath confined to outRoot (no path escape)
-	case "windows":
-		cmd = exec.Command("explorer.exe", absPath) // #nosec G204 G702 - no shell (no injection); absPath confined to outRoot (no path escape)
-	case "linux":
-		cmd = exec.Command("xdg-open",     absPath) // #nosec G204 G702 - no shell (no injection); absPath confined to outRoot (no path escape)
-	default:
-		return fmt.Errorf("unrecognized OS: %s", os)
-	}
-	return new(realRunner).Run(cmd)
-}
-
-// isTerm determines if the specified writer is connected to a terminal.
-func isTerm(v any) bool {
-	if testing.Testing()                     ||
-	   os.Getenv("GITHUB_ACTIONS") == "true" || // https://docs.github.com/actions/reference/workflows-and-actions/variables
-	   os.Getenv("CI"            ) == "true" { return false }
-	fd := getFD(v)
-	if fd < 0 { return false }
-	return term.IsTerminal(fd)
-}
-
-// getFD returns the file descriptor of the provided argument.
-func getFD(w any) int {
-	if f, ok := w.(interface{ Fd() uintptr }); ok { return int(f.Fd()) }
-	return -1
 }

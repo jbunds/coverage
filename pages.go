@@ -194,7 +194,7 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	buf    := scanAndAnnotate(file, src, blocks)
 
 	relPath := strings.Repeat("../", strings.Count(srcPath, "/"))
-	writePreamble(ew, srcPath, relPath + rg.styleCSSFilename)
+	writePreamble(ew, relPath + rg.iconFilename, srcPath, relPath + rg.styleCSSFilename)
 	for line := range bytes.SplitSeq(bytes.TrimRight(buf.Bytes(), "\n"), []byte{'\n'}) {
 		ew.write(`<div class="line">`)
 		ew.write(string(line))
@@ -206,19 +206,22 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 
 // writePreamble writes the preamble portion of the
 // HTML content common to every Go source HTML file.
-func writePreamble(ew stickyWriter, srcPath, cssPath string) {
+func writePreamble(ew stickyWriter, iconPath, srcPath, cssPath string) {
 	ew.write("<!DOCTYPE html>\n")
-	ew.write(`<html lang="en">` + "\n")
+	ew.write("<html lang=\"en\">\n")
 	ew.write("<head>\n")
-	ew.write(`<meta charset="utf-8">` + "\n")
+	ew.write("<meta charset=\"utf-8\">\n")
+	ew.write(`<link rel="icon"       href="`)
+	ew.write(iconPath)
+	ew.write("\" type=\"image/vnd.microsoft.icon\">\n")
 	ew.write(`<link rel="stylesheet" href="`)
 	ew.write(cssPath)
-	ew.write(`">` + "\n")
+	ew.write("\">\n")
 	ew.write("<title>")
 	ew.write(srcPath)
 	ew.write("</title>\n")
 	ew.write("</head>\n")
-	ew.write(`<body id="code" class="line-numbers">` + "\n")
+	ew.write("<body id=\"code\" class=\"line-numbers\">\n")
 }
 
 // writePostamble writes the postamble portion of the
@@ -226,7 +229,7 @@ func writePreamble(ew stickyWriter, srcPath, cssPath string) {
 func writePostamble(ew stickyWriter, childJSPath string) {
 	ew.write(`<script src="`)
 	ew.write(childJSPath) // DOM-dependent
-	ew.write(`"></script>` + "\n")
+	ew.write("\"></script>\n")
 	ew.write("</body>\n")
 	ew.write("</html>")
 }

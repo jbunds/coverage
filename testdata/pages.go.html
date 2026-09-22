@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<link rel="icon"       href="../../../favicon.ico" type="image/vnd.microsoft.icon">
 <link rel="stylesheet" href="../../../style.css">
 <title>github.com/jbunds/coverage/pages.go</title>
 </head>
@@ -202,7 +203,7 @@
 <div class="line"><span class="hit">	buf    := scanAndAnnotate(file, src, blocks)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	relPath := strings.Repeat(&#34;../&#34;, strings.Count(srcPath, &#34;/&#34;))</span></div>
-<div class="line"><span class="hit">	writePreamble(ew, srcPath, relPath + rg.styleCSSFilename)</span></div>
+<div class="line"><span class="hit">	writePreamble(ew, relPath + rg.iconFilename, srcPath, relPath + rg.styleCSSFilename)</span></div>
 <div class="line"><span class="hit">	for line := range bytes.SplitSeq(bytes.TrimRight(buf.Bytes(), &#34;\n&#34;), []byte{&#39;\n&#39;}) {</span></div>
 <div class="line"><span class="hit">		ew.write(`&lt;div class=&#34;line&#34;&gt;`)</span></div>
 <div class="line"><span class="hit">		ew.write(string(line))</span></div>
@@ -214,19 +215,22 @@
 <div class="line"></div>
 <div class="line">// writePreamble writes the preamble portion of the</div>
 <div class="line">// HTML content common to every Go source HTML file.</div>
-<div class="line">func writePreamble(ew stickyWriter, srcPath, cssPath string<span class="hit">) {</span></div>
+<div class="line">func writePreamble(ew stickyWriter, iconPath, srcPath, cssPath string<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;!DOCTYPE html&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	ew.write(`&lt;html lang=&#34;en&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;html lang=\&#34;en\&#34;&gt;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;head&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	ew.write(`&lt;meta charset=&#34;utf-8&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;meta charset=\&#34;utf-8\&#34;&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(`&lt;link rel=&#34;icon&#34;       href=&#34;`)</span></div>
+<div class="line"><span class="hit">	ew.write(iconPath)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;\&#34; type=\&#34;image/vnd.microsoft.icon\&#34;&gt;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(`&lt;link rel=&#34;stylesheet&#34; href=&#34;`)</span></div>
 <div class="line"><span class="hit">	ew.write(cssPath)</span></div>
-<div class="line"><span class="hit">	ew.write(`&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;\&#34;&gt;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;title&gt;&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(srcPath)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;/title&gt;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;/head&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	ew.write(`&lt;body id=&#34;code&#34; class=&#34;line-numbers&#34;&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;&lt;body id=\&#34;code\&#34; class=\&#34;line-numbers\&#34;&gt;\n&#34;)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// writePostamble writes the postamble portion of the</div>
@@ -234,7 +238,7 @@
 <div class="line">func writePostamble(ew stickyWriter, childJSPath string<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	ew.write(`&lt;script src=&#34;`)</span></div>
 <div class="line"><span class="hit">	ew.write(childJSPath) // DOM-dependent</span></div>
-<div class="line"><span class="hit">	ew.write(`&#34;&gt;&lt;/script&gt;` + &#34;\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;\&#34;&gt;&lt;/script&gt;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;/body&gt;\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;&lt;/html&gt;&#34;)</span></div>
 <div class="line">}</div>

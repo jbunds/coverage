@@ -69,6 +69,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 			`<html lang="en">`,
 			`<head>`,
 			`<meta charset="utf-8">`,
+			`<link rel="icon"       href="../../favicon.ico" type="image/vnd.microsoft.icon">`,
 			`<link rel="stylesheet" href="../../style.css">`,
 			`<title>foo/bar/baz.go</title>`,
 			`</head>`,
@@ -128,6 +129,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				outRoot:          &mockRoot{name: "some/path"},
 				profiles:         tt.profiles,
 				pkgDirCache:      tt.pkgDirCache,
+				iconFilename:     "favicon.ico",
 				styleCSSFilename: "style.css",
 				childJSFilename:  "child.js",
 			}

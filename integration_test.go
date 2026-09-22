@@ -23,6 +23,7 @@ func TestIntegrationTest(t *testing.T) {
 		fsys:             &localFS{},
 		outRoot:          tmpDir,
 		profiles:         profiles,
+		iconFilename:     "favicon.ico",
 		styleCSSFilename: "style.css",
 		childJSFilename:  "child.js",
 	}

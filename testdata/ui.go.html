@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon"       href="../../../favicon.ico" type="image/vnd.microsoft.icon">
+<link rel="stylesheet" href="../../../style.css">
+<title>github.com/jbunds/coverage/ui.go</title>
+</head>
+<body id="code" class="line-numbers">
+<div class="line">package main</div>
+<div class="line"></div>
+<div class="line">import (</div>
+<div class="line">	&#34;cmp&#34;</div>
+<div class="line">	&#34;fmt&#34;</div>
+<div class="line">	&#34;io&#34;</div>
+<div class="line">	&#34;maps&#34;</div>
+<div class="line">	&#34;os&#34;</div>
+<div class="line">	&#34;os/exec&#34;</div>
+<div class="line">	&#34;path/filepath&#34;</div>
+<div class="line">	&#34;runtime&#34;</div>
+<div class="line">	&#34;slices&#34;</div>
+<div class="line">	&#34;strconv&#34;</div>
+<div class="line">	&#34;strings&#34;</div>
+<div class="line">	&#34;testing&#34;</div>
+<div class="line"></div>
+<div class="line">	&#34;golang.org/x/term&#34;</div>
+<div class="line">)</div>
+<div class="line"></div>
+<div class="line">// printCoverage prints per-file coverage percentages to stdout.</div>
+<div class="line">func (rg *reportGenerator) printCoverage(w io.Writer) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	keys       := slices.Collect(maps.Keys(rg.cov))</span></div>
+<div class="line"><span class="hit">	maxPathLen := len(slices.MaxFunc(keys, func(a, b string) int {</span></div>
+<div class="line"><span class="hit">		return cmp.Compare(len(a), len(b))</span></div>
+<div class="line">	}))</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	maxPathLen = max(maxPathLen, 5) // 5 == len(&#34;Total&#34;)</span></div>
+<div class="line"></div>
+<div class="line">	// TODO(jbunds): allow users to chose how the rows rendered in the tree should be sorted;</div>
+<div class="line">	//               default should probably path-depth, then alphanumerically, just like here</div>
+<div class="line"><span class="hit">	slices.SortFunc(keys, func(a, b string) int {</span></div>
+<div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
+<div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthA, depthB</span>) } // sort by path depth</div>
+<div class="line"><span class="hit">		return cmp.Compare(a, b</span>)                                   // sort alphanumerically</div>
+<div class="line">	})</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	divider := strings.Repeat(&#34;—&#34;, maxPathLen + 9) + &#34;\n&#34; // 9 == 2 spaces + len(&#34;100.00%&#34;)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	ew := newErrorWriter(w)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;File&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen - 4 + 1))</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;Coverage\n&#34;)</span></div>
+<div class="line"><span class="hit">	ew.write(divider)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	for _, path := range keys {</span></div>
+<div class="line"><span class="hit">		cov     := rg.cov[path]</span></div>
+<div class="line"><span class="hit">		percent := 0.0</span></div>
+<div class="line"><span class="hit">		if cov.total &gt; 0 {</span></div>
+<div class="line"><span class="hit">			percent = float64(cov.covered) / float64(cov.total) * 100</span></div>
+<div class="line">		}</div>
+<div class="line"><span class="hit">		rg.writeRow(ew, path, percent, maxPathLen</span><span class="hit">)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	totalPercent    := 0.0</span></div>
+<div class="line"><span class="hit">	totalCovered    := rg.totalCovered.Load()</span></div>
+<div class="line"><span class="hit">	totalStatements := rg.totalStatements.Load()</span></div>
+<div class="line"><span class="hit">	if totalStatements &gt; 0 {</span></div>
+<div class="line"><span class="hit">		totalPercent = float64(totalCovered) / float64(totalStatements) * 100</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	ew.write(divider)</span></div>
+<div class="line"><span class="hit">	rg.writeRow(ew, &#34;Total&#34;, totalPercent, maxPathLen)</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">	return ew.err</span><span class="hit">()</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// writeRow writes a single padded, color-coded (green ≥ 50%, red below) coverage row.</div>
+<div class="line">func (rg *reportGenerator) writeRow(ew *errorWriter, path string, percent float64, maxPathLen int<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	const (</span></div>
+<div class="line"><span class="hit">		green = &#34;\033[32m&#34;</span></div>
+<div class="line"><span class="hit">		red   = &#34;\033[31m&#34;</span></div>
+<div class="line"><span class="hit">	)</span></div>
+<div class="line"><span class="hit">	ew.write(path)</span></div>
+<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen-len(path)+2))</span></div>
+<div class="line"><span class="hit">	pct       := strconv.FormatFloat(percent, &#39;f&#39;, 2, 64)</span></div>
+<div class="line"><span class="hit">	colorCode := green</span></div>
+<div class="line"><span class="hit">	if percent &lt; 50 { colorCode = red</span><span class="hit"> }</span></div>
+<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, 6-len(pct)))</span></div>
+<div class="line"><span class="hit">	ew.writeColor(pct+&#34;%&#34;, colorCode)</span></div>
+<div class="line"><span class="hit">	ew.write(&#34;\n&#34;</span><span class="hit">)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// maybeOpenBrowser opens the generated index.html file in the</div>
+<div class="line">// default browser when stdout is a TTY and -n is not set.</div>
+<div class="line">func (rg *reportGenerator) maybeOpenBrowser(indexHTMLFile string, noBrowser, httpServer bool) error<span class="miss"> {</span></div>
+<div class="line"><span class="miss">	if noBrowser || !isTerm(os.Stdout) { return nil</span><span class="miss"> }</span></div>
+<div class="line"></div>
+<div class="line"><span class="miss">	if httpServer {</span></div>
+<div class="line"><span class="miss">		return launchHTTPServer(rg.outRoot.Name())</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), indexHTMLFile)) // file:// scheme</span></div>
+<div class="line"><span class="miss">	if err != nil {</span></div>
+<div class="line"><span class="miss">		return err</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	if runtime.GOOS == &#34;linux&#34; {</span></div>
+<div class="line"><span class="miss">		absPath = &#34;file://&#34; + absPath // Linux requires explicit file:// scheme prefix</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	return openBrowser(absPath</span><span class="miss">)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// launchHTTPServer launches a Python HTTP server when -s is set and -n is not set.</div>
+<div class="line">func launchHTTPServer(outDir string) error<span class="miss"> {</span></div>
+<div class="line"><span class="miss">	python := &#34;python3&#34;</span></div>
+<div class="line"><span class="miss">	if runtime.GOOS == &#34;windows&#34; {</span></div>
+<div class="line"><span class="miss">		python = &#34;python&#34;</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	pyPath, err := exec.LookPath(python)</span></div>
+<div class="line"><span class="miss">	if err != nil { return err</span><span class="miss"> }</span></div>
+<div class="line"></div>
+<div class="line"><span class="miss">	cmd := exec.Command(pyPath, &#34;-m&#34;, &#34;http.server&#34;, &#34;-d&#34;, outDir) // #nosec G204 G702 - no shell (no injection); outDir confined to outRoot (no path escape)</span></div>
+<div class="line"></div>
+<div class="line"><span class="miss">	const port = 8000</span></div>
+<div class="line"></div>
+<div class="line"><span class="miss">	url := fmt.Sprintf(&#34;http://localhost:%d&#34;, port)</span></div>
+<div class="line"></div>
+<div class="line"><span class="miss">	if runtime.GOOS == &#34;windows&#34;</span> { // fire-and-forget, no PID reporting</div>
+<div class="line"><span class="miss">		if err := new(realRunner).Start(cmd); err != nil</span> { // leaves Python HTTP server running in the background</div>
+<div class="line"><span class="miss">			return err</span></div>
+<div class="line">		}</div>
+<div class="line"><span class="miss">		return openBrowser(url</span><span class="miss">)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	if pid, err := findPortPID(port); err == nil</span> { // check for existing process listening on port 8000 on macOS or Linux</div>
+<div class="line"><span class="miss">		fmt.Fprintf(os.Stderr, &#34;process already listening on port %d (PID: %d)\n&#34;, port, pid)</span></div>
+<div class="line"><span class="miss">		return openBrowser(url) // assume the process listening on port 8000 is an HTTP server rather than launch a new one</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	if err := new(realRunner).Start(cmd); err != nil</span> { // leaves Python HTTP server running in the background</div>
+<div class="line"><span class="miss">		return err</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	fmt.Fprintf(os.Stderr, &#34;HTTP server listening on port %d (PID: %d)\n&#34;, port, cmd.Process.Pid)</span></div>
+<div class="line"><span class="miss">	return openBrowser(url</span><span class="miss">)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// openBrowser opens the default browser wiTh the specified URL.</div>
+<div class="line">func openBrowser(url string) error<span class="miss"> {</span></div>
+<div class="line"><span class="miss">	var cmd *exec.Cmd</span></div>
+<div class="line"><span class="miss">	switch os := runtime.GOOS; os</span> {</div>
+<div class="line">	case &#34;darwin&#34;<span class="miss">:</span></div>
+<div class="line"><span class="miss">		cmd = exec.Command(&#34;open&#34;,         url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
+<div class="line">	case &#34;windows&#34;<span class="miss">:</span></div>
+<div class="line"><span class="miss">		cmd = exec.Command(&#34;explorer.exe&#34;, url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
+<div class="line">	case &#34;linux&#34;<span class="miss">:</span></div>
+<div class="line"><span class="miss">		cmd = exec.Command(&#34;xdg-open&#34;,     url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
+<div class="line">	default<span class="miss">:</span></div>
+<div class="line"><span class="miss">		return fmt.Errorf(&#34;unrecognized OS: %s&#34;, os</span><span class="miss">)</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	return new(realRunner).Run(cmd</span><span class="miss">)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// findPortPID searches for a process listening on the specified port and returns its PID if found.</div>
+<div class="line">func findPortPID(port int) (int, error<span class="miss">) {</span></div>
+<div class="line"><span class="miss">	out, err := exec.Command(&#34;lsof&#34;, &#34;-ti&#34;, fmt.Sprintf(&#34;:%d&#34;, port)).Output() // #nosec G204 - port is a const defined in maybeOpenBrowser()</span></div>
+<div class="line"><span class="miss">	if err != nil { return 0, err</span><span class="miss"> }</span></div>
+<div class="line"><span class="miss">	var pid int</span></div>
+<div class="line"><span class="miss">	if _, err := fmt.Sscanf(strings.TrimSpace(string(out)), &#34;%d&#34;, &amp;pid); err != nil {</span></div>
+<div class="line"><span class="miss">		return 0, err</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	return pid, nil</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// isTerm determines if the specified writer is connected to a terminal.</div>
+<div class="line">func isTerm(v any) bool<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	if testing.Testing()                     ||</span></div>
+<div class="line"><span class="hit">	   os.Getenv(&#34;GITHUB_ACTIONS&#34;) == &#34;true&#34; || // https://docs.github.com/actions/reference/workflows-and-actions/variables</span></div>
+<div class="line"><span class="hit">	   os.Getenv(&#34;CI&#34;            ) == &#34;true&#34; { return false</span><span class="hit"> }</span></div>
+<div class="line"><span class="miss">	fd := getFD(v)</span></div>
+<div class="line"><span class="miss">	if fd &lt; 0 { return false</span><span class="miss"> }</span></div>
+<div class="line"><span class="miss">	return term.IsTerminal(fd</span><span class="miss">)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// getFD returns the file descriptor of the provided argument.</div>
+<div class="line">func getFD(w any) int<span class="miss"> {</span></div>
+<div class="line"><span class="miss">	if f, ok := w.(interface{ Fd() uintptr }); ok { return int(f.Fd</span><span class="miss">()) }</span></div>
+<div class="line"><span class="miss">	return -1</span></div>
+<div class="line">}</div>
+<script src="../../../child.js"></script>
+</body>
+</html>
