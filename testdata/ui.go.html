@@ -91,14 +91,14 @@
 <div class="line"></div>
 <div class="line">// maybeOpenBrowser opens the generated index.html file in the</div>
 <div class="line">// default browser when stdout is a TTY and -n is not set.</div>
-<div class="line">func (rg *reportGenerator) maybeOpenBrowser(indexHTMLFile string, noBrowser, httpServer bool) error<span class="miss"> {</span></div>
+<div class="line">func (rg *reportGenerator) maybeOpenBrowser(noBrowser, httpServer bool) error<span class="miss"> {</span></div>
 <div class="line"><span class="miss">	if noBrowser || !isTerm(os.Stdout) { return nil</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	if httpServer {</span></div>
 <div class="line"><span class="miss">		return launchHTTPServer(rg.outRoot.Name())</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), indexHTMLFile)) // file:// scheme</span></div>
+<div class="line"><span class="miss">	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), &#34;index.html&#34;))</span></div>
 <div class="line"><span class="miss">	if err != nil {</span></div>
 <div class="line"><span class="miss">		return err</span></div>
 <div class="line">	}</div>
@@ -142,7 +142,7 @@
 <div class="line"><span class="miss">	return openBrowser(url</span><span class="miss">)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// openBrowser opens the default browser wiTh the specified URL.</div>
+<div class="line">// openBrowser opens the default browser with the specified URL.</div>
 <div class="line">func openBrowser(url string) error<span class="miss"> {</span></div>
 <div class="line"><span class="miss">	var cmd *exec.Cmd</span></div>
 <div class="line"><span class="miss">	switch os := runtime.GOOS; os</span> {</div>

@@ -103,15 +103,12 @@ func run() int {
 		cov:     repGen.cov,
 	}
 
-	indexHTMLFile     := "html/index.html" // embedded template (.ModName, .ModURL, .TreeHTML)
-	indexHTMLFilename := filepath.Base(indexHTMLFile)
-
 	var treeHTML string
-	if treeHTML, err = tb.buildTree(ctx, os.Stderr);                             err != nil { return fatal( 9, "cannot build tree HTML: %v\n",         err) }
-	if err := repGen.writeIndexHTMLFile(indexHTMLFile, treeHTML);                err != nil { return fatal(10, "cannot write %q: %v\n", indexHTMLFile, err) }
-	if err := repGen.writeStaticFiles();                                         err != nil { return fatal(11, "cannot write static files: %v\n",      err) }
-	if err := repGen.printCoverage(os.Stdout);                                   err != nil { return fatal(12, "cannot print per-file coverage: %v\n", err) }
-	if err := repGen.maybeOpenBrowser(indexHTMLFilename, noBrowser, httpServer); err != nil { return fatal(13, "cannot open browser: %v\n",            err) }
+	if treeHTML, err = tb.buildTree(ctx, os.Stderr);          err != nil { return fatal( 9, "cannot build tree HTML: %v\n",    err) }
+	if err := repGen.writeIndexHTMLFile(treeHTML);            err != nil { return fatal(10, "cannot write index.html: %v\n",   err) }
+	if err := repGen.writeStaticFiles();                      err != nil { return fatal(11, "cannot write static files: %v\n", err) }
+	if err := repGen.printCoverage(os.Stdout);                err != nil { return fatal(12, "cannot print coverage: %v\n",     err) }
+	if err := repGen.maybeOpenBrowser(noBrowser, httpServer); err != nil { return fatal(13, "cannot open browser: %v\n",       err) }
 
 	return 0
 }

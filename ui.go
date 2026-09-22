@@ -82,14 +82,14 @@ func (rg *reportGenerator) writeRow(ew *errorWriter, path string, percent float6
 
 // maybeOpenBrowser opens the generated index.html file in the
 // default browser when stdout is a TTY and -n is not set.
-func (rg *reportGenerator) maybeOpenBrowser(indexHTMLFile string, noBrowser, httpServer bool) error {
+func (rg *reportGenerator) maybeOpenBrowser(noBrowser, httpServer bool) error {
 	if noBrowser || !isTerm(os.Stdout) { return nil }
 
 	if httpServer {
 		return launchHTTPServer(rg.outRoot.Name())
 	}
 
-	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), indexHTMLFile)) // file:// scheme
+	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), "index.html"))
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func launchHTTPServer(outDir string) error {
 	return openBrowser(url)
 }
 
-// openBrowser opens the default browser wiTh the specified URL.
+// openBrowser opens the default browser with the specified URL.
 func openBrowser(url string) error {
 	var cmd *exec.Cmd
 	switch os := runtime.GOOS; os {

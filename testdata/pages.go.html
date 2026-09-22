@@ -245,7 +245,7 @@
 <div class="line"></div>
 <div class="line">// writeIndexHTMLFile writes the index HTML file, which contains three template parameters (ModName, ModURL,</div>
 <div class="line">// and TreeHTML), and hosts one iframe within which the generated source code HTML files are rendered.</div>
-<div class="line">func (rg *reportGenerator) writeIndexHTMLFile(indexHTMLFile, treeHTML string) error<span class="hit"> {</span></div>
+<div class="line">func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	data := struct{</span></div>
 <div class="line"><span class="hit">		ModName,</span></div>
 <div class="line"><span class="hit">		ModURL,</span></div>
@@ -256,7 +256,7 @@
 <div class="line"><span class="hit">		TreeHTML: treeHTML</span><span class="hit">,</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	return rg.writeTemplateFile(indexHTMLFile, data)</span></div>
+<div class="line"><span class="hit">	return rg.writeTemplateFile(&#34;html/index.html&#34;, data)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// writeTemplateFile writes the specified template file.</div>

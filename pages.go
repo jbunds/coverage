@@ -236,7 +236,7 @@ func writePostamble(ew stickyWriter, childJSPath string) {
 
 // writeIndexHTMLFile writes the index HTML file, which contains three template parameters (ModName, ModURL,
 // and TreeHTML), and hosts one iframe within which the generated source code HTML files are rendered.
-func (rg *reportGenerator) writeIndexHTMLFile(indexHTMLFile, treeHTML string) error {
+func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
 	data := struct{
 		ModName,
 		ModURL,
@@ -247,7 +247,7 @@ func (rg *reportGenerator) writeIndexHTMLFile(indexHTMLFile, treeHTML string) er
 		TreeHTML: treeHTML,
 	}
 
-	return rg.writeTemplateFile(indexHTMLFile, data)
+	return rg.writeTemplateFile("html/index.html", data)
 }
 
 // writeTemplateFile writes the specified template file.

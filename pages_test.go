@@ -161,7 +161,7 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 		wantErr       error
 	}{{
 		name:          "succeeds",
-		embeddedFiles: fstest.MapFS{ "index.html": &fstest.MapFile{
+		embeddedFiles: fstest.MapFS{ "html/index.html": &fstest.MapFile{
 			Data: []byte("ModName: {{ .ModName }}, ModURL: {{ .ModURL }}, TreeHTML: {{ .TreeHTML }}"),
 		}},
 		modName:       "github.com/foo/bar",
@@ -170,10 +170,10 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 	}, {
 		name:          "template.ParseFS fails because index file does not exist",
 		embeddedFiles: fstest.MapFS{},
-		wantErr:       fmt.Errorf("cannot parse %q: template: pattern matches no files: `index.html`", "index.html"),
+		wantErr:       fmt.Errorf("cannot parse %q: template: pattern matches no files: `html/index.html`", "html/index.html"),
 	}, {
 		name:          "Create fails",
-		embeddedFiles: fstest.MapFS{ "index.html": &fstest.MapFile{} },
+		embeddedFiles: fstest.MapFS{ "html/index.html": &fstest.MapFile{} },
 		createFails:   true,
 		wantErr:       fmt.Errorf("cannot create %q: Create failed", "some/path/index.html"),
 	}}
@@ -191,7 +191,7 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 				repoURL:       tt.repoURL,
 				embeddedFiles: tt.embeddedFiles,
 			}
-			gotErr := repGen.writeIndexHTMLFile("index.html", "foo")
+			gotErr := repGen.writeIndexHTMLFile("foo")
 			if tt.wantErr == nil && gotErr != nil {
 				t.Fatalf("unexpected error: %v", gotErr)
 			}
