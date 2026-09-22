@@ -67,23 +67,20 @@ func (tb *treeBuilder) buildTree(ctx context.Context, progressOutput io.Writer) 
 	prog := progress.New(ctx, 0, progressOutput)
 	defer prog.Close()
 
-	// TODO(jbunds): calculate aggregate coverage percentage purely from results
-	results, totStatements, totCovered, err := tb.scanEntries(ctx, prog, modDomain, entries)
+	results, err := tb.scanEntries(ctx, prog, modDomain, entries)
 	if err != nil { return "", err }
 
-	return buildTreeHTML(modDomain, results, totStatements, totCovered), nil
+	return buildTreeHTML(modDomain, results), nil
 }
 
 // scanEntries processes each entry in a directory, collecting the resulting
 // tree nodes and aggregating their statement and coverage counts.
-func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modDomain string, entries []fs.DirEntry) ([]*entryResult, uint64, uint64, error) {
-	if err := ctx.Err(); err != nil { return nil, 0, 0, err }
+func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modDomain string, entries []fs.DirEntry) ([]*entryResult, error ) {
+	if err := ctx.Err(); err != nil { return nil, err }
 
-	if len(entries) < 1 { return nil, 0, 0, nil }
+	if len(entries) < 1 { return nil, nil }
 
 	results := make([]*entryResult, len(entries))
-
-	var totalStatements, totalCovered atomic.Uint64
 	budgets := splitBudget(prog.InitialBudget(), len(entries))
 
 	group, gCtx := errgroup.WithContext(ctx)
@@ -102,17 +99,15 @@ func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress,
 			res, err := tb.processEntry(gCtx, st)
 			if err != nil { return err }
 			results[i] = res
-			totalStatements.Add(res.total)
-			totalCovered.Add(res.covered)
 			return nil
 		})
 	}
 
 	if err := group.Wait(); err != nil {
-		return nil, 0, 0, err
+		return nil, err
 	}
 
-	return results, totalStatements.Load(), totalCovered.Load(), nil
+	return results, nil
 }
 
 // processEntry recursively builds ordered HTML tree nodes and aggregates
@@ -175,6 +170,14 @@ func (tb *treeBuilder) processDir(ctx context.Context, st *scanState, pkgPath, s
 		st.prog.Report(st.budget, pkgPath)
 	}
 
+	// TODO(jbunds): change buildSubDirHTML() so it mutates res.html in place
+	//
+	//               the final three lines of this method then become:
+	//
+	//   res := &entryResult{html: subDirSB.String(), covered: dirCovered.Load(), total: dirStatements.Load()}
+	//   hb.buildSubDirHTML(res)
+	//   return res, nil
+
 	hb   := &htmlBuilder{indent: st.indent, itemID: itemID, subDir: srcBasename}
 	html := hb.buildSubDirHTML(subDirSB.String(), dirCovered.Load(), dirStatements.Load())
 
@@ -207,8 +210,13 @@ func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (
 
 // buildTreeHTML wraps the top-level entry results in the outermost <ul>, with
 // the module name as the root label and the aggregate coverage percentage.
-func buildTreeHTML(modDomain string, results []*entryResult, totalStatements, totalCovered uint64) string {
-	// TODO(jbunds): calculate aggregate coverage percentage purely via the results argument
+func buildTreeHTML(modDomain string, results []*entryResult) string {
+	var totalStatements, totalCovered uint64
+	for _, res := range results {
+		totalStatements += res.total
+		totalCovered    += res.covered
+	}
+
 	aggregatePercent := "0.0"
 	if totalStatements > 0 {
 		aggregatePercent = strconv.FormatFloat(
@@ -243,6 +251,13 @@ func buildTreeHTML(modDomain string, results []*entryResult, totalStatements, to
 // buildSubDirHTML wraps pre-rendered child nodes in a <li> tree-node for
 // a subdirectory, with its name and aggregated coverage percentage.
 func (hb *htmlBuilder) buildSubDirHTML(subDirHTML string, dirCovered, dirStatements uint64) string {
+	// TODO(jbunds): change signature to buildSubDirHTML(res *entryResult) { ... } and mutate res.html in place:
+	//
+	//               s/subDirHTML/res.html/g
+	//               s/dirStatements/res.total/g
+	//               s/dirCovered/res.covered/g
+	//
+	//               res.html = sb.String()
 	if subDirHTML == "" { return "" }
 
 	percent := 0.0
@@ -251,6 +266,7 @@ func (hb *htmlBuilder) buildSubDirHTML(subDirHTML string, dirCovered, dirStateme
 	}
 
 	indent := strings.Repeat("  ", hb.indent)
+
 	var sb strings.Builder
 	sb.WriteString(indent)
 	sb.WriteString("<li>\n")

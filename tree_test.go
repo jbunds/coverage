@@ -315,14 +315,14 @@ func TestBuildTreeHTML(t *testing.T) {
 	tests := []struct{
 		name         string
 		entryResults []*entryResult
-		total        uint64
-		covered      uint64
 		wantLines    []string
 	}{{
 		name:         "foo",
-		entryResults: []*entryResult{{html: "bar\n",}},
-		covered: 3,
-		total:   5,
+		entryResults: []*entryResult{{
+			html: "bar\n",
+			covered: 3,
+			total:   5,
+		}},
 		wantLines: []string{
 			`<ul class="tree">`,
 			`  <li>`,
@@ -341,7 +341,7 @@ func TestBuildTreeHTML(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got      := buildTreeHTML("foo", tt.entryResults, tt.total, tt.covered)
+			got      := buildTreeHTML("foo", tt.entryResults)
 			gotLines := strings.Split(got, "\n")
 			var rep reporter
 			if !cmp.Equal(tt.wantLines, gotLines, cmp.Reporter(&rep)) {

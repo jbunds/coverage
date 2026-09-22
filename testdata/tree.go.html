@@ -76,23 +76,20 @@
 <div class="line"><span class="hit">	prog := progress.New(ctx, 0, progressOutput)</span></div>
 <div class="line"><span class="hit">	defer prog.Close()</span></div>
 <div class="line"></div>
-<div class="line">	// TODO(jbunds): calculate aggregate coverage percentage purely from results</div>
-<div class="line"><span class="hit">	results, totStatements, totCovered, err := tb.scanEntries(ctx, prog, modDomain, entries)</span></div>
+<div class="line"><span class="hit">	results, err := tb.scanEntries(ctx, prog, modDomain, entries)</span></div>
 <div class="line"><span class="hit">	if err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	return buildTreeHTML(modDomain, results, totStatements, totCovered), nil</span></div>
+<div class="line"><span class="hit">	return buildTreeHTML(modDomain, results), nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// scanEntries processes each entry in a directory, collecting the resulting</div>
 <div class="line">// tree nodes and aggregating their statement and coverage counts.</div>
-<div class="line">func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modDomain string, entries []fs.DirEntry) ([]*entryResult, uint64, uint64, error<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return nil, 0, 0, err</span><span class="miss"> }</span></div>
+<div class="line">func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modDomain string, entries []fs.DirEntry) ([]*entryResult, error<span class="hit"> ) {</span></div>
+<div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return nil, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	if len(entries) &lt; 1</span><span class="miss"> { return nil, 0, 0, nil</span><span class="miss"> }</span></div>
+<div class="line"><span class="hit">	if len(entries) &lt; 1</span><span class="miss"> { return nil, nil</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	results := make([]*entryResult, len(entries))</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	var totalStatements, totalCovered atomic.Uint64</span></div>
 <div class="line"><span class="hit">	budgets := splitBudget(prog.InitialBudget(), len(entries))</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	group, gCtx := errgroup.WithContext(ctx)</span></div>
@@ -111,17 +108,15 @@
 <div class="line"><span class="hit">			res, err := tb.processEntry(gCtx, st)</span></div>
 <div class="line"><span class="hit">			if err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
 <div class="line"><span class="hit">			results[i] = res</span></div>
-<div class="line"><span class="hit">			totalStatements.Add(res.total)</span></div>
-<div class="line"><span class="hit">			totalCovered.Add(res.covered)</span></div>
 <div class="line"><span class="hit">			return nil</span></div>
 <div class="line">		})</div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if err := group.Wait(); err != nil</span><span class="miss"> {</span></div>
-<div class="line"><span class="miss">		return nil, 0, 0, err</span></div>
+<div class="line"><span class="miss">		return nil, err</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	return results, totalStatements.Load(), totalCovered.Load(), nil</span></div>
+<div class="line"><span class="hit">	return results, nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// processEntry recursively builds ordered HTML tree nodes and aggregates</div>
@@ -184,6 +179,14 @@
 <div class="line"><span class="hit">		st.prog.Report(st.budget, pkgPath)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
+<div class="line">	// TODO(jbunds): change buildSubDirHTML() so it mutates res.html in place</div>
+<div class="line">	//</div>
+<div class="line">	//               the final three lines of this method then become:</div>
+<div class="line">	//</div>
+<div class="line">	//   res := &amp;entryResult{html: subDirSB.String(), covered: dirCovered.Load(), total: dirStatements.Load()}</div>
+<div class="line">	//   hb.buildSubDirHTML(res)</div>
+<div class="line">	//   return res, nil</div>
+<div class="line"></div>
 <div class="line"><span class="hit">	hb   := &amp;htmlBuilder{indent: st.indent, itemID: itemID, subDir: srcBasename}</span></div>
 <div class="line"><span class="hit">	html := hb.buildSubDirHTML(subDirSB.String(), dirCovered.Load(), dirStatements.Load())</span></div>
 <div class="line"></div>
@@ -216,8 +219,13 @@
 <div class="line"></div>
 <div class="line">// buildTreeHTML wraps the top-level entry results in the outermost &lt;ul&gt;, with</div>
 <div class="line">// the module name as the root label and the aggregate coverage percentage.</div>
-<div class="line">func buildTreeHTML(modDomain string, results []*entryResult, totalStatements, totalCovered uint64) string {</div>
-<div class="line">	// TODO(jbunds): calculate aggregate coverage percentage purely via the results argument</div>
+<div class="line">func buildTreeHTML(modDomain string, results []*entryResult) string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	var totalStatements, totalCovered uint64</span></div>
+<div class="line"><span class="hit">	for _, res := range results {</span></div>
+<div class="line"><span class="hit">		totalStatements += res.total</span></div>
+<div class="line"><span class="hit">		totalCovered    += res.covered</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
 <div class="line"><span class="hit">	aggregatePercent := &#34;0.0&#34;</span></div>
 <div class="line"><span class="hit">	if totalStatements &gt; 0 {</span></div>
 <div class="line"><span class="hit">		aggregatePercent = strconv.FormatFloat(</span></div>
@@ -251,7 +259,14 @@
 <div class="line"></div>
 <div class="line">// buildSubDirHTML wraps pre-rendered child nodes in a &lt;li&gt; tree-node for</div>
 <div class="line">// a subdirectory, with its name and aggregated coverage percentage.</div>
-<div class="line">func (hb *htmlBuilder) buildSubDirHTML(subDirHTML string, dirCovered, dirStatements uint64) string<span class="hit"> {</span></div>
+<div class="line">func (hb *htmlBuilder) buildSubDirHTML(subDirHTML string, dirCovered, dirStatements uint64) string {</div>
+<div class="line">	// TODO(jbunds): change signature to buildSubDirHTML(res *entryResult) { ... } and mutate res.html in place:</div>
+<div class="line">	//</div>
+<div class="line">	//               s/subDirHTML/res.html/g</div>
+<div class="line">	//               s/dirStatements/res.total/g</div>
+<div class="line">	//               s/dirCovered/res.covered/g</div>
+<div class="line">	//</div>
+<div class="line">	//               res.html = sb.String()</div>
 <div class="line"><span class="hit">	if subDirHTML == &#34;&#34; { return &#34;&#34;</span><span class="hit"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	percent := 0.0</span></div>
@@ -260,6 +275,7 @@
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	indent := strings.Repeat(&#34;  &#34;, hb.indent)</span></div>
+<div class="line"></div>
 <div class="line"><span class="hit">	var sb strings.Builder</span></div>
 <div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
 <div class="line"><span class="hit">	sb.WriteString(&#34;&lt;li&gt;\n&#34;)</span></div>
