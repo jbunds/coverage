@@ -76,9 +76,12 @@ coverage usage:
     	path to the Go test coverage profile file
   -gomod string
     	path to the root go.mod file
-  -n	suppress opening the browser
+  -n	suppress opening the browser (overrides -s)
+  -order value
+    	per-file coverage stdout rows sort order
   -path string
     	path where HTML files will be written
+  -s	serve the generated HTML via a Python HTTP server
 ```
 
 ---
