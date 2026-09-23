@@ -24,16 +24,16 @@ const ( // must cohere with `allowedSortOrders` in flags.go
 	// highest sorts file paths by coverage (highest to lowest).
 	highest
 
-	// alpha sorts file paths alphanumerically.
+	// alpha sorts file paths lexicographically.
 	alpha
 )
 
-// sortAlpha sorts file paths alphanumerically.
+// sortAlpha sorts file paths lexicographically.
 func (rg *reportGenerator) sortAlpha() []string {
 	return slices.SortedFunc(maps.Keys(rg.cov), cmp.Compare)
 }
 
-// sortByLowCov first sorts file paths by coverage (lowest first) and then alphanumerically.
+// sortByLowCov first sorts file paths by coverage (lowest first) and then lexicographically.
 func (rg *reportGenerator) sortByLowCov() []string {
 	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {
 		aCovered, bCovered := rg.cov[a].covered, rg.cov[b].covered
@@ -46,7 +46,7 @@ func (rg *reportGenerator) sortByLowCov() []string {
 	})
 }
 
-// sortByHighCov first sorts file paths by coverage (highest first) and then alphanumerically.
+// sortByHighCov first sorts file paths by coverage (highest first) and then lexicographically.
 func (rg *reportGenerator) sortByHighCov() []string {
 	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {
 		aCovered, bCovered := rg.cov[a].covered, rg.cov[b].covered
@@ -59,7 +59,7 @@ func (rg *reportGenerator) sortByHighCov() []string {
 	})
 }
 
-// sortByShortPath first sorts file paths by path depth (deepest first) and then alphanumerically.
+// sortByShortPath first sorts file paths by path depth (deepest first) and then lexicographically.
 func (rg *reportGenerator) sortByShortPath() []string {
 	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {
 		depthA, depthB := strings.Count(a, "/"), strings.Count(b, "/")
@@ -68,7 +68,7 @@ func (rg *reportGenerator) sortByShortPath() []string {
 	})
 }
 
-// sortByLongPath first sorts file paths by path depth (deepest first) and then alphanumerically.
+// sortByLongPath first sorts file paths by path depth (deepest first) and then lexicographically.
 func (rg *reportGenerator) sortByLongPath() []string {
 	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {
 		depthA, depthB := strings.Count(a, "/"), strings.Count(b, "/")

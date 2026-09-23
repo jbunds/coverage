@@ -82,7 +82,7 @@ func TestPrintCoverage(t *testing.T) {
 			"————————————————",
 			"Total     67.65%" + "\n"}, "\n"),
 	}, {
-		name:            "sort alphanumerically",
+		name:            "sort lexicographically",
 		order:           alpha,
 		cov:             cov,
 		totalCovered:    totalCovered,

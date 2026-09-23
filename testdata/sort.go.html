@@ -33,16 +33,16 @@
 <div class="line">	// highest sorts file paths by coverage (highest to lowest).</div>
 <div class="line">	highest</div>
 <div class="line"></div>
-<div class="line">	// alpha sorts file paths alphanumerically.</div>
+<div class="line">	// alpha sorts file paths lexicographically.</div>
 <div class="line">	alpha</div>
 <div class="line">)</div>
 <div class="line"></div>
-<div class="line">// sortAlpha sorts file paths alphanumerically.</div>
+<div class="line">// sortAlpha sorts file paths lexicographically.</div>
 <div class="line">func (rg *reportGenerator) sortAlpha() []string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), cmp.Compare)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// sortByLowCov first sorts file paths by coverage (lowest first) and then alphanumerically.</div>
+<div class="line">// sortByLowCov first sorts file paths by coverage (lowest first) and then lexicographically.</div>
 <div class="line">func (rg *reportGenerator) sortByLowCov() []string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
 <div class="line"><span class="hit">		aCovered, bCovered := rg.cov[a].covered, rg.cov[b].covered</span></div>
@@ -55,7 +55,7 @@
 <div class="line">	})</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// sortByHighCov first sorts file paths by coverage (highest first) and then alphanumerically.</div>
+<div class="line">// sortByHighCov first sorts file paths by coverage (highest first) and then lexicographically.</div>
 <div class="line">func (rg *reportGenerator) sortByHighCov() []string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
 <div class="line"><span class="hit">		aCovered, bCovered := rg.cov[a].covered, rg.cov[b].covered</span></div>
@@ -68,7 +68,7 @@
 <div class="line">	})</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// sortByShortPath first sorts file paths by path depth (deepest first) and then alphanumerically.</div>
+<div class="line">// sortByShortPath first sorts file paths by path depth (deepest first) and then lexicographically.</div>
 <div class="line">func (rg *reportGenerator) sortByShortPath() []string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
 <div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
@@ -77,7 +77,7 @@
 <div class="line">	})</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// sortByLongPath first sorts file paths by path depth (deepest first) and then alphanumerically.</div>
+<div class="line">// sortByLongPath first sorts file paths by path depth (deepest first) and then lexicographically.</div>
 <div class="line">func (rg *reportGenerator) sortByLongPath() []string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
 <div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
