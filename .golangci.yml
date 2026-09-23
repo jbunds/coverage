@@ -116,3 +116,6 @@ linters:
             - testing
             - github.com/google/go-cmp/cmp
             - golang.org/x/tools/cover
+  exclusions:
+    paths:
+      - tools/loctrace/
