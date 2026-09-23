@@ -36,10 +36,10 @@
 <div class="line">	// highest sorts file paths by coverage (highest to lowest).</div>
 <div class="line">	highest</div>
 <div class="line"></div>
-<div class="line">	// shortest sorts file paths by path length (shortest to longest)</div>
+<div class="line">	// shortest sorts file paths by path length (shortest to longest).</div>
 <div class="line">	shortest</div>
 <div class="line"></div>
-<div class="line">	// longest sorts file paths by path length (longest to shortest)</div>
+<div class="line">	// longest sorts file paths by path length (longest to shortest).</div>
 <div class="line">	longest</div>
 <div class="line">)</div>
 <div class="line"></div>
@@ -49,20 +49,20 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// sortByShallowPath first sorts file paths by path depth (shallowest first) and then lexicographically.</div>
-<div class="line">func (rg *reportGenerator) sortByShallowPath() []string<span class="miss"> {</span></div>
-<div class="line"><span class="miss">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="miss">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
-<div class="line"><span class="miss">		if depthA != depthB { return cmp.Compare(depthA, depthB</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">		return strings.Compare(a, b</span><span class="miss">)</span></div>
+<div class="line">func (rg *reportGenerator) sortByShallowPath() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
+<div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthA, depthB</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
 <div class="line">	})</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// sortByDeepPath first sorts file paths by path depth (deepest first) and then lexicographically.</div>
-<div class="line">func (rg *reportGenerator) sortByDeepPath() []string<span class="miss"> {</span></div>
-<div class="line"><span class="miss">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="miss">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
-<div class="line"><span class="miss">		if depthA != depthB { return cmp.Compare(depthB, depthA</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">		return strings.Compare(a, b</span><span class="miss">)</span></div>
+<div class="line">func (rg *reportGenerator) sortByDeepPath() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
+<div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthB, depthA</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
 <div class="line">	})</div>
 <div class="line">}</div>
 <div class="line"></div>
@@ -115,10 +115,10 @@
 <div class="line"><span class="hit">	switch o</span> {</div>
 <div class="line">	case lex<span class="hit">:</span></div>
 <div class="line"><span class="hit">		rg.sort = rg.sortLex</span></div>
-<div class="line">	case shallowest<span class="miss">:</span></div>
-<div class="line"><span class="miss">		rg.sort = rg.sortByShallowPath</span></div>
-<div class="line">	case deepest<span class="miss">:</span></div>
-<div class="line"><span class="miss">		rg.sort = rg.sortByDeepPath</span></div>
+<div class="line">	case shallowest<span class="hit">:</span></div>
+<div class="line"><span class="hit">		rg.sort = rg.sortByShallowPath</span></div>
+<div class="line">	case deepest<span class="hit">:</span></div>
+<div class="line"><span class="hit">		rg.sort = rg.sortByDeepPath</span></div>
 <div class="line">	case lowest<span class="hit">:</span></div>
 <div class="line"><span class="hit">		rg.sort = rg.sortByLowCov</span></div>
 <div class="line">	case highest<span class="hit">:</span></div>
