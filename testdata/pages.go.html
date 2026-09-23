@@ -118,6 +118,8 @@
 <div class="line"></div>
 <div class="line">// createDirs creates all required output directories concurrently, bounded by NumCPU.</div>
 <div class="line">func (rg *reportGenerator) createDirs(ctx context.Context, dirs map[string]struct{}, progressOutput io.Writer) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	if !rg.write</span><span class="miss"> { return nil</span><span class="miss"> }</span></div>
+<div class="line"></div>
 <div class="line"><span class="hit">	prog := progress.New(ctx, uint64(len(dirs)), progressOutput)</span></div>
 <div class="line"><span class="hit">	defer prog.Close()</span></div>
 <div class="line"></div>
@@ -171,8 +173,10 @@
 <div class="line"><span class="hit">	if err := rg.buildCovHTML(ctx, ew, unit.profile, unit.profile.FileName); err != nil {</span></div>
 <div class="line"><span class="hit">		return fmt.Errorf(&#34;cannot build HTML for %q: %w&#34;, unit.profile.FileName, err)</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="hit">	if err := rg.fsys.WriteFile(unit.outPath, buf.Bytes(), 0600); err != nil {</span></div>
-<div class="line"><span class="hit">		return fmt.Errorf(&#34;cannot write HTML file for %q: %w&#34;, unit.outPath, err)</span></div>
+<div class="line"><span class="hit">	if rg.write {</span></div>
+<div class="line"><span class="hit">		if err := rg.fsys.WriteFile(unit.outPath, buf.Bytes(), 0600); err != nil {</span></div>
+<div class="line"><span class="hit">			return fmt.Errorf(&#34;cannot write HTML file for %q: %w&#34;, unit.outPath, err)</span></div>
+<div class="line">		}</div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	prog.Report(float64(fileStatements), unit.profile.FileName)</span></div>

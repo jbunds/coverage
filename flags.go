@@ -9,7 +9,14 @@ import (
 )
 
 // flags parses command line flags.
-func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, noBrowser, httpServer bool, err error) {
+func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, noBrowser, httpServer bool, sortOrder sortOrder, err error) {
+	allowedSortOrders := []string{ // must cohere with the `sortOrder` enum in sort.go
+		"alpha",
+		"lowest",
+		"highest",
+		"longest",
+		"shortest",
+	}
 	// tests may call fs.SetOutput(); it is not called here
 	fs.Usage = func() {
 		fmt.Fprintf(fs.Output(), "%s usage:\n\n", filepath.Base(fs.Name()))
@@ -19,22 +26,43 @@ func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, n
 	fs.StringVar(&goMod,        "gomod",        "",    "path to the root go.mod file")
 	fs.StringVar(&coverProfile, "coverprofile", "",    "path to the Go test coverage profile file")
 	fs.StringVar(&path,         "path",         "",    "path where HTML files will be written")
-	fs.BoolVar(  &noBrowser,    "n",            false, "suppress opening the browser (overrides -s)")
-	fs.BoolVar(  &httpServer,   "s",            false, "launch a Python HTTP server")
+	fs.BoolVar  (&noBrowser,    "n",            false, "suppress opening the browser (overrides -s)")
+	fs.BoolVar  (&httpServer,   "s",            false, "serve the generated HTML via a Python HTTP server")
+	fs.Func     (               "order",               "per-file coverage stdout rows sort order", func(val string) error {
+		switch val {
+		case "alpha":
+			sortOrder = alpha
+			return nil
+		case "lowest":
+			sortOrder = lowest
+			return nil
+		case "highest":
+			sortOrder = highest
+			return nil
+		case "longest":
+			sortOrder = longest
+			return nil
+		case "shortest":
+			sortOrder = shortest
+			return nil
+		default:
+			return fmt.Errorf("invalid sort order specified\nmust be one of (%s)", strings.Join(allowedSortOrders, ", "))
+		}
+	})
 	if err := fs.Parse(args); err != nil {
-		return "", "", "", false, false, err
+		return "", "", "", false, false, shortest, err
 	}
 	if goMod == "" {
 		fs.Usage()
-		return "", "", "", false, false, errors.New("no value specified for -gomod")
+		return "", "", "", false, false, shortest, errors.New("no value specified for -gomod")
 	}
 	if coverProfile == "" {
 		fs.Usage()
-		return "", "", "", false, false, errors.New("no value specified for -coverprofile")
+		return "", "", "", false, false, shortest, errors.New("no value specified for -coverprofile")
 	}
 	if path == "" {
 		fs.Usage()
-		return "", "", "", false, false, errors.New("no value specified for -path")
+		return "", "", "", false, false, shortest, errors.New("no value specified for -path")
 	}
 	if len(fs.Args()) > 0 {
 		fmt.Fprintf(fs.Output(), "ignored arguments: %s\n", strings.Join(fs.Args(), ", "))

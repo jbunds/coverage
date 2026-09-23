@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -60,6 +61,8 @@ type reportGenerator struct {
 	iconFilename     string              // name of the icon file included by index.html and generated source HTML files
 	styleCSSFilename string              // name of the CSS file included by index.html and generated source HTML files
 	childJSFilename  string              // name of the JS file included by generated source HTML files that handles toggling the theme and line numbers
+	sort             func() []string     // returns file paths in the order they are printed to stdout
+	write            bool                // true when static and generated files should be written to disk
 }
 
 func main() {
@@ -68,17 +71,21 @@ func main() {
 
 func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(),
-		os.Interrupt,    // ctrl+c
+		syscall.SIGINT,  // ctrl+c
 		syscall.SIGTERM, // standard kill signal
 		syscall.SIGHUP,  // terminal closed, SSH disconnection, etc
 	)
 	defer stop()
 
+	signal.Notify(make(chan os.Signal, 1), syscall.SIGPIPE) // prevent SIGPIPE from killing the process; writes return EPIPE (handled below)
+
 	goModFile,
 		profilePath,
 		outDir,
 		noBrowser,
-		httpServer, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))
+		httpServer,
+		sortOrder,
+		err := flags(flag.CommandLine, filterArgs(os.Args[1:]))
 	if err != nil { return fatal(1, "cannot parse flags: %v\n", err) }
 
 	profiles, err := cover.ParseProfiles(profilePath) // TODO(jbunds): (maybe?) add an adapter to handle both legacy textfmt and binary coverage profiles
@@ -87,7 +94,7 @@ func run() int {
 	fmt.Fprintf(os.Stderr, "processing %d source files...", len(profiles))
 	if !isTerm(os.Stderr) { fmt.Println() } // nolint:forbidigo
 
-	repGen, err := newReportGenerator(goModFile, profilePath, profiles, outDir)
+	repGen, err := newReportGenerator(goModFile, profilePath, profiles, outDir, sortOrder)
 	if err != nil { return fatal(3, "cannot instantiate report generator: %v\n", err) }
 	defer repGen.outRoot.Close()
 
@@ -103,11 +110,18 @@ func run() int {
 		cov:     repGen.cov,
 	}
 
-	var treeHTML string
-	if treeHTML, err = tb.buildTree(ctx, os.Stderr);          err != nil { return fatal( 9, "cannot build tree HTML: %v\n",    err) }
-	if err := repGen.writeIndexHTMLFile(treeHTML);            err != nil { return fatal(10, "cannot write index.html: %v\n",   err) }
-	if err := repGen.writeStaticFiles();                      err != nil { return fatal(11, "cannot write static files: %v\n", err) }
-	if err := repGen.printCoverage(os.Stdout);                err != nil { return fatal(12, "cannot print coverage: %v\n",     err) }
+	if repGen.write {
+		var treeHTML string
+		if treeHTML, err = tb.buildTree(ctx, os.Stderr); err != nil { return fatal( 9, "cannot build tree HTML: %v\n",    err) }
+		if err := repGen.writeIndexHTMLFile(treeHTML);   err != nil { return fatal(10, "cannot write index.html: %v\n",   err) }
+		if err := repGen.writeStaticFiles();             err != nil { return fatal(11, "cannot write static files: %v\n", err) }
+	}
+
+	if err := repGen.printCoverage(os.Stdout); err != nil {
+		if errors.Is(err, syscall.EPIPE) { return 0 } // downstream pipe closed; not an error
+		return fatal(12, "cannot print coverage: %v\n", err)
+	}
+
 	if err := repGen.maybeOpenBrowser(noBrowser, httpServer); err != nil { return fatal(13, "cannot open browser: %v\n",       err) }
 
 	return 0
@@ -119,7 +133,7 @@ func fatal(code int, format string, args ...any) int {
 	return code
 }
 
-func newReportGenerator(goModFile, profilePath string, profiles []*cover.Profile, outDir string) (*reportGenerator, error) {
+func newReportGenerator(goModFile, profilePath string, profiles []*cover.Profile, outDir string, sortOrder sortOrder) (*reportGenerator, error) {
 	repGen := &reportGenerator{
 		fsys:             &localFS{},
 		modFile:          filepath.Clean(goModFile),
@@ -140,18 +154,25 @@ func newReportGenerator(goModFile, profilePath string, profiles []*cover.Profile
 		},
 	}
 
-	info, err := repGen.fsys.Stat(outDir)
-	if err != nil || !info.IsDir() {
-		if err := repGen.fsys.MkdirAll(outDir, 0700); err != nil {
-			return nil, fmt.Errorf("cannot create directory %q: %w", outDir, err)
-		}
-	}
+	sortOrder.bind(repGen)
 
-	root, err := os.OpenRoot(outDir)
-	if err != nil {
-		return nil, fmt.Errorf("cannot open %q: %v", outDir, err)
+	repGen.write   = outDir != "/dev/null" && outDir != "nul"
+	repGen.outRoot = nullRoot{}
+
+	if repGen.write {
+		info, err := repGen.fsys.Stat(outDir)
+		if err != nil || !info.IsDir() {
+			if err := repGen.fsys.MkdirAll(outDir, 0700); err != nil {
+				return nil, fmt.Errorf("cannot create directory %q: %w", outDir, err)
+			}
+		}
+
+		root, err := os.OpenRoot(outDir)
+		if err != nil {
+			return nil, fmt.Errorf("cannot open %q: %v", outDir, err)
+		}
+		repGen.outRoot = root
 	}
-	repGen.outRoot = root
 
 	return repGen, nil
 }

@@ -20,6 +20,7 @@ func TestIntegrationTest(t *testing.T) {
 	tmpDir, err   := os.OpenRoot(t.TempDir());                if err != nil { t.Fatal(err) }
 	profiles, err := cover.ParseProfiles("testdata/cov.out"); if err != nil { t.Fatal(err) }
 	rg            := &reportGenerator{
+		write:            true,
 		fsys:             &localFS{},
 		outRoot:          tmpDir,
 		profiles:         profiles,

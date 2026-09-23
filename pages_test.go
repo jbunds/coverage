@@ -125,6 +125,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				writeFileFails: tt.writeFileFails,
 			}
 			repGen := &reportGenerator{
+				write:            true,
 				fsys:             mfs,
 				outRoot:          &mockRoot{name: "some/path"},
 				profiles:         tt.profiles,

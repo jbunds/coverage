@@ -25,6 +25,7 @@
 <div class="line">	&#34;bytes&#34;</div>
 <div class="line">	&#34;context&#34;</div>
 <div class="line">	&#34;embed&#34;</div>
+<div class="line">	&#34;errors&#34;</div>
 <div class="line">	&#34;flag&#34;</div>
 <div class="line">	&#34;fmt&#34;</div>
 <div class="line">	&#34;io/fs&#34;</div>
@@ -69,6 +70,8 @@
 <div class="line">	iconFilename     string              // name of the icon file included by index.html and generated source HTML files</div>
 <div class="line">	styleCSSFilename string              // name of the CSS file included by index.html and generated source HTML files</div>
 <div class="line">	childJSFilename  string              // name of the JS file included by generated source HTML files that handles toggling the theme and line numbers</div>
+<div class="line">	sort             func() []string     // returns file paths in the order they are printed to stdout</div>
+<div class="line">	write            bool                // true when static and generated files should be written to disk</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func main<span class="miss">() {</span></div>
@@ -77,17 +80,21 @@
 <div class="line"></div>
 <div class="line">func run() int<span class="miss"> {</span></div>
 <div class="line"><span class="miss">	ctx, stop := signal.NotifyContext(context.Background(),</span></div>
-<div class="line"><span class="miss">		os.Interrupt,    // ctrl+c</span></div>
+<div class="line"><span class="miss">		syscall.SIGINT,  // ctrl+c</span></div>
 <div class="line"><span class="miss">		syscall.SIGTERM, // standard kill signal</span></div>
 <div class="line"><span class="miss">		syscall.SIGHUP,  // terminal closed, SSH disconnection, etc</span></div>
 <div class="line"><span class="miss">	)</span></div>
 <div class="line"><span class="miss">	defer stop()</span></div>
 <div class="line"></div>
+<div class="line"><span class="miss">	signal.Notify(make(chan os.Signal, 1), syscall.SIGPIPE) // prevent SIGPIPE from killing the process; writes return EPIPE (handled below)</span></div>
+<div class="line"></div>
 <div class="line"><span class="miss">	goModFile,</span></div>
 <div class="line"><span class="miss">		profilePath,</span></div>
 <div class="line"><span class="miss">		outDir,</span></div>
 <div class="line"><span class="miss">		noBrowser,</span></div>
-<div class="line"><span class="miss">		httpServer, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))</span></div>
+<div class="line"><span class="miss">		httpServer,</span></div>
+<div class="line"><span class="miss">		sortOrder,</span></div>
+<div class="line"><span class="miss">		err := flags(flag.CommandLine, filterArgs(os.Args[1:]))</span></div>
 <div class="line"><span class="miss">	if err != nil { return fatal(1, &#34;cannot parse flags: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	profiles, err := cover.ParseProfiles(profilePath) // TODO(jbunds): (maybe?) add an adapter to handle both legacy textfmt and binary coverage profiles</span></div>
@@ -96,7 +103,7 @@
 <div class="line"><span class="miss">	fmt.Fprintf(os.Stderr, &#34;processing %d source files...&#34;, len(profiles))</span></div>
 <div class="line"><span class="miss">	if !isTerm(os.Stderr) { fmt.Println</span>() } // nolint:forbidigo</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	repGen, err := newReportGenerator(goModFile, profilePath, profiles, outDir)</span></div>
+<div class="line"><span class="miss">	repGen, err := newReportGenerator(goModFile, profilePath, profiles, outDir, sortOrder)</span></div>
 <div class="line"><span class="miss">	if err != nil { return fatal(3, &#34;cannot instantiate report generator: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"><span class="miss">	defer repGen.outRoot.Close()</span></div>
 <div class="line"></div>
@@ -112,11 +119,18 @@
 <div class="line"><span class="miss">		cov:     repGen.cov</span><span class="miss">,</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	var treeHTML string</span></div>
-<div class="line"><span class="miss">	if treeHTML, err = tb.buildTree(ctx, os.Stderr);          err != nil { return fatal( 9, &#34;cannot build tree HTML: %v\n&#34;,    err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := repGen.writeIndexHTMLFile(treeHTML);            err != nil { return fatal(10, &#34;cannot write index.html: %v\n&#34;,   err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := repGen.writeStaticFiles();                      err != nil { return fatal(11, &#34;cannot write static files: %v\n&#34;, err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := repGen.printCoverage(os.Stdout);                err != nil { return fatal(12, &#34;cannot print coverage: %v\n&#34;,     err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if repGen.write {</span></div>
+<div class="line"><span class="miss">		var treeHTML string</span></div>
+<div class="line"><span class="miss">		if treeHTML, err = tb.buildTree(ctx, os.Stderr); err != nil { return fatal( 9, &#34;cannot build tree HTML: %v\n&#34;,    err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">		if err := repGen.writeIndexHTMLFile(treeHTML);   err != nil { return fatal(10, &#34;cannot write index.html: %v\n&#34;,   err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">		if err := repGen.writeStaticFiles();             err != nil { return fatal(11, &#34;cannot write static files: %v\n&#34;, err</span><span class="miss">) }</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">	if err := repGen.printCoverage(os.Stdout); err != nil {</span></div>
+<div class="line"><span class="miss">		if errors.Is(err, syscall.EPIPE) { return 0</span> } // downstream pipe closed; not an error</div>
+<div class="line"><span class="miss">		return fatal(12, &#34;cannot print coverage: %v\n&#34;, err</span><span class="miss">)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
 <div class="line"><span class="miss">	if err := repGen.maybeOpenBrowser(noBrowser, httpServer); err != nil { return fatal(13, &#34;cannot open browser: %v\n&#34;,       err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	return 0</span></div>
@@ -128,7 +142,7 @@
 <div class="line"><span class="miss">	return code</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">func newReportGenerator(goModFile, profilePath string, profiles []*cover.Profile, outDir string) (*reportGenerator, error<span class="miss">) {</span></div>
+<div class="line">func newReportGenerator(goModFile, profilePath string, profiles []*cover.Profile, outDir string, sortOrder sortOrder) (*reportGenerator, error<span class="miss">) {</span></div>
 <div class="line"><span class="miss">	repGen := &amp;reportGenerator{</span></div>
 <div class="line"><span class="miss">		fsys:             &amp;localFS{},</span></div>
 <div class="line"><span class="miss">		modFile:          filepath.Clean(goModFile),</span></div>
@@ -149,18 +163,25 @@
 <div class="line"><span class="miss">		},</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	info, err := repGen.fsys.Stat(outDir)</span></div>
-<div class="line"><span class="miss">	if err != nil || !info.IsDir() {</span></div>
-<div class="line"><span class="miss">		if err := repGen.fsys.MkdirAll(outDir, 0700); err != nil {</span></div>
-<div class="line"><span class="miss">			return nil, fmt.Errorf(&#34;cannot create directory %q: %w&#34;, outDir, err)</span></div>
-<div class="line">		}</div>
-<div class="line">	}</div>
+<div class="line"><span class="miss">	sortOrder.bind(repGen)</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	root, err := os.OpenRoot(outDir)</span></div>
-<div class="line"><span class="miss">	if err != nil {</span></div>
-<div class="line"><span class="miss">		return nil, fmt.Errorf(&#34;cannot open %q: %v&#34;, outDir, err)</span></div>
+<div class="line"><span class="miss">	repGen.write   = outDir != &#34;/dev/null&#34; &amp;&amp; outDir != &#34;nul&#34;</span></div>
+<div class="line"><span class="miss">	repGen.outRoot = nullRoot{}</span></div>
+<div class="line"></div>
+<div class="line"><span class="miss">	if repGen.write {</span></div>
+<div class="line"><span class="miss">		info, err := repGen.fsys.Stat(outDir)</span></div>
+<div class="line"><span class="miss">		if err != nil || !info.IsDir() {</span></div>
+<div class="line"><span class="miss">			if err := repGen.fsys.MkdirAll(outDir, 0700); err != nil {</span></div>
+<div class="line"><span class="miss">				return nil, fmt.Errorf(&#34;cannot create directory %q: %w&#34;, outDir, err)</span></div>
+<div class="line">			}</div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">		root, err := os.OpenRoot(outDir)</span></div>
+<div class="line"><span class="miss">		if err != nil {</span></div>
+<div class="line"><span class="miss">			return nil, fmt.Errorf(&#34;cannot open %q: %v&#34;, outDir, err)</span></div>
+<div class="line">		}</div>
+<div class="line"><span class="miss">		repGen.outRoot = root</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="miss">	repGen.outRoot = root</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	return repGen, nil</span></div>
 <div class="line">}</div>

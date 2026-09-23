@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon"       href="../../../favicon.ico" type="image/vnd.microsoft.icon">
+<link rel="stylesheet" href="../../../style.css">
+<title>github.com/jbunds/coverage/sort.go</title>
+</head>
+<body id="code" class="line-numbers">
+<div class="line">package main</div>
+<div class="line"></div>
+<div class="line">import (</div>
+<div class="line">	&#34;cmp&#34;</div>
+<div class="line">	&#34;maps&#34;</div>
+<div class="line">	&#34;slices&#34;</div>
+<div class="line">	&#34;strings&#34;</div>
+<div class="line">)</div>
+<div class="line"></div>
+<div class="line">// sortOrder selects the order by which per-file coverage stats are printed to the terminal.</div>
+<div class="line">type sortOrder int</div>
+<div class="line"></div>
+<div class="line">const ( // must cohere with `allowedSortOrders` in flags.go</div>
+<div class="line">	// shortest sorts rows by path depth (lowest to highest; default).</div>
+<div class="line">	shortest sortOrder = iota</div>
+<div class="line">	// longest sorts rows by path depth (highest to lowest).</div>
+<div class="line">	longest</div>
+<div class="line">	// lowest sorts rows by coverage (lowest to highest).</div>
+<div class="line">	lowest</div>
+<div class="line">	// highest sorts rows by coverage (highest to lowest).</div>
+<div class="line">	highest</div>
+<div class="line">	// alphanumerically sorts rows alphanumerically.</div>
+<div class="line">	alpha</div>
+<div class="line">)</div>
+<div class="line"></div>
+<div class="line">func (rg *reportGenerator) sortAlpha() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), cmp.Compare) // sort alphanumerically</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (rg *reportGenerator) sortByLowCov() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line"><span class="hit">		aCovered, bCovered := rg.cov[a].covered, rg.cov[b].covered</span></div>
+<div class="line"><span class="hit">		aTotal, bTotal     := rg.cov[a].total,   rg.cov[b].total</span></div>
+<div class="line"><span class="hit">		aPct, bPct         := 0.0, 0.0</span></div>
+<div class="line"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">		if aPct != bPct { return cmp.Compare(aPct, bPct</span>) } // sort by coverage (lowest first)</div>
+<div class="line"><span class="miss">		return cmp.Compare(a, b</span>)                           // sort alphanumerically</div>
+<div class="line">	})</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (rg *reportGenerator) sortByHighCov() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line"><span class="hit">		aCovered, bCovered := rg.cov[a].covered, rg.cov[b].covered</span></div>
+<div class="line"><span class="hit">		aTotal, bTotal     := rg.cov[a].total,   rg.cov[b].total</span></div>
+<div class="line"><span class="hit">		aPct, bPct         := 0.0, 0.0</span></div>
+<div class="line"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">		if aPct != bPct { return cmp.Compare(bPct, aPct</span>) } // sort by coverage (highest first)</div>
+<div class="line"><span class="miss">		return cmp.Compare(a, b</span>)                           // sort alphanumerically</div>
+<div class="line">	})</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (rg *reportGenerator) sortByShortPath() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
+<div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthA, depthB</span>) } // sort by path depth (shortest first)</div>
+<div class="line"><span class="hit">		return cmp.Compare(a, b</span>)                                   // sort alphanumerically</div>
+<div class="line">	})</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (rg *reportGenerator) sortByLongPath() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
+<div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthB, depthA</span>) } // sort by path depth (longest first)</div>
+<div class="line"><span class="hit">		return cmp.Compare(a, b</span>)                                   // sort alphanumerically</div>
+<div class="line">	})</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">func (o sortOrder) bind(rg *reportGenerator<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	switch o</span> {</div>
+<div class="line">	case shortest<span class="hit">:</span></div>
+<div class="line"><span class="hit">		rg.sort = rg.sortByShortPath</span></div>
+<div class="line">	case longest<span class="hit">:</span></div>
+<div class="line"><span class="hit">		rg.sort = rg.sortByLongPath</span></div>
+<div class="line">	case lowest<span class="hit">:</span></div>
+<div class="line"><span class="hit">		rg.sort = rg.sortByLowCov</span></div>
+<div class="line">	case highest<span class="hit">:</span></div>
+<div class="line"><span class="hit">		rg.sort = rg.sortByHighCov</span></div>
+<div class="line">	case alpha<span class="hit">:</span></div>
+<div class="line"><span class="hit">		rg.sort = rg.sortAlpha</span></div>
+<div class="line">	}</div>
+<div class="line">}</div>
+<script src="../../../child.js"></script>
+</body>
+</html>

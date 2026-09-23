@@ -18,6 +18,11 @@ type rootHandle interface {
 	Name() string
 }
 
+type nullRoot struct{}
+
+func (nullRoot) Close() error { return nil         }
+func (nullRoot) Name() string { return "/dev/null" }
+
 type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
 
 type runner interface { Run(*exec.Cmd) error }

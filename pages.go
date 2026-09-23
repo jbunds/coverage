@@ -109,6 +109,8 @@ func (rg *reportGenerator) buildWorkUnits() (units []workUnit, dirs map[string]s
 
 // createDirs creates all required output directories concurrently, bounded by NumCPU.
 func (rg *reportGenerator) createDirs(ctx context.Context, dirs map[string]struct{}, progressOutput io.Writer) error {
+	if !rg.write { return nil }
+
 	prog := progress.New(ctx, uint64(len(dirs)), progressOutput)
 	defer prog.Close()
 
@@ -162,8 +164,10 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 	if err := rg.buildCovHTML(ctx, ew, unit.profile, unit.profile.FileName); err != nil {
 		return fmt.Errorf("cannot build HTML for %q: %w", unit.profile.FileName, err)
 	}
-	if err := rg.fsys.WriteFile(unit.outPath, buf.Bytes(), 0600); err != nil {
-		return fmt.Errorf("cannot write HTML file for %q: %w", unit.outPath, err)
+	if rg.write {
+		if err := rg.fsys.WriteFile(unit.outPath, buf.Bytes(), 0600); err != nil {
+			return fmt.Errorf("cannot write HTML file for %q: %w", unit.outPath, err)
+		}
 	}
 
 	prog.Report(float64(fileStatements), unit.profile.FileName)

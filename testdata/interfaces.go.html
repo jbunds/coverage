@@ -27,6 +27,11 @@
 <div class="line">	Name() string</div>
 <div class="line">}</div>
 <div class="line"></div>
+<div class="line">type nullRoot struct{}</div>
+<div class="line"></div>
+<div class="line"><span class="miss">func (nullRoot) Close() error { return nil</span><span class="miss">         }</span></div>
+<div class="line"><span class="miss">func (nullRoot) Name() string { return &#34;/dev/null&#34;</span><span class="miss"> }</span></div>
+<div class="line"></div>
 <div class="line">type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)</div>
 <div class="line"></div>
 <div class="line">type runner interface { Run(*exec.Cmd) error }</div>

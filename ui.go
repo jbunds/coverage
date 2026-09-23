@@ -26,16 +26,6 @@ func (rg *reportGenerator) printCoverage(w io.Writer) error {
 
 	maxPathLen = max(maxPathLen, 5) // 5 == len("Total")
 
-	// TODO(jbunds): allow users to choose how to sort the rows, with default override
-	//               activated by a new -o flag that maps strings like "alpha",
-	//               "lowest" / "highest" (coverage), "shortest" / "longest" (path),
-	//               etc, to a sortOrder enum type
-	slices.SortFunc(keys, func(a, b string) int {
-		depthA, depthB := strings.Count(a, "/"), strings.Count(b, "/")
-		if depthA != depthB { return cmp.Compare(depthA, depthB) } // sort by path depth
-		return cmp.Compare(a, b)                                   // sort alphanumerically
-	})
-
 	divider := strings.Repeat("—", maxPathLen + 9) + "\n" // 9 == 2 spaces + len("100.00%")
 
 	ew := newErrorWriter(w)
@@ -44,7 +34,7 @@ func (rg *reportGenerator) printCoverage(w io.Writer) error {
 	ew.write("Coverage\n")
 	ew.write(divider)
 
-	for _, path := range keys {
+	for _, path := range rg.sort() {
 		cov     := rg.cov[path]
 		percent := 0.0
 		if cov.total > 0 {

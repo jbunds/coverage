@@ -21,6 +21,7 @@ func TestFlags(t *testing.T) {
 		wantOut          string
 		wantNoBrowser    bool
 		wantHTTPServer   bool
+		wantSortOrder    sortOrder
 		err              string // zero value means no error expected (err113)
 	}{{
 		name: "valid",
@@ -102,7 +103,12 @@ func TestFlags(t *testing.T) {
 			gotOut := new(bytes.Buffer)
 			fs     := flag.NewFlagSet(tt.name, flag.ContinueOnError)
 			fs.SetOutput(gotOut)
-			gotGoMod, gotCoverProfile, gotPath, gotNoBrowser, gotHTTPServer, err := flags(fs, tt.args)
+			gotGoMod,
+			gotCoverProfile,
+			gotPath,
+			gotNoBrowser,
+			gotHTTPServer,
+			gotSortOrder, err := flags(fs, tt.args)
 			if tt.err != "" {
 				if err == nil {
 					t.Errorf("flags(%q) did not fail", tt.name)
@@ -128,6 +134,9 @@ func TestFlags(t *testing.T) {
 			}
 			if diff := cmp.Diff(tt.wantHTTPServer, gotHTTPServer); diff != "" {
 				t.Errorf("flags(%q) httpServer mismatch (-want +got):\n%s", tt.name, diff)
+			}
+			if diff := cmp.Diff(tt.wantSortOrder, gotSortOrder); diff != "" {
+				t.Errorf("flags(%q) sortOrder mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}
@@ -168,7 +177,7 @@ func getUsage(t *testing.T) string {
 	buf := new(bytes.Buffer)
 	fs  := flag.NewFlagSet("test", flag.ContinueOnError)
 	fs.SetOutput(buf)
-	if _, _, _, _, _, err := flags(fs, []string{"-invalid"}); err == nil {
+	if _, _, _, _, _, _, err := flags(fs, []string{"-invalid"}); err == nil {
 		t.Fatal("flags() unexpectedly succeeded")
 	}
 	return strings.SplitN(buf.String(), "\n", 3)[2]

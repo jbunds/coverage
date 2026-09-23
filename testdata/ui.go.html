@@ -35,16 +35,6 @@
 <div class="line"></div>
 <div class="line"><span class="hit">	maxPathLen = max(maxPathLen, 5) // 5 == len(&#34;Total&#34;)</span></div>
 <div class="line"></div>
-<div class="line">	// TODO(jbunds): allow users to choose how to sort the rows, with default override</div>
-<div class="line">	//               activated by a new -o flag that maps strings like &#34;alpha&#34;,</div>
-<div class="line">	//               &#34;lowest&#34; / &#34;highest&#34; (coverage), &#34;shortest&#34; / &#34;longest&#34; (path),</div>
-<div class="line">	//               etc, to a sortOrder enum type</div>
-<div class="line"><span class="hit">	slices.SortFunc(keys, func(a, b string) int {</span></div>
-<div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
-<div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthA, depthB</span>) } // sort by path depth</div>
-<div class="line"><span class="hit">		return cmp.Compare(a, b</span>)                                   // sort alphanumerically</div>
-<div class="line">	})</div>
-<div class="line"></div>
 <div class="line"><span class="hit">	divider := strings.Repeat(&#34;—&#34;, maxPathLen + 9) + &#34;\n&#34; // 9 == 2 spaces + len(&#34;100.00%&#34;)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	ew := newErrorWriter(w)</span></div>
@@ -53,7 +43,7 @@
 <div class="line"><span class="hit">	ew.write(&#34;Coverage\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(divider)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	for _, path := range keys {</span></div>
+<div class="line"><span class="hit">	for _, path := range rg.sort() {</span></div>
 <div class="line"><span class="hit">		cov     := rg.cov[path]</span></div>
 <div class="line"><span class="hit">		percent := 0.0</span></div>
 <div class="line"><span class="hit">		if cov.total &gt; 0 {</span></div>
