@@ -88,7 +88,19 @@ func TestFlags(t *testing.T) {
 		wantPath:         "baz",
 		wantHTTPServer:   true,
 	}, {
-		name: "-order set",
+		name: "-order alpha",
+		args: []string{
+			"-gomod",        "foo",
+			"-coverprofile", "bar",
+			"-path",         "baz",
+			"-order",        "alpha",
+		},
+		wantGoMod:        "foo",
+		wantCoverProfile: "bar",
+		wantPath:         "baz",
+		wantSortOrder:    alpha,
+	}, {
+		name: "-order lowest",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
@@ -99,6 +111,51 @@ func TestFlags(t *testing.T) {
 		wantCoverProfile: "bar",
 		wantPath:         "baz",
 		wantSortOrder:    lowest,
+	}, {
+		name: "-order highest",
+		args: []string{
+			"-gomod",        "foo",
+			"-coverprofile", "bar",
+			"-path",         "baz",
+			"-order",        "highest",
+		},
+		wantGoMod:        "foo",
+		wantCoverProfile: "bar",
+		wantPath:         "baz",
+		wantSortOrder:    highest,
+	}, {
+		name: "-order longest",
+		args: []string{
+			"-gomod",        "foo",
+			"-coverprofile", "bar",
+			"-path",         "baz",
+			"-order",        "longest",
+		},
+		wantGoMod:        "foo",
+		wantCoverProfile: "bar",
+		wantPath:         "baz",
+		wantSortOrder:    longest,
+	}, {
+		name: "-order shortest",
+		args: []string{
+			"-gomod",        "foo",
+			"-coverprofile", "bar",
+			"-path",         "baz",
+			"-order",        "shortest",
+		},
+		wantGoMod:        "foo",
+		wantCoverProfile: "bar",
+		wantPath:         "baz",
+		wantSortOrder:    shortest,
+	}, {
+		name:    "-order invalid",
+		args:    []string{"-order", "invalid"},
+		wantOut: strings.Join([]string{
+			"invalid value \"invalid\" for flag -order: invalid sort order specified\nmust be one of (alpha, lowest, highest, longest, shortest)",
+			"-order invalid usage:",
+			usage,
+		}, "\n"),
+		err: "invalid value \"invalid\" for flag -order: invalid sort order specified\nmust be one of (alpha, lowest, highest, longest, shortest)",
 	}, {
 		name:    "invalid",
 		args:    []string{"-invalid"},

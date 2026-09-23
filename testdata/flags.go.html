@@ -39,23 +39,23 @@
 <div class="line"><span class="hit">	fs.BoolVar  (&amp;httpServer,   &#34;s&#34;,            false, &#34;serve the generated HTML via a Python HTTP server&#34;)</span></div>
 <div class="line"><span class="hit">	fs.Func     (               &#34;order&#34;,               &#34;per-file coverage stdout rows sort order&#34;, func(val string) error {</span></div>
 <div class="line"><span class="hit">		switch val</span> {</div>
-<div class="line">		case &#34;alpha&#34;<span class="miss">:</span></div>
-<div class="line"><span class="miss">			sortOrder = alpha</span></div>
-<div class="line"><span class="miss">			return nil</span></div>
+<div class="line">		case &#34;alpha&#34;<span class="hit">:</span></div>
+<div class="line"><span class="hit">			sortOrder = alpha</span></div>
+<div class="line"><span class="hit">			return nil</span></div>
 <div class="line">		case &#34;lowest&#34;<span class="hit">:</span></div>
 <div class="line"><span class="hit">			sortOrder = lowest</span></div>
 <div class="line"><span class="hit">			return nil</span></div>
-<div class="line">		case &#34;highest&#34;<span class="miss">:</span></div>
-<div class="line"><span class="miss">			sortOrder = highest</span></div>
-<div class="line"><span class="miss">			return nil</span></div>
-<div class="line">		case &#34;longest&#34;<span class="miss">:</span></div>
-<div class="line"><span class="miss">			sortOrder = longest</span></div>
-<div class="line"><span class="miss">			return nil</span></div>
-<div class="line">		case &#34;shortest&#34;<span class="miss">:</span></div>
-<div class="line"><span class="miss">			sortOrder = shortest</span></div>
-<div class="line"><span class="miss">			return nil</span></div>
-<div class="line">		default<span class="miss">:</span></div>
-<div class="line"><span class="miss">			return fmt.Errorf(&#34;invalid sort order specified\nmust be one of (%s)&#34;, strings.Join(allowedSortOrders, &#34;, &#34;</span><span class="miss">))</span></div>
+<div class="line">		case &#34;highest&#34;<span class="hit">:</span></div>
+<div class="line"><span class="hit">			sortOrder = highest</span></div>
+<div class="line"><span class="hit">			return nil</span></div>
+<div class="line">		case &#34;longest&#34;<span class="hit">:</span></div>
+<div class="line"><span class="hit">			sortOrder = longest</span></div>
+<div class="line"><span class="hit">			return nil</span></div>
+<div class="line">		case &#34;shortest&#34;<span class="hit">:</span></div>
+<div class="line"><span class="hit">			sortOrder = shortest</span></div>
+<div class="line"><span class="hit">			return nil</span></div>
+<div class="line">		default<span class="hit">:</span></div>
+<div class="line"><span class="hit">			return fmt.Errorf(&#34;invalid sort order specified\nmust be one of (%s)&#34;, strings.Join(allowedSortOrders, &#34;, &#34;</span><span class="hit">))</span></div>
 <div class="line">		}</div>
 <div class="line">	})</div>
 <div class="line"><span class="hit">	if err := fs.Parse(args); err != nil {</span></div>
