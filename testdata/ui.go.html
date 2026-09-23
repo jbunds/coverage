@@ -84,7 +84,9 @@
 <div class="line">// maybeOpenBrowser opens the generated index.html file in the</div>
 <div class="line">// default browser when stdout is a TTY and -n is not set.</div>
 <div class="line">func (rg *reportGenerator) maybeOpenBrowser(noBrowser, httpServer bool) error<span class="miss"> {</span></div>
-<div class="line"><span class="miss">	if noBrowser || !isTerm(os.Stdout) { return nil</span><span class="miss"> }</span></div>
+<div class="line"><span class="miss">	if noBrowser || !isTerm(os.Stdin) {</span></div>
+<div class="line"><span class="miss">		return nil</span></div>
+<div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="miss">	if httpServer {</span></div>
 <div class="line"><span class="miss">		return launchHTTPServer(rg.outRoot.Name())</span></div>

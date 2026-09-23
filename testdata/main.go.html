@@ -127,8 +127,9 @@
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="miss">	if err := repGen.printCoverage(os.Stdout); err != nil {</span></div>
-<div class="line"><span class="miss">		if errors.Is(err, syscall.EPIPE) { return 0</span> } // downstream pipe closed; not an error</div>
-<div class="line"><span class="miss">		return fatal(12, &#34;cannot print coverage: %v\n&#34;, err</span><span class="miss">)</span></div>
+<div class="line"><span class="miss">		if !errors.Is(err, syscall.EPIPE</span>) { // downstream pipe closed; not an error</div>
+<div class="line"><span class="miss">			return fatal(12, &#34;cannot print coverage: %v\n&#34;, err)</span></div>
+<div class="line">		}</div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="miss">	if err := repGen.maybeOpenBrowser(noBrowser, httpServer); err != nil { return fatal(13, &#34;cannot open browser: %v\n&#34;,       err</span><span class="miss">) }</span></div>

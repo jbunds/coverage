@@ -118,8 +118,9 @@ func run() int {
 	}
 
 	if err := repGen.printCoverage(os.Stdout); err != nil {
-		if errors.Is(err, syscall.EPIPE) { return 0 } // downstream pipe closed; not an error
-		return fatal(12, "cannot print coverage: %v\n", err)
+		if !errors.Is(err, syscall.EPIPE) { // downstream pipe closed; not an error
+			return fatal(12, "cannot print coverage: %v\n", err)
+		}
 	}
 
 	if err := repGen.maybeOpenBrowser(noBrowser, httpServer); err != nil { return fatal(13, "cannot open browser: %v\n",       err) }
