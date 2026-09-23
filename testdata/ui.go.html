@@ -35,8 +35,10 @@
 <div class="line"></div>
 <div class="line"><span class="hit">	maxPathLen = max(maxPathLen, 5) // 5 == len(&#34;Total&#34;)</span></div>
 <div class="line"></div>
-<div class="line">	// TODO(jbunds): allow users to chose how the rows rendered in the tree should be sorted;</div>
-<div class="line">	//               default should probably path-depth, then alphanumerically, just like here</div>
+<div class="line">	// TODO(jbunds): allow users to choose how to sort the rows, with default override</div>
+<div class="line">	//               activated by a new -o flag that maps strings like &#34;alpha&#34;,</div>
+<div class="line">	//               &#34;lowest&#34; / &#34;highest&#34; (coverage), &#34;shortest&#34; / &#34;longest&#34; (path),</div>
+<div class="line">	//               etc, to a sortOrder enum type</div>
 <div class="line"><span class="hit">	slices.SortFunc(keys, func(a, b string) int {</span></div>
 <div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
 <div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthA, depthB</span>) } // sort by path depth</div>
@@ -115,30 +117,29 @@
 <div class="line"><span class="miss">		python = &#34;python&#34;</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="miss">	pyPath, err := exec.LookPath(python)</span></div>
-<div class="line"><span class="miss">	if err != nil { return err</span><span class="miss"> }</span></div>
+<div class="line"><span class="miss">	if err != nil {</span></div>
+<div class="line"><span class="miss">		return err</span></div>
+<div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	cmd := exec.Command(pyPath, &#34;-m&#34;, &#34;http.server&#34;, &#34;-d&#34;, outDir) // #nosec G204 G702 - no shell (no injection); outDir confined to outRoot (no path escape)</span></div>
-<div class="line"></div>
-<div class="line"><span class="miss">	const port = 8000</span></div>
+<div class="line"><span class="miss">	const port = 8000 // https://docs.python.org/3/library/http.server.html#cmdoption-http.server-arg-port</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	url := fmt.Sprintf(&#34;http://localhost:%d&#34;, port)</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if runtime.GOOS == &#34;windows&#34;</span> { // fire-and-forget, no PID reporting</div>
-<div class="line"><span class="miss">		if err := new(realRunner).Start(cmd); err != nil</span> { // leaves Python HTTP server running in the background</div>
-<div class="line"><span class="miss">			return err</span></div>
+<div class="line"><span class="miss">	if runtime.GOOS != &#34;windows&#34; {</span></div>
+<div class="line"><span class="miss">		if pid, err := findPortPID(port); err == nil</span> { // macOS / Linux: check for existing process listening on port 8000</div>
+<div class="line"><span class="miss">			fmt.Fprintf(os.Stderr, &#34;process already listening on port %d (PID: %d)\n&#34;, port, pid)</span></div>
+<div class="line"><span class="miss">			return openBrowser(url) // assume the process listening on port 8000 is an HTTP server rather than launch a new one</span></div>
 <div class="line">		}</div>
-<div class="line"><span class="miss">		return openBrowser(url</span><span class="miss">)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if pid, err := findPortPID(port); err == nil</span> { // check for existing process listening on port 8000 on macOS or Linux</div>
-<div class="line"><span class="miss">		fmt.Fprintf(os.Stderr, &#34;process already listening on port %d (PID: %d)\n&#34;, port, pid)</span></div>
-<div class="line"><span class="miss">		return openBrowser(url) // assume the process listening on port 8000 is an HTTP server rather than launch a new one</span></div>
-<div class="line">	}</div>
+<div class="line"><span class="miss">	cmd := exec.Command(pyPath, &#34;-m&#34;, &#34;http.server&#34;, &#34;-d&#34;, outDir) // #nosec G204 G702 - no shell (no injection); outDir confined to outRoot (no path escape)</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if err := new(realRunner).Start(cmd); err != nil</span> { // leaves Python HTTP server running in the background</div>
+<div class="line"><span class="miss">	if err := new(realRunner).Start(cmd); err != nil</span> { // Windows: fire-and-forget, no PID reporting</div>
 <div class="line"><span class="miss">		return err</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="miss">	fmt.Fprintf(os.Stderr, &#34;HTTP server listening on port %d (PID: %d)\n&#34;, port, cmd.Process.Pid)</span></div>
+<div class="line"><span class="miss">	if runtime.GOOS != &#34;windows&#34; {</span></div>
+<div class="line"><span class="miss">		fmt.Fprintf(os.Stderr, &#34;HTTP server listening on port %d (PID: %d)\n&#34;, port, cmd.Process.Pid)</span></div>
+<div class="line">	}</div>
 <div class="line"><span class="miss">	return openBrowser(url</span><span class="miss">)</span></div>
 <div class="line">}</div>
 <div class="line"></div>

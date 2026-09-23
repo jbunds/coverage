@@ -26,8 +26,10 @@ func (rg *reportGenerator) printCoverage(w io.Writer) error {
 
 	maxPathLen = max(maxPathLen, 5) // 5 == len("Total")
 
-	// TODO(jbunds): allow users to chose how the rows rendered in the tree should be sorted;
-	//               default should probably path-depth, then alphanumerically, just like here
+	// TODO(jbunds): allow users to choose how to sort the rows, with default override
+	//               activated by a new -o flag that maps strings like "alpha",
+	//               "lowest" / "highest" (coverage), "shortest" / "longest" (path),
+	//               etc, to a sortOrder enum type
 	slices.SortFunc(keys, func(a, b string) int {
 		depthA, depthB := strings.Count(a, "/"), strings.Count(b, "/")
 		if depthA != depthB { return cmp.Compare(depthA, depthB) } // sort by path depth
@@ -106,30 +108,29 @@ func launchHTTPServer(outDir string) error {
 		python = "python"
 	}
 	pyPath, err := exec.LookPath(python)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
-	cmd := exec.Command(pyPath, "-m", "http.server", "-d", outDir) // #nosec G204 G702 - no shell (no injection); outDir confined to outRoot (no path escape)
-
-	const port = 8000
+	const port = 8000 // https://docs.python.org/3/library/http.server.html#cmdoption-http.server-arg-port
 
 	url := fmt.Sprintf("http://localhost:%d", port)
 
-	if runtime.GOOS == "windows" { // fire-and-forget, no PID reporting
-		if err := new(realRunner).Start(cmd); err != nil { // leaves Python HTTP server running in the background
-			return err
+	if runtime.GOOS != "windows" {
+		if pid, err := findPortPID(port); err == nil { // macOS / Linux: check for existing process listening on port 8000
+			fmt.Fprintf(os.Stderr, "process already listening on port %d (PID: %d)\n", port, pid)
+			return openBrowser(url) // assume the process listening on port 8000 is an HTTP server rather than launch a new one
 		}
-		return openBrowser(url)
 	}
 
-	if pid, err := findPortPID(port); err == nil { // check for existing process listening on port 8000 on macOS or Linux
-		fmt.Fprintf(os.Stderr, "process already listening on port %d (PID: %d)\n", port, pid)
-		return openBrowser(url) // assume the process listening on port 8000 is an HTTP server rather than launch a new one
-	}
+	cmd := exec.Command(pyPath, "-m", "http.server", "-d", outDir) // #nosec G204 G702 - no shell (no injection); outDir confined to outRoot (no path escape)
 
-	if err := new(realRunner).Start(cmd); err != nil { // leaves Python HTTP server running in the background
+	if err := new(realRunner).Start(cmd); err != nil { // Windows: fire-and-forget, no PID reporting
 		return err
 	}
-	fmt.Fprintf(os.Stderr, "HTTP server listening on port %d (PID: %d)\n", port, cmd.Process.Pid)
+	if runtime.GOOS != "windows" {
+		fmt.Fprintf(os.Stderr, "HTTP server listening on port %d (PID: %d)\n", port, cmd.Process.Pid)
+	}
 	return openBrowser(url)
 }
 
