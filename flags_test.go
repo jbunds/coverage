@@ -88,6 +88,18 @@ func TestFlags(t *testing.T) {
 		wantPath:         "baz",
 		wantHTTPServer:   true,
 	}, {
+		name: "-order set",
+		args: []string{
+			"-gomod",        "foo",
+			"-coverprofile", "bar",
+			"-path",         "baz",
+			"-order",        "lowest",
+		},
+		wantGoMod:        "foo",
+		wantCoverProfile: "bar",
+		wantPath:         "baz",
+		wantSortOrder:    lowest,
+	}, {
 		name:    "invalid",
 		args:    []string{"-invalid"},
 		wantOut: strings.Join([]string{
