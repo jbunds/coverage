@@ -9,16 +9,11 @@
 ├── css
 │   ├── style.css
 │   └── tree.css
-├── demo
-│   ├── bunch.sh
-│   ├── demo.sh
-│   ├── helpers.js
-│   └── render.js
 ├── doc
 │   ├── code_stats.md
+│   ├── structure.md
 │   ├── expand.svg
 │   ├── lines.svg
-│   ├── structure.md
 │   └── theme.svg
 ├── flags.go
 ├── flags_test.go
@@ -45,23 +40,34 @@
 ├── screenshots
 │   ├── dark_theme.jpg
 │   └── light_theme.jpg
+├── sort.go
+├── sort_test.go
 ├── testdata
-│   ├── assets.go.html
 │   ├── cov.out
+│   ├── assets.go.html
 │   ├── flags.go.html
 │   ├── interfaces.go.html
 │   ├── main.go.html
 │   ├── pages.go.html
 │   ├── scan.go.html
+│   ├── sort.go.html
 │   ├── tree.go.html
 │   └── ui.go.html
-├── tests.sh
+├── tools
+│   ├── demo
+│   │   ├── bunch.sh
+│   │   ├── demo.sh
+│   │   ├── helpers.js
+│   │   └── render.js
+│   ├── loctrace
+│   │   └── loctrace.go
+│   ├── tests.sh
+│   ├── untree.sh
+│   └── validate.js
 ├── tree.go
 ├── tree_test.go
 ├── ui.go
-├── ui_test.go
-├── untree.sh
-└── validate.js
+└── ui_test.go
 
-9 directories, 54 files
+11 directories, 58 files
 ```
