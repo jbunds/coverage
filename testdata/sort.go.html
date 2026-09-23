@@ -21,11 +21,14 @@
 <div class="line">type sortOrder int</div>
 <div class="line"></div>
 <div class="line">const ( // must cohere with `allowedSortOrders` in flags.go</div>
-<div class="line">	// shortest sorts file paths by path depth (deepest to shallowest; default).</div>
-<div class="line">	shortest sortOrder = iota</div>
+<div class="line">	// lex sorts file paths lexicographically (default).</div>
+<div class="line">	lex sortOrder = iota</div>
 <div class="line"></div>
-<div class="line">	// longest sorts file paths by path depth (shallowest to deepest).</div>
-<div class="line">	longest</div>
+<div class="line">	// shallowest sorts file paths by path depth (shallowest to deepest).</div>
+<div class="line">	shallowest</div>
+<div class="line"></div>
+<div class="line">	// deepest sorts file paths by path depth (deepest to shallowest).</div>
+<div class="line">	deepest</div>
 <div class="line"></div>
 <div class="line">	// lowest sorts file paths by coverage (lowest to highest).</div>
 <div class="line">	lowest</div>
@@ -33,13 +36,34 @@
 <div class="line">	// highest sorts file paths by coverage (highest to lowest).</div>
 <div class="line">	highest</div>
 <div class="line"></div>
-<div class="line">	// alpha sorts file paths lexicographically.</div>
-<div class="line">	alpha</div>
+<div class="line">	// shortest sorts file paths by path length (shortest to longest)</div>
+<div class="line">	shortest</div>
+<div class="line"></div>
+<div class="line">	// longest sorts file paths by path length (longest to shortest)</div>
+<div class="line">	longest</div>
 <div class="line">)</div>
 <div class="line"></div>
-<div class="line">// sortAlpha sorts file paths lexicographically.</div>
-<div class="line">func (rg *reportGenerator) sortAlpha() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), cmp.Compare)</span></div>
+<div class="line">// sortLex sorts file paths lexicographically.</div>
+<div class="line">func (rg *reportGenerator) sortLex() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), strings.Compare)</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// sortByShallowPath first sorts file paths by path depth (shallowest first) and then lexicographically.</div>
+<div class="line">func (rg *reportGenerator) sortByShallowPath() []string<span class="miss"> {</span></div>
+<div class="line"><span class="miss">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line"><span class="miss">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
+<div class="line"><span class="miss">		if depthA != depthB { return cmp.Compare(depthA, depthB</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">		return strings.Compare(a, b</span><span class="miss">)</span></div>
+<div class="line">	})</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// sortByDeepPath first sorts file paths by path depth (deepest first) and then lexicographically.</div>
+<div class="line">func (rg *reportGenerator) sortByDeepPath() []string<span class="miss"> {</span></div>
+<div class="line"><span class="miss">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line"><span class="miss">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
+<div class="line"><span class="miss">		if depthA != depthB { return cmp.Compare(depthB, depthA</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">		return strings.Compare(a, b</span><span class="miss">)</span></div>
+<div class="line">	})</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// sortByLowCov first sorts file paths by coverage (lowest first) and then lexicographically.</div>
@@ -51,7 +75,7 @@
 <div class="line"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">		if aPct != bPct { return cmp.Compare(aPct, bPct</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		return cmp.Compare(a, b</span><span class="hit">)</span></div>
+<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
 <div class="line">	})</div>
 <div class="line">}</div>
 <div class="line"></div>
@@ -64,41 +88,45 @@
 <div class="line"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">		if aPct != bPct { return cmp.Compare(bPct, aPct</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		return cmp.Compare(a, b</span><span class="hit">)</span></div>
+<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
 <div class="line">	})</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// sortByShortPath first sorts file paths by path depth (deepest first) and then lexicographically.</div>
+<div class="line">// sortByShortPath first sorts file paths by path length (shortest first) and then lexicographically.</div>
 <div class="line">func (rg *reportGenerator) sortByShortPath() []string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
-<div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthA, depthB</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		return cmp.Compare(a, b</span><span class="hit">)</span></div>
+<div class="line"><span class="hit">		aLen, bLen := len(a), len(b)</span></div>
+<div class="line"><span class="hit">		if aLen != bLen { return cmp.Compare(aLen, bLen</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
 <div class="line">	})</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// sortByLongPath first sorts file paths by path depth (deepest first) and then lexicographically.</div>
+<div class="line">// sortByLongPath first sorts file paths by path length (longest first) and then lexicographically.</div>
 <div class="line">func (rg *reportGenerator) sortByLongPath() []string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
-<div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthB, depthA</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		return cmp.Compare(a, b</span><span class="hit">)</span></div>
+<div class="line"><span class="hit">		aLen, bLen := len(a), len(b)</span></div>
+<div class="line"><span class="hit">		if aLen != bLen { return cmp.Compare(bLen, aLen</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
 <div class="line">	})</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// bind sets rg&#39;s sort method according to sortOrder o.</div>
 <div class="line">func (o sortOrder) bind(rg *reportGenerator<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	switch o</span> {</div>
-<div class="line">	case shortest<span class="hit">:</span></div>
-<div class="line"><span class="hit">		rg.sort = rg.sortByShortPath</span></div>
-<div class="line">	case longest<span class="hit">:</span></div>
-<div class="line"><span class="hit">		rg.sort = rg.sortByLongPath</span></div>
+<div class="line">	case lex<span class="hit">:</span></div>
+<div class="line"><span class="hit">		rg.sort = rg.sortLex</span></div>
+<div class="line">	case shallowest<span class="miss">:</span></div>
+<div class="line"><span class="miss">		rg.sort = rg.sortByShallowPath</span></div>
+<div class="line">	case deepest<span class="miss">:</span></div>
+<div class="line"><span class="miss">		rg.sort = rg.sortByDeepPath</span></div>
 <div class="line">	case lowest<span class="hit">:</span></div>
 <div class="line"><span class="hit">		rg.sort = rg.sortByLowCov</span></div>
 <div class="line">	case highest<span class="hit">:</span></div>
 <div class="line"><span class="hit">		rg.sort = rg.sortByHighCov</span></div>
-<div class="line">	case alpha<span class="hit">:</span></div>
-<div class="line"><span class="hit">		rg.sort = rg.sortAlpha</span></div>
+<div class="line">	case shortest<span class="hit">:</span></div>
+<div class="line"><span class="hit">		rg.sort = rg.sortByShortPath</span></div>
+<div class="line">	case longest<span class="hit">:</span></div>
+<div class="line"><span class="hit">		rg.sort = rg.sortByLongPath</span></div>
 <div class="line">	}</div>
 <div class="line">}</div>
 <script src="../../../child.js"></script>

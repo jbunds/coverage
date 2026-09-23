@@ -74,7 +74,7 @@ func (lfs *localFS) ReadDir(name string) ([]fs.DirEntry, error) {
 }
 
 func (lfs *localFS) ReadFile(name string) ([]byte, error) {
-	return os.ReadFile(name) // #nosec G304 -- all input is either user-specified or generated herein
+	return os.ReadFile(name) // #nosec G304 - all input is either user-specified or generated herein
 }
 
 func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error {

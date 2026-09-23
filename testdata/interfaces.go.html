@@ -83,7 +83,7 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func (lfs *localFS) ReadFile(name string) ([]byte, error<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	return os.ReadFile(name) // #nosec G304 -- all input is either user-specified or generated herein</span></div>
+<div class="line"><span class="hit">	return os.ReadFile(name) // #nosec G304 - all input is either user-specified or generated herein</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error<span class="hit"> {</span></div>

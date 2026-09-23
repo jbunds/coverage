@@ -20,11 +20,10 @@
 <div class="line">// flags parses command line flags.</div>
 <div class="line">func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, noBrowser, httpServer bool, sortOrder sortOrder, err error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	allowedSortOrders := []string{ // must cohere with the `sortOrder` enum in sort.go</span></div>
-<div class="line"><span class="hit">		&#34;alpha&#34;,</span></div>
-<div class="line"><span class="hit">		&#34;lowest&#34;,</span></div>
-<div class="line"><span class="hit">		&#34;highest&#34;,</span></div>
-<div class="line"><span class="hit">		&#34;longest&#34;,</span></div>
-<div class="line"><span class="hit">		&#34;shortest&#34;</span><span class="hit">,</span></div>
+<div class="line"><span class="hit">		&#34;lex&#34;,</span></div>
+<div class="line"><span class="hit">		&#34;shallowest&#34;, &#34;deepest&#34;,</span></div>
+<div class="line"><span class="hit">		&#34;lowest&#34;,     &#34;highest&#34;,</span></div>
+<div class="line"><span class="hit">		&#34;shortest&#34;,   &#34;longest&#34;</span><span class="hit">,</span></div>
 <div class="line">	}</div>
 <div class="line">	// tests may call fs.SetOutput(); it is not called here</div>
 <div class="line"><span class="hit">	fs.Usage = func() {</span></div>
@@ -39,8 +38,14 @@
 <div class="line"><span class="hit">	fs.BoolVar  (&amp;httpServer,   &#34;s&#34;,            false, &#34;serve the generated HTML via a Python HTTP server&#34;)</span></div>
 <div class="line"><span class="hit">	fs.Func     (               &#34;order&#34;,               &#34;per-file coverage stdout rows sort order&#34;, func(val string) error {</span></div>
 <div class="line"><span class="hit">		switch val</span> {</div>
-<div class="line">		case &#34;alpha&#34;<span class="hit">:</span></div>
-<div class="line"><span class="hit">			sortOrder = alpha</span></div>
+<div class="line">		case &#34;lex&#34;<span class="hit">:</span></div>
+<div class="line"><span class="hit">			sortOrder = lex</span></div>
+<div class="line"><span class="hit">			return nil</span></div>
+<div class="line">		case &#34;shallowest&#34;<span class="hit">:</span></div>
+<div class="line"><span class="hit">			sortOrder = shallowest</span></div>
+<div class="line"><span class="hit">			return nil</span></div>
+<div class="line">		case &#34;deepest&#34;<span class="hit">:</span></div>
+<div class="line"><span class="hit">			sortOrder = deepest</span></div>
 <div class="line"><span class="hit">			return nil</span></div>
 <div class="line">		case &#34;lowest&#34;<span class="hit">:</span></div>
 <div class="line"><span class="hit">			sortOrder = lowest</span></div>
@@ -48,30 +53,30 @@
 <div class="line">		case &#34;highest&#34;<span class="hit">:</span></div>
 <div class="line"><span class="hit">			sortOrder = highest</span></div>
 <div class="line"><span class="hit">			return nil</span></div>
-<div class="line">		case &#34;longest&#34;<span class="hit">:</span></div>
-<div class="line"><span class="hit">			sortOrder = longest</span></div>
-<div class="line"><span class="hit">			return nil</span></div>
 <div class="line">		case &#34;shortest&#34;<span class="hit">:</span></div>
 <div class="line"><span class="hit">			sortOrder = shortest</span></div>
+<div class="line"><span class="hit">			return nil</span></div>
+<div class="line">		case &#34;longest&#34;<span class="hit">:</span></div>
+<div class="line"><span class="hit">			sortOrder = longest</span></div>
 <div class="line"><span class="hit">			return nil</span></div>
 <div class="line">		default<span class="hit">:</span></div>
 <div class="line"><span class="hit">			return fmt.Errorf(&#34;invalid sort order specified\nmust be one of (%s)&#34;, strings.Join(allowedSortOrders, &#34;, &#34;</span><span class="hit">))</span></div>
 <div class="line">		}</div>
 <div class="line">	})</div>
 <div class="line"><span class="hit">	if err := fs.Parse(args); err != nil {</span></div>
-<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, shortest, err</span></div>
+<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, lex, err</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="hit">	if goMod == &#34;&#34; {</span></div>
 <div class="line"><span class="hit">		fs.Usage()</span></div>
-<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, shortest, errors.New(&#34;no value specified for -gomod&#34;)</span></div>
+<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, lex, errors.New(&#34;no value specified for -gomod&#34;)</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="hit">	if coverProfile == &#34;&#34; {</span></div>
 <div class="line"><span class="hit">		fs.Usage()</span></div>
-<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, shortest, errors.New(&#34;no value specified for -coverprofile&#34;)</span></div>
+<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, lex, errors.New(&#34;no value specified for -coverprofile&#34;)</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="hit">	if path == &#34;&#34; {</span></div>
 <div class="line"><span class="hit">		fs.Usage()</span></div>
-<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, shortest, errors.New(&#34;no value specified for -path&#34;)</span></div>
+<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, lex, errors.New(&#34;no value specified for -path&#34;)</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="hit">	if len(fs.Args()) &gt; 0 {</span></div>
 <div class="line"><span class="hit">		fmt.Fprintf(fs.Output(), &#34;ignored arguments: %s\n&#34;, strings.Join(fs.Args(), &#34;, &#34;))</span></div>
