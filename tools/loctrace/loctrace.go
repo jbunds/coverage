@@ -1,4 +1,6 @@
-// go run loctrace.go ./your/project
+// prints the LoC counts of all Go functions and methods defined in
+// all *.go files beneath the current working directory (default)
+// or the directory specified per its first argument.
 package main
 
 import (
@@ -23,14 +25,15 @@ type function struct {
 
 func main() {
 	root := "."
-	if len(os.Args) > 1 {
-		root = os.Args[1]
-	}
+	if len(os.Args) > 1 { root = os.Args[1] }
 
 	var funcs []*function
 
 	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+		if err != nil                           ||
+		   info.IsDir()                         ||
+		   !strings.HasSuffix(path, ".go")      ||
+		    strings.HasSuffix(path, "_test.go") {
 			return nil
 		}
 		fset := token.NewFileSet()
@@ -41,15 +44,12 @@ func main() {
 		}
 		for _, decl := range f.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
-			if !ok {
-				continue
-			}
+			if !ok { continue }
 			kind := "func"
 			name := fn.Name.Name
 			if fn.Recv != nil && len(fn.Recv.List) > 0 {
 				kind = "method"
-				// extract receiver type
-				switch t := fn.Recv.List[0].Type.(type) {
+				switch t := fn.Recv.List[0].Type.(type) { // extract receiver type
 				case *ast.Ident:
 					name = t.Name + "." + name
 				case *ast.StarExpr:
