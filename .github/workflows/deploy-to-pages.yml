@@ -7,6 +7,6 @@ on:
       - '**/*.go'
 jobs:
   pages:
-    uses: ./.github/workflows/pages.yml@main
+    uses: ./.github/workflows/pages.yml
     with:
       cover-pkg: .
