@@ -93,6 +93,7 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
    - uses: jbunds/coverage@v1
      with:
        go-mod:               'go.mod'           # optional; default is 'go.mod'
+       cover-pkg:            './...'            # optional; default is './...'
        coverage-threshold:   '50'               # optional; default is '0'
        coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
    ```
@@ -123,6 +124,7 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
        id-token: write  # required by actions/deploy-pages
      with:
        go-mod:               'go.mod'           # optional; default is 'go.mod'
+       cover-pkg:            './...'            # optional; default is './...'
        coverage-threshold:   '50'               # optional; default is '0'
        coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
    ```

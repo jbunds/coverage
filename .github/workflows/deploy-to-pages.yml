@@ -1,0 +1,12 @@
+name: deploy jbunds/coverage coverage report to Pages
+on:
+  workflow_dispatch: # allows this workflow to be manually triggered from the UI
+  push:
+    branches: [main]
+    paths:
+      - '**/*.go'
+jobs:
+  pages:
+    uses: .github/workflows/pages.yml@main
+    with:
+      cover-pkg: .

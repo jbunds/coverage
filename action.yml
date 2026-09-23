@@ -20,6 +20,10 @@ inputs:
     description: path to the root go.mod file
     required:    false
     default:     go.mod
+  cover-pkg:
+    description: Go package scope
+    required:    false
+    default:     ./...
   coverage-threshold:
     description: coverage threshold percentage (gwatts/go-coverage-action)
     required:    false
@@ -48,6 +52,7 @@ runs:
       id:   coverage_profile
       uses: gwatts/go-coverage-action@v2
       with:
+        cover-pkg:          ${{ inputs.cover-pkg          }}
         coverage-threshold: ${{ inputs.coverage-threshold }}
 
     - name:  coverage report
