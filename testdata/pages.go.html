@@ -25,14 +25,16 @@
 <div class="line">	&#34;golang.org/x/tools/cover&#34;</div>
 <div class="line">)</div>
 <div class="line"></div>
-<div class="line">// stickyWriter is a wrapper interface used to enable sequential string writing with deferred error handling.</div>
+<div class="line">// stickyWriter is a wrapper interface used to enable sequential</div>
+<div class="line">// string writing with deferred error handling.</div>
 <div class="line">type stickyWriter interface {</div>
 <div class="line">	io.Writer</div>
 <div class="line">	write(string)</div>
 <div class="line">	err() error</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// errorWriter tracks the first encountered I/O failure to allow multiple sequential writes without repetitive inline error checking.</div>
+<div class="line">// errorWriter tracks the first encountered I/O failure to allow multiple</div>
+<div class="line">// sequential writes without repetitive inline error checking.</div>
 <div class="line">type errorWriter struct {</div>
 <div class="line">	w        io.Writer</div>
 <div class="line">	e        error</div>
@@ -45,7 +47,8 @@
 <div class="line"><span class="hit">	_, w.e = io.WriteString(w.w, s</span><span class="hit">)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// write performs a sticky-error write that optionally wraps the provided string in ANSI color codes.</div>
+<div class="line">// write performs a sticky-error write that optionally</div>
+<div class="line">// wraps the provided string in ANSI color codes.</div>
 <div class="line">func (w *errorWriter) writeColor(s, color string<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	if w.e != nil</span><span class="miss"> { return</span><span class="miss"> }</span></div>
 <div class="line"><span class="hit">	if !w.useColor {</span></div>
@@ -57,7 +60,8 @@
 <div class="line"><span class="miss">	w.write(&#34;\033[0m&#34;</span>) // reset attributes, styles, and colors to defaults</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// err returns the first I/O failure encountered during multiple sequential write operations.</div>
+<div class="line">// err returns the first I/O failure encountered</div>
+<div class="line">// during multiple sequential write operations.</div>
 <div class="line"><span class="hit">func (w *errorWriter) err() error { return w.e</span><span class="hit"> }</span></div>
 <div class="line"></div>
 <div class="line">// Write satisfies the io.Writer interface, but is otherwise unused.</div>
@@ -247,8 +251,9 @@
 <div class="line"><span class="hit">	ew.write(&#34;&lt;/html&gt;&#34;)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// writeIndexHTMLFile writes the index HTML file, which contains three template parameters (ModName, ModURL,</div>
-<div class="line">// and TreeHTML), and hosts one iframe within which the generated source code HTML files are rendered.</div>
+<div class="line">// writeIndexHTMLFile writes the index HTML file, which contains three</div>
+<div class="line">// template parameters (ModName, ModURL, and TreeHTML), and hosts one</div>
+<div class="line">// iframe within which the generated source code HTML files are rendered.</div>
 <div class="line">func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	data := struct{</span></div>
 <div class="line"><span class="hit">		ModName,</span></div>
@@ -287,7 +292,8 @@
 <div class="line"><span class="hit">	return</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// toUint64 safely casts an int to a uint64 by guarding against overflow when n is negative.</div>
+<div class="line">// toUint64 safely casts an int to a uint64 by guarding</div>
+<div class="line">// against overflow when n is negative.</div>
 <div class="line">func toUint64(n int) uint64<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	if n &lt; 0</span><span class="miss"> { return 0</span> } // satisfy the gosec linter&#39;s overflow conversion check (G115)</div>
 <div class="line"><span class="hit">	return uint64(n</span><span class="hit">)</span></div>

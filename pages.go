@@ -16,14 +16,16 @@ import (
 	"golang.org/x/tools/cover"
 )
 
-// stickyWriter is a wrapper interface used to enable sequential string writing with deferred error handling.
+// stickyWriter is a wrapper interface used to enable sequential
+// string writing with deferred error handling.
 type stickyWriter interface {
 	io.Writer
 	write(string)
 	err() error
 }
 
-// errorWriter tracks the first encountered I/O failure to allow multiple sequential writes without repetitive inline error checking.
+// errorWriter tracks the first encountered I/O failure to allow multiple
+// sequential writes without repetitive inline error checking.
 type errorWriter struct {
 	w        io.Writer
 	e        error
@@ -36,7 +38,8 @@ func (w *errorWriter) write(s string) {
 	_, w.e = io.WriteString(w.w, s)
 }
 
-// write performs a sticky-error write that optionally wraps the provided string in ANSI color codes.
+// write performs a sticky-error write that optionally
+// wraps the provided string in ANSI color codes.
 func (w *errorWriter) writeColor(s, color string) {
 	if w.e != nil { return }
 	if !w.useColor {
@@ -48,7 +51,8 @@ func (w *errorWriter) writeColor(s, color string) {
 	w.write("\033[0m") // reset attributes, styles, and colors to defaults
 }
 
-// err returns the first I/O failure encountered during multiple sequential write operations.
+// err returns the first I/O failure encountered
+// during multiple sequential write operations.
 func (w *errorWriter) err() error { return w.e }
 
 // Write satisfies the io.Writer interface, but is otherwise unused.
@@ -238,8 +242,9 @@ func writePostamble(ew stickyWriter, childJSPath string) {
 	ew.write("</html>")
 }
 
-// writeIndexHTMLFile writes the index HTML file, which contains three template parameters (ModName, ModURL,
-// and TreeHTML), and hosts one iframe within which the generated source code HTML files are rendered.
+// writeIndexHTMLFile writes the index HTML file, which contains three
+// template parameters (ModName, ModURL, and TreeHTML), and hosts one
+// iframe within which the generated source code HTML files are rendered.
 func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
 	data := struct{
 		ModName,
@@ -278,7 +283,8 @@ func countStatements(blocks []cover.ProfileBlock) (total, covered uint64) {
 	return
 }
 
-// toUint64 safely casts an int to a uint64 by guarding against overflow when n is negative.
+// toUint64 safely casts an int to a uint64 by guarding
+// against overflow when n is negative.
 func toUint64(n int) uint64 {
 	if n < 0 { return 0 } // satisfy the gosec linter's overflow conversion check (G115)
 	return uint64(n)
