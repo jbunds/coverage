@@ -28,6 +28,7 @@
 <div class="line">	&#34;errors&#34;</div>
 <div class="line">	&#34;flag&#34;</div>
 <div class="line">	&#34;fmt&#34;</div>
+<div class="line">	&#34;io&#34;</div>
 <div class="line">	&#34;io/fs&#34;</div>
 <div class="line">	&#34;net/url&#34;</div>
 <div class="line">	&#34;os&#34;</div>
@@ -104,10 +105,13 @@
 <div class="line"><span class="miss">	fmt.Fprintf(os.Stderr, &#34;processing %d source files...&#34;, len(repGen.profiles))</span></div>
 <div class="line"><span class="miss">	if !isTerm(os.Stdin) { fmt.Fprintln(os.Stderr</span><span class="miss">) }</span></div>
 <div class="line"></div>
+<div class="line"><span class="miss">	var progressOutput io.Writer = os.Stderr</span></div>
+<div class="line"><span class="miss">	if !isTerm(os.Stderr) { progressOutput = io.Discard</span><span class="miss"> }</span></div>
+<div class="line"></div>
 <div class="line"><span class="miss">	if err := repGen.getModName(goModFile);                  err != nil { return fatal(3, &#34;cannot determine module name: %v\n&#34;,         err</span><span class="miss">) }</span></div>
 <div class="line"><span class="miss">	if err := repGen.getRemoteURL(&amp;realRunner{}, goModFile); err != nil { return fatal(4, &#34;cannot determine remote URL: %v\n&#34;,          err</span><span class="miss">) }</span></div>
 <div class="line"><span class="miss">	if err := repGen.primePkgDirCache(packages.Load);        err != nil { return fatal(5, &#34;cannot prime package directory cache: %v\n&#34;, err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := repGen.writeCovHTMLFiles(ctx, os.Stderr);      err != nil { return fatal(6, &#34;cannot write HTML coverage files: %v\n&#34;,     err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := repGen.writeCovHTMLFiles(ctx, progressOutput); err != nil { return fatal(6, &#34;cannot write HTML coverage files: %v\n&#34;,     err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	tb := &amp;treeBuilder{</span></div>
 <div class="line"><span class="miss">		fsys:    &amp;localFS{},</span></div>
@@ -118,9 +122,9 @@
 <div class="line"></div>
 <div class="line"><span class="miss">	if repGen.write {</span></div>
 <div class="line"><span class="miss">		var treeHTML string</span></div>
-<div class="line"><span class="miss">		if treeHTML, err = tb.buildTree(ctx, os.Stderr); err != nil { return fatal(7, &#34;cannot build tree HTML: %v\n&#34;,    err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">		if err := repGen.writeIndexHTMLFile(treeHTML);   err != nil { return fatal(8, &#34;cannot write index.html: %v\n&#34;,   err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">		if err := repGen.writeStaticFiles();             err != nil { return fatal(9, &#34;cannot write static files: %v\n&#34;, err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">		if treeHTML, err = tb.buildTree(ctx, progressOutput); err != nil { return fatal(7, &#34;cannot build tree HTML: %v\n&#34;,    err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">		if err := repGen.writeIndexHTMLFile(treeHTML);        err != nil { return fatal(8, &#34;cannot write index.html: %v\n&#34;,   err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">		if err := repGen.writeStaticFiles();                  err != nil { return fatal(9, &#34;cannot write static files: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="miss">	if err := repGen.printCoverage(os.Stdout); err != nil {</span></div>
@@ -129,7 +133,7 @@
 <div class="line">		}</div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if err := repGen.maybeOpenBrowser(noBrowser, httpServer); err != nil { return fatal(11, &#34;cannot open browser: %v\n&#34;,       err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := repGen.maybeOpenBrowser(noBrowser, httpServer); err != nil { return fatal(11, &#34;cannot open browser: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	return 0</span></div>
 <div class="line">}</div>

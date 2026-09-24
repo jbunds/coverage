@@ -19,6 +19,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/url"
 	"os"
@@ -95,10 +96,13 @@ func run() int {
 	fmt.Fprintf(os.Stderr, "processing %d source files...", len(repGen.profiles))
 	if !isTerm(os.Stdin) { fmt.Fprintln(os.Stderr) }
 
+	var progressOutput io.Writer = os.Stderr
+	if !isTerm(os.Stderr) { progressOutput = io.Discard }
+
 	if err := repGen.getModName(goModFile);                  err != nil { return fatal(3, "cannot determine module name: %v\n",         err) }
 	if err := repGen.getRemoteURL(&realRunner{}, goModFile); err != nil { return fatal(4, "cannot determine remote URL: %v\n",          err) }
 	if err := repGen.primePkgDirCache(packages.Load);        err != nil { return fatal(5, "cannot prime package directory cache: %v\n", err) }
-	if err := repGen.writeCovHTMLFiles(ctx, os.Stderr);      err != nil { return fatal(6, "cannot write HTML coverage files: %v\n",     err) }
+	if err := repGen.writeCovHTMLFiles(ctx, progressOutput); err != nil { return fatal(6, "cannot write HTML coverage files: %v\n",     err) }
 
 	tb := &treeBuilder{
 		fsys:    &localFS{},
@@ -109,9 +113,9 @@ func run() int {
 
 	if repGen.write {
 		var treeHTML string
-		if treeHTML, err = tb.buildTree(ctx, os.Stderr); err != nil { return fatal(7, "cannot build tree HTML: %v\n",    err) }
-		if err := repGen.writeIndexHTMLFile(treeHTML);   err != nil { return fatal(8, "cannot write index.html: %v\n",   err) }
-		if err := repGen.writeStaticFiles();             err != nil { return fatal(9, "cannot write static files: %v\n", err) }
+		if treeHTML, err = tb.buildTree(ctx, progressOutput); err != nil { return fatal(7, "cannot build tree HTML: %v\n",    err) }
+		if err := repGen.writeIndexHTMLFile(treeHTML);        err != nil { return fatal(8, "cannot write index.html: %v\n",   err) }
+		if err := repGen.writeStaticFiles();                  err != nil { return fatal(9, "cannot write static files: %v\n", err) }
 	}
 
 	if err := repGen.printCoverage(os.Stdout); err != nil {
@@ -120,7 +124,7 @@ func run() int {
 		}
 	}
 
-	if err := repGen.maybeOpenBrowser(noBrowser, httpServer); err != nil { return fatal(11, "cannot open browser: %v\n",       err) }
+	if err := repGen.maybeOpenBrowser(noBrowser, httpServer); err != nil { return fatal(11, "cannot open browser: %v\n", err) }
 
 	return 0
 }
