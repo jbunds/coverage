@@ -88,20 +88,17 @@ func run() int {
 		err := flags(flag.CommandLine, filterArgs(os.Args[1:]))
 	if err != nil { return fatal(1, "cannot parse flags: %v\n", err) }
 
-	profiles, err := cover.ParseProfiles(profilePath) // TODO(jbunds): (maybe?) add an adapter to handle both legacy textfmt and binary coverage profiles
-	if err != nil { return fatal(2, "cannot parse coverage profile file: %v\n", err) }
-
-	fmt.Fprintf(os.Stderr, "processing %d source files...", len(profiles))
-	if !isTerm(os.Stderr) { fmt.Println() } // nolint:forbidigo
-
-	repGen, err := newReportGenerator(goModFile, profilePath, profiles, outDir, sortOrder)
-	if err != nil { return fatal(3, "cannot instantiate report generator: %v\n", err) }
+	repGen, err := newReportGenerator(goModFile, profilePath, outDir, sortOrder)
+	if err != nil { return fatal(2, "cannot instantiate report generator: %v\n", err) }
 	defer repGen.outRoot.Close()
 
-	if err := repGen.getModName(goModFile);                  err != nil { return fatal(4, "cannot determine module name: %v\n",         err) }
-	if err := repGen.getRemoteURL(&realRunner{}, goModFile); err != nil { return fatal(6, "cannot determine remote URL: %v\n",          err) }
-	if err := repGen.primePkgDirCache(packages.Load);        err != nil { return fatal(7, "cannot prime package directory cache: %v\n", err) }
-	if err := repGen.writeCovHTMLFiles(ctx, os.Stderr);      err != nil { return fatal(8, "cannot write HTML coverage files: %v\n",     err) }
+	fmt.Fprintf(os.Stderr, "processing %d source files...", len(repGen.profiles))
+	if !isTerm(os.Stdin) { fmt.Fprintln(os.Stderr) }
+
+	if err := repGen.getModName(goModFile);                  err != nil { return fatal(3, "cannot determine module name: %v\n",         err) }
+	if err := repGen.getRemoteURL(&realRunner{}, goModFile); err != nil { return fatal(4, "cannot determine remote URL: %v\n",          err) }
+	if err := repGen.primePkgDirCache(packages.Load);        err != nil { return fatal(5, "cannot prime package directory cache: %v\n", err) }
+	if err := repGen.writeCovHTMLFiles(ctx, os.Stderr);      err != nil { return fatal(6, "cannot write HTML coverage files: %v\n",     err) }
 
 	tb := &treeBuilder{
 		fsys:    &localFS{},
@@ -112,18 +109,18 @@ func run() int {
 
 	if repGen.write {
 		var treeHTML string
-		if treeHTML, err = tb.buildTree(ctx, os.Stderr); err != nil { return fatal( 9, "cannot build tree HTML: %v\n",    err) }
-		if err := repGen.writeIndexHTMLFile(treeHTML);   err != nil { return fatal(10, "cannot write index.html: %v\n",   err) }
-		if err := repGen.writeStaticFiles();             err != nil { return fatal(11, "cannot write static files: %v\n", err) }
+		if treeHTML, err = tb.buildTree(ctx, os.Stderr); err != nil { return fatal(7, "cannot build tree HTML: %v\n",    err) }
+		if err := repGen.writeIndexHTMLFile(treeHTML);   err != nil { return fatal(8, "cannot write index.html: %v\n",   err) }
+		if err := repGen.writeStaticFiles();             err != nil { return fatal(9, "cannot write static files: %v\n", err) }
 	}
 
 	if err := repGen.printCoverage(os.Stdout); err != nil {
 		if !errors.Is(err, syscall.EPIPE) { // downstream pipe closed; not an error
-			return fatal(12, "cannot print coverage: %v\n", err)
+			return fatal(10, "cannot print coverage: %v\n", err)
 		}
 	}
 
-	if err := repGen.maybeOpenBrowser(noBrowser, httpServer); err != nil { return fatal(13, "cannot open browser: %v\n",       err) }
+	if err := repGen.maybeOpenBrowser(noBrowser, httpServer); err != nil { return fatal(11, "cannot open browser: %v\n",       err) }
 
 	return 0
 }
@@ -134,7 +131,12 @@ func fatal(code int, format string, args ...any) int {
 	return code
 }
 
-func newReportGenerator(goModFile, profilePath string, profiles []*cover.Profile, outDir string, sortOrder sortOrder) (*reportGenerator, error) {
+func newReportGenerator(goModFile, profilePath string, outDir string, sortOrder sortOrder) (*reportGenerator, error) {
+	profiles, err := cover.ParseProfiles(profilePath) // TODO(jbunds): (maybe?) add an adapter to handle both legacy textfmt and binary coverage profiles
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse coverage profile file: %w", err)
+	}
+
 	repGen := &reportGenerator{
 		fsys:             &localFS{},
 		modFile:          filepath.Clean(goModFile),
