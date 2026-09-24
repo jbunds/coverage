@@ -124,7 +124,7 @@
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="miss">	if err := repGen.printCoverage(os.Stdout); err != nil {</span></div>
-<div class="line"><span class="miss">		if !errors.Is(err, syscall.EPIPE</span>) { // downstream pipe closed; not an error</div>
+<div class="line"><span class="miss">		if !errors.Is(err, syscall.EPIPE</span>) { // syscall.EPIPE indicates the downstream pipe closed; not an error</div>
 <div class="line"><span class="miss">			return fatal(10, &#34;cannot print coverage: %v\n&#34;, err)</span></div>
 <div class="line">		}</div>
 <div class="line">	}</div>
@@ -140,53 +140,53 @@
 <div class="line"><span class="miss">	return code</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">func newReportGenerator(goModFile, profilePath string, outDir string, sortOrder sortOrder) (*reportGenerator, error<span class="miss">) {</span></div>
-<div class="line"><span class="miss">	profiles, err := cover.ParseProfiles(profilePath) // TODO(jbunds): (maybe?) add an adapter to handle both legacy textfmt and binary coverage profiles</span></div>
-<div class="line"><span class="miss">	if err != nil {</span></div>
+<div class="line">func newReportGenerator(goModFile, profilePath string, outDir string, sortOrder sortOrder) (*reportGenerator, error<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	profiles, err := cover.ParseProfiles(profilePath) // TODO(jbunds): (maybe?) add an adapter to handle both legacy textfmt and binary coverage profiles</span></div>
+<div class="line"><span class="hit">	if err != nil</span><span class="miss"> {</span></div>
 <div class="line"><span class="miss">		return nil, fmt.Errorf(&#34;cannot parse coverage profile file: %w&#34;, err)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	repGen := &amp;reportGenerator{</span></div>
-<div class="line"><span class="miss">		fsys:             &amp;localFS{},</span></div>
-<div class="line"><span class="miss">		modFile:          filepath.Clean(goModFile),</span></div>
-<div class="line"><span class="miss">		profilePath:      filepath.Clean(profilePath),</span></div>
-<div class="line"><span class="miss">		profiles:         profiles,</span></div>
-<div class="line"><span class="miss">		embeddedFiles:    embeddedFiles,</span></div>
-<div class="line"><span class="miss">		iconFilename:     &#34;favicon.ico&#34;,</span></div>
-<div class="line"><span class="miss">		childJSFilename:  &#34;child.js&#34;,</span></div>
-<div class="line"><span class="miss">		styleCSSFilename: &#34;style.css&#34;,</span></div>
-<div class="line"><span class="miss">		staticFiles:      []string{</span></div>
-<div class="line"><span class="miss">			&#34;html/code.html&#34;,</span></div>
-<div class="line"><span class="miss">			&#34;img/favicon.ico&#34;,</span></div>
-<div class="line"><span class="miss">			&#34;img/go-blue-gradient.svg&#34;,</span></div>
-<div class="line"><span class="miss">			&#34;css/style.css&#34;,</span></div>
-<div class="line"><span class="miss">			&#34;css/tree.css&#34;,</span></div>
-<div class="line"><span class="miss">			&#34;js/events.js&#34;,</span></div>
-<div class="line"><span class="miss">			&#34;js/child.js&#34;</span><span class="miss">,</span></div>
-<div class="line"><span class="miss">		},</span></div>
+<div class="line"><span class="hit">	repGen := &amp;reportGenerator{</span></div>
+<div class="line"><span class="hit">		fsys:             &amp;localFS{},</span></div>
+<div class="line"><span class="hit">		modFile:          filepath.Clean(goModFile),</span></div>
+<div class="line"><span class="hit">		profilePath:      filepath.Clean(profilePath),</span></div>
+<div class="line"><span class="hit">		profiles:         profiles,</span></div>
+<div class="line"><span class="hit">		embeddedFiles:    embeddedFiles,</span></div>
+<div class="line"><span class="hit">		iconFilename:     &#34;favicon.ico&#34;,</span></div>
+<div class="line"><span class="hit">		childJSFilename:  &#34;child.js&#34;,</span></div>
+<div class="line"><span class="hit">		styleCSSFilename: &#34;style.css&#34;,</span></div>
+<div class="line"><span class="hit">		staticFiles:      []string{</span></div>
+<div class="line"><span class="hit">			&#34;html/code.html&#34;,</span></div>
+<div class="line"><span class="hit">			&#34;img/favicon.ico&#34;,</span></div>
+<div class="line"><span class="hit">			&#34;img/go-blue-gradient.svg&#34;,</span></div>
+<div class="line"><span class="hit">			&#34;css/style.css&#34;,</span></div>
+<div class="line"><span class="hit">			&#34;css/tree.css&#34;,</span></div>
+<div class="line"><span class="hit">			&#34;js/events.js&#34;,</span></div>
+<div class="line"><span class="hit">			&#34;js/child.js&#34;</span><span class="hit">,</span></div>
+<div class="line"><span class="hit">		},</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	sortOrder.bind(repGen)</span></div>
+<div class="line"><span class="hit">	sortOrder.bind(repGen)</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	repGen.write   = outDir != &#34;/dev/null&#34; &amp;&amp; outDir != &#34;nul&#34;</span></div>
-<div class="line"><span class="miss">	repGen.outRoot = nullRoot{}</span></div>
+<div class="line"><span class="hit">	repGen.write   = outDir != &#34;/dev/null&#34; &amp;&amp; outDir != &#34;nul&#34;</span></div>
+<div class="line"><span class="hit">	repGen.outRoot = nullRoot{}</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if repGen.write {</span></div>
-<div class="line"><span class="miss">		info, err := repGen.fsys.Stat(outDir)</span></div>
-<div class="line"><span class="miss">		if err != nil || !info.IsDir() {</span></div>
+<div class="line"><span class="hit">	if repGen.write {</span></div>
+<div class="line"><span class="hit">		info, err := repGen.fsys.Stat(outDir)</span></div>
+<div class="line"><span class="hit">		if err != nil || !info.IsDir</span><span class="miss">() {</span></div>
 <div class="line"><span class="miss">			if err := repGen.fsys.MkdirAll(outDir, 0700); err != nil {</span></div>
 <div class="line"><span class="miss">				return nil, fmt.Errorf(&#34;cannot create directory %q: %w&#34;, outDir, err)</span></div>
 <div class="line">			}</div>
 <div class="line">		}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">		root, err := os.OpenRoot(outDir)</span></div>
-<div class="line"><span class="miss">		if err != nil {</span></div>
+<div class="line"><span class="hit">		root, err := os.OpenRoot(outDir)</span></div>
+<div class="line"><span class="hit">		if err != nil</span><span class="miss"> {</span></div>
 <div class="line"><span class="miss">			return nil, fmt.Errorf(&#34;cannot open %q: %v&#34;, outDir, err)</span></div>
 <div class="line">		}</div>
-<div class="line"><span class="miss">		repGen.outRoot = root</span></div>
+<div class="line"><span class="hit">		repGen.outRoot = root</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	return repGen, nil</span></div>
+<div class="line"><span class="hit">	return repGen, nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// getModName reads the repo&#39;s root go.mod file to determine the name of the Go module.</div>

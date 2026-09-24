@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/tools/cover"
 )
 
 // integration_test.sh provides a convenience wrapper for this test
@@ -17,17 +16,8 @@ import (
 func TestIntegrationTest(t *testing.T) {
 	t.Parallel()
 
-	tmpDir, err   := os.OpenRoot(t.TempDir());                if err != nil { t.Fatal(err) }
-	profiles, err := cover.ParseProfiles("testdata/cov.out"); if err != nil { t.Fatal(err) }
-	rg            := &reportGenerator{
-		write:            true,
-		fsys:             &localFS{},
-		outRoot:          tmpDir,
-		profiles:         profiles,
-		iconFilename:     "favicon.ico",
-		styleCSSFilename: "style.css",
-		childJSFilename:  "child.js",
-	}
+	rg, err := newReportGenerator("go.mod", "testdata/cov.out", t.TempDir(), lex)
+	if err != nil { t.Fatal(err) }
 
 	if err := rg.getModName("go.mod");                        err != nil { t.Fatal(err) }
 	if err := rg.writeCovHTMLFiles(t.Context(), io.Discard);  err != nil { t.Fatal(err) }
@@ -50,8 +40,8 @@ func TestIntegrationTest(t *testing.T) {
 
 			goldenFile := tt.name + ".html"
 
-			wantPath   := filepath.Join("testdata",                goldenFile)
-			gotPath    := filepath.Join(tmpDir.Name(), rg.modName, goldenFile)
+			wantPath   := filepath.Join("testdata",                    goldenFile)
+			gotPath    := filepath.Join(rg.outRoot.Name(), rg.modName, goldenFile)
 
 			want, err  := os.ReadFile(wantPath); if err != nil { t.Fatal(err) } // #nosec G304
 			got,  err  := os.ReadFile( gotPath); if err != nil { t.Fatal(err) } // #nosec G304

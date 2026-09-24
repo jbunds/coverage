@@ -115,7 +115,7 @@ func run() int {
 	}
 
 	if err := repGen.printCoverage(os.Stdout); err != nil {
-		if !errors.Is(err, syscall.EPIPE) { // downstream pipe closed; not an error
+		if !errors.Is(err, syscall.EPIPE) { // syscall.EPIPE indicates the downstream pipe closed; not an error
 			return fatal(10, "cannot print coverage: %v\n", err)
 		}
 	}

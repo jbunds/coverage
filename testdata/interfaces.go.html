@@ -90,8 +90,8 @@
 <div class="line"><span class="hit">	return os.WriteFile(name, data, perm)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">func (lfs *localFS) Stat(name string) (fs.FileInfo, error<span class="miss">) {</span></div>
-<div class="line"><span class="miss">	return os.Stat(name)</span></div>
+<div class="line">func (lfs *localFS) Stat(name string) (fs.FileInfo, error<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	return os.Stat(name)</span></div>
 <div class="line">}</div>
 <script src="../../../child.js"></script>
 </body>
