@@ -105,7 +105,7 @@ span.cov {
   top:         50%;
   right:       10px;
   width:       8ch; /* 8ch == len("100.0%") + 2ch gap */
-  font-family: Menlo, monospace;
+  font-family: monospace;
   font-size:   small;
   font-weight: normal;
   font-style:  italic;
