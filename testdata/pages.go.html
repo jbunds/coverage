@@ -89,7 +89,7 @@
 <div class="line">func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput io.Writer) error<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	rg.cov = make(map[string]coverage, len(rg.profiles))</span></div>
+<div class="line"><span class="hit">	rg.covState.cov = make(map[string]coverage, len(rg.profiles))</span></div>
 <div class="line"><span class="hit">	units, dirs := rg.buildWorkUnits()</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if err := rg.createDirs(ctx, dirs, progressOutput); err != nil {</span></div>
@@ -102,7 +102,7 @@
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	for i, cov := range perFileCov {</span></div>
-<div class="line"><span class="hit">		rg.cov[units[i].profile.FileName] = cov</span></div>
+<div class="line"><span class="hit">		rg.covState.cov[units[i].profile.FileName] = cov</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="hit">	return nil</span></div>
 <div class="line">}</div>
@@ -184,8 +184,8 @@
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	prog.Report(float64(fileStatements), unit.profile.FileName)</span></div>
-<div class="line"><span class="hit">	rg.totalCovered.Add(fileCovered)</span></div>
-<div class="line"><span class="hit">	rg.totalStatements.Add(fileStatements)</span></div>
+<div class="line"><span class="hit">	rg.covState.totalCovered.Add(fileCovered)</span></div>
+<div class="line"><span class="hit">	rg.covState.totalStatements.Add(fileStatements)</span></div>
 <div class="line"><span class="hit">	perFileCov[i] = coverage{covered: fileCovered, total: fileStatements}</span></div>
 <div class="line"><span class="hit">	return nil</span></div>
 <div class="line">}</div>

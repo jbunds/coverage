@@ -81,10 +81,10 @@ func TestBuildTree(t *testing.T) {
 				readDirFails: tt.readDirFails,
 			}
 			tb := &treeBuilder{
-				fsys:    mfs,
-				cov:     tt.cov,
-				outRoot: &mockRoot{name: "some/path"},
+				fsys:     mfs,
 				modName: "bar/baz",
+				outRoot:  &mockRoot{name: "some/path"},
+				covState: &coverageState{cov: tt.cov},
 			}
 			got, err := tb.buildTree(t.Context(), io.Discard)
 			if (err != nil) != tt.wantErr {
@@ -205,9 +205,9 @@ func TestProcessEntry(t *testing.T) {
 				readDirFails: tt.readDirFails,
 			}
 			tb := &treeBuilder{
-				fsys:    mfs,
-				cov:     tt.cov,
-				outRoot: &mockRoot{name: "some/path"},
+				fsys:     mfs,
+				outRoot:  &mockRoot{name: "some/path"},
+				covState: &coverageState{cov: tt.cov},
 			}
 			ctx  := t.Context()
 			prog := progress.New(ctx, 0, io.Discard); t.Cleanup(func() { prog.Close() })
@@ -229,7 +229,7 @@ func TestProcessEntry(t *testing.T) {
 
 func TestProcessFile(t *testing.T) {
 	t.Parallel()
-	tb   := &treeBuilder{}
+	tb   := &treeBuilder{covState: &coverageState{}}
 	prog := progress.New(t.Context(), 0, io.Discard)
 	st   := &scanState{
 		prog:       prog,

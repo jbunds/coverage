@@ -35,13 +35,13 @@ const ( // must cohere with `allowedSortOrders` in flags.go
 )
 
 // sortLex sorts file paths lexicographically.
-func (rg *reportGenerator) sortLex() []string {
-	return slices.SortedFunc(maps.Keys(rg.cov), strings.Compare)
+func (cs *coverageState) sortLex() []string {
+	return slices.SortedFunc(maps.Keys(cs.cov), strings.Compare)
 }
 
 // sortByShallowPath first sorts file paths by path depth (shallowest first) and then lexicographically.
-func (rg *reportGenerator) sortByShallowPath() []string {
-	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {
+func (cs *coverageState) sortByShallowPath() []string {
+	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {
 		depthA, depthB := strings.Count(a, "/"), strings.Count(b, "/")
 		if depthA != depthB { return cmp.Compare(depthA, depthB) }
 		return strings.Compare(a, b)
@@ -49,8 +49,8 @@ func (rg *reportGenerator) sortByShallowPath() []string {
 }
 
 // sortByDeepPath first sorts file paths by path depth (deepest first) and then lexicographically.
-func (rg *reportGenerator) sortByDeepPath() []string {
-	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {
+func (cs *coverageState) sortByDeepPath() []string {
+	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {
 		depthA, depthB := strings.Count(a, "/"), strings.Count(b, "/")
 		if depthA != depthB { return cmp.Compare(depthB, depthA) }
 		return strings.Compare(a, b)
@@ -58,10 +58,10 @@ func (rg *reportGenerator) sortByDeepPath() []string {
 }
 
 // sortByLowCov first sorts file paths by coverage (lowest first) and then lexicographically.
-func (rg *reportGenerator) sortByLowCov() []string {
-	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {
-		aCovered, bCovered := rg.cov[a].covered, rg.cov[b].covered
-		aTotal, bTotal     := rg.cov[a].total,   rg.cov[b].total
+func (cs *coverageState) sortByLowCov() []string {
+	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {
+		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered
+		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total
 		aPct, bPct         := 0.0, 0.0
 		if aTotal > 0 { aPct = float64(aCovered) / float64(aTotal) }
 		if bTotal > 0 { bPct = float64(bCovered) / float64(bTotal) }
@@ -71,10 +71,10 @@ func (rg *reportGenerator) sortByLowCov() []string {
 }
 
 // sortByHighCov first sorts file paths by coverage (highest first) and then lexicographically.
-func (rg *reportGenerator) sortByHighCov() []string {
-	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {
-		aCovered, bCovered := rg.cov[a].covered, rg.cov[b].covered
-		aTotal, bTotal     := rg.cov[a].total,   rg.cov[b].total
+func (cs *coverageState) sortByHighCov() []string {
+	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {
+		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered
+		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total
 		aPct, bPct         := 0.0, 0.0
 		if aTotal > 0 { aPct = float64(aCovered) / float64(aTotal) }
 		if bTotal > 0 { bPct = float64(bCovered) / float64(bTotal) }
@@ -84,8 +84,8 @@ func (rg *reportGenerator) sortByHighCov() []string {
 }
 
 // sortByShortPath first sorts file paths by path length (shortest first) and then lexicographically.
-func (rg *reportGenerator) sortByShortPath() []string {
-	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {
+func (cs *coverageState) sortByShortPath() []string {
+	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {
 		aLen, bLen := len(a), len(b)
 		if aLen != bLen { return cmp.Compare(aLen, bLen) }
 		return strings.Compare(a, b)
@@ -93,30 +93,23 @@ func (rg *reportGenerator) sortByShortPath() []string {
 }
 
 // sortByLongPath first sorts file paths by path length (longest first) and then lexicographically.
-func (rg *reportGenerator) sortByLongPath() []string {
-	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {
+func (cs *coverageState) sortByLongPath() []string {
+	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {
 		aLen, bLen := len(a), len(b)
 		if aLen != bLen { return cmp.Compare(bLen, aLen) }
 		return strings.Compare(a, b)
 	})
 }
 
-// bind sets rg's sort method according to sortOrder o.
-func (o sortOrder) bind(rg *reportGenerator) {
+// bind returns the sort function for the given order; unrecognized orders default to lex.
+func (o sortOrder) bind(cs *coverageState) func() []string {
 	switch o {
-	case lex:
-		rg.sort = rg.sortLex
-	case shallowest:
-		rg.sort = rg.sortByShallowPath
-	case deepest:
-		rg.sort = rg.sortByDeepPath
-	case lowest:
-		rg.sort = rg.sortByLowCov
-	case highest:
-		rg.sort = rg.sortByHighCov
-	case shortest:
-		rg.sort = rg.sortByShortPath
-	case longest:
-		rg.sort = rg.sortByLongPath
+	case shallowest: return cs.sortByShallowPath
+	case deepest:    return cs.sortByDeepPath
+	case lowest:     return cs.sortByLowCov
+	case highest:    return cs.sortByHighCov
+	case shortest:   return cs.sortByShortPath
+	case longest:    return cs.sortByLongPath
+	default:         return cs.sortLex
 	}
 }

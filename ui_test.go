@@ -99,12 +99,12 @@ func TestPrintCoverage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			repGen := &reportGenerator{cov: tt.cov}
-			tt.order.bind(repGen)
-			repGen.totalCovered.Store(tt.totalCovered)
-			repGen.totalStatements.Store(tt.totalStatements)
+			cs     := &coverageState{cov: tt.cov}
+			cs.sort = tt.order.bind(cs)
+			cs.totalCovered.Store(tt.totalCovered)
+			cs.totalStatements.Store(tt.totalStatements)
 			got := new(bytes.Buffer)
-			err := repGen.printCoverage(got)
+			err := cs.printCoverage(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("printCoverage(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}

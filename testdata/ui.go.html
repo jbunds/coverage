@@ -27,8 +27,8 @@
 <div class="line">)</div>
 <div class="line"></div>
 <div class="line">// printCoverage prints per-file coverage percentages to stdout.</div>
-<div class="line">func (rg *reportGenerator) printCoverage(w io.Writer) error<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	keys       := slices.Collect(maps.Keys(rg.cov))</span></div>
+<div class="line">func (cs *coverageState) printCoverage(w io.Writer) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	keys       := slices.Collect(maps.Keys(cs.cov))</span></div>
 <div class="line"><span class="hit">	maxPathLen := len(slices.MaxFunc(keys, func(a, b string) int {</span></div>
 <div class="line"><span class="hit">		return cmp.Compare(len(a), len(b))</span></div>
 <div class="line">	}))</div>
@@ -43,41 +43,41 @@
 <div class="line"><span class="hit">	ew.write(&#34;Coverage\n&#34;)</span></div>
 <div class="line"><span class="hit">	ew.write(divider)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	for _, path := range rg.sort() {</span></div>
-<div class="line"><span class="hit">		cov     := rg.cov[path]</span></div>
+<div class="line"><span class="hit">	for _, path := range cs.sort() {</span></div>
+<div class="line"><span class="hit">		cov     := cs.cov[path]</span></div>
 <div class="line"><span class="hit">		percent := 0.0</span></div>
 <div class="line"><span class="hit">		if cov.total &gt; 0 {</span></div>
 <div class="line"><span class="hit">			percent = float64(cov.covered) / float64(cov.total) * 100</span></div>
 <div class="line">		}</div>
-<div class="line"><span class="hit">		rg.writeRow(ew, path, percent, maxPathLen</span><span class="hit">)</span></div>
+<div class="line"><span class="hit">		writeRow(ew, path, percent, maxPathLen</span><span class="hit">)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	totalPercent    := 0.0</span></div>
-<div class="line"><span class="hit">	totalCovered    := rg.totalCovered.Load()</span></div>
-<div class="line"><span class="hit">	totalStatements := rg.totalStatements.Load()</span></div>
+<div class="line"><span class="hit">	totalCovered    := cs.totalCovered.Load()</span></div>
+<div class="line"><span class="hit">	totalStatements := cs.totalStatements.Load()</span></div>
 <div class="line"><span class="hit">	if totalStatements &gt; 0 {</span></div>
 <div class="line"><span class="hit">		totalPercent = float64(totalCovered) / float64(totalStatements) * 100</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	ew.write(divider)</span></div>
-<div class="line"><span class="hit">	rg.writeRow(ew, &#34;Total&#34;, totalPercent, maxPathLen)</span></div>
+<div class="line"><span class="hit">	writeRow(ew, &#34;Total&#34;, totalPercent, maxPathLen)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	return ew.err</span><span class="hit">()</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// writeRow writes a single padded, color-coded (green ≥ 50%, red below) coverage row.</div>
-<div class="line">func (rg *reportGenerator) writeRow(ew *errorWriter, path string, percent float64, maxPathLen int<span class="hit">) {</span></div>
+<div class="line">// writeRow writes a single padded, color-coded (green ≥ 50%, red &lt; 50%) coverage row.</div>
+<div class="line">func writeRow(ew *errorWriter, path string, percent float64, maxPathLen int<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	const (</span></div>
 <div class="line"><span class="hit">		green = &#34;\033[32m&#34;</span></div>
 <div class="line"><span class="hit">		red   = &#34;\033[31m&#34;</span></div>
 <div class="line"><span class="hit">	)</span></div>
 <div class="line"><span class="hit">	ew.write(path)</span></div>
-<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen-len(path)+2))</span></div>
+<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen - len(path) + 2))</span></div>
 <div class="line"><span class="hit">	pct       := strconv.FormatFloat(percent, &#39;f&#39;, 2, 64)</span></div>
 <div class="line"><span class="hit">	colorCode := green</span></div>
 <div class="line"><span class="hit">	if percent &lt; 50 { colorCode = red</span><span class="hit"> }</span></div>
-<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, 6-len(pct)))</span></div>
-<div class="line"><span class="hit">	ew.writeColor(pct+&#34;%&#34;, colorCode)</span></div>
+<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, 6 - len(pct)))</span></div>
+<div class="line"><span class="hit">	ew.writeColor(pct + &#34;%&#34;, colorCode)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;\n&#34;</span><span class="hit">)</span></div>
 <div class="line">}</div>
 <div class="line"></div>

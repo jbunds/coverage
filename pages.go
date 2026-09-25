@@ -80,7 +80,7 @@ type workUnit struct {
 func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput io.Writer) error {
 	if err := ctx.Err(); err != nil { return err }
 
-	rg.cov = make(map[string]coverage, len(rg.profiles))
+	rg.covState.cov = make(map[string]coverage, len(rg.profiles))
 	units, dirs := rg.buildWorkUnits()
 
 	if err := rg.createDirs(ctx, dirs, progressOutput); err != nil {
@@ -93,7 +93,7 @@ func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput
 	}
 
 	for i, cov := range perFileCov {
-		rg.cov[units[i].profile.FileName] = cov
+		rg.covState.cov[units[i].profile.FileName] = cov
 	}
 	return nil
 }
@@ -175,8 +175,8 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 	}
 
 	prog.Report(float64(fileStatements), unit.profile.FileName)
-	rg.totalCovered.Add(fileCovered)
-	rg.totalStatements.Add(fileStatements)
+	rg.covState.totalCovered.Add(fileCovered)
+	rg.covState.totalStatements.Add(fileStatements)
 	perFileCov[i] = coverage{covered: fileCovered, total: fileStatements}
 	return nil
 }

@@ -128,6 +128,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				write:            true,
 				fsys:             mfs,
 				outRoot:          &mockRoot{name: "some/path"},
+				covState:         &coverageState{},
 				profiles:         tt.profiles,
 				pkgDirCache:      tt.pkgDirCache,
 				iconFilename:     "favicon.ico",

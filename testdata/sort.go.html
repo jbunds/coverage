@@ -44,13 +44,13 @@
 <div class="line">)</div>
 <div class="line"></div>
 <div class="line">// sortLex sorts file paths lexicographically.</div>
-<div class="line">func (rg *reportGenerator) sortLex() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), strings.Compare)</span></div>
+<div class="line">func (cs *coverageState) sortLex() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), strings.Compare)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// sortByShallowPath first sorts file paths by path depth (shallowest first) and then lexicographically.</div>
-<div class="line">func (rg *reportGenerator) sortByShallowPath() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line">func (cs *coverageState) sortByShallowPath() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
 <div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
 <div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthA, depthB</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
@@ -58,8 +58,8 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// sortByDeepPath first sorts file paths by path depth (deepest first) and then lexicographically.</div>
-<div class="line">func (rg *reportGenerator) sortByDeepPath() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line">func (cs *coverageState) sortByDeepPath() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
 <div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
 <div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthB, depthA</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
@@ -67,10 +67,10 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// sortByLowCov first sorts file paths by coverage (lowest first) and then lexicographically.</div>
-<div class="line">func (rg *reportGenerator) sortByLowCov() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="hit">		aCovered, bCovered := rg.cov[a].covered, rg.cov[b].covered</span></div>
-<div class="line"><span class="hit">		aTotal, bTotal     := rg.cov[a].total,   rg.cov[b].total</span></div>
+<div class="line">func (cs *coverageState) sortByLowCov() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
+<div class="line"><span class="hit">		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered</span></div>
+<div class="line"><span class="hit">		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total</span></div>
 <div class="line"><span class="hit">		aPct, bPct         := 0.0, 0.0</span></div>
 <div class="line"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
@@ -80,10 +80,10 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// sortByHighCov first sorts file paths by coverage (highest first) and then lexicographically.</div>
-<div class="line">func (rg *reportGenerator) sortByHighCov() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="hit">		aCovered, bCovered := rg.cov[a].covered, rg.cov[b].covered</span></div>
-<div class="line"><span class="hit">		aTotal, bTotal     := rg.cov[a].total,   rg.cov[b].total</span></div>
+<div class="line">func (cs *coverageState) sortByHighCov() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
+<div class="line"><span class="hit">		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered</span></div>
+<div class="line"><span class="hit">		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total</span></div>
 <div class="line"><span class="hit">		aPct, bPct         := 0.0, 0.0</span></div>
 <div class="line"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
@@ -93,8 +93,8 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// sortByShortPath first sorts file paths by path length (shortest first) and then lexicographically.</div>
-<div class="line">func (rg *reportGenerator) sortByShortPath() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line">func (cs *coverageState) sortByShortPath() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
 <div class="line"><span class="hit">		aLen, bLen := len(a), len(b)</span></div>
 <div class="line"><span class="hit">		if aLen != bLen { return cmp.Compare(aLen, bLen</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
@@ -102,31 +102,24 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// sortByLongPath first sorts file paths by path length (longest first) and then lexicographically.</div>
-<div class="line">func (rg *reportGenerator) sortByLongPath() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(rg.cov), func(a, b string) int {</span></div>
+<div class="line">func (cs *coverageState) sortByLongPath() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
 <div class="line"><span class="hit">		aLen, bLen := len(a), len(b)</span></div>
 <div class="line"><span class="hit">		if aLen != bLen { return cmp.Compare(bLen, aLen</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
 <div class="line">	})</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// bind sets rg&#39;s sort method according to sortOrder o.</div>
-<div class="line">func (o sortOrder) bind(rg *reportGenerator<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	switch o</span> {</div>
-<div class="line">	case lex<span class="hit">:</span></div>
-<div class="line"><span class="hit">		rg.sort = rg.sortLex</span></div>
-<div class="line">	case shallowest<span class="hit">:</span></div>
-<div class="line"><span class="hit">		rg.sort = rg.sortByShallowPath</span></div>
-<div class="line">	case deepest<span class="hit">:</span></div>
-<div class="line"><span class="hit">		rg.sort = rg.sortByDeepPath</span></div>
-<div class="line">	case lowest<span class="hit">:</span></div>
-<div class="line"><span class="hit">		rg.sort = rg.sortByLowCov</span></div>
-<div class="line">	case highest<span class="hit">:</span></div>
-<div class="line"><span class="hit">		rg.sort = rg.sortByHighCov</span></div>
-<div class="line">	case shortest<span class="hit">:</span></div>
-<div class="line"><span class="hit">		rg.sort = rg.sortByShortPath</span></div>
-<div class="line">	case longest<span class="hit">:</span></div>
-<div class="line"><span class="hit">		rg.sort = rg.sortByLongPath</span></div>
+<div class="line">// bind returns the sort function for the given order; unrecognized orders default to lex.</div>
+<div class="line">func (o sortOrder) bind(cs *coverageState) func() []string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	switch o {</span></div>
+<div class="line"><span class="hit">	case shallowest: return cs.sortByShallowPath</span></div>
+<div class="line"><span class="hit">	case deepest:    return cs.sortByDeepPath</span></div>
+<div class="line"><span class="hit">	case lowest:     return cs.sortByLowCov</span></div>
+<div class="line"><span class="hit">	case highest:    return cs.sortByHighCov</span></div>
+<div class="line"><span class="hit">	case shortest:   return cs.sortByShortPath</span></div>
+<div class="line"><span class="hit">	case longest:    return cs.sortByLongPath</span></div>
+<div class="line"><span class="hit">	default:         return cs.sortLex</span></div>
 <div class="line">	}</div>
 <div class="line">}</div>
 <script src="../../../child.js"></script>

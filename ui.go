@@ -18,8 +18,8 @@ import (
 )
 
 // printCoverage prints per-file coverage percentages to stdout.
-func (rg *reportGenerator) printCoverage(w io.Writer) error {
-	keys       := slices.Collect(maps.Keys(rg.cov))
+func (cs *coverageState) printCoverage(w io.Writer) error {
+	keys       := slices.Collect(maps.Keys(cs.cov))
 	maxPathLen := len(slices.MaxFunc(keys, func(a, b string) int {
 		return cmp.Compare(len(a), len(b))
 	}))
@@ -34,41 +34,41 @@ func (rg *reportGenerator) printCoverage(w io.Writer) error {
 	ew.write("Coverage\n")
 	ew.write(divider)
 
-	for _, path := range rg.sort() {
-		cov     := rg.cov[path]
+	for _, path := range cs.sort() {
+		cov     := cs.cov[path]
 		percent := 0.0
 		if cov.total > 0 {
 			percent = float64(cov.covered) / float64(cov.total) * 100
 		}
-		rg.writeRow(ew, path, percent, maxPathLen)
+		writeRow(ew, path, percent, maxPathLen)
 	}
 
 	totalPercent    := 0.0
-	totalCovered    := rg.totalCovered.Load()
-	totalStatements := rg.totalStatements.Load()
+	totalCovered    := cs.totalCovered.Load()
+	totalStatements := cs.totalStatements.Load()
 	if totalStatements > 0 {
 		totalPercent = float64(totalCovered) / float64(totalStatements) * 100
 	}
 
 	ew.write(divider)
-	rg.writeRow(ew, "Total", totalPercent, maxPathLen)
+	writeRow(ew, "Total", totalPercent, maxPathLen)
 
 	return ew.err()
 }
 
-// writeRow writes a single padded, color-coded (green ≥ 50%, red below) coverage row.
-func (rg *reportGenerator) writeRow(ew *errorWriter, path string, percent float64, maxPathLen int) {
+// writeRow writes a single padded, color-coded (green ≥ 50%, red < 50%) coverage row.
+func writeRow(ew *errorWriter, path string, percent float64, maxPathLen int) {
 	const (
 		green = "\033[32m"
 		red   = "\033[31m"
 	)
 	ew.write(path)
-	ew.write(strings.Repeat(" ", maxPathLen-len(path)+2))
+	ew.write(strings.Repeat(" ", maxPathLen - len(path) + 2))
 	pct       := strconv.FormatFloat(percent, 'f', 2, 64)
 	colorCode := green
 	if percent < 50 { colorCode = red }
-	ew.write(strings.Repeat(" ", 6-len(pct)))
-	ew.writeColor(pct+"%", colorCode)
+	ew.write(strings.Repeat(" ", 6 - len(pct)))
+	ew.writeColor(pct + "%", colorCode)
 	ew.write("\n")
 }
 

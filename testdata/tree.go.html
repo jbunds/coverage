@@ -24,39 +24,38 @@
 <div class="line">	&#34;golang.org/x/sync/errgroup&#34;</div>
 <div class="line">)</div>
 <div class="line"></div>
-<div class="line">// treeBuilder manages the global configuration, coverage data, and</div>
-<div class="line">// atomic counters used to create the directory tree HTML fragment.</div>
+<div class="line">// treeBuilder renders the source tree HTML fragment.</div>
 <div class="line">type treeBuilder struct {</div>
-<div class="line">	fsys     writeFS</div>
-<div class="line">	modName  string</div>
-<div class="line">	outRoot  rootHandle</div>
-<div class="line">	cov      map[string]coverage</div>
-<div class="line">	counter  atomic.Uint64</div>
+<div class="line">	fsys     writeFS        // directory listing (thin wrapper around os.ReadDir)</div>
+<div class="line">	modName  string         // module name</div>
+<div class="line">	outRoot  rootHandle     // output root for the generated HTML files, per -outdir</div>
+<div class="line">	covState *coverageState // accumulated coverage data</div>
+<div class="line">	counter  atomic.Uint64  // ID for each subdirectory node (&lt;input type=&#34;checkbox&#34;&gt; its &lt;label&gt;)</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// scanState captures the ephemeral, per-iteration state required for</div>
-<div class="line">// recursive directory traversal and incremental progress tracking.</div>
+<div class="line">// scanState holds per-iteration state during recursive</div>
+<div class="line">// directory traversal and incremental progress tracking.</div>
 <div class="line">type scanState struct {</div>
-<div class="line">	parentPath string             // logical Go package prefix for the current branch</div>
-<div class="line">	entry      fs.DirEntry        // specific file or directory currently being processed</div>
-<div class="line">	indent     int                // current indentation level of nested UL elements</div>
-<div class="line">	prog       *progress.Progress // progress tracker</div>
+<div class="line">	parentPath string             // package prefix for the current branch</div>
+<div class="line">	entry      fs.DirEntry        // directory entry currently being processed</div>
+<div class="line">	indent     int                // &lt;ul&gt; nesting depth</div>
+<div class="line">	prog       *progress.Progress // incremental progress tracker</div>
 <div class="line">	budget     float64            // progress budget allocated for this branch</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// entryResult stores the results of processing directory entries</div>
-<div class="line">// containing *.go.html files generated from coverge profiles.</div>
+<div class="line">// entryResult stores the results of processing a directory</div>
+<div class="line">// entry containing the generated *.go.html files.</div>
 <div class="line">type entryResult struct {</div>
-<div class="line">	html    string</div>
-<div class="line">	covered uint64</div>
-<div class="line">	total   uint64</div>
+<div class="line">	html    string // HTML fragment for the entry</div>
+<div class="line">	covered uint64 // weighted covered statement count</div>
+<div class="line">	total   uint64 // total statement count</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// htmlBuilder stores the state used to render the navigable source tree HTML.</div>
+<div class="line">// htmlBuilder renders source tree HTML fragments.</div>
 <div class="line">type htmlBuilder struct {</div>
-<div class="line">	indent int</div>
-<div class="line">	itemID string</div>
-<div class="line">	subDir string</div>
+<div class="line">	indent int    // nesting depth (2 spaces per level)</div>
+<div class="line">	itemID string // subdirectory node ID (&#34;tree-item-%d&#34;)</div>
+<div class="line">	subDir string // subdirectory name</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// buildTree traverses the module-qualified output directory and returns</div>
@@ -190,7 +189,7 @@
 <div class="line">func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (*entryResult, error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	st.prog.Report(st.budget, pkgPath)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	cov     := tb.cov[pkgPath]</span></div>
+<div class="line"><span class="hit">	cov     := tb.covState.cov[pkgPath]</span></div>
 <div class="line"><span class="hit">	percent := 0.0</span></div>
 <div class="line"><span class="hit">	if cov.total &gt; 0 {</span></div>
 <div class="line"><span class="hit">		percent = float64(cov.covered) / float64(cov.total) * 100</span></div>

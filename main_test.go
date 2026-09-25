@@ -365,8 +365,8 @@ func TestPrimePkgDirCache(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			repGen := &reportGenerator{
-				profilePath: tt.profilePath,
 				fsys:        &mockFS{ FS: tt.fsys },
+				profilePath: tt.profilePath,
 			}
 			err := repGen.primePkgDirCache(mockPkgLoader)
 			if (err != nil) != tt.wantErr {

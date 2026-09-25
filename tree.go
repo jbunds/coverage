@@ -15,39 +15,38 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// treeBuilder manages the global configuration, coverage data, and
-// atomic counters used to create the directory tree HTML fragment.
+// treeBuilder renders the source tree HTML fragment.
 type treeBuilder struct {
-	fsys     writeFS
-	modName  string
-	outRoot  rootHandle
-	cov      map[string]coverage
-	counter  atomic.Uint64
+	fsys     writeFS        // directory listing (thin wrapper around os.ReadDir)
+	modName  string         // module name
+	outRoot  rootHandle     // output root for the generated HTML files, per -outdir
+	covState *coverageState // accumulated coverage data
+	counter  atomic.Uint64  // ID for each subdirectory node (<input type="checkbox"> its <label>)
 }
 
-// scanState captures the ephemeral, per-iteration state required for
-// recursive directory traversal and incremental progress tracking.
+// scanState holds per-iteration state during recursive
+// directory traversal and incremental progress tracking.
 type scanState struct {
-	parentPath string             // logical Go package prefix for the current branch
-	entry      fs.DirEntry        // specific file or directory currently being processed
-	indent     int                // current indentation level of nested UL elements
-	prog       *progress.Progress // progress tracker
+	parentPath string             // package prefix for the current branch
+	entry      fs.DirEntry        // directory entry currently being processed
+	indent     int                // <ul> nesting depth
+	prog       *progress.Progress // incremental progress tracker
 	budget     float64            // progress budget allocated for this branch
 }
 
-// entryResult stores the results of processing directory entries
-// containing *.go.html files generated from coverge profiles.
+// entryResult stores the results of processing a directory
+// entry containing the generated *.go.html files.
 type entryResult struct {
-	html    string
-	covered uint64
-	total   uint64
+	html    string // HTML fragment for the entry
+	covered uint64 // weighted covered statement count
+	total   uint64 // total statement count
 }
 
-// htmlBuilder stores the state used to render the navigable source tree HTML.
+// htmlBuilder renders source tree HTML fragments.
 type htmlBuilder struct {
-	indent int
-	itemID string
-	subDir string
+	indent int    // nesting depth (2 spaces per level)
+	itemID string // subdirectory node ID ("tree-item-%d")
+	subDir string // subdirectory name
 }
 
 // buildTree traverses the module-qualified output directory and returns
@@ -181,7 +180,7 @@ func (tb *treeBuilder) processDir(ctx context.Context, st *scanState, pkgPath, s
 func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (*entryResult, error) {
 	st.prog.Report(st.budget, pkgPath)
 
-	cov     := tb.cov[pkgPath]
+	cov     := tb.covState.cov[pkgPath]
 	percent := 0.0
 	if cov.total > 0 {
 		percent = float64(cov.covered) / float64(cov.total) * 100
