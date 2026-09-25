@@ -13,26 +13,40 @@ func TestFlags(t *testing.T) {
 	t.Parallel()
 	usage := getUsage(t)
 	tests := []struct{
-		name             string
-		args             []string
-		wantGoMod        string
-		wantCoverProfile string
-		wantPath         string
-		wantOut          string
-		wantNoBrowser    bool
-		wantHTTPServer   bool
-		wantSortOrder    sortOrder
-		err              string // zero value means no error expected (err113)
+		name         string
+		args         []string
+		wantFlagVals *flagVals
+		wantOut      string
+		err          string // zero value means no error expected (err113)
 	}{{
 		name: "valid",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
-			"-path",         "baz",
+			"-outdir",       "baz",
 		},
-		wantGoMod:         "foo",
-		wantCoverProfile:  "bar",
-		wantPath:          "baz",
+		wantFlagVals: &flagVals{
+			goModFile:        "foo",
+			coverProfileFile: "bar",
+			outDir:           "baz",
+			sortOrder:        lex,
+		},
+	}, {
+		name: "ignored args",
+		args: []string{
+			"-gomod",        "foo",
+			"-coverprofile", "bar",
+			"-outdir",       "baz",
+			"bug",
+			"boo",
+		},
+		wantFlagVals: &flagVals{
+			goModFile:        "foo",
+			coverProfileFile: "bar",
+			outDir:           "baz",
+			sortOrder:        lex,
+		},
+		wantOut: "ignored arguments: bug, boo\n",
 	}, {
 		name:    "missing -gomod",
 		err:     "no value specified for -gomod",
@@ -43,134 +57,141 @@ func TestFlags(t *testing.T) {
 		err:     "no value specified for -coverprofile",
 		wantOut: "missing -coverprofile usage:\n" + usage,
 	}, {
-		name:    "missing -path",
-		args:    []string{
-			"-gomod",        "foo",
-			"-coverprofile", "bar",
-		},
-		err:     "no value specified for -path",
-		wantOut: "missing -path usage:\n" + usage,
-	}, {
-		name: "ignored args",
+		name: "missing -outdir",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
-			"-path",         "baz",
-			"bug",
-			"boo",
 		},
-		wantGoMod:        "foo",
-		wantCoverProfile: "bar",
-		wantPath:         "baz",
-		wantOut:          "ignored arguments: bug, boo\n",
+		err:     "no value specified for -outdir",
+		wantOut: "missing -outdir usage:\n" + usage,
 	}, {
 		name: "-n set",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
-			"-path",         "baz",
+			"-outdir",       "baz",
 			"-n",
 		},
-		wantGoMod:        "foo",
-		wantCoverProfile: "bar",
-		wantPath:         "baz",
-		wantNoBrowser:    true,
+		wantFlagVals: &flagVals{
+			goModFile:        "foo",
+			coverProfileFile: "bar",
+			outDir:           "baz",
+			sortOrder:        lex,
+			noBrowser:        true,
+		},
 	}, {
 		name: "-s set",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
-			"-path",         "baz",
+			"-outdir",       "baz",
 			"-s",
 		},
-		wantGoMod:        "foo",
-		wantCoverProfile: "bar",
-		wantPath:         "baz",
-		wantHTTPServer:   true,
+		wantFlagVals: &flagVals{
+			goModFile:        "foo",
+			coverProfileFile: "bar",
+			outDir:           "baz",
+			sortOrder:        lex,
+			httpServer:       true,
+		},
 	}, {
 		name: "-order lex",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
-			"-path",         "baz",
+			"-outdir",       "baz",
 			"-order",        "lex",
 		},
-		wantGoMod:        "foo",
-		wantCoverProfile: "bar",
-		wantPath:         "baz",
-		wantSortOrder:    lex,
+		wantFlagVals: &flagVals{
+			goModFile:        "foo",
+			coverProfileFile: "bar",
+			outDir:           "baz",
+			sortOrder:        lex,
+		},
 	}, {
 		name: "-order shallowest",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
-			"-path",         "baz",
+			"-outdir",       "baz",
 			"-order",        "shallowest",
 		},
-		wantGoMod:        "foo",
-		wantCoverProfile: "bar",
-		wantPath:         "baz",
-		wantSortOrder:    shallowest,
+		wantFlagVals: &flagVals{
+			goModFile:        "foo",
+			coverProfileFile: "bar",
+			outDir:           "baz",
+			sortOrder:        shallowest,
+		},
 	}, {
 		name: "-order deepest",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
-			"-path",         "baz",
+			"-outdir",       "baz",
 			"-order",        "deepest",
 		},
-		wantGoMod:        "foo",
-		wantCoverProfile: "bar",
-		wantPath:         "baz",
-		wantSortOrder:    deepest,
+		wantFlagVals: &flagVals{
+			goModFile:        "foo",
+			coverProfileFile: "bar",
+			outDir:           "baz",
+			sortOrder:        deepest,
+		},
 	}, {
 		name: "-order lowest",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
-			"-path",         "baz",
+			"-outdir",       "baz",
 			"-order",        "lowest",
 		},
-		wantGoMod:        "foo",
-		wantCoverProfile: "bar",
-		wantPath:         "baz",
-		wantSortOrder:    lowest,
+		wantFlagVals: &flagVals{
+			goModFile:        "foo",
+			coverProfileFile: "bar",
+			outDir:           "baz",
+			sortOrder:        lowest,
+		},
 	}, {
 		name: "-order highest",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
-			"-path",         "baz",
+			"-outdir",       "baz",
 			"-order",        "highest",
 		},
-		wantGoMod:        "foo",
-		wantCoverProfile: "bar",
-		wantPath:         "baz",
-		wantSortOrder:    highest,
+		wantFlagVals: &flagVals{
+			goModFile:        "foo",
+			coverProfileFile: "bar",
+			outDir:           "baz",
+			sortOrder:        highest,
+		},
 	}, {
 		name: "-order shortest",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
-			"-path",         "baz",
+			"-outdir",       "baz",
 			"-order",        "shortest",
 		},
-		wantGoMod:        "foo",
-		wantCoverProfile: "bar",
-		wantPath:         "baz",
-		wantSortOrder:    shortest,
+		wantFlagVals: &flagVals{
+			goModFile:        "foo",
+			coverProfileFile: "bar",
+			outDir:           "baz",
+			sortOrder:        shortest,
+		},
 	}, {
 		name: "-order longest",
 		args: []string{
 			"-gomod",        "foo",
 			"-coverprofile", "bar",
-			"-path",         "baz",
+			"-outdir",       "baz",
 			"-order",        "longest",
 		},
-		wantGoMod:        "foo",
-		wantCoverProfile: "bar",
-		wantPath:         "baz",
-		wantSortOrder:    longest,
+		wantFlagVals: &flagVals{
+			goModFile:        "foo",
+			coverProfileFile: "bar",
+			outDir:           "baz",
+			sortOrder:        longest,
+		},
 	}, {
 		name:    "-order invalid",
 		args:    []string{"-order", "invalid"},
@@ -200,12 +221,7 @@ func TestFlags(t *testing.T) {
 			gotOut := new(bytes.Buffer)
 			fs     := flag.NewFlagSet(tt.name, flag.ContinueOnError)
 			fs.SetOutput(gotOut)
-			gotGoMod,
-			gotCoverProfile,
-			gotPath,
-			gotNoBrowser,
-			gotHTTPServer,
-			gotSortOrder, err := flags(fs, tt.args)
+			gotFlagVals, err := flags(fs, tt.args)
 			if tt.err != "" {
 				if err == nil {
 					t.Errorf("flags(%q) did not fail", tt.name)
@@ -213,26 +229,27 @@ func TestFlags(t *testing.T) {
 				if tt.err != err.Error() {
 					t.Errorf("flags(%q) returned %q; expected %q\n", tt.name, err, tt.err)
 				}
+				return
 			}
 			if diff := cmp.Diff(tt.wantOut, gotOut.String()); diff != "" {
 				t.Errorf("flags(%q) usage message mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantGoMod, gotGoMod); diff != "" {
+			if diff := cmp.Diff(tt.wantFlagVals.goModFile, gotFlagVals.goModFile); diff != "" {
 				t.Errorf("flags(%q) goMod mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantCoverProfile, gotCoverProfile); diff != "" {
+			if diff := cmp.Diff(tt.wantFlagVals.coverProfileFile, gotFlagVals.coverProfileFile); diff != "" {
 				t.Errorf("flags(%q) coverProfile mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantPath, gotPath); diff != "" {
+			if diff := cmp.Diff(tt.wantFlagVals.outDir, gotFlagVals.outDir); diff != "" {
 				t.Errorf("flags(%q) path mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantNoBrowser, gotNoBrowser); diff != "" {
-				t.Errorf("flags(%q) noBrowser mismatch (-want +got):\n%s", tt.name, diff)
+			if diff := cmp.Diff(tt.wantFlagVals.noBrowser, gotFlagVals.noBrowser); diff != "" {
+				t.Errorf("flags(%q) browser mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantHTTPServer, gotHTTPServer); diff != "" {
+			if diff := cmp.Diff(tt.wantFlagVals.httpServer, gotFlagVals.httpServer); diff != "" {
 				t.Errorf("flags(%q) httpServer mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantSortOrder, gotSortOrder); diff != "" {
+			if diff := cmp.Diff(tt.wantFlagVals.sortOrder, gotFlagVals.sortOrder); diff != "" {
 				t.Errorf("flags(%q) sortOrder mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
@@ -247,11 +264,11 @@ func TestFilterArgs(t *testing.T) {
 		want []string
 	}{{
 		name: "no extra args",
-		args: []string{"-gomod", "foo", "-coverfile", "bar", "-path", "baz"},
-		want: []string{"-gomod", "foo", "-coverfile", "bar", "-path", "baz"},
+		args: []string{"-gomod", "foo", "-coverfile", "bar", "-outdir", "baz"},
+		want: []string{"-gomod", "foo", "-coverfile", "bar", "-outdir", "baz"},
 	}, {
 		name: "extra args",
-		args: []string{"-gomod", "foo", "-coverfile", "bar", "-path", "baz", "--", "boo", "hoo"},
+		args: []string{"-gomod", "foo", "-coverfile", "bar", "-outdir", "baz", "--", "boo", "hoo"},
 		want: []string{"boo", "hoo"},
 	}, {
 		name: "invalid args",
@@ -274,7 +291,7 @@ func getUsage(t *testing.T) string {
 	buf := new(bytes.Buffer)
 	fs  := flag.NewFlagSet("test", flag.ContinueOnError)
 	fs.SetOutput(buf)
-	if _, _, _, _, _, _, err := flags(fs, []string{"-invalid"}); err == nil {
+	if _, err := flags(fs, []string{"-invalid"}); err == nil {
 		t.Fatal("flags() unexpectedly succeeded")
 	}
 	return strings.SplitN(buf.String(), "\n", 3)[2]

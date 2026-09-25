@@ -7,7 +7,7 @@ description: upload a Go test coverage HTML report to GitHub Pages
 author:      jbunds
 
 inputs:
-  coverage-report-path:
+  coverage-report-outdir:
     description: path to the root of the Go coverage report
     required:    false
     default:     coverage_report

@@ -8,8 +8,17 @@ import (
 	"strings"
 )
 
+type flagVals struct {
+	goModFile        string
+	coverProfileFile string
+	outDir           string
+	noBrowser        bool
+	httpServer       bool
+	sortOrder        sortOrder
+}
+
 // flags parses command line flags.
-func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, noBrowser, httpServer bool, sortOrder sortOrder, err error) {
+func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error) {
 	allowedSortOrders := []string{ // must cohere with the `sortOrder` enum in sort.go
 		"lex",
 		"shallowest", "deepest",
@@ -22,12 +31,15 @@ func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, n
 		fs.PrintDefaults()
 		fmt.Fprintln(fs.Output())
 	}
-	fs.StringVar(&goMod,        "gomod",        "",    "path to the root go.mod file")
-	fs.StringVar(&coverProfile, "coverprofile", "",    "path to the Go test coverage profile file")
-	fs.StringVar(&path,         "path",         "",    "path where HTML files will be written")
-	fs.BoolVar  (&noBrowser,    "n",            false, "suppress opening the browser (overrides -s)")
-	fs.BoolVar  (&httpServer,   "s",            false, "serve the generated HTML via a Python HTTP server")
-	fs.Func     (               "order",               "per-file coverage stdout rows sort order", func(val string) error {
+	var goModFile, coverProfileFile, outDir string
+	var noBrowser, httpServer bool
+	var sortOrder sortOrder
+	fs.StringVar(&goModFile,        "gomod",        "",    "path to the module's go.mod file")
+	fs.StringVar(&coverProfileFile, "coverprofile", "",    "path to the coverage profile file")
+	fs.StringVar(&outDir,           "outdir",       "",    "path where HTML files will be written")
+	fs.BoolVar  (&noBrowser,        "n",            false, "suppress opening the browser (overrides -s)")
+	fs.BoolVar  (&httpServer,       "s",            false, "serve the generated HTML via a Python HTTP server")
+	fs.Func     (                   "order",               "per-file coverage stdout rows sort order", func(val string) error {
 		switch val {
 		case "lex":
 			sortOrder = lex
@@ -55,19 +67,27 @@ func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, n
 		}
 	})
 	if err := fs.Parse(args); err != nil {
-		return "", "", "", false, false, lex, err
+		return nil, err
 	}
-	if goMod == "" {
+	if goModFile == "" {
 		fs.Usage()
-		return "", "", "", false, false, lex, errors.New("no value specified for -gomod")
+		return nil, errors.New("no value specified for -gomod")
 	}
-	if coverProfile == "" {
+	if coverProfileFile == "" {
 		fs.Usage()
-		return "", "", "", false, false, lex, errors.New("no value specified for -coverprofile")
+		return nil, errors.New("no value specified for -coverprofile")
 	}
-	if path == "" {
+	if outDir == "" {
 		fs.Usage()
-		return "", "", "", false, false, lex, errors.New("no value specified for -path")
+		return nil, errors.New("no value specified for -outdir")
+	}
+	fv = &flagVals{
+		goModFile:        goModFile,
+		coverProfileFile: coverProfileFile,
+		outDir:           outDir,
+		noBrowser:        noBrowser,
+		httpServer:       httpServer,
+		sortOrder:        sortOrder,
 	}
 	if len(fs.Args()) > 0 {
 		fmt.Fprintf(fs.Output(), "ignored arguments: %s\n", strings.Join(fs.Args(), ", "))

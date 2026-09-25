@@ -27,12 +27,12 @@ The `coverage` Go module renders an HTML file for each `*.go` source file listed
 The program expects the specification of three flags with corresponding arguments (see [usage](#cli-usage) below):
 
 ```
--gomod         # path to the root go.mod file
--coverprofile  # path to the Go test coverage profile file
--path          # path where HTML files will be written
+-gomod         # path to the module's go.mod file
+-coverprofile  # path to the coverage profile file
+-outdir        # path where HTML files will be written
 ```
 
-The generated HTML files are marked up to identify which lines are covered by tests ($\color{seagreen}{\text{green}}$), and which lines are not ($\color{red}{\text{red}}$). Each HTML file is written to the specified path (per the `-path` flag) following the same directory structure as the source from which the coverage profile file (per the `-coverprofile` flag) was created.
+The generated HTML files are marked up to identify which lines are covered by tests ($\color{seagreen}{\text{green}}$), and which lines are not ($\color{red}{\text{red}}$). Each HTML file is written to the specified path (per the `-outdir` flag) following the same directory structure as the source from which the coverage profile file (per the `-coverprofile` flag) was created.
 
 The program then renders an `index.html` file to the specified path which provides a navigable view of the source rendered as a directory tree on the left, where each node is either a subdirectory (`📁 <subdirectory>`) or a source file (`<source file>.go`). Clicking on a subdirectory node expands its contents, and clicking on a source file node renders the marked up source in a child iframe positioned to the right of the directory tree.
 
@@ -73,13 +73,13 @@ $ go run github.com/jbunds/coverage
 coverage usage:
 
   -coverprofile string
-    	path to the Go test coverage profile file
+    	path to the coverage profile file
   -gomod string
-    	path to the root go.mod file
+    	path to the module's go.mod file
   -n	suppress opening the browser (overrides -s)
   -order value
     	per-file coverage stdout rows sort order
-  -path string
+  -outdir string
     	path where HTML files will be written
   -s	serve the generated HTML via a Python HTTP server
 ```
@@ -90,18 +90,18 @@ coverage usage:
 
 Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to incorporate the `coverage` module within [GitHub workflows][workflows]:
 
-1. The [`jbunds/coverage@v1`][action] reusable [GitHub Action][actions] generates the test coverage report and writes the files comprising the report to `coverage-report-path`. For example:
+1. The [`jbunds/coverage@v1`][action] reusable [GitHub Action][actions] generates the test coverage report and writes the files comprising the report to `coverage-report-outdir`. For example:
 
    ```
    - uses: jbunds/coverage@v1
      with:
-       go-mod:               'go.mod'           # optional; default is 'go.mod'
-       cover-pkg:            './...'            # optional; default is './...'
-       coverage-threshold:   '50'               # optional; default is '0'
-       coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
+       go-mod:                 'go.mod'           # optional; default is 'go.mod'
+       cover-pkg:              './...'            # optional; default is './...'
+       coverage-threshold:     '50'               # optional; default is '0'
+       coverage-report-outdir: 'coverage_report'  # optional; default is 'coverage_report'
    ```
 
-   The [`go-mod`][action], [`coverage-threshold`][gwatts-gocov-outputs], and [`coverage-report-path`][workflow] parameters are optional.
+   The [`go-mod`][action], [`coverage-threshold`][gwatts-gocov-outputs], and [`coverage-report-outdir`][workflow] parameters are optional.
 
    All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
 
@@ -126,10 +126,10 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
        pages:    write  # required by actions/deploy-pages
        id-token: write  # required by actions/deploy-pages
      with:
-       go-mod:               'go.mod'           # optional; default is 'go.mod'
-       cover-pkg:            './...'            # optional; default is './...'
-       coverage-threshold:   '50'               # optional; default is '0'
-       coverage-report-path: 'coverage_report'  # optional; default is 'coverage_report'
+       go-mod:                 'go.mod'           # optional; default is 'go.mod'
+       cover-pkg:              './...'            # optional; default is './...'
+       coverage-threshold:     '50'               # optional; default is '0'
+       coverage-report-outdir: 'coverage_report'  # optional; default is 'coverage_report'
    ```
 
    See [`jbunds/progress/.github/workflows/pages.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/pages.yml) for a working example.

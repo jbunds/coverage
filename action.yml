@@ -17,7 +17,7 @@ branding:
 
 inputs:
   go-mod:
-    description: path to the root go.mod file
+    description: path to the module's go.mod file
     required:    false
     default:     go.mod
   cover-pkg:
@@ -28,7 +28,7 @@ inputs:
     description: coverage threshold percentage (gwatts/go-coverage-action)
     required:    false
     default:     '0'
-  coverage-report-path:
+  coverage-report-outdir:
     description: path to the root of the Go coverage report
     required:    false
     default:     coverage_report
@@ -63,4 +63,4 @@ runs:
           -n \
           -gomod="${{ inputs.go-mod }}" \
           -coverprofile="${{ steps.coverage_profile.outputs.gocov-pathname }}" \
-          -path="${{ inputs.coverage-report-path }}"
+          -outdir="${{ inputs.coverage-report-outdir }}"

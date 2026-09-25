@@ -19,7 +19,7 @@ on:
     inputs:
       go-mod:
         type:        string
-        description: path to the root go.mod file
+        description: path to the module's go.mod file
         required:    false
         default:     go.mod
       cover-pkg:
@@ -32,7 +32,7 @@ on:
         description: coverage threshold percentage
         required:    false
         default:     0
-      coverage-report-path:
+      coverage-report-outdir:
         type:        string
         description: path to the root of the Go coverage report
         required:    false
@@ -51,15 +51,15 @@ jobs:
       - name: Go coverage report
         uses: jbunds/coverage@v1
         with:
-          go-mod:               ${{ inputs.go-mod               || 'go.mod'          }}
-          cover-pkg:            ${{ inputs.cover-pkg            || './...'           }}
-          coverage-threshold:   ${{ inputs.coverage-threshold   || '0'               }}
-          coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
+          go-mod:                 ${{ inputs.go-mod                 || 'go.mod'          }}
+          cover-pkg:              ${{ inputs.cover-pkg              || './...'           }}
+          coverage-threshold:     ${{ inputs.coverage-threshold     || '0'               }}
+          coverage-report-outdir: ${{ inputs.coverage-report-outdir || 'coverage_report' }}
 
       - name: upload to GitHub Pages # https://jbunds.github.io/coverage/
         uses: jbunds/coverage/.github/actions/upload-pages@v1
         with:
-          coverage-report-path: ${{ inputs.coverage-report-path || 'coverage_report' }}
+          coverage-report-outdir: ${{ inputs.coverage-report-outdir || 'coverage_report' }}
 
   deploy:
     runs-on: ubuntu-latest

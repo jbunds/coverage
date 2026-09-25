@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -20,8 +21,14 @@ type rootHandle interface {
 
 type nullRoot struct{}
 
-func (nullRoot) Close() error { return nil         }
-func (nullRoot) Name() string { return "/dev/null" }
+func (nullRoot) Close() error { return nil }
+
+func (nullRoot) Name() string {
+	if runtime.GOOS == "windows" {
+		return "nul"
+	}
+	return "/dev/null"
+}
 
 type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
 

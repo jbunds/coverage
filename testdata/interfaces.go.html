@@ -15,6 +15,7 @@
 <div class="line">	&#34;os&#34;</div>
 <div class="line">	&#34;os/exec&#34;</div>
 <div class="line">	&#34;path/filepath&#34;</div>
+<div class="line">	&#34;runtime&#34;</div>
 <div class="line"></div>
 <div class="line">	&#34;golang.org/x/tools/go/packages&#34;</div>
 <div class="line">)</div>
@@ -29,8 +30,14 @@
 <div class="line"></div>
 <div class="line">type nullRoot struct{}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">func (nullRoot) Close() error { return nil</span><span class="miss">         }</span></div>
-<div class="line"><span class="miss">func (nullRoot) Name() string { return &#34;/dev/null&#34;</span><span class="miss"> }</span></div>
+<div class="line"><span class="miss">func (nullRoot) Close() error { return nil</span><span class="miss"> }</span></div>
+<div class="line"></div>
+<div class="line">func (nullRoot) Name() string<span class="miss"> {</span></div>
+<div class="line"><span class="miss">	if runtime.GOOS == &#34;windows&#34; {</span></div>
+<div class="line"><span class="miss">		return &#34;nul&#34;</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="miss">	return &#34;/dev/null&#34;</span></div>
+<div class="line">}</div>
 <div class="line"></div>
 <div class="line">type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)</div>
 <div class="line"></div>

@@ -74,12 +74,12 @@ func (rg *reportGenerator) writeRow(ew *errorWriter, path string, percent float6
 
 // maybeOpenBrowser opens the generated index.html file in the
 // default browser when stdout is a TTY and -n is not set.
-func (rg *reportGenerator) maybeOpenBrowser(noBrowser, httpServer bool) error {
-	if noBrowser || !isTerm(os.Stdin) {
+func (rg *reportGenerator) maybeOpenBrowser(fv *flagVals) error {
+	if fv.noBrowser || !isTerm(os.Stdin) {
 		return nil
 	}
 
-	if httpServer {
+	if fv.httpServer {
 		return launchHTTPServer(rg.outRoot.Name())
 	}
 

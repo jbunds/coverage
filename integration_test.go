@@ -16,11 +16,17 @@ import (
 func TestIntegrationTest(t *testing.T) {
 	t.Parallel()
 
-	rg, err := newReportGenerator("go.mod", "testdata/cov.out", t.TempDir(), lex)
+	fv := &flagVals{
+		goModFile:        "go.mod",
+		coverProfileFile: "testdata/cov.out",
+		outDir:           t.TempDir(),
+	}
+
+	rg, err := newReportGenerator(fv)
 	if err != nil { t.Fatal(err) }
 
-	if err := rg.getModName("go.mod");                        err != nil { t.Fatal(err) }
-	if err := rg.writeCovHTMLFiles(t.Context(), io.Discard);  err != nil { t.Fatal(err) }
+	if err := rg.getModName(fv);                             err != nil { t.Fatal(err) }
+	if err := rg.writeCovHTMLFiles(t.Context(), io.Discard); err != nil { t.Fatal(err) }
 
 	tests := []struct{
 		name string

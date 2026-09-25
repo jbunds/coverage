@@ -29,6 +29,20 @@ func (w *sliceWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+type mockRoot struct {
+	name      string
+	closeFunc func() error // nil -> success; non-nil -> delegate
+}
+
+func (m *mockRoot) Close() error {
+	if m.closeFunc != nil { return m.closeFunc() }
+	return nil
+}
+
+func (m *mockRoot) Name() string {
+	return m.name
+}
+
 type mockFS struct {
 	fs.FS
 	root           *mockRoot
@@ -106,20 +120,6 @@ func (m *mockFileInfo) ModTime() time.Time   { return time.Time{}              }
 func (m *mockFileInfo) IsDir()   bool        { return m.mode & fs.ModeDir != 0 }
 func (m *mockFileInfo) Sys()     any         { return nil                      }
 
-type mockRoot struct {
-	name      string
-	closeFunc func() error // nil -> success; non-nil -> delegate
-}
-
-func (m *mockRoot) Close() error {
-	if m.closeFunc != nil { return m.closeFunc() }
-	return nil
-}
-
-func (m *mockRoot) Name() string {
-	return m.name
-}
-
 type mockFile struct {
 	writer     io.Writer
 	closeFails bool
@@ -168,7 +168,7 @@ func TestGetModName(t *testing.T) {
 			repGen := &reportGenerator{
 				fsys: &mockFS{ FS: tt.fsys },
 			}
-			err := repGen.getModName("go.mod")
+			err := repGen.getModName(&flagVals{goModFile: "go.mod"})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getModName(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -238,7 +238,7 @@ func TestGetRemoteURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			repGen := &reportGenerator{modName: "github.com/foo/bar"}
-			err    := repGen.getRemoteURL(tt.runner, "go.mod")
+			err    := repGen.getRemoteURL(tt.runner, &flagVals{goModFile: "go.mod"})
 			if err != nil {
 				t.Errorf("getRemoteURL(%q) returned unexpected error: %v", tt.name, err)
 			}

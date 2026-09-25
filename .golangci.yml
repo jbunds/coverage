@@ -96,6 +96,8 @@ linters:
             - io/fs
             - math
             - os/exec
+            - reflect
+            - runtime
             - strings
             - testing
             - time

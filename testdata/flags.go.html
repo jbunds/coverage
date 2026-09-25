@@ -17,8 +17,17 @@
 <div class="line">	&#34;strings&#34;</div>
 <div class="line">)</div>
 <div class="line"></div>
+<div class="line">type flagVals struct {</div>
+<div class="line">	goModFile        string</div>
+<div class="line">	coverProfileFile string</div>
+<div class="line">	outDir           string</div>
+<div class="line">	noBrowser        bool</div>
+<div class="line">	httpServer       bool</div>
+<div class="line">	sortOrder        sortOrder</div>
+<div class="line">}</div>
+<div class="line"></div>
 <div class="line">// flags parses command line flags.</div>
-<div class="line">func flags(fs *flag.FlagSet, args []string) (goMod, coverProfile, path string, noBrowser, httpServer bool, sortOrder sortOrder, err error<span class="hit">) {</span></div>
+<div class="line">func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	allowedSortOrders := []string{ // must cohere with the `sortOrder` enum in sort.go</span></div>
 <div class="line"><span class="hit">		&#34;lex&#34;,</span></div>
 <div class="line"><span class="hit">		&#34;shallowest&#34;, &#34;deepest&#34;,</span></div>
@@ -31,12 +40,15 @@
 <div class="line"><span class="hit">		fs.PrintDefaults()</span></div>
 <div class="line"><span class="hit">		fmt.Fprintln(fs.Output())</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="hit">	fs.StringVar(&amp;goMod,        &#34;gomod&#34;,        &#34;&#34;,    &#34;path to the root go.mod file&#34;)</span></div>
-<div class="line"><span class="hit">	fs.StringVar(&amp;coverProfile, &#34;coverprofile&#34;, &#34;&#34;,    &#34;path to the Go test coverage profile file&#34;)</span></div>
-<div class="line"><span class="hit">	fs.StringVar(&amp;path,         &#34;path&#34;,         &#34;&#34;,    &#34;path where HTML files will be written&#34;)</span></div>
-<div class="line"><span class="hit">	fs.BoolVar  (&amp;noBrowser,    &#34;n&#34;,            false, &#34;suppress opening the browser (overrides -s)&#34;)</span></div>
-<div class="line"><span class="hit">	fs.BoolVar  (&amp;httpServer,   &#34;s&#34;,            false, &#34;serve the generated HTML via a Python HTTP server&#34;)</span></div>
-<div class="line"><span class="hit">	fs.Func     (               &#34;order&#34;,               &#34;per-file coverage stdout rows sort order&#34;, func(val string) error {</span></div>
+<div class="line"><span class="hit">	var goModFile, coverProfileFile, outDir string</span></div>
+<div class="line"><span class="hit">	var noBrowser, httpServer bool</span></div>
+<div class="line"><span class="hit">	var sortOrder sortOrder</span></div>
+<div class="line"><span class="hit">	fs.StringVar(&amp;goModFile,        &#34;gomod&#34;,        &#34;&#34;,    &#34;path to the module&#39;s go.mod file&#34;)</span></div>
+<div class="line"><span class="hit">	fs.StringVar(&amp;coverProfileFile, &#34;coverprofile&#34;, &#34;&#34;,    &#34;path to the coverage profile file&#34;)</span></div>
+<div class="line"><span class="hit">	fs.StringVar(&amp;outDir,           &#34;outdir&#34;,       &#34;&#34;,    &#34;path where HTML files will be written&#34;)</span></div>
+<div class="line"><span class="hit">	fs.BoolVar  (&amp;noBrowser,        &#34;n&#34;,            false, &#34;suppress opening the browser (overrides -s)&#34;)</span></div>
+<div class="line"><span class="hit">	fs.BoolVar  (&amp;httpServer,       &#34;s&#34;,            false, &#34;serve the generated HTML via a Python HTTP server&#34;)</span></div>
+<div class="line"><span class="hit">	fs.Func     (                   &#34;order&#34;,               &#34;per-file coverage stdout rows sort order&#34;, func(val string) error {</span></div>
 <div class="line"><span class="hit">		switch val</span> {</div>
 <div class="line">		case &#34;lex&#34;<span class="hit">:</span></div>
 <div class="line"><span class="hit">			sortOrder = lex</span></div>
@@ -64,19 +76,27 @@
 <div class="line">		}</div>
 <div class="line">	})</div>
 <div class="line"><span class="hit">	if err := fs.Parse(args); err != nil {</span></div>
-<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, lex, err</span></div>
+<div class="line"><span class="hit">		return nil, err</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="hit">	if goMod == &#34;&#34; {</span></div>
+<div class="line"><span class="hit">	if goModFile == &#34;&#34; {</span></div>
 <div class="line"><span class="hit">		fs.Usage()</span></div>
-<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, lex, errors.New(&#34;no value specified for -gomod&#34;)</span></div>
+<div class="line"><span class="hit">		return nil, errors.New(&#34;no value specified for -gomod&#34;)</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="hit">	if coverProfile == &#34;&#34; {</span></div>
+<div class="line"><span class="hit">	if coverProfileFile == &#34;&#34; {</span></div>
 <div class="line"><span class="hit">		fs.Usage()</span></div>
-<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, lex, errors.New(&#34;no value specified for -coverprofile&#34;)</span></div>
+<div class="line"><span class="hit">		return nil, errors.New(&#34;no value specified for -coverprofile&#34;)</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="hit">	if path == &#34;&#34; {</span></div>
+<div class="line"><span class="hit">	if outDir == &#34;&#34; {</span></div>
 <div class="line"><span class="hit">		fs.Usage()</span></div>
-<div class="line"><span class="hit">		return &#34;&#34;, &#34;&#34;, &#34;&#34;, false, false, lex, errors.New(&#34;no value specified for -path&#34;)</span></div>
+<div class="line"><span class="hit">		return nil, errors.New(&#34;no value specified for -outdir&#34;)</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	fv = &amp;flagVals{</span></div>
+<div class="line"><span class="hit">		goModFile:        goModFile,</span></div>
+<div class="line"><span class="hit">		coverProfileFile: coverProfileFile,</span></div>
+<div class="line"><span class="hit">		outDir:           outDir,</span></div>
+<div class="line"><span class="hit">		noBrowser:        noBrowser,</span></div>
+<div class="line"><span class="hit">		httpServer:       httpServer,</span></div>
+<div class="line"><span class="hit">		sortOrder:        sortOrder</span><span class="hit">,</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="hit">	if len(fs.Args()) &gt; 0 {</span></div>
 <div class="line"><span class="hit">		fmt.Fprintf(fs.Output(), &#34;ignored arguments: %s\n&#34;, strings.Join(fs.Args(), &#34;, &#34;))</span></div>
