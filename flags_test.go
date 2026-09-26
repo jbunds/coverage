@@ -13,11 +13,11 @@ func TestFlags(t *testing.T) {
 	t.Parallel()
 	usage := getUsage(t)
 	tests := []struct{
-		name         string
-		args         []string
-		wantFlagVals *flagVals
-		wantOut      string
-		err          string // zero value means no error expected (err113)
+		name    string
+		args    []string
+		wantFV  *flagVals
+		wantOut string
+		err     string // zero value means no error expected (err113)
 	}{{
 		name: "valid",
 		args: []string{
@@ -25,7 +25,7 @@ func TestFlags(t *testing.T) {
 			"-coverprofile", "bar",
 			"-outdir",       "baz",
 		},
-		wantFlagVals: &flagVals{
+		wantFV: &flagVals{
 			goModFile:        "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
@@ -40,7 +40,7 @@ func TestFlags(t *testing.T) {
 			"bug",
 			"boo",
 		},
-		wantFlagVals: &flagVals{
+		wantFV: &flagVals{
 			goModFile:        "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
@@ -72,7 +72,7 @@ func TestFlags(t *testing.T) {
 			"-outdir",       "baz",
 			"-n",
 		},
-		wantFlagVals: &flagVals{
+		wantFV: &flagVals{
 			goModFile:        "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
@@ -87,7 +87,7 @@ func TestFlags(t *testing.T) {
 			"-outdir",       "baz",
 			"-s",
 		},
-		wantFlagVals: &flagVals{
+		wantFV: &flagVals{
 			goModFile:        "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
@@ -102,7 +102,7 @@ func TestFlags(t *testing.T) {
 			"-outdir",       "baz",
 			"-order",        "lex",
 		},
-		wantFlagVals: &flagVals{
+		wantFV: &flagVals{
 			goModFile:        "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
@@ -116,7 +116,7 @@ func TestFlags(t *testing.T) {
 			"-outdir",       "baz",
 			"-order",        "shallowest",
 		},
-		wantFlagVals: &flagVals{
+		wantFV: &flagVals{
 			goModFile:        "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
@@ -130,7 +130,7 @@ func TestFlags(t *testing.T) {
 			"-outdir",       "baz",
 			"-order",        "deepest",
 		},
-		wantFlagVals: &flagVals{
+		wantFV: &flagVals{
 			goModFile:        "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
@@ -144,7 +144,7 @@ func TestFlags(t *testing.T) {
 			"-outdir",       "baz",
 			"-order",        "lowest",
 		},
-		wantFlagVals: &flagVals{
+		wantFV: &flagVals{
 			goModFile:        "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
@@ -158,7 +158,7 @@ func TestFlags(t *testing.T) {
 			"-outdir",       "baz",
 			"-order",        "highest",
 		},
-		wantFlagVals: &flagVals{
+		wantFV: &flagVals{
 			goModFile:        "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
@@ -172,7 +172,7 @@ func TestFlags(t *testing.T) {
 			"-outdir",       "baz",
 			"-order",        "shortest",
 		},
-		wantFlagVals: &flagVals{
+		wantFV: &flagVals{
 			goModFile:        "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
@@ -186,7 +186,7 @@ func TestFlags(t *testing.T) {
 			"-outdir",       "baz",
 			"-order",        "longest",
 		},
-		wantFlagVals: &flagVals{
+		wantFV: &flagVals{
 			goModFile:        "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
@@ -221,7 +221,7 @@ func TestFlags(t *testing.T) {
 			gotOut := new(bytes.Buffer)
 			fs     := flag.NewFlagSet(tt.name, flag.ContinueOnError)
 			fs.SetOutput(gotOut)
-			gotFlagVals, err := flags(fs, tt.args)
+			gotFV, err := flags(fs, tt.args)
 			if tt.err != "" {
 				if err == nil {
 					t.Errorf("flags(%q) did not fail", tt.name)
@@ -234,22 +234,22 @@ func TestFlags(t *testing.T) {
 			if diff := cmp.Diff(tt.wantOut, gotOut.String()); diff != "" {
 				t.Errorf("flags(%q) usage message mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantFlagVals.goModFile, gotFlagVals.goModFile); diff != "" {
+			if diff := cmp.Diff(tt.wantFV.goModFile, gotFV.goModFile); diff != "" {
 				t.Errorf("flags(%q) goMod mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantFlagVals.coverProfileFile, gotFlagVals.coverProfileFile); diff != "" {
+			if diff := cmp.Diff(tt.wantFV.coverProfileFile, gotFV.coverProfileFile); diff != "" {
 				t.Errorf("flags(%q) coverProfile mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantFlagVals.outDir, gotFlagVals.outDir); diff != "" {
+			if diff := cmp.Diff(tt.wantFV.outDir, gotFV.outDir); diff != "" {
 				t.Errorf("flags(%q) path mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantFlagVals.noBrowser, gotFlagVals.noBrowser); diff != "" {
+			if diff := cmp.Diff(tt.wantFV.noBrowser, gotFV.noBrowser); diff != "" {
 				t.Errorf("flags(%q) browser mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantFlagVals.httpServer, gotFlagVals.httpServer); diff != "" {
+			if diff := cmp.Diff(tt.wantFV.httpServer, gotFV.httpServer); diff != "" {
 				t.Errorf("flags(%q) httpServer mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantFlagVals.sortOrder, gotFlagVals.sortOrder); diff != "" {
+			if diff := cmp.Diff(tt.wantFV.sortOrder, gotFV.sortOrder); diff != "" {
 				t.Errorf("flags(%q) sortOrder mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
