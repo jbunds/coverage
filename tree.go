@@ -21,7 +21,7 @@ type treeBuilder struct {
 	modName  string         // module name
 	outRoot  rootHandle     // output root for the generated HTML files, per -outdir
 	covState *coverageState // accumulated coverage data
-	counter  atomic.Uint64  // ID for each subdirectory node (<input type="checkbox"> its <label>)
+	counter  atomic.Uint64  // ID for each subdirectory node (<input type="checkbox"> and its <label>)
 }
 
 // scanState holds per-iteration state during recursive
@@ -45,8 +45,8 @@ type entryResult struct {
 // htmlBuilder renders source tree HTML fragments.
 type htmlBuilder struct {
 	indent int    // nesting depth (2 spaces per level)
-	itemID string // subdirectory node ID ("tree-item-%d")
 	subDir string // subdirectory name
+	itemID string // subdirectory node ID ("tree-item-%d")
 }
 
 // buildTree traverses the module-qualified output directory and returns

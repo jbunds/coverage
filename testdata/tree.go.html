@@ -30,7 +30,7 @@
 <div class="line">	modName  string         // module name</div>
 <div class="line">	outRoot  rootHandle     // output root for the generated HTML files, per -outdir</div>
 <div class="line">	covState *coverageState // accumulated coverage data</div>
-<div class="line">	counter  atomic.Uint64  // ID for each subdirectory node (&lt;input type=&#34;checkbox&#34;&gt; its &lt;label&gt;)</div>
+<div class="line">	counter  atomic.Uint64  // ID for each subdirectory node (&lt;input type=&#34;checkbox&#34;&gt; and its &lt;label&gt;)</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// scanState holds per-iteration state during recursive</div>
@@ -54,8 +54,8 @@
 <div class="line">// htmlBuilder renders source tree HTML fragments.</div>
 <div class="line">type htmlBuilder struct {</div>
 <div class="line">	indent int    // nesting depth (2 spaces per level)</div>
-<div class="line">	itemID string // subdirectory node ID (&#34;tree-item-%d&#34;)</div>
 <div class="line">	subDir string // subdirectory name</div>
+<div class="line">	itemID string // subdirectory node ID (&#34;tree-item-%d&#34;)</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// buildTree traverses the module-qualified output directory and returns</div>
