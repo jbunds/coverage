@@ -1,1 +1,1 @@
-{"go-coverage-action-fmt":1,"coverage_pct":81.20989917506874,"pkg_stats":{"github.com/jbunds/coverage":[84.38095238095238],"github.com/jbunds/coverage/tools/loctrace":[0]},"skipped_count":0}
+{"go-coverage-action-fmt":1,"coverage_pct":84.38095238095238,"pkg_stats":{"github.com/jbunds/coverage":[84.38095238095238]},"skipped_count":0}
