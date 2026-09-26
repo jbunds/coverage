@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Go coverage report
+      - name: Go test coverage report
         uses: jbunds/coverage@v1
         with:
           go-mod:                 ${{ inputs.go-mod                 || 'go.mod'          }}
@@ -56,7 +56,7 @@ jobs:
           coverage-threshold:     ${{ inputs.coverage-threshold     || '0'               }}
           coverage-report-outdir: ${{ inputs.coverage-report-outdir || 'coverage_report' }}
 
-      - name: upload to GitHub Pages # https://jbunds.github.io/coverage/
+      - name: upload to GitHub Pages
         uses: jbunds/coverage/.github/actions/upload-pages@v1
         with:
           coverage-report-outdir: ${{ inputs.coverage-report-outdir || 'coverage_report' }}
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:   generate-and-upload
     permissions:      # required permissions for the GITHUB_TOKEN to deploy to GitHub Pages
-      contents: write # required for callers (!!!) to execute `git push origin refs/notes/gocoverage`; https://docs.github.com/actions/reference/workflows-and-actions/reusing-workflow-configurations#access-and-permissions-for-nested-workflows
+      contents: write # required for callers to execute `git push origin refs/notes/gocoverage`; https://docs.github.com/actions/reference/workflows-and-actions/reusing-workflow-configurations#access-and-permissions-for-nested-workflows
       pages:    write
       id-token: write
     environment:
