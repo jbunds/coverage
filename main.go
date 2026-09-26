@@ -92,17 +92,17 @@ func run() int {
 	if err != nil { return fatal(2, "cannot instantiate report generator: %v", err) }
 	defer rg.outRoot.Close()
 
+	if err := rg.getModName(fv);                  err != nil { return fatal(3, "cannot determine module name: %v",         err) }
+	if err := rg.getRemoteURL(&realRunner{}, fv); err != nil { return fatal(4, "cannot determine remote URL: %v",          err) }
+	if err := rg.primePkgDirCache(packages.Load); err != nil { return fatal(5, "cannot prime package directory cache: %v", err) }
+
 	var progressWriter io.Writer = os.Stderr
 	if !isTerm(os.Stderr) { progressWriter = io.Discard }
-
-	if err := rg.getModName(fv);                         err != nil { return fatal(3, "cannot determine module name: %v",         err) }
-	if err := rg.getRemoteURL(&realRunner{}, fv);        err != nil { return fatal(4, "cannot determine remote URL: %v",          err) }
-	if err := rg.primePkgDirCache(packages.Load);        err != nil { return fatal(5, "cannot prime package directory cache: %v", err) }
 
 	fmt.Fprintf(os.Stderr, "processing %d source files...", len(rg.profiles))
 	if !isTerm(os.Stdin) { fmt.Fprintln(os.Stderr) }
 
-	if err := rg.writeCovHTMLFiles(ctx, progressWriter); err != nil { return fatal(6, "cannot write HTML coverage files: %v",     err) }
+	if err := rg.writeCovHTMLFiles(ctx, progressWriter); err != nil { return fatal(6, "cannot write HTML coverage files: %v", err) }
 
 	tb := &treeBuilder{
 		fsys:     &localFS{},

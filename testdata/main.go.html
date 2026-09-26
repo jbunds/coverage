@@ -101,17 +101,17 @@
 <div class="line"><span class="miss">	if err != nil { return fatal(2, &#34;cannot instantiate report generator: %v&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"><span class="miss">	defer rg.outRoot.Close()</span></div>
 <div class="line"></div>
+<div class="line"><span class="miss">	if err := rg.getModName(fv);                  err != nil { return fatal(3, &#34;cannot determine module name: %v&#34;,         err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.getRemoteURL(&amp;realRunner{}, fv); err != nil { return fatal(4, &#34;cannot determine remote URL: %v&#34;,          err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.primePkgDirCache(packages.Load); err != nil { return fatal(5, &#34;cannot prime package directory cache: %v&#34;, err</span><span class="miss">) }</span></div>
+<div class="line"></div>
 <div class="line"><span class="miss">	var progressWriter io.Writer = os.Stderr</span></div>
 <div class="line"><span class="miss">	if !isTerm(os.Stderr) { progressWriter = io.Discard</span><span class="miss"> }</span></div>
-<div class="line"></div>
-<div class="line"><span class="miss">	if err := rg.getModName(fv);                         err != nil { return fatal(3, &#34;cannot determine module name: %v&#34;,         err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := rg.getRemoteURL(&amp;realRunner{}, fv);        err != nil { return fatal(4, &#34;cannot determine remote URL: %v&#34;,          err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := rg.primePkgDirCache(packages.Load);        err != nil { return fatal(5, &#34;cannot prime package directory cache: %v&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	fmt.Fprintf(os.Stderr, &#34;processing %d source files...&#34;, len(rg.profiles))</span></div>
 <div class="line"><span class="miss">	if !isTerm(os.Stdin) { fmt.Fprintln(os.Stderr</span><span class="miss">) }</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if err := rg.writeCovHTMLFiles(ctx, progressWriter); err != nil { return fatal(6, &#34;cannot write HTML coverage files: %v&#34;,     err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.writeCovHTMLFiles(ctx, progressWriter); err != nil { return fatal(6, &#34;cannot write HTML coverage files: %v&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	tb := &amp;treeBuilder{</span></div>
 <div class="line"><span class="miss">		fsys:     &amp;localFS{},</span></div>
