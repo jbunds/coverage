@@ -37,9 +37,9 @@ func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error) {
 	fs.StringVar(&goModFile,        "gomod",        "",    "path to the module's go.mod file")
 	fs.StringVar(&coverProfileFile, "coverprofile", "",    "path to the coverage profile file")
 	fs.StringVar(&outDir,           "outdir",       "",    "path where HTML files will be written")
-	fs.BoolVar  (&noBrowser,        "n",            false, "suppress opening the browser (overrides -s)")
-	fs.BoolVar  (&httpServer,       "s",            false, "serve the generated HTML via a Python HTTP server")
-	fs.Func     (                   "order",               "per-file coverage stdout rows sort order", func(val string) error {
+	fs.BoolVar(  &noBrowser,        "n",            false, "suppress opening the browser (overrides -s)")
+	fs.BoolVar(  &httpServer,       "s",            false, "serve the generated HTML via a Python HTTP server")
+	fs.Func(                        "order",               "per-file coverage stdout rows sort order", func(val string) error {
 		switch val {
 		case "lex":
 			sortOrder = lex

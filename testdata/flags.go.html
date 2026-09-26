@@ -46,9 +46,9 @@
 <div class="line"><span class="hit">	fs.StringVar(&amp;goModFile,        &#34;gomod&#34;,        &#34;&#34;,    &#34;path to the module&#39;s go.mod file&#34;)</span></div>
 <div class="line"><span class="hit">	fs.StringVar(&amp;coverProfileFile, &#34;coverprofile&#34;, &#34;&#34;,    &#34;path to the coverage profile file&#34;)</span></div>
 <div class="line"><span class="hit">	fs.StringVar(&amp;outDir,           &#34;outdir&#34;,       &#34;&#34;,    &#34;path where HTML files will be written&#34;)</span></div>
-<div class="line"><span class="hit">	fs.BoolVar  (&amp;noBrowser,        &#34;n&#34;,            false, &#34;suppress opening the browser (overrides -s)&#34;)</span></div>
-<div class="line"><span class="hit">	fs.BoolVar  (&amp;httpServer,       &#34;s&#34;,            false, &#34;serve the generated HTML via a Python HTTP server&#34;)</span></div>
-<div class="line"><span class="hit">	fs.Func     (                   &#34;order&#34;,               &#34;per-file coverage stdout rows sort order&#34;, func(val string) error {</span></div>
+<div class="line"><span class="hit">	fs.BoolVar(  &amp;noBrowser,        &#34;n&#34;,            false, &#34;suppress opening the browser (overrides -s)&#34;)</span></div>
+<div class="line"><span class="hit">	fs.BoolVar(  &amp;httpServer,       &#34;s&#34;,            false, &#34;serve the generated HTML via a Python HTTP server&#34;)</span></div>
+<div class="line"><span class="hit">	fs.Func(                        &#34;order&#34;,               &#34;per-file coverage stdout rows sort order&#34;, func(val string) error {</span></div>
 <div class="line"><span class="hit">		switch val</span> {</div>
 <div class="line">		case &#34;lex&#34;<span class="hit">:</span></div>
 <div class="line"><span class="hit">			sortOrder = lex</span></div>
