@@ -86,22 +86,23 @@ func run() int {
 	signal.Notify(make(chan os.Signal, 1), syscall.SIGPIPE) // prevent SIGPIPE from killing the process; writes return EPIPE (handled below)
 
 	fv, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))
-	if err != nil { return fatal(1, "cannot parse flags: %v\n", err) }
+	if err != nil { return fatal(1, "cannot parse flags: %v", err) }
 
 	rg, err := newReportGenerator(fv)
-	if err != nil { return fatal(2, "cannot instantiate report generator: %v\n", err) }
+	if err != nil { return fatal(2, "cannot instantiate report generator: %v", err) }
 	defer rg.outRoot.Close()
-
-	fmt.Fprintf(os.Stderr, "processing %d source files...", len(rg.profiles))
-	if !isTerm(os.Stdin) { fmt.Fprintln(os.Stderr) }
 
 	var progressWriter io.Writer = os.Stderr
 	if !isTerm(os.Stderr) { progressWriter = io.Discard }
 
-	if err := rg.getModName(fv);                         err != nil { return fatal(3, "cannot determine module name: %v\n",         err) }
-	if err := rg.getRemoteURL(&realRunner{}, fv);        err != nil { return fatal(4, "cannot determine remote URL: %v\n",          err) }
-	if err := rg.primePkgDirCache(packages.Load);        err != nil { return fatal(5, "cannot prime package directory cache: %v\n", err) }
-	if err := rg.writeCovHTMLFiles(ctx, progressWriter); err != nil { return fatal(6, "cannot write HTML coverage files: %v\n",     err) }
+	if err := rg.getModName(fv);                         err != nil { return fatal(3, "cannot determine module name: %v",         err) }
+	if err := rg.getRemoteURL(&realRunner{}, fv);        err != nil { return fatal(4, "cannot determine remote URL: %v",          err) }
+	if err := rg.primePkgDirCache(packages.Load);        err != nil { return fatal(5, "cannot prime package directory cache: %v", err) }
+
+	fmt.Fprintf(os.Stderr, "processing %d source files...", len(rg.profiles))
+	if !isTerm(os.Stdin) { fmt.Fprintln(os.Stderr) }
+
+	if err := rg.writeCovHTMLFiles(ctx, progressWriter); err != nil { return fatal(6, "cannot write HTML coverage files: %v",     err) }
 
 	tb := &treeBuilder{
 		fsys:     &localFS{},
@@ -112,18 +113,18 @@ func run() int {
 
 	if rg.write {
 		var treeHTML string
-		if treeHTML, err = tb.buildTree(ctx, progressWriter); err != nil { return fatal(7, "cannot build tree HTML: %v\n",    err) }
-		if err := rg.writeIndexHTMLFile(treeHTML);            err != nil { return fatal(8, "cannot write index.html: %v\n",   err) }
-		if err := rg.writeStaticFiles();                      err != nil { return fatal(9, "cannot write static files: %v\n", err) }
+		if treeHTML, err = tb.buildTree(ctx, progressWriter); err != nil { return fatal(7, "cannot build tree HTML: %v",    err) }
+		if err := rg.writeIndexHTMLFile(treeHTML);            err != nil { return fatal(8, "cannot write index.html: %v",   err) }
+		if err := rg.writeStaticFiles();                      err != nil { return fatal(9, "cannot write static files: %v", err) }
 	}
 
 	if err := rg.covState.printCoverage(os.Stdout); err != nil {
 		if !errors.Is(err, syscall.EPIPE) { // syscall.EPIPE indicates the downstream pipe closed; not an error
-			return fatal(10, "cannot print coverage: %v\n", err)
+			return fatal(10, "cannot print coverage: %v", err)
 		}
 	}
 
-	if err := rg.maybeOpenBrowser(fv); err != nil { return fatal(11, "cannot open browser: %v\n", err) }
+	if err := rg.maybeOpenBrowser(fv); err != nil { return fatal(11, "cannot open browser: %v", err) }
 
 	return 0
 }
