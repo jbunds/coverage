@@ -260,13 +260,13 @@ func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
 }
 
 // writeTemplateFile writes the specified template file.
-func (rg *reportGenerator) writeTemplateFile(file string, tmplVars any) error {
-	outFile   := filepath.Join(rg.outRoot.Name(), filepath.Base(file))
-	tmpl, err := template.ParseFS(rg.embeddedFiles, file)
-	if                                   err != nil { return fmt.Errorf("cannot parse %q: %w",     file, err) }
+func (rg *reportGenerator) writeTemplateFile(file string, data any) error {
+	outFile := filepath.Join(rg.outRoot.Name(), filepath.Base(file))
+	t, err  := template.ParseFS(rg.embeddedFiles, file)
+	if                            err != nil { return fmt.Errorf("cannot parse %q: %w",     file, err) }
 	f, err := rg.fsys.Create(outFile)
-	if                                   err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
-	if err := tmpl.Execute(f, tmplVars); err != nil { return fmt.Errorf("cannot render template: %w",    err) }
+	if                            err != nil { return fmt.Errorf("cannot create %q: %w", outFile, err) }
+	if err := t.Execute(f, data); err != nil { return fmt.Errorf("cannot render template: %w",    err) }
 
 	return f.Close()
 }

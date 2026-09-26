@@ -269,13 +269,13 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// writeTemplateFile writes the specified template file.</div>
-<div class="line">func (rg *reportGenerator) writeTemplateFile(file string, tmplVars any) error<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	outFile   := filepath.Join(rg.outRoot.Name(), filepath.Base(file))</span></div>
-<div class="line"><span class="hit">	tmpl, err := template.ParseFS(rg.embeddedFiles, file)</span></div>
-<div class="line"><span class="hit">	if                                   err != nil { return fmt.Errorf(&#34;cannot parse %q: %w&#34;,     file, err</span><span class="hit">) }</span></div>
+<div class="line">func (rg *reportGenerator) writeTemplateFile(file string, data any) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	outFile := filepath.Join(rg.outRoot.Name(), filepath.Base(file))</span></div>
+<div class="line"><span class="hit">	t, err  := template.ParseFS(rg.embeddedFiles, file)</span></div>
+<div class="line"><span class="hit">	if                            err != nil { return fmt.Errorf(&#34;cannot parse %q: %w&#34;,     file, err</span><span class="hit">) }</span></div>
 <div class="line"><span class="hit">	f, err := rg.fsys.Create(outFile)</span></div>
-<div class="line"><span class="hit">	if                                   err != nil { return fmt.Errorf(&#34;cannot create %q: %w&#34;, outFile, err</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">	if err := tmpl.Execute(f, tmplVars); err != nil { return fmt.Errorf(&#34;cannot render template: %w&#34;,    err</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">	if                            err != nil { return fmt.Errorf(&#34;cannot create %q: %w&#34;, outFile, err</span><span class="hit">) }</span></div>
+<div class="line"><span class="hit">	if err := t.Execute(f, data); err != nil { return fmt.Errorf(&#34;cannot render template: %w&#34;,    err</span><span class="hit">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	return f.Close</span><span class="hit">()</span></div>
 <div class="line">}</div>

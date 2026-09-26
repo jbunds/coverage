@@ -230,7 +230,7 @@ func TestWriteTemplateFile(t *testing.T) {
 			want:          "VarExists: this var exists",
 		},
 		{
-			name:          "tmpl.Execute fails",
+			name:          "template.Execute fails",
 			fileName:      "bar",
 			embeddedFiles: fstest.MapFS{ "bar": &fstest.MapFile{ Data: []byte("NoSuchData: {{ .NoSuchData }}") }},
 			want:          "NoSuchData: ",
