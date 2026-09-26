@@ -252,16 +252,16 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// writeIndexHTMLFile writes the index HTML file, which contains three</div>
-<div class="line">// template parameters (ModName, ModURL, and TreeHTML), and hosts one</div>
+<div class="line">// template parameters (ModPath, RepoURL, and TreeHTML), and hosts one</div>
 <div class="line">// iframe within which the generated source code HTML files are rendered.</div>
 <div class="line">func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	data := struct{</span></div>
-<div class="line"><span class="hit">		ModName,</span></div>
-<div class="line"><span class="hit">		ModURL,</span></div>
+<div class="line"><span class="hit">		ModPath,</span></div>
+<div class="line"><span class="hit">		RepoURL,</span></div>
 <div class="line"><span class="hit">		TreeHTML  string</span></div>
 <div class="line"><span class="hit">	}{</span></div>
-<div class="line"><span class="hit">		ModName:  rg.modName,</span></div>
-<div class="line"><span class="hit">		ModURL:   rg.repoURL,</span></div>
+<div class="line"><span class="hit">		ModPath:  rg.modPath,</span></div>
+<div class="line"><span class="hit">		RepoURL:  rg.repoURL,</span></div>
 <div class="line"><span class="hit">		TreeHTML: treeHTML</span><span class="hit">,</span></div>
 <div class="line">	}</div>
 <div class="line"></div>

@@ -27,7 +27,7 @@
 <div class="line">// treeBuilder renders the source tree HTML fragment.</div>
 <div class="line">type treeBuilder struct {</div>
 <div class="line">	fsys     writeFS        // directory listing (thin wrapper around os.ReadDir)</div>
-<div class="line">	modName  string         // module name</div>
+<div class="line">	modPath  string         // module path; https://go.dev/ref/mod#glos-module-path</div>
 <div class="line">	outRoot  rootHandle     // output root for the generated HTML files, per -outdir</div>
 <div class="line">	covState *coverageState // accumulated coverage data</div>
 <div class="line">	counter  atomic.Uint64  // ID for each subdirectory node (&lt;input type=&#34;checkbox&#34;&gt; and its &lt;label&gt;)</div>
@@ -64,7 +64,7 @@
 <div class="line">func (tb *treeBuilder) buildTree(ctx context.Context, progressOutput io.Writer) (string, error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	modDomain, _, _ := strings.Cut(tb.modName, &#34;/&#34;)</span></div>
+<div class="line"><span class="hit">	modDomain, _, _ := strings.Cut(tb.modPath, &#34;/&#34;) // https://go.dev/ref/mod#go-mod-file-ident</span></div>
 <div class="line"><span class="hit">	scanRoot        := filepath.Join(tb.outRoot.Name(), modDomain)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	entries, err := tb.fsys.ReadDir(scanRoot)</span></div>
@@ -209,8 +209,9 @@
 <div class="line"><span class="hit">	return &amp;entryResult{html: sb.String(), covered: cov.covered, total: cov.total}, nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// buildTreeHTML wraps the top-level entry results in the outermost &lt;ul&gt;, with</div>
-<div class="line">// the module name as the root label and the aggregate coverage percentage.</div>
+<div class="line">// buildTreeHTML wraps the top-level entry results in the outermost &lt;ul&gt;,</div>
+<div class="line">// with the leading path element (conventionally a domain name) as the</div>
+<div class="line">// root label and the aggregate coverage percentage.</div>
 <div class="line">func buildTreeHTML(modDomain string, results []*entryResult) string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	var totalStatements, totalCovered uint64</span></div>
 <div class="line"><span class="hit">	for _, res := range results {</span></div>

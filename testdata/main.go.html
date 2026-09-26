@@ -65,8 +65,8 @@
 <div class="line">type reportGenerator struct {</div>
 <div class="line">	fsys             writeFS           // wrapper around the os functions used herein</div>
 <div class="line">	embeddedFiles    fs.FS             // templates and static files referenced by the generated HTML</div>
-<div class="line">	modFile          string            // path to go.mod</div>
-<div class="line">	modName          string            // module name</div>
+<div class="line">	goModFile        string            // path to the go.mod file; https://go.dev/ref/mod#glos-go-mod-file</div>
+<div class="line">	modPath          string            // module path; https://go.dev/ref/mod#glos-module-path</div>
 <div class="line">	repoURL          string            // repository URL written to the repo link in index.html template via .ModURL</div>
 <div class="line">	outRoot          rootHandle        // output root for the generated HTML files, per -outdir</div>
 <div class="line">	profilePath      string            // value of the -coverprofile flag</div>
@@ -101,9 +101,9 @@
 <div class="line"><span class="miss">	if err != nil { return fatal(2, &#34;cannot instantiate report generator: %v&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"><span class="miss">	defer rg.outRoot.Close()</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if err := rg.getModName(fv);                  err != nil { return fatal(3, &#34;cannot determine module name: %v&#34;,         err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := rg.getRemoteURL(&amp;realRunner{}, fv); err != nil { return fatal(4, &#34;cannot determine remote URL: %v&#34;,          err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := rg.primePkgDirCache(packages.Load); err != nil { return fatal(5, &#34;cannot prime package directory cache: %v&#34;, err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.getModPath(fv);                    err != nil { return fatal(3, &#34;cannot determine module path: %v&#34;,         err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.resolveRepoURL(&amp;realRunner{}, fv); err != nil { return fatal(4, &#34;cannot resolve repository URL: %v&#34;,        err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.primePkgDirCache(packages.Load);   err != nil { return fatal(5, &#34;cannot prime package directory cache: %v&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	var progressWriter io.Writer = os.Stderr</span></div>
 <div class="line"><span class="miss">	if !isTerm(os.Stderr) { progressWriter = io.Discard</span><span class="miss"> }</span></div>
@@ -115,7 +115,7 @@
 <div class="line"></div>
 <div class="line"><span class="miss">	tb := &amp;treeBuilder{</span></div>
 <div class="line"><span class="miss">		fsys:     &amp;localFS{},</span></div>
-<div class="line"><span class="miss">		modName:  rg.modName,</span></div>
+<div class="line"><span class="miss">		modPath:  rg.modPath,</span></div>
 <div class="line"><span class="miss">		outRoot:  rg.outRoot,</span></div>
 <div class="line"><span class="miss">		covState: rg.covState</span><span class="miss">,</span></div>
 <div class="line">	}</div>
@@ -154,7 +154,7 @@
 <div class="line"><span class="hit">		fsys:             &amp;localFS{},</span></div>
 <div class="line"><span class="hit">		covState:         &amp;coverageState{},</span></div>
 <div class="line"><span class="hit">		outRoot:          nullRoot{},</span></div>
-<div class="line"><span class="hit">		modFile:          filepath.Clean(fv.goModFile),</span></div>
+<div class="line"><span class="hit">		goModFile:        filepath.Clean(fv.goModFile),</span></div>
 <div class="line"><span class="hit">		profilePath:      filepath.Clean(fv.coverProfileFile),</span></div>
 <div class="line"><span class="hit">		profiles:         profiles,</span></div>
 <div class="line"><span class="hit">		embeddedFiles:    embeddedFiles,</span></div>
@@ -193,24 +193,36 @@
 <div class="line"><span class="hit">	return rg, nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// getModName reads the specified go.mod file to determine the name of the Go module.</div>
-<div class="line">func (rg *reportGenerator) getModName(fv *flagVals) error<span class="hit"> {</span></div>
+<div class="line">// getModPath reads the specified go.mod file to determine the module path.</div>
+<div class="line">func (rg *reportGenerator) getModPath(fv *flagVals) error<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	goMod, err   := rg.fsys.ReadFile(fv.goModFile)</span></div>
-<div class="line"><span class="hit">	if err != nil                          { return fmt.Errorf(&#34;cannot read %q: %w&#34;,  fv.goModFile, err</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">	modFile, err := modfile.Parse(fv.goModFile, goMod, nil)</span></div>
-<div class="line"><span class="hit">	if err != nil || modFile.Module == nil { return fmt.Errorf(&#34;cannot parse %q: %w&#34;, fv.goModFile, err</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">	rg.modName = modFile.Module.Mod.Path</span></div>
+<div class="line"><span class="hit">	if err != nil {</span></div>
+<div class="line"><span class="hit">		return fmt.Errorf(&#34;cannot read %q: %w&#34;, fv.goModFile, err)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	goModFile, err := modfile.Parse(fv.goModFile, goMod, nil)</span></div>
+<div class="line"><span class="hit">	if err              != nil ||</span></div>
+<div class="line"><span class="hit">	   goModFile.Module == nil {</span></div>
+<div class="line"><span class="hit">		return fmt.Errorf(&#34;cannot parse %q: %w&#34;, fv.goModFile, err)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	rg.modPath = goModFile.Module.Mod.Path</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	return nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// getRepoURL converts a remote URL to an HTTP URL for subsequent use in writeIndexHTMLFile.</div>
-<div class="line">func (rg *reportGenerator) getRemoteURL(runner runner, fv *flagVals) error {</div>
-<div class="line">	// handles custom import paths (vanity URLs) resolved via Go&#39;s HTML &lt;meta&gt; tag discovery mechanism:</div>
+<div class="line">// resolveRepoURL determines the repository URL for the Go module</div>
+<div class="line">// by reading the git remote origin and normalizing it to an HTTP(S) URL,</div>
+<div class="line">// falling back to the module path if no remote is configured.</div>
+<div class="line">func (rg *reportGenerator) resolveRepoURL(runner runner, fv *flagVals) error {</div>
+<div class="line">	// handles custom import paths (a.k.a. &#34;vanity URLs&#34;) resolved via the `go-import`</div>
+<div class="line">	// &lt;meta&gt; tag discovery mechanism described in https://go.dev/ref/mod#vcs-find:</div>
 <div class="line">	//</div>
 <div class="line">	//   &lt;meta name=&#34;go-import&#34; content=&#34;import-prefix vcs repo-root subdir&#34;&gt;</div>
 <div class="line">	//</div>
-<div class="line">	// see also https://pkg.go.dev/cmd/go#hdr-Fully_qualified_import_paths</div>
+<div class="line">	// see also:</div>
+<div class="line">	//</div>
+<div class="line">	//   https://pkg.go.dev/cmd/go#hdr-Fully_qualified_import_paths</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	var stdout, stderr bytes.Buffer</span></div>
 <div class="line"></div>
@@ -220,32 +232,32 @@
 <div class="line"><span class="hit">	cmd.Stderr = &amp;stderr</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if err := runner.Run(cmd); err != nil {</span></div>
-<div class="line"><span class="hit">		rg.repoURL = &#34;https://&#34; + rg.modName // fallback to modName</span></div>
+<div class="line"><span class="hit">		rg.repoURL = &#34;https://&#34; + rg.modPath // fallback to module path</span></div>
 <div class="line"><span class="hit">		return nil</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	remoteURL := strings.TrimSpace(stdout.String())</span></div>
+<div class="line"><span class="hit">	originURL := strings.TrimSpace(stdout.String())</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	if idx := strings.Index(remoteURL, &#34;@&#34;); idx != -1 {</span></div>
-<div class="line"><span class="hit">		remoteURL = remoteURL[idx + 1:]</span></div>
+<div class="line"><span class="hit">	if idx := strings.Index(originURL, &#34;@&#34;); idx != -1 {</span></div>
+<div class="line"><span class="hit">		originURL = originURL[idx + 1:]</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	remoteURL = strings.TrimPrefix(remoteURL, &#34;ssh://&#34;)</span></div>
-<div class="line"><span class="hit">	remoteURL = strings.TrimPrefix(remoteURL, &#34;git://&#34;)</span></div>
+<div class="line"><span class="hit">	originURL = strings.TrimPrefix(originURL, &#34;ssh://&#34;)</span></div>
+<div class="line"><span class="hit">	originURL = strings.TrimPrefix(originURL, &#34;git://&#34;)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	if !strings.HasPrefix(remoteURL, &#34;http://&#34; ) &amp;&amp;</span></div>
-<div class="line"><span class="hit">	   !strings.HasPrefix(remoteURL, &#34;https://&#34;) {</span></div>
-<div class="line"><span class="hit">		 remoteURL = &#34;https://&#34; + strings.Replace(remoteURL, &#34;:&#34;, &#34;/&#34;, 1)</span></div>
+<div class="line"><span class="hit">	if !strings.HasPrefix(originURL, &#34;http://&#34; ) &amp;&amp;</span></div>
+<div class="line"><span class="hit">	   !strings.HasPrefix(originURL, &#34;https://&#34;) {</span></div>
+<div class="line"><span class="hit">		originURL = &#34;https://&#34; + strings.Replace(originURL, &#34;:&#34;, &#34;/&#34;, 1)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	u, err  := url.Parse(remoteURL)</span></div>
-<div class="line"><span class="hit">	if err  != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+<div class="line"><span class="hit">	u, err := url.Parse(originURL)</span></div>
+<div class="line"><span class="hit">	if err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	httpURL := fmt.Sprintf(&#34;https://%s%s&#34;, u.Host, u.Path)</span></div>
-<div class="line"><span class="hit">	httpURL  = strings.TrimSuffix(httpURL, &#34;.git&#34;)</span></div>
-<div class="line"><span class="hit">	httpURL  = strings.TrimSuffix(httpURL, &#34;/&#34;)</span></div>
+<div class="line"><span class="hit">	repoURL := fmt.Sprintf(&#34;https://%s%s&#34;, u.Host, u.Path)</span></div>
+<div class="line"><span class="hit">	repoURL  = strings.TrimSuffix(repoURL, &#34;.git&#34;)</span></div>
+<div class="line"><span class="hit">	repoURL  = strings.TrimSuffix(repoURL, &#34;/&#34;)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	rg.repoURL = httpURL</span></div>
+<div class="line"><span class="hit">	rg.repoURL = repoURL</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	return nil</span></div>
 <div class="line">}</div>
@@ -287,7 +299,7 @@
 <div class="line"><span class="hit">	cfg := &amp;packages.Config{</span></div>
 <div class="line"><span class="hit">		Mode:  packages.NeedFiles | packages.NeedModule | packages.NeedName,</span></div>
 <div class="line"><span class="hit">		Tests: false,</span></div>
-<div class="line"><span class="hit">		Dir:   filepath.Dir(rg.modFile</span><span class="hit">),</span></div>
+<div class="line"><span class="hit">		Dir:   filepath.Dir(rg.goModFile</span><span class="hit">),</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="hit">	pkgs, err := pkgLoader(cfg, allPkgPaths...)</span></div>
 <div class="line"><span class="hit">	if err != nil { return err</span><span class="hit"> }</span></div>

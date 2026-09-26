@@ -136,7 +136,7 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 
 // tests
 
-func TestGetModName(t *testing.T) {
+func TestGetModPath(t *testing.T) {
 	t.Parallel()
 	tests := []struct{
 		name    string
@@ -168,12 +168,12 @@ func TestGetModName(t *testing.T) {
 			rg := &reportGenerator{
 				fsys: &mockFS{FS: tt.fsys},
 			}
-			err := rg.getModName(&flagVals{goModFile: "go.mod"})
+			err := rg.getModPath(&flagVals{goModFile: "go.mod"})
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getModName(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+				t.Errorf("getModPath(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
-			if diff := cmp.Diff(tt.want, rg.modName); diff != "" {
-				t.Errorf("getModName(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			if diff := cmp.Diff(tt.want, rg.modPath); diff != "" {
+				t.Errorf("getModPath(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}
@@ -191,7 +191,7 @@ func (f *mockRunner) Run(cmd *exec.Cmd) error {
 	return f.err
 }
 
-func TestGetRemoteURL(t *testing.T) {
+func TestResolveRepoURL(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name    string
@@ -237,13 +237,13 @@ func TestGetRemoteURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rg  := &reportGenerator{modName: "github.com/foo/bar"}
-			err := rg.getRemoteURL(tt.runner, &flagVals{goModFile: "go.mod"})
+			rg  := &reportGenerator{modPath: "github.com/foo/bar"}
+			err := rg.resolveRepoURL(tt.runner, &flagVals{goModFile: "go.mod"})
 			if err != nil {
-				t.Errorf("getRemoteURL(%q) returned unexpected error: %v", tt.name, err)
+				t.Errorf("resolveRepoURL(%q) returned unexpected error: %v", tt.name, err)
 			}
 			if diff := cmp.Diff(tt.want, rg.repoURL); diff != "" {
-				t.Errorf("getRemoteURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
+				t.Errorf("resolveRepoURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}

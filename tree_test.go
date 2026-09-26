@@ -25,41 +25,59 @@ func TestBuildTree(t *testing.T) {
 	}{{
 		name: "succeeds",
 		fsys: fstest.MapFS{
-			"some/path/bar/a.go.html":            &fstest.MapFile{},
-			"some/path/bar/dir/b.go.html":        &fstest.MapFile{},
-			"some/path/bar/dir/subdir/c.go.html": &fstest.MapFile{},
+			"some/path/github.com/user/project/a.go.html":            &fstest.MapFile{},
+			"some/path/github.com/user/project/dir/b.go.html":        &fstest.MapFile{},
+			"some/path/github.com/user/project/dir/subdir/c.go.html": &fstest.MapFile{},
 		},
 		cov: map[string]coverage{
-			"bar/a.go":            {covered: 10, total: 10},
-			"bar/dir/b.go":        {covered:  5, total: 10},
-			"bar/dir/subdir/c.go": {covered:  0, total: 10},
+			"github.com/user/project/a.go":            {covered: 10, total: 10},
+			"github.com/user/project/dir/b.go":        {covered:  5, total: 10},
+			"github.com/user/project/dir/subdir/c.go": {covered:  0, total: 10},
 		},
 		want: strings.Join([]string{
 			`<ul class="tree">`,
 			`  <li>`,
 			`    <input type="checkbox" id="tree-item-0"/>`,
 			`    <div class="tree-node">`,
-			`      <label for="tree-item-0">bar</label>`,
+			`      <label for="tree-item-0">github.com</label>`,
 			`      <span class="cov">50.0%</span>`, // covered: 10 + 5 + 0 == 15; total: 10 + 10 + 10 == 30; 15 / 30 == 50.0%
 			`    </div>`,
 			`    <ul>`,
-			`      <li><div class="tree-node"><span class="src"><a href="bar/a.go.html">a.go</a></span> <span class="cov">100.0%</span></div></li>`,
 			`      <li>`,
 			`        <input type="checkbox" id="tree-item-1"/>`,
 			`        <div class="tree-node">`,
-			`          <label for="tree-item-1">dir</label>`,
-			`          <span class="cov">25.0%</span>`, // covered: 5 + 0 == 5; total: 10 + 10 == 20; 5 / 20 == 25.0%
+			`          <label for="tree-item-1">user</label>`,
+			`          <span class="cov">50.0%</span>`, // covered: 10 + 5 + 0 == 15; total: 10 + 10 + 10 == 30; 15 / 30 == 50.0%
 			`        </div>`,
 			`        <ul>`,
-			`          <li><div class="tree-node"><span class="src"><a href="bar/dir/b.go.html">b.go</a></span> <span class="cov">50.0%</span></div></li>`,
 			`          <li>`,
 			`            <input type="checkbox" id="tree-item-2"/>`,
 			`            <div class="tree-node">`,
-			`              <label for="tree-item-2">subdir</label>`,
-			`              <span class="cov">0.0%</span>`, // covered: 0; total: 10; 0 / 10 == 0.0%
+			`              <label for="tree-item-2">project</label>`,
+			`              <span class="cov">50.0%</span>`, // covered: 10 + 5 + 0 == 15; total: 10 + 10 + 10 == 30; 15 / 30 == 50.0%
 			`            </div>`,
 			`            <ul>`,
-			`              <li><div class="tree-node"><span class="src"><a href="bar/dir/subdir/c.go.html">c.go</a></span> <span class="cov">0.0%</span></div></li>`,
+			`              <li><div class="tree-node"><span class="src"><a href="github.com/user/project/a.go.html">a.go</a></span> <span class="cov">100.0%</span></div></li>`, // covered: 10; total: 10; 10 / 10 == 100.0%
+			`              <li>`,
+			`                <input type="checkbox" id="tree-item-3"/>`,
+			`                <div class="tree-node">`,
+			`                  <label for="tree-item-3">dir</label>`,
+			`                  <span class="cov">25.0%</span>`, // covered: 5 + 0 == 5; total: 10 + 10 == 20; 5 / 20 == 25.0%
+			`                </div>`,
+			`                <ul>`,
+			`                  <li><div class="tree-node"><span class="src"><a href="github.com/user/project/dir/b.go.html">b.go</a></span> <span class="cov">50.0%</span></div></li>`, // covered: 5; total: 10; 5 / 10 == 50.0%
+			`                  <li>`,
+			`                    <input type="checkbox" id="tree-item-4"/>`,
+			`                    <div class="tree-node">`,
+			`                      <label for="tree-item-4">subdir</label>`,
+			`                      <span class="cov">0.0%</span>`, // covered: 0; total: 10; 0 / 10 == 0.0%
+			`                    </div>`,
+			`                    <ul>`,
+			`                      <li><div class="tree-node"><span class="src"><a href="github.com/user/project/dir/subdir/c.go.html">c.go</a></span> <span class="cov">0.0%</span></div></li>`, // covered: 0; total: 10; 0 / 10 == 0.0%
+			`                    </ul>`,
+			`                  </li>`,
+			`                </ul>`,
+			`              </li>`,
 			`            </ul>`,
 			`          </li>`,
 			`        </ul>`,
@@ -82,7 +100,7 @@ func TestBuildTree(t *testing.T) {
 			}
 			tb := &treeBuilder{
 				fsys:     mfs,
-				modName: "bar/baz",
+				modPath: "github.com/user/project",
 				outRoot:  &mockRoot{name: "some/path"},
 				covState: &coverageState{cov: tt.cov},
 			}
@@ -114,11 +132,11 @@ func TestProcessEntry(t *testing.T) {
 		wantErr         bool
 	}{{
 		name:            "succeeds",
-		src:             "foo/bar/baz/boo.go",
-		initialDir:      "foo",
-		initialDirEntry: &mockFileInfo{mode: fs.ModeDir, name: "bar"},
-		fsys:            fstest.MapFS{"some/path/foo/bar/baz/boo.go.html": &fstest.MapFile{}},
-		cov:             map[string]coverage{"foo/bar/baz/boo.go": {covered: 17, total: 53}},
+		src:             "github.com/user/project/foo/bar/baz.go",
+		initialDir:      "github.com/user/project",
+		initialDirEntry: &mockFileInfo{mode: fs.ModeDir, name: "foo"},
+		fsys:            fstest.MapFS{"some/path/github.com/user/project/foo/bar/baz.go.html": &fstest.MapFile{}},
+		cov:             map[string]coverage{"github.com/user/project/foo/bar/baz.go": {covered: 17, total: 53}},
 		want:            &entryResult{
 			covered: 17,
 			total:   53,
@@ -126,18 +144,18 @@ func TestProcessEntry(t *testing.T) {
 				`<li>`,
 				`  <input type="checkbox" id="tree-item-1"/>`,
 				`  <div class="tree-node">`,
-				`    <label for="tree-item-1">bar</label>`,
+				`    <label for="tree-item-1">foo</label>`,
 				`    <span class="cov">32.1%</span>`,
 				`  </div>`,
 				`  <ul>`,
 				`    <li>`,
 				`      <input type="checkbox" id="tree-item-2"/>`,
 				`      <div class="tree-node">`,
-				`        <label for="tree-item-2">baz</label>`,
+				`        <label for="tree-item-2">bar</label>`,
 				`        <span class="cov">32.1%</span>`,
 				`      </div>`,
 				`      <ul>`,
-				`        <li><div class="tree-node"><span class="src"><a href="foo/bar/baz/boo.go.html">boo.go</a></span> <span class="cov">32.1%</span></div></li>`,
+				`        <li><div class="tree-node"><span class="src"><a href="github.com/user/project/foo/bar/baz.go.html">baz.go</a></span> <span class="cov">32.1%</span></div></li>`,
 				`      </ul>`,
 				`    </li>`,
 				`  </ul>`,
@@ -317,9 +335,9 @@ func TestBuildTreeHTML(t *testing.T) {
 		entryResults []*entryResult
 		wantLines    []string
 	}{{
-		name:         "foo",
+		name:         "succeeds",
 		entryResults: []*entryResult{{
-			html: "bar\n",
+			html:    "      <li>some html</li>\n",
 			covered: 3,
 			total:   5,
 		}},
@@ -328,11 +346,11 @@ func TestBuildTreeHTML(t *testing.T) {
 			`  <li>`,
 			`    <input type="checkbox" id="tree-item-0"/>`,
 			`    <div class="tree-node">`,
-			`      <label for="tree-item-0">foo</label>`,
+			`      <label for="tree-item-0">github.com</label>`,
 			`      <span class="cov">60.0%</span>`,
 			`    </div>`,
 			`    <ul>`,
-			`bar`,
+			`      <li>some html</li>`,
 			`    </ul>`,
 			`  </li>`,
 			`</ul>`,
@@ -341,7 +359,7 @@ func TestBuildTreeHTML(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got      := buildTreeHTML("foo", tt.entryResults)
+			got      := buildTreeHTML("github.com", tt.entryResults)
 			gotLines := strings.Split(got, "\n")
 			var rep reporter
 			if !cmp.Equal(tt.wantLines, gotLines, cmp.Reporter(&rep)) {

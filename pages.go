@@ -243,16 +243,16 @@ func writePostamble(ew stickyWriter, childJSPath string) {
 }
 
 // writeIndexHTMLFile writes the index HTML file, which contains three
-// template parameters (ModName, ModURL, and TreeHTML), and hosts one
+// template parameters (ModPath, RepoURL, and TreeHTML), and hosts one
 // iframe within which the generated source code HTML files are rendered.
 func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
 	data := struct{
-		ModName,
-		ModURL,
+		ModPath,
+		RepoURL,
 		TreeHTML  string
 	}{
-		ModName:  rg.modName,
-		ModURL:   rg.repoURL,
+		ModPath:  rg.modPath,
+		RepoURL:  rg.repoURL,
 		TreeHTML: treeHTML,
 	}
 

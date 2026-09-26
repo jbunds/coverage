@@ -56,8 +56,8 @@ type coverageState struct {
 type reportGenerator struct {
 	fsys             writeFS           // wrapper around the os functions used herein
 	embeddedFiles    fs.FS             // templates and static files referenced by the generated HTML
-	modFile          string            // path to go.mod
-	modName          string            // module name
+	goModFile        string            // path to the go.mod file; https://go.dev/ref/mod#glos-go-mod-file
+	modPath          string            // module path; https://go.dev/ref/mod#glos-module-path
 	repoURL          string            // repository URL written to the repo link in index.html template via .ModURL
 	outRoot          rootHandle        // output root for the generated HTML files, per -outdir
 	profilePath      string            // value of the -coverprofile flag
@@ -92,9 +92,9 @@ func run() int {
 	if err != nil { return fatal(2, "cannot instantiate report generator: %v", err) }
 	defer rg.outRoot.Close()
 
-	if err := rg.getModName(fv);                  err != nil { return fatal(3, "cannot determine module name: %v",         err) }
-	if err := rg.getRemoteURL(&realRunner{}, fv); err != nil { return fatal(4, "cannot determine remote URL: %v",          err) }
-	if err := rg.primePkgDirCache(packages.Load); err != nil { return fatal(5, "cannot prime package directory cache: %v", err) }
+	if err := rg.getModPath(fv);                    err != nil { return fatal(3, "cannot determine module path: %v",         err) }
+	if err := rg.resolveRepoURL(&realRunner{}, fv); err != nil { return fatal(4, "cannot resolve repository URL: %v",        err) }
+	if err := rg.primePkgDirCache(packages.Load);   err != nil { return fatal(5, "cannot prime package directory cache: %v", err) }
 
 	var progressWriter io.Writer = os.Stderr
 	if !isTerm(os.Stderr) { progressWriter = io.Discard }
@@ -106,7 +106,7 @@ func run() int {
 
 	tb := &treeBuilder{
 		fsys:     &localFS{},
-		modName:  rg.modName,
+		modPath:  rg.modPath,
 		outRoot:  rg.outRoot,
 		covState: rg.covState,
 	}
@@ -145,7 +145,7 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 		fsys:             &localFS{},
 		covState:         &coverageState{},
 		outRoot:          nullRoot{},
-		modFile:          filepath.Clean(fv.goModFile),
+		goModFile:        filepath.Clean(fv.goModFile),
 		profilePath:      filepath.Clean(fv.coverProfileFile),
 		profiles:         profiles,
 		embeddedFiles:    embeddedFiles,
@@ -184,24 +184,36 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 	return rg, nil
 }
 
-// getModName reads the specified go.mod file to determine the name of the Go module.
-func (rg *reportGenerator) getModName(fv *flagVals) error {
+// getModPath reads the specified go.mod file to determine the module path.
+func (rg *reportGenerator) getModPath(fv *flagVals) error {
 	goMod, err   := rg.fsys.ReadFile(fv.goModFile)
-	if err != nil                          { return fmt.Errorf("cannot read %q: %w",  fv.goModFile, err) }
-	modFile, err := modfile.Parse(fv.goModFile, goMod, nil)
-	if err != nil || modFile.Module == nil { return fmt.Errorf("cannot parse %q: %w", fv.goModFile, err) }
-	rg.modName = modFile.Module.Mod.Path
+	if err != nil {
+		return fmt.Errorf("cannot read %q: %w", fv.goModFile, err)
+	}
+
+	goModFile, err := modfile.Parse(fv.goModFile, goMod, nil)
+	if err              != nil ||
+	   goModFile.Module == nil {
+		return fmt.Errorf("cannot parse %q: %w", fv.goModFile, err)
+	}
+
+	rg.modPath = goModFile.Module.Mod.Path
 
 	return nil
 }
 
-// getRepoURL converts a remote URL to an HTTP URL for subsequent use in writeIndexHTMLFile.
-func (rg *reportGenerator) getRemoteURL(runner runner, fv *flagVals) error {
-	// handles custom import paths (vanity URLs) resolved via Go's HTML <meta> tag discovery mechanism:
+// resolveRepoURL determines the repository URL for the Go module
+// by reading the git remote origin and normalizing it to an HTTP(S) URL,
+// falling back to the module path if no remote is configured.
+func (rg *reportGenerator) resolveRepoURL(runner runner, fv *flagVals) error {
+	// handles custom import paths (a.k.a. "vanity URLs") resolved via the `go-import`
+	// <meta> tag discovery mechanism described in https://go.dev/ref/mod#vcs-find:
 	//
 	//   <meta name="go-import" content="import-prefix vcs repo-root subdir">
 	//
-	// see also https://pkg.go.dev/cmd/go#hdr-Fully_qualified_import_paths
+	// see also:
+	//
+	//   https://pkg.go.dev/cmd/go#hdr-Fully_qualified_import_paths
 
 	var stdout, stderr bytes.Buffer
 
@@ -211,32 +223,32 @@ func (rg *reportGenerator) getRemoteURL(runner runner, fv *flagVals) error {
 	cmd.Stderr = &stderr
 
 	if err := runner.Run(cmd); err != nil {
-		rg.repoURL = "https://" + rg.modName // fallback to modName
+		rg.repoURL = "https://" + rg.modPath // fallback to module path
 		return nil
 	}
 
-	remoteURL := strings.TrimSpace(stdout.String())
+	originURL := strings.TrimSpace(stdout.String())
 
-	if idx := strings.Index(remoteURL, "@"); idx != -1 {
-		remoteURL = remoteURL[idx + 1:]
+	if idx := strings.Index(originURL, "@"); idx != -1 {
+		originURL = originURL[idx + 1:]
 	}
 
-	remoteURL = strings.TrimPrefix(remoteURL, "ssh://")
-	remoteURL = strings.TrimPrefix(remoteURL, "git://")
+	originURL = strings.TrimPrefix(originURL, "ssh://")
+	originURL = strings.TrimPrefix(originURL, "git://")
 
-	if !strings.HasPrefix(remoteURL, "http://" ) &&
-	   !strings.HasPrefix(remoteURL, "https://") {
-		 remoteURL = "https://" + strings.Replace(remoteURL, ":", "/", 1)
+	if !strings.HasPrefix(originURL, "http://" ) &&
+	   !strings.HasPrefix(originURL, "https://") {
+		originURL = "https://" + strings.Replace(originURL, ":", "/", 1)
 	}
 
-	u, err  := url.Parse(remoteURL)
-	if err  != nil { return err }
+	u, err := url.Parse(originURL)
+	if err != nil { return err }
 
-	httpURL := fmt.Sprintf("https://%s%s", u.Host, u.Path)
-	httpURL  = strings.TrimSuffix(httpURL, ".git")
-	httpURL  = strings.TrimSuffix(httpURL, "/")
+	repoURL := fmt.Sprintf("https://%s%s", u.Host, u.Path)
+	repoURL  = strings.TrimSuffix(repoURL, ".git")
+	repoURL  = strings.TrimSuffix(repoURL, "/")
 
-	rg.repoURL = httpURL
+	rg.repoURL = repoURL
 
 	return nil
 }
@@ -278,7 +290,7 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader) error {
 	cfg := &packages.Config{
 		Mode:  packages.NeedFiles | packages.NeedModule | packages.NeedName,
 		Tests: false,
-		Dir:   filepath.Dir(rg.modFile),
+		Dir:   filepath.Dir(rg.goModFile),
 	}
 	pkgs, err := pkgLoader(cfg, allPkgPaths...)
 	if err != nil { return err }

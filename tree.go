@@ -18,7 +18,7 @@ import (
 // treeBuilder renders the source tree HTML fragment.
 type treeBuilder struct {
 	fsys     writeFS        // directory listing (thin wrapper around os.ReadDir)
-	modName  string         // module name
+	modPath  string         // module path; https://go.dev/ref/mod#glos-module-path
 	outRoot  rootHandle     // output root for the generated HTML files, per -outdir
 	covState *coverageState // accumulated coverage data
 	counter  atomic.Uint64  // ID for each subdirectory node (<input type="checkbox"> and its <label>)
@@ -55,7 +55,7 @@ type htmlBuilder struct {
 func (tb *treeBuilder) buildTree(ctx context.Context, progressOutput io.Writer) (string, error) {
 	if err := ctx.Err(); err != nil { return "", err }
 
-	modDomain, _, _ := strings.Cut(tb.modName, "/")
+	modDomain, _, _ := strings.Cut(tb.modPath, "/") // https://go.dev/ref/mod#go-mod-file-ident
 	scanRoot        := filepath.Join(tb.outRoot.Name(), modDomain)
 
 	entries, err := tb.fsys.ReadDir(scanRoot)
@@ -200,8 +200,9 @@ func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (
 	return &entryResult{html: sb.String(), covered: cov.covered, total: cov.total}, nil
 }
 
-// buildTreeHTML wraps the top-level entry results in the outermost <ul>, with
-// the module name as the root label and the aggregate coverage percentage.
+// buildTreeHTML wraps the top-level entry results in the outermost <ul>,
+// with the leading path element (conventionally a domain name) as the
+// root label and the aggregate coverage percentage.
 func buildTreeHTML(modDomain string, results []*entryResult) string {
 	var totalStatements, totalCovered uint64
 	for _, res := range results {

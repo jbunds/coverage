@@ -17,7 +17,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 	tests := []struct {
 		name           string
 		fsys           fs.FS
-		modName        string
+		modPath        string
 		pkgDirCache    map[string]string
 		profiles       []*cover.Profile
 		mkdirAllFails  bool
@@ -54,7 +54,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				}, "\n")),
 			},
 		},
-		modName:     "foo",
+		modPath:     "foo",
 		pkgDirCache: map[string]string{ "foo/bar": "foo/bar" },
 		profiles:    []*cover.Profile{{
 			FileName:  "foo/bar/baz.go",
@@ -154,7 +154,7 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 	tests := []struct{
 		name          string
 		embeddedFiles fs.FS
-		modName       string
+		modPath       string
 		repoURL       string
 		openRootFails bool
 		rootCloseFunc func() error
@@ -164,11 +164,11 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 	}{{
 		name:          "succeeds",
 		embeddedFiles: fstest.MapFS{ "html/index.html": &fstest.MapFile{
-			Data: []byte("ModName: {{ .ModName }}, ModURL: {{ .ModURL }}, TreeHTML: {{ .TreeHTML }}"),
+			Data: []byte("ModPath: {{ .ModPath }}, RepoURL: {{ .RepoURL }}, TreeHTML: {{ .TreeHTML }}"),
 		}},
-		modName:       "github.com/foo/bar",
+		modPath:       "github.com/foo/bar",
 		repoURL:       "https://github.com/foo/bar",
-		want:          "ModName: github.com/foo/bar, ModURL: https://github.com/foo/bar, TreeHTML: foo",
+		want:          "ModPath: github.com/foo/bar, RepoURL: https://github.com/foo/bar, TreeHTML: foo",
 	}, {
 		name:          "template.ParseFS fails because index file does not exist",
 		embeddedFiles: fstest.MapFS{},
@@ -189,7 +189,7 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 			rg := &reportGenerator{
 				fsys:          mfs,
 				outRoot:       &mockRoot{name: "some/path"},
-				modName:       tt.modName,
+				modPath:       tt.modPath,
 				repoURL:       tt.repoURL,
 				embeddedFiles: tt.embeddedFiles,
 			}
