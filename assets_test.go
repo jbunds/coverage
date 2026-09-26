@@ -62,13 +62,13 @@ func TestWriteStaticFiles(t *testing.T) {
 				closeFails:  tt.closeFails,
 				badWriter:   tt.badWriter,
 			}
-			repGen := &reportGenerator{
+			rg := &reportGenerator{
 				fsys:          mfs,
 				outRoot:       &mockRoot{name: "some/path"},
 				embeddedFiles: tt.embeddedFiles,
 				staticFiles:   tt.staticFiles,
 			}
-			err := repGen.writeStaticFiles()
+			err := rg.writeStaticFiles()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeStaticFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}

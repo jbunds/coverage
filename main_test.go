@@ -165,14 +165,14 @@ func TestGetModName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			repGen := &reportGenerator{
-				fsys: &mockFS{ FS: tt.fsys },
+			rg := &reportGenerator{
+				fsys: &mockFS{FS: tt.fsys},
 			}
-			err := repGen.getModName(&flagVals{goModFile: "go.mod"})
+			err := rg.getModName(&flagVals{goModFile: "go.mod"})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getModName(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
-			if diff := cmp.Diff(tt.want, repGen.modName); diff != "" {
+			if diff := cmp.Diff(tt.want, rg.modName); diff != "" {
 				t.Errorf("getModName(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
@@ -237,12 +237,12 @@ func TestGetRemoteURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			repGen := &reportGenerator{modName: "github.com/foo/bar"}
-			err    := repGen.getRemoteURL(tt.runner, &flagVals{goModFile: "go.mod"})
+			rg  := &reportGenerator{modName: "github.com/foo/bar"}
+			err := rg.getRemoteURL(tt.runner, &flagVals{goModFile: "go.mod"})
 			if err != nil {
 				t.Errorf("getRemoteURL(%q) returned unexpected error: %v", tt.name, err)
 			}
-			if diff := cmp.Diff(tt.want, repGen.repoURL); diff != "" {
+			if diff := cmp.Diff(tt.want, rg.repoURL); diff != "" {
 				t.Errorf("getRemoteURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
@@ -286,11 +286,11 @@ func TestGetAllPkgPaths(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			repGen := &reportGenerator{
+			rg := &reportGenerator{
 				profilePath: tt.profilePath,
-				fsys:        &mockFS{ FS: tt.fsys },
+				fsys:        &mockFS{FS: tt.fsys},
 			}
-			got, err := repGen.getAllPkgPaths()
+			got, err := rg.getAllPkgPaths()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getAllPkgPaths(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -364,16 +364,16 @@ func TestPrimePkgDirCache(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			repGen := &reportGenerator{
-				fsys:        &mockFS{ FS: tt.fsys },
+			rg := &reportGenerator{
+				fsys:        &mockFS{FS: tt.fsys},
 				profilePath: tt.profilePath,
 			}
-			err := repGen.primePkgDirCache(mockPkgLoader)
+			err := rg.primePkgDirCache(mockPkgLoader)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("primePkgDirCache(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
 			if tt.wantErr { return }
-			if diff := cmp.Diff(tt.want, repGen.pkgDirCache); diff != "" {
+			if diff := cmp.Diff(tt.want, rg.pkgDirCache); diff != "" {
 				t.Errorf("primePkgDirCache(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})

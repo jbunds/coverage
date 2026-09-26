@@ -88,42 +88,42 @@ func run() int {
 	fv, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))
 	if err != nil { return fatal(1, "cannot parse flags: %v\n", err) }
 
-	repGen, err := newReportGenerator(fv)
+	rg, err := newReportGenerator(fv)
 	if err != nil { return fatal(2, "cannot instantiate report generator: %v\n", err) }
-	defer repGen.outRoot.Close()
+	defer rg.outRoot.Close()
 
-	fmt.Fprintf(os.Stderr, "processing %d source files...", len(repGen.profiles))
+	fmt.Fprintf(os.Stderr, "processing %d source files...", len(rg.profiles))
 	if !isTerm(os.Stdin) { fmt.Fprintln(os.Stderr) }
 
-	var progressOutput io.Writer = os.Stderr
-	if !isTerm(os.Stderr) { progressOutput = io.Discard }
+	var progressWriter io.Writer = os.Stderr
+	if !isTerm(os.Stderr) { progressWriter = io.Discard }
 
-	if err := repGen.getModName(fv);                         err != nil { return fatal(3, "cannot determine module name: %v\n",         err) }
-	if err := repGen.getRemoteURL(&realRunner{}, fv);        err != nil { return fatal(4, "cannot determine remote URL: %v\n",          err) }
-	if err := repGen.primePkgDirCache(packages.Load);        err != nil { return fatal(5, "cannot prime package directory cache: %v\n", err) }
-	if err := repGen.writeCovHTMLFiles(ctx, progressOutput); err != nil { return fatal(6, "cannot write HTML coverage files: %v\n",     err) }
+	if err := rg.getModName(fv);                         err != nil { return fatal(3, "cannot determine module name: %v\n",         err) }
+	if err := rg.getRemoteURL(&realRunner{}, fv);        err != nil { return fatal(4, "cannot determine remote URL: %v\n",          err) }
+	if err := rg.primePkgDirCache(packages.Load);        err != nil { return fatal(5, "cannot prime package directory cache: %v\n", err) }
+	if err := rg.writeCovHTMLFiles(ctx, progressWriter); err != nil { return fatal(6, "cannot write HTML coverage files: %v\n",     err) }
 
 	tb := &treeBuilder{
 		fsys:     &localFS{},
-		modName:  repGen.modName,
-		outRoot:  repGen.outRoot,
-		covState: repGen.covState,
+		modName:  rg.modName,
+		outRoot:  rg.outRoot,
+		covState: rg.covState,
 	}
 
-	if repGen.write {
+	if rg.write {
 		var treeHTML string
-		if treeHTML, err = tb.buildTree(ctx, progressOutput); err != nil { return fatal(7, "cannot build tree HTML: %v\n",    err) }
-		if err := repGen.writeIndexHTMLFile(treeHTML);        err != nil { return fatal(8, "cannot write index.html: %v\n",   err) }
-		if err := repGen.writeStaticFiles();                  err != nil { return fatal(9, "cannot write static files: %v\n", err) }
+		if treeHTML, err = tb.buildTree(ctx, progressWriter); err != nil { return fatal(7, "cannot build tree HTML: %v\n",    err) }
+		if err := rg.writeIndexHTMLFile(treeHTML);            err != nil { return fatal(8, "cannot write index.html: %v\n",   err) }
+		if err := rg.writeStaticFiles();                      err != nil { return fatal(9, "cannot write static files: %v\n", err) }
 	}
 
-	if err := repGen.covState.printCoverage(os.Stdout); err != nil {
+	if err := rg.covState.printCoverage(os.Stdout); err != nil {
 		if !errors.Is(err, syscall.EPIPE) { // syscall.EPIPE indicates the downstream pipe closed; not an error
 			return fatal(10, "cannot print coverage: %v\n", err)
 		}
 	}
 
-	if err := repGen.maybeOpenBrowser(fv); err != nil { return fatal(11, "cannot open browser: %v\n", err) }
+	if err := rg.maybeOpenBrowser(fv); err != nil { return fatal(11, "cannot open browser: %v\n", err) }
 
 	return 0
 }
@@ -140,7 +140,7 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 		return nil, fmt.Errorf("cannot parse coverage profile file: %w", err)
 	}
 
-	repGen := &reportGenerator{
+	rg := &reportGenerator{
 		fsys:             &localFS{},
 		covState:         &coverageState{},
 		outRoot:          nullRoot{},
@@ -162,13 +162,13 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 		},
 	}
 
-	repGen.covState.sort = fv.sortOrder.bind(repGen.covState)
-	repGen.write         = fv.outDir != "/dev/null" && fv.outDir != "nul"
+	rg.covState.sort = fv.sortOrder.bind(rg.covState)
+	rg.write         = fv.outDir != "/dev/null" && fv.outDir != "nul"
 
-	if repGen.write {
-		info, err := repGen.fsys.Stat(fv.outDir)
+	if rg.write {
+		info, err := rg.fsys.Stat(fv.outDir)
 		if err != nil || !info.IsDir() {
-			if err := repGen.fsys.MkdirAll(fv.outDir, 0700); err != nil {
+			if err := rg.fsys.MkdirAll(fv.outDir, 0700); err != nil {
 				return nil, fmt.Errorf("cannot create directory %q: %w", fv.outDir, err)
 			}
 		}
@@ -177,10 +177,10 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot open %q: %v", fv.outDir, err)
 		}
-		repGen.outRoot = root
+		rg.outRoot = root
 	}
 
-	return repGen, nil
+	return rg, nil
 }
 
 // getModName reads the specified go.mod file to determine the name of the Go module.

@@ -97,42 +97,42 @@
 <div class="line"><span class="miss">	fv, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))</span></div>
 <div class="line"><span class="miss">	if err != nil { return fatal(1, &#34;cannot parse flags: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	repGen, err := newReportGenerator(fv)</span></div>
+<div class="line"><span class="miss">	rg, err := newReportGenerator(fv)</span></div>
 <div class="line"><span class="miss">	if err != nil { return fatal(2, &#34;cannot instantiate report generator: %v\n&#34;, err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	defer repGen.outRoot.Close()</span></div>
+<div class="line"><span class="miss">	defer rg.outRoot.Close()</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	fmt.Fprintf(os.Stderr, &#34;processing %d source files...&#34;, len(repGen.profiles))</span></div>
+<div class="line"><span class="miss">	fmt.Fprintf(os.Stderr, &#34;processing %d source files...&#34;, len(rg.profiles))</span></div>
 <div class="line"><span class="miss">	if !isTerm(os.Stdin) { fmt.Fprintln(os.Stderr</span><span class="miss">) }</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	var progressOutput io.Writer = os.Stderr</span></div>
-<div class="line"><span class="miss">	if !isTerm(os.Stderr) { progressOutput = io.Discard</span><span class="miss"> }</span></div>
+<div class="line"><span class="miss">	var progressWriter io.Writer = os.Stderr</span></div>
+<div class="line"><span class="miss">	if !isTerm(os.Stderr) { progressWriter = io.Discard</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if err := repGen.getModName(fv);                         err != nil { return fatal(3, &#34;cannot determine module name: %v\n&#34;,         err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := repGen.getRemoteURL(&amp;realRunner{}, fv);        err != nil { return fatal(4, &#34;cannot determine remote URL: %v\n&#34;,          err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := repGen.primePkgDirCache(packages.Load);        err != nil { return fatal(5, &#34;cannot prime package directory cache: %v\n&#34;, err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">	if err := repGen.writeCovHTMLFiles(ctx, progressOutput); err != nil { return fatal(6, &#34;cannot write HTML coverage files: %v\n&#34;,     err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.getModName(fv);                         err != nil { return fatal(3, &#34;cannot determine module name: %v\n&#34;,         err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.getRemoteURL(&amp;realRunner{}, fv);        err != nil { return fatal(4, &#34;cannot determine remote URL: %v\n&#34;,          err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.primePkgDirCache(packages.Load);        err != nil { return fatal(5, &#34;cannot prime package directory cache: %v\n&#34;, err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.writeCovHTMLFiles(ctx, progressWriter); err != nil { return fatal(6, &#34;cannot write HTML coverage files: %v\n&#34;,     err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	tb := &amp;treeBuilder{</span></div>
 <div class="line"><span class="miss">		fsys:     &amp;localFS{},</span></div>
-<div class="line"><span class="miss">		modName:  repGen.modName,</span></div>
-<div class="line"><span class="miss">		outRoot:  repGen.outRoot,</span></div>
-<div class="line"><span class="miss">		covState: repGen.covState</span><span class="miss">,</span></div>
+<div class="line"><span class="miss">		modName:  rg.modName,</span></div>
+<div class="line"><span class="miss">		outRoot:  rg.outRoot,</span></div>
+<div class="line"><span class="miss">		covState: rg.covState</span><span class="miss">,</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if repGen.write {</span></div>
+<div class="line"><span class="miss">	if rg.write {</span></div>
 <div class="line"><span class="miss">		var treeHTML string</span></div>
-<div class="line"><span class="miss">		if treeHTML, err = tb.buildTree(ctx, progressOutput); err != nil { return fatal(7, &#34;cannot build tree HTML: %v\n&#34;,    err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">		if err := repGen.writeIndexHTMLFile(treeHTML);        err != nil { return fatal(8, &#34;cannot write index.html: %v\n&#34;,   err</span><span class="miss">) }</span></div>
-<div class="line"><span class="miss">		if err := repGen.writeStaticFiles();                  err != nil { return fatal(9, &#34;cannot write static files: %v\n&#34;, err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">		if treeHTML, err = tb.buildTree(ctx, progressWriter); err != nil { return fatal(7, &#34;cannot build tree HTML: %v\n&#34;,    err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">		if err := rg.writeIndexHTMLFile(treeHTML);            err != nil { return fatal(8, &#34;cannot write index.html: %v\n&#34;,   err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">		if err := rg.writeStaticFiles();                      err != nil { return fatal(9, &#34;cannot write static files: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if err := repGen.covState.printCoverage(os.Stdout); err != nil {</span></div>
+<div class="line"><span class="miss">	if err := rg.covState.printCoverage(os.Stdout); err != nil {</span></div>
 <div class="line"><span class="miss">		if !errors.Is(err, syscall.EPIPE</span>) { // syscall.EPIPE indicates the downstream pipe closed; not an error</div>
 <div class="line"><span class="miss">			return fatal(10, &#34;cannot print coverage: %v\n&#34;, err)</span></div>
 <div class="line">		}</div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if err := repGen.maybeOpenBrowser(fv); err != nil { return fatal(11, &#34;cannot open browser: %v\n&#34;, err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.maybeOpenBrowser(fv); err != nil { return fatal(11, &#34;cannot open browser: %v\n&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
 <div class="line"><span class="miss">	return 0</span></div>
 <div class="line">}</div>
@@ -149,7 +149,7 @@
 <div class="line"><span class="miss">		return nil, fmt.Errorf(&#34;cannot parse coverage profile file: %w&#34;, err)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	repGen := &amp;reportGenerator{</span></div>
+<div class="line"><span class="hit">	rg := &amp;reportGenerator{</span></div>
 <div class="line"><span class="hit">		fsys:             &amp;localFS{},</span></div>
 <div class="line"><span class="hit">		covState:         &amp;coverageState{},</span></div>
 <div class="line"><span class="hit">		outRoot:          nullRoot{},</span></div>
@@ -171,13 +171,13 @@
 <div class="line"><span class="hit">		},</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	repGen.covState.sort = fv.sortOrder.bind(repGen.covState)</span></div>
-<div class="line"><span class="hit">	repGen.write         = fv.outDir != &#34;/dev/null&#34; &amp;&amp; fv.outDir != &#34;nul&#34;</span></div>
+<div class="line"><span class="hit">	rg.covState.sort = fv.sortOrder.bind(rg.covState)</span></div>
+<div class="line"><span class="hit">	rg.write         = fv.outDir != &#34;/dev/null&#34; &amp;&amp; fv.outDir != &#34;nul&#34;</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	if repGen.write {</span></div>
-<div class="line"><span class="hit">		info, err := repGen.fsys.Stat(fv.outDir)</span></div>
+<div class="line"><span class="hit">	if rg.write {</span></div>
+<div class="line"><span class="hit">		info, err := rg.fsys.Stat(fv.outDir)</span></div>
 <div class="line"><span class="hit">		if err != nil || !info.IsDir</span><span class="miss">() {</span></div>
-<div class="line"><span class="miss">			if err := repGen.fsys.MkdirAll(fv.outDir, 0700); err != nil {</span></div>
+<div class="line"><span class="miss">			if err := rg.fsys.MkdirAll(fv.outDir, 0700); err != nil {</span></div>
 <div class="line"><span class="miss">				return nil, fmt.Errorf(&#34;cannot create directory %q: %w&#34;, fv.outDir, err)</span></div>
 <div class="line">			}</div>
 <div class="line">		}</div>
@@ -186,10 +186,10 @@
 <div class="line"><span class="hit">		if err != nil</span><span class="miss"> {</span></div>
 <div class="line"><span class="miss">			return nil, fmt.Errorf(&#34;cannot open %q: %v&#34;, fv.outDir, err)</span></div>
 <div class="line">		}</div>
-<div class="line"><span class="hit">		repGen.outRoot = root</span></div>
+<div class="line"><span class="hit">		rg.outRoot = root</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	return repGen, nil</span></div>
+<div class="line"><span class="hit">	return rg, nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// getModName reads the specified go.mod file to determine the name of the Go module.</div>

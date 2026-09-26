@@ -124,7 +124,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				mkdirAllFails:  tt.mkdirAllFails,
 				writeFileFails: tt.writeFileFails,
 			}
-			repGen := &reportGenerator{
+			rg := &reportGenerator{
 				write:            true,
 				fsys:             mfs,
 				outRoot:          &mockRoot{name: "some/path"},
@@ -135,7 +135,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				styleCSSFilename: "style.css",
 				childJSFilename:  "child.js",
 			}
-			err := repGen.writeCovHTMLFiles(t.Context(), io.Discard)
+			err := rg.writeCovHTMLFiles(t.Context(), io.Discard)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeCovHTMLFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
@@ -186,14 +186,14 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 				openRootFails: tt.openRootFails,
 				createFails:   tt.createFails,
 			}
-			repGen := &reportGenerator{
+			rg := &reportGenerator{
 				fsys:          mfs,
 				outRoot:       &mockRoot{name: "some/path"},
 				modName:       tt.modName,
 				repoURL:       tt.repoURL,
 				embeddedFiles: tt.embeddedFiles,
 			}
-			gotErr := repGen.writeIndexHTMLFile("foo")
+			gotErr := rg.writeIndexHTMLFile("foo")
 			if tt.wantErr == nil && gotErr != nil {
 				t.Fatalf("unexpected error: %v", gotErr)
 			}
@@ -240,13 +240,13 @@ func TestWriteTemplateFile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			mfs    := &mockFS{}
-			repGen := &reportGenerator{
+			mfs := &mockFS{}
+			rg  := &reportGenerator{
 				fsys:          mfs,
 				outRoot:       &mockRoot{name: "some/path"},
 				embeddedFiles: tt.embeddedFiles,
 			}
-			err := repGen.writeTemplateFile(tt.fileName, tt.tmplData)
+			err := rg.writeTemplateFile(tt.fileName, tt.tmplData)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("writeTemplateFile(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
