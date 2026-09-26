@@ -4,12 +4,9 @@
 #
 # the changes to the testdata files should be reviewed before committing
 
-go test -race -coverprofile cov.out -skip TestIntegrationTest
-go run . -n -gomod go.mod -coverprofile cov.out -outdir cover
-cp cov.out testdata
-cp cover/github.com/jbunds/coverage/*.go.html testdata
-
-go test -race -coverprofile cov.out
-go run . -n -gomod go.mod -coverprofile cov.out -outdir cover
-cp cov.out testdata
-cp cover/github.com/jbunds/coverage/*.go.html testdata
+for skip in ' -skip TestIntegrationTest' ''; do
+  go test -race -coverprofile cov.out $skip
+  go run . -n -gomod go.mod -coverprofile cov.out -outdir cover
+  cp cov.out testdata
+  cp cover/github.com/jbunds/coverage/*.go.html testdata
+done
