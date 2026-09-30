@@ -64,11 +64,11 @@ func writeRow(ew *errorWriter, path string, percent float64, maxPathLen int) {
 	)
 	ew.write(path)
 	ew.write(strings.Repeat(" ", maxPathLen - len(path) + 2))
-	pct       := strconv.FormatFloat(percent, 'f', 2, 64)
+	pct       := strconv.FormatFloat(percent, 'f', 2, 64) + "%"
 	colorCode := green
 	if percent < 50 { colorCode = red }
-	ew.write(strings.Repeat(" ", 6 - len(pct)))
-	ew.writeColor(pct + "%", colorCode)
+	ew.write(strings.Repeat(" ", 7 - len(pct))) // 7 == len("100.00%")
+	ew.writeColor(pct, colorCode)
 	ew.write("\n")
 }
 

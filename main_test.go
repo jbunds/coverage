@@ -136,44 +136,38 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 
 // tests
 
-func TestGetModPath(t *testing.T) {
+func TestGetModPaths(t *testing.T) {
 	t.Parallel()
 	tests := []struct{
 		name    string
 		fsys    fs.FS
-		want    string
+		want    []string
 		wantErr bool
-	}{
-		{
-			name: "succeeds",
-			fsys: fstest.MapFS{ "go.mod": &fstest.MapFile{
-				Data: []byte("module github.com/foo/bar"),
-			}},
-			want: "github.com/foo/bar",
-		},
-		{
-			name:    "cannot read go.mod",
-			fsys:    fstest.MapFS{},
-			wantErr: true,
-		},
-		{
-			name:    "cannot parse go.mod",
-			fsys:    fstest.MapFS{ "go.mod": &fstest.MapFile{} },
-			wantErr: true,
-		},
-	}
+	}{{
+		name: "succeeds",
+		fsys: fstest.MapFS{"go.mod": &fstest.MapFile{Data: []byte("module github.com/foo/bar")}},
+		want: []string{"github.com/foo/bar"},
+	}, {
+		name:    "cannot read go.mod",
+		fsys:    fstest.MapFS{},
+		wantErr: true,
+	}, {
+		name:    "cannot parse go.mod",
+		fsys:    fstest.MapFS{"go.mod": &fstest.MapFile{}},
+		wantErr: true,
+	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			rg := &reportGenerator{
 				fsys: &mockFS{FS: tt.fsys},
 			}
-			err := rg.getModPath(&flagVals{goModFile: "go.mod"})
+			err := rg.getModPaths(&flagVals{goModFiles: "go.mod"})
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getModPath(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+				t.Errorf("getModPaths(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
 			}
-			if diff := cmp.Diff(tt.want, rg.modPath); diff != "" {
-				t.Errorf("getModPath(%q) mismatch (-want +got):\n%s", tt.name, diff)
+			if diff := cmp.Diff(tt.want, rg.modPaths); diff != "" {
+				t.Errorf("getModPaths(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}
@@ -191,58 +185,50 @@ func (f *mockRunner) Run(cmd *exec.Cmd) error {
 	return f.err
 }
 
-func TestResolveRepoURL(t *testing.T) {
+func TestResolveRepoURLs(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name    string
 		runner  runner
-		want    string
-	}{
-		{
-			name:   "local SSH standard (SCP style)",
-			runner: &mockRunner{ stdout: "git@github.com:foo/bar.git" },
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:   "local SSH standard (no extension)",
-			runner: &mockRunner{ stdout: "git@github.com:foo/bar" },
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:   "local SSH explicit protocol",
-			runner: &mockRunner{ stdout: "ssh://git@github.com:foo/bar.git" },
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:   "local HTTPS standard",
-			runner: &mockRunner{ stdout: "https://github.com/foo/bar.git" },
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:   "GitHub CI runner (token authentication)",
-			runner: &mockRunner{ stdout: "https://x-access-token:ghp_1234567890@github.com/foo/bar.git" }, // #nosec G101 - false positive (hardcoded creds)
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:   "GitHub CI runner (standard checkout)",
-			runner: &mockRunner{ stdout: "https://github.com/foo/bar.git" },
-			want:   "https://github.com/foo/bar",
-		},
-		{
-			name:    "git config fails",
-			runner:  &mockRunner{ err: errors.New("git config failed") },
-			want:    "https://github.com/foo/bar",
-		},
-	}
+		want    []string
+	}{{
+		name:   "local SSH standard (SCP style)",
+		runner: &mockRunner{stdout: "git@github.com:foo/bar.git"},
+		want:   []string{"https://github.com/foo/bar"},
+	}, {
+		name:   "local SSH standard (no extension)",
+		runner: &mockRunner{stdout: "git@github.com:foo/bar"},
+		want:   []string{"https://github.com/foo/bar"},
+	}, {
+		name:   "local SSH explicit protocol",
+		runner: &mockRunner{stdout: "ssh://git@github.com:foo/bar.git"},
+		want:   []string{"https://github.com/foo/bar"},
+	}, {
+		name:   "local HTTPS standard",
+		runner: &mockRunner{stdout: "https://github.com/foo/bar.git"},
+		want:   []string{"https://github.com/foo/bar"},
+	}, {
+		name:   "GitHub CI runner (token authentication)",
+		runner: &mockRunner{stdout: "https://x-access-token:ghp_1234567890@github.com/foo/bar.git"}, // #nosec G101 - false positive (hardcoded creds)
+		want:   []string{"https://github.com/foo/bar"},
+	}, {
+		name:   "GitHub CI runner (standard checkout)",
+		runner: &mockRunner{stdout: "https://github.com/foo/bar.git"},
+		want:   []string{"https://github.com/foo/bar"},
+	}, {
+		name:    "git config fails",
+		runner:  &mockRunner{err: errors.New("git config failed")},
+		want:    []string{"https://github.com/foo/bar"},
+	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			rg  := &reportGenerator{modPath: "github.com/foo/bar"}
-			err := rg.resolveRepoURL(tt.runner, &flagVals{goModFile: "go.mod"})
+			rg  := &reportGenerator{modPaths: []string{"github.com/foo/bar"}}
+			err := rg.resolveRepoURLs(tt.runner, &flagVals{goModFiles: "go.mod"})
 			if err != nil {
 				t.Errorf("resolveRepoURL(%q) returned unexpected error: %v", tt.name, err)
 			}
-			if diff := cmp.Diff(tt.want, rg.repoURL); diff != "" {
+			if diff := cmp.Diff(tt.want, rg.repoURLs); diff != "" {
 				t.Errorf("resolveRepoURL(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
@@ -322,51 +308,48 @@ func TestPrimePkgDirCache(t *testing.T) {
 		fsys        fs.FS
 		want        map[string]string
 		wantErr     bool
-	}{
-		{
-			name:        "succeeds",
-			profilePath: "cov.out",
-			fsys:        fstest.MapFS{
-				"cov.out": &fstest.MapFile{
-					Data: []byte(strings.Join([]string{
-						"mode: set",
-						"github.com/foo/bar/baz.go:0",
-						"invalid line",
-						"github.com/foo/bar/boo/bug.go:0",
-					}, "\n")),
-				},
-			},
-			want: map[string]string{
-				"github.com/foo/bar":     "github.com/foo",
-				"github.com/foo/bar/boo": "github.com/foo/bar",
+	}{{
+		name:        "succeeds",
+		profilePath: "cov.out",
+		fsys:        fstest.MapFS{
+			"cov.out": &fstest.MapFile{
+				Data: []byte(strings.Join([]string{
+					"mode: set",
+					"github.com/foo/bar/baz.go:0",
+					"invalid line",
+					"github.com/foo/bar/boo/bug.go:0",
+				}, "\n")),
 			},
 		},
-		{
-			name:        "cannot read coverage profile file",
-			profilePath: "nope",
-			fsys:        fstest.MapFS{},
-			wantErr:     true,
+		want: map[string]string{
+			"github.com/foo/bar":     "github.com/foo",
+			"github.com/foo/bar/boo": "github.com/foo/bar",
 		},
-		{
-			name:        "packages.Load fails",
-			profilePath: "cov.out",
-			fsys:        fstest.MapFS{
-				"cov.out": &fstest.MapFile{
-					Data: []byte(strings.Join([]string{
-						"mode: set",
-						"this/will/fail/fosho:0",
-					}, "\n")),
-				},
+	}, {
+		name:        "cannot read coverage profile file",
+		profilePath: "nope",
+		fsys:        fstest.MapFS{},
+		wantErr:     true,
+	}, {
+		name:        "packages.Load fails",
+		profilePath: "cov.out",
+		fsys:        fstest.MapFS{
+			"cov.out": &fstest.MapFile{
+				Data: []byte(strings.Join([]string{
+					"mode: set",
+					"this/will/fail/fosho:0",
+				}, "\n")),
 			},
-			wantErr: true,
 		},
-	}
+		wantErr: true,
+	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			rg := &reportGenerator{
 				fsys:        &mockFS{FS: tt.fsys},
 				profilePath: tt.profilePath,
+				goModFiles:  []string{"go.mod"},
 			}
 			err := rg.primePkgDirCache(mockPkgLoader)
 			if (err != nil) != tt.wantErr {

@@ -63,9 +63,9 @@ func main() {
 			loc       := endLine - startLine + 1
 			function  := &function{
 				name:      name,
+				filename:  filepath.Base(path),
 				kind:      kind,
 				loc:       loc,
-				filename:  filepath.Base(path),
 				startLine: startLine,
 			}
 			funcs = append(funcs, function)
@@ -76,6 +76,16 @@ func main() {
 	slices.SortFunc(funcs, func(a, b *function) int { return cmp.Compare(b.loc, a.loc)})
 
 	for _, fn := range funcs {
-		fmt.Printf("%-40s %-6s %4d lines  %s:%d\n", fn.name, fn.kind, fn.loc, fn.filename, fn.startLine)
+		fmt.Printf(fmt.Sprintf("%%-%ds  ", longestName(funcs)) + "%-6s %4d lines  %s:%d\n", fn.name, fn.kind, fn.loc, fn.filename, fn.startLine)
 	}
+}
+
+func longestName(funcs []*function) int {
+	longest := 0
+	for _, fn := range funcs {
+		if len(fn.name) > longest {
+			longest = len(fn.name)
+		}
+	}
+	return longest
 }

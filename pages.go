@@ -243,17 +243,44 @@ func writePostamble(ew stickyWriter, childJSPath string) {
 }
 
 // writeIndexHTMLFile writes the index HTML file, which contains three
-// template parameters (ModPath, RepoURL, and TreeHTML), and hosts one
+// template parameters (ModPath, HeaderHTML, and TreeHTML), and hosts one
 // iframe within which the generated source code HTML files are rendered.
 func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
+	var modPath  string
+	var headerSB strings.Builder
+	if len(rg.modPaths) == 1 {
+		modPath = " // " + rg.modPaths[0]
+		headerSB.WriteString(`<code><a href="`)
+		headerSB.WriteString(rg.repoURLs[0])
+		headerSB.WriteString(`">`)
+		headerSB.WriteString(rg.modPaths[0])
+		headerSB.WriteString(`</a></code>`)
+	} else {
+		headerSB.WriteString("  <div class=\"dropdown-wrapper\">\n")
+		headerSB.WriteString("    <input type=\"checkbox\" id=\"modules-menu\"/>\n")
+		headerSB.WriteString("    <label for=\"modules-menu\" class=\"dropdown-toggle\">modules</label>\n")
+		headerSB.WriteString("    <div class=\"dropdown-menu\">\n")
+		
+		for _, mod := range rg.modPaths {
+			headerSB.WriteString(`      <label for="module-`)
+			headerSB.WriteString(normalizeModID(mod))
+			headerSB.WriteString(`" class="dropdown-link">`)
+			headerSB.WriteString(mod)
+			headerSB.WriteString("</label>\n")
+		}
+		
+		headerSB.WriteString("    </div>\n")
+		headerSB.WriteString("  </div>")
+	}
+
 	data := struct{
-		ModPath,
-		RepoURL,
-		TreeHTML  string
+		ModPath    string
+		HeaderHTML string
+		TreeHTML   string
 	}{
-		ModPath:  rg.modPath,
-		RepoURL:  rg.repoURL,
-		TreeHTML: treeHTML,
+		ModPath:    modPath,
+		HeaderHTML: headerSB.String(),
+		TreeHTML:   treeHTML,
 	}
 
 	return rg.writeTemplateFile("html/index.html", data)

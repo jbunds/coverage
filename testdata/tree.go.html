@@ -16,6 +16,7 @@
 <div class="line">	&#34;math&#34;</div>
 <div class="line">	&#34;path/filepath&#34;</div>
 <div class="line">	&#34;runtime&#34;</div>
+<div class="line">	&#34;slices&#34;</div>
 <div class="line">	&#34;strconv&#34;</div>
 <div class="line">	&#34;strings&#34;</div>
 <div class="line">	&#34;sync/atomic&#34;</div>
@@ -27,7 +28,7 @@
 <div class="line">// treeBuilder renders the source tree HTML fragment.</div>
 <div class="line">type treeBuilder struct {</div>
 <div class="line">	fsys     writeFS        // directory listing (thin wrapper around os.ReadDir)</div>
-<div class="line">	modPath  string         // module path; https://go.dev/ref/mod#glos-module-path</div>
+<div class="line">	modPaths []string       // module paths; https://go.dev/ref/mod#glos-module-path</div>
 <div class="line">	outRoot  rootHandle     // output root for the generated HTML files, per -outdir</div>
 <div class="line">	covState *coverageState // accumulated coverage data</div>
 <div class="line">	counter  atomic.Uint64  // ID for each subdirectory node (&lt;input type=&#34;checkbox&#34;&gt; and its &lt;label&gt;)</div>
@@ -38,7 +39,7 @@
 <div class="line">type scanState struct {</div>
 <div class="line">	parentPath string             // package prefix for the current branch</div>
 <div class="line">	entry      fs.DirEntry        // directory entry currently being processed</div>
-<div class="line">	indent     int                // &lt;ul&gt; nesting depth</div>
+<div class="line">	indent     int                // &lt;ul&gt; nesting depth (2 spaces per level)</div>
 <div class="line">	prog       *progress.Progress // incremental progress tracker</div>
 <div class="line">	budget     float64            // progress budget allocated for this branch</div>
 <div class="line">}</div>
@@ -46,14 +47,16 @@
 <div class="line">// entryResult stores the results of processing a directory</div>
 <div class="line">// entry containing the generated *.go.html files.</div>
 <div class="line">type entryResult struct {</div>
-<div class="line">	html    string // HTML fragment for the entry</div>
-<div class="line">	covered uint64 // weighted covered statement count</div>
-<div class="line">	total   uint64 // total statement count</div>
+<div class="line">	pkgPath     string // package path (https://go.dev/ref/mod#glos-package-path)</div>
+<div class="line">	srcBasename string // subdirectory or file basename of a directory entry in the source tree</div>
+<div class="line">	html        string // HTML fragment for the entry</div>
+<div class="line">	covered     uint64 // weighted covered statement count</div>
+<div class="line">	total       uint64 // total statement count</div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// htmlBuilder renders source tree HTML fragments.</div>
 <div class="line">type htmlBuilder struct {</div>
-<div class="line">	indent int    // nesting depth (2 spaces per level)</div>
+<div class="line">	indent int    // &lt;ul&gt; nesting depth (2 spaces per level)</div>
 <div class="line">	subDir string // subdirectory name</div>
 <div class="line">	itemID string // subdirectory node ID (&#34;tree-item-%d&#34;)</div>
 <div class="line">}</div>
@@ -64,26 +67,38 @@
 <div class="line">func (tb *treeBuilder) buildTree(ctx context.Context, progressOutput io.Writer) (string, error<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	modDomain, _, _ := strings.Cut(tb.modPath, &#34;/&#34;) // https://go.dev/ref/mod#go-mod-file-ident</span></div>
-<div class="line"><span class="hit">	scanRoot        := filepath.Join(tb.outRoot.Name(), modDomain)</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	entries, err := tb.fsys.ReadDir(scanRoot)</span></div>
-<div class="line"><span class="hit">	if err != nil {</span></div>
-<div class="line"><span class="hit">		return &#34;&#34;, err</span></div>
-<div class="line">	}</div>
-<div class="line"></div>
 <div class="line"><span class="hit">	prog := progress.New(ctx, 0, progressOutput)</span></div>
 <div class="line"><span class="hit">	defer prog.Close()</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	results, err := tb.scanEntries(ctx, prog, modDomain, entries)</span></div>
-<div class="line"><span class="hit">	if err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
+<div class="line"><span class="hit">	rootNode := &amp;trieNode{children: make(map[string]*trieNode)}</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	return buildTreeHTML(modDomain, results), nil</span></div>
+<div class="line"><span class="hit">	for _, modPath := range tb.modPaths {</span></div>
+<div class="line"><span class="hit">		scanRoot     := filepath.Join(tb.outRoot.Name(), modPath)</span></div>
+<div class="line"><span class="hit">		entries, err := tb.fsys.ReadDir(scanRoot)</span></div>
+<div class="line"><span class="hit">		if err != nil { return &#34;&#34;, err</span><span class="hit"> }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">		baseIndent := 2 * strings.Count(modPath, &#34;/&#34;) + 3 // initial nesting depth: root &lt;ul&gt;, current subdir &lt;li&gt;, and inner &lt;ul&gt; wrapping source file &lt;li&gt; elements</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">		results, err := tb.scanEntries(ctx, prog, modPath, baseIndent, entries) // TODO(jbunds): maybe parallelize the call to tb.scanEntries</span></div>
+<div class="line"><span class="hit">		if err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">		var modCovered, modTotal uint64</span></div>
+<div class="line"><span class="hit">		var sb strings.Builder</span></div>
+<div class="line"><span class="hit">		for _, res := range results {</span></div>
+<div class="line"><span class="hit">			sb.WriteString(res.html)</span></div>
+<div class="line"><span class="hit">			modCovered += res.covered</span></div>
+<div class="line"><span class="hit">			modTotal   += res.total</span></div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		rootNode.insert(modPath, sb.String(), modCovered, modTotal</span><span class="hit">)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	return rootNode.renderHTML(&amp;tb.counter), nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// scanEntries processes each entry in a directory, collecting the resulting</div>
 <div class="line">// tree nodes and aggregating their statement and coverage counts.</div>
-<div class="line">func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modDomain string, entries []fs.DirEntry) ([]*entryResult, error<span class="hit"> ) {</span></div>
+<div class="line">func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modPath string, baseIndent int, entries []fs.DirEntry) ([]*entryResult, error<span class="hit"> ) {</span></div>
 <div class="line"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return nil, err</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if len(entries) &lt; 1</span><span class="miss"> { return nil, nil</span><span class="miss"> }</span></div>
@@ -98,14 +113,15 @@
 <div class="line"><span class="hit">		if err := gCtx.Err(); err != nil</span><span class="miss"> { break</span> }</div>
 <div class="line"><span class="hit">		group.Go(func() error {</span></div>
 <div class="line"><span class="hit">			st := &amp;scanState{</span></div>
-<div class="line"><span class="hit">				parentPath: modDomain,</span></div>
+<div class="line"><span class="hit">				parentPath: modPath,</span></div>
 <div class="line"><span class="hit">				entry:      entry,</span></div>
-<div class="line"><span class="hit">				indent:     3,</span></div>
+<div class="line"><span class="hit">				indent:     baseIndent,</span></div>
 <div class="line"><span class="hit">				prog:       prog,</span></div>
 <div class="line"><span class="hit">				budget:     budgets[i</span><span class="hit">],</span></div>
 <div class="line">			}</div>
 <div class="line"><span class="hit">			res, err := tb.processEntry(gCtx, st)</span></div>
 <div class="line"><span class="hit">			if err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+<div class="line"></div>
 <div class="line"><span class="hit">			results[i] = res</span></div>
 <div class="line"><span class="hit">			return nil</span></div>
 <div class="line">		})</div>
@@ -127,7 +143,7 @@
 <div class="line"><span class="hit">	isTargetFile := !isDir &amp;&amp; strings.HasSuffix(st.entry.Name(), &#34;.go.html&#34;)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if !isDir &amp;&amp; !isTargetFile {</span></div>
-<div class="line"><span class="hit">		st.prog.Report(st.budget, &#34;&#34;)</span></div>
+<div class="line"><span class="hit">		st.prog.Report(st.budget, st.entry.Name())</span></div>
 <div class="line"><span class="hit">		return nil, nil</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
@@ -158,42 +174,64 @@
 <div class="line"></div>
 <div class="line"><span class="hit">	if len(subDirEntries) &gt; 0 {</span></div>
 <div class="line"><span class="hit">		budgets := splitBudget(st.budget, len(subDirEntries))</span></div>
+<div class="line"><span class="hit">    </span></div>
+<div class="line"><span class="hit">		childResults := make([]*entryResult, len(subDirEntries))</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">		group, gCtx := errgroup.WithContext(ctx)</span></div>
+<div class="line"><span class="hit">		group.SetLimit(runtime.NumCPU())</span></div>
+<div class="line"></div>
 <div class="line"><span class="hit">		for i, subDirEntry := range subDirEntries {</span></div>
-<div class="line"><span class="hit">			childState := &amp;scanState{</span></div>
-<div class="line"><span class="hit">				parentPath: pkgPath,</span></div>
-<div class="line"><span class="hit">				entry:      subDirEntry,</span></div>
-<div class="line"><span class="hit">				indent:     st.indent + 2,</span></div>
-<div class="line"><span class="hit">				prog:       st.prog,</span></div>
-<div class="line"><span class="hit">				budget:     budgets[i</span><span class="hit">],</span></div>
-<div class="line">			}</div>
-<div class="line"><span class="hit">			res, err := tb.processEntry(ctx, childState)</span></div>
-<div class="line"><span class="hit">			if err != nil</span><span class="miss"> {</span></div>
-<div class="line"><span class="miss">				return nil, err</span></div>
-<div class="line">			}</div>
-<div class="line"><span class="hit">			subDirSB.WriteString(res.html)</span></div>
+<div class="line"><span class="hit">			group.Go(func() error {</span></div>
+<div class="line"><span class="hit">				childState := &amp;scanState{</span></div>
+<div class="line"><span class="hit">					parentPath: pkgPath,</span></div>
+<div class="line"><span class="hit">					entry:      subDirEntry,</span></div>
+<div class="line"><span class="hit">					indent:     st.indent + 2,</span></div>
+<div class="line"><span class="hit">					prog:       st.prog,</span></div>
+<div class="line"><span class="hit">					budget:     budgets[i</span><span class="hit">],</span></div>
+<div class="line">				}</div>
+<div class="line"><span class="hit">				res, err := tb.processEntry(gCtx, childState)</span></div>
+<div class="line"><span class="hit">				if err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+<div class="line"></div>
+<div class="line"><span class="hit">				childResults[i] = res</span></div>
+<div class="line"><span class="hit">				return nil</span></div>
+<div class="line">			})</div>
+<div class="line">		}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">    if err := group.Wait(); err != nil</span><span class="miss"> {</span></div>
+<div class="line"><span class="miss">      return nil, err</span></div>
+<div class="line">    }</div>
+<div class="line"></div>
+<div class="line"><span class="hit">		slices.SortFunc(childResults, func(a, b *entryResult) int {</span></div>
+<div class="line"><span class="hit">			return strings.Compare(a.srcBasename, b.srcBasename)</span></div>
+<div class="line">		})</div>
+<div class="line"><span class="hit">    </span></div>
+<div class="line"><span class="hit">		for _, res := range childResults {</span></div>
 <div class="line"><span class="hit">			dirCovered.Add(res.covered)</span></div>
-<div class="line"><span class="hit">			dirStatements.Add(res.total</span><span class="hit">)</span></div>
+<div class="line"><span class="hit">			dirStatements.Add(res.total)</span></div>
+<div class="line"><span class="hit">			subDirSB.WriteString(res.html)</span></div>
 <div class="line">		}</div>
 <div class="line">	} else<span class="hit"> {</span></div>
 <div class="line"><span class="hit">		st.prog.Report(st.budget, pkgPath)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">	res := &amp;entryResult{html: subDirSB.String(), covered: dirCovered.Load(), total: dirStatements.Load()}</span></div>
-<div class="line"><span class="hit">	hb  := &amp;htmlBuilder{indent: st.indent, itemID: itemID, subDir: srcBasename}</span></div>
-<div class="line"><span class="hit">	hb.buildSubDirHTML(res)</span></div>
+<div class="line"><span class="hit">  res := &amp;entryResult{</span></div>
+<div class="line"><span class="hit">    pkgPath:     pkgPath,</span></div>
+<div class="line"><span class="hit">    srcBasename: srcBasename,</span></div>
+<div class="line"><span class="hit">    html:        subDirSB.String(),</span></div>
+<div class="line"><span class="hit">    covered:     dirCovered.Load(),</span></div>
+<div class="line"><span class="hit">    total:       dirStatements.Load</span><span class="hit">(),</span></div>
+<div class="line">  }</div>
+<div class="line"><span class="hit">  </span></div>
+<div class="line"><span class="hit">  hb := &amp;htmlBuilder{indent: st.indent, itemID: itemID, subDir: srcBasename}</span></div>
+<div class="line"><span class="hit">  hb.buildSubDirHTML(res)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	return res, nil</span></div>
+<div class="line"><span class="hit">  return res, nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// processFile renders a single &lt;li&gt; tree-node for a Go source file, including its coverage percentage.</div>
+<div class="line">// processFile renders a single &lt;li&gt; tree-node for a Go source file, including its coverge percentage.</div>
 <div class="line">func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (*entryResult, error<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	st.prog.Report(st.budget, pkgPath)</span></div>
-<div class="line"></div>
 <div class="line"><span class="hit">	cov     := tb.covState.cov[pkgPath]</span></div>
-<div class="line"><span class="hit">	percent := 0.0</span></div>
-<div class="line"><span class="hit">	if cov.total &gt; 0 {</span></div>
-<div class="line"><span class="hit">		percent = float64(cov.covered) / float64(cov.total) * 100</span></div>
-<div class="line">	}</div>
+<div class="line"><span class="hit">	percent := formatCov(cov.covered, cov.total)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	var sb strings.Builder</span></div>
 <div class="line"><span class="hit">	sb.Grow(st.indent * 2 + 128) // rough pre-allocation to avoid reallocations; should cover most cases</span></div>
@@ -203,64 +241,27 @@
 <div class="line"><span class="hit">	sb.WriteString(`&#34;&gt;`)</span></div>
 <div class="line"><span class="hit">	sb.WriteString(srcBasename)</span></div>
 <div class="line"><span class="hit">	sb.WriteString(`&lt;/a&gt;&lt;/span&gt; &lt;span class=&#34;cov&#34;&gt;`)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(strconv.FormatFloat(percent, &#39;f&#39;, 1, 64))</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;%&lt;/span&gt;&lt;/div&gt;&lt;/li&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit">	sb.WriteString(percent)</span></div>
+<div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/span&gt;&lt;/div&gt;&lt;/li&gt;\n&#34;)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	return &amp;entryResult{html: sb.String(), covered: cov.covered, total: cov.total}, nil</span></div>
-<div class="line">}</div>
+<div class="line"><span class="hit">	st.prog.Report(st.budget, pkgPath)</span></div>
 <div class="line"></div>
-<div class="line">// buildTreeHTML wraps the top-level entry results in the outermost &lt;ul&gt;,</div>
-<div class="line">// with the leading path element (conventionally a domain name) as the</div>
-<div class="line">// root label and the aggregate coverage percentage.</div>
-<div class="line">func buildTreeHTML(modDomain string, results []*entryResult) string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	var totalStatements, totalCovered uint64</span></div>
-<div class="line"><span class="hit">	for _, res := range results {</span></div>
-<div class="line"><span class="hit">		totalStatements += res.total</span></div>
-<div class="line"><span class="hit">		totalCovered    += res.covered</span></div>
-<div class="line">	}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">	aggregatePercent := &#34;0.0&#34;</span></div>
-<div class="line"><span class="hit">	if totalStatements &gt; 0 {</span></div>
-<div class="line"><span class="hit">		aggregatePercent = strconv.FormatFloat(</span></div>
-<div class="line"><span class="hit">			float64(totalCovered) / float64(totalStatements) * 100, &#39;f&#39;, 1, 64)</span></div>
-<div class="line">	}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">	var sb strings.Builder</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;&lt;ul class=\&#34;tree\&#34;&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;  &lt;li&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;    &lt;input type=\&#34;checkbox\&#34; id=\&#34;tree-item-0\&#34;/&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;    &lt;div class=\&#34;tree-node\&#34;&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(`      &lt;label for=&#34;tree-item-0&#34;&gt;`)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(modDomain)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(`      &lt;span class=&#34;cov&#34;&gt;`)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(aggregatePercent)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;%&lt;/span&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;    &lt;/div&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;    &lt;ul&gt;\n&#34;)</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	for _, res := range results {</span></div>
-<div class="line"><span class="hit">		sb.WriteString(res.html)</span></div>
-<div class="line">	}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;    &lt;/ul&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;  &lt;/li&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/ul&gt;&#34;)</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	return sb.String</span><span class="hit">()</span></div>
+<div class="line"><span class="hit">	return &amp;entryResult{</span></div>
+<div class="line"><span class="hit">		pkgPath:     pkgPath,</span></div>
+<div class="line"><span class="hit">		srcBasename: srcBasename,</span></div>
+<div class="line"><span class="hit">		html:        sb.String(),</span></div>
+<div class="line"><span class="hit">		covered:     cov.covered,</span></div>
+<div class="line"><span class="hit">		total:       cov.total,</span></div>
+<div class="line"><span class="hit">	}, nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// buildSubDirHTML wraps pre-rendered child nodes in a &lt;li&gt; subdirectory</div>
-<div class="line">// tree-node, with its name and aggregated coverage percentage.</div>
+<div class="line">// tree-node, with its name and aggregated coverge percentage.</div>
 <div class="line">func (hb *htmlBuilder) buildSubDirHTML(res *entryResult<span class="hit">) {</span></div>
 <div class="line"><span class="hit">	if res.html == &#34;&#34; { return</span><span class="hit"> }</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	percent := 0.0</span></div>
-<div class="line"><span class="hit">	if res.total &gt; 0 {</span></div>
-<div class="line"><span class="hit">		percent = float64(res.covered) / float64(res.total) * 100</span></div>
-<div class="line">	}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">	indent := strings.Repeat(&#34;  &#34;, hb.indent)</span></div>
+<div class="line"><span class="hit">	indent  := strings.Repeat(&#34;  &#34;, hb.indent)</span></div>
+<div class="line"><span class="hit">	percent := formatCov(res.covered, res.total)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	var sb strings.Builder</span></div>
 <div class="line"></div>
@@ -280,8 +281,8 @@
 <div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
 <div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
 <div class="line"><span class="hit">	sb.WriteString(`    &lt;span class=&#34;cov&#34;&gt;`)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(strconv.FormatFloat(percent, &#39;f&#39;, 1, 64))</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;%&lt;/span&gt;\n&#34;)</span></div>
+<div class="line"><span class="hit">	sb.WriteString(percent)</span></div>
+<div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/span&gt;\n&#34;)</span></div>
 <div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
 <div class="line"><span class="hit">	sb.WriteString(&#34;  &lt;/div&gt;\n&#34;)</span></div>
 <div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
@@ -293,6 +294,15 @@
 <div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/li&gt;\n&#34;)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	res.html = sb.String</span><span class="hit">()</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// formatCov returns covered/total as a one-decimal percentage</div>
+<div class="line">// string (e.g. &#34;12.3%&#34;, or &#34;0.0%&#34; if total is zero).</div>
+<div class="line">func formatCov(covered, total uint64) string<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	if total == 0 {</span></div>
+<div class="line"><span class="hit">		return &#34;0.0%&#34;</span></div>
+<div class="line">	}</div>
+<div class="line"><span class="hit">	return strconv.FormatFloat(float64(covered) / float64(total) * 100, &#39;f&#39;, 1, 64) + &#34;%&#34;</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// splitBudget divides a progress budget into n child allocations,</div>

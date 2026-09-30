@@ -4,14 +4,17 @@
 <meta charset="utf-8">
 <link rel="icon"       href="favicon.ico" type="image/vnd.microsoft.icon">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="modules.css">
 <link rel="stylesheet" href="tree.css">
-<title>Go test coverage // {{ .ModPath }}</title>
+<title>Go test coverage{{ .ModPath }}</title>
 <base target="code"/>
 </head>
 <body id="index">
 <header>
 <div><img src="go-blue-gradient.svg"/> <strong>test coverage</strong></div>
-<div class="centered"><code><a href="{{ .RepoURL }}">{{ .ModPath }}</a></code></div>
+<div class="centered">
+{{ .HeaderHTML }}
+</div>
 <div id="buttons">
   <button id="expand">expand</button>
   <button id="lines">lines</button>

@@ -1,0 +1,52 @@
+.dropdown-wrapper { /* establish a standalone absolute coordinate boundary */
+  position: relative;
+  display:  inline-block;
+}
+
+#modules-menu { /* hide the modules list dropdown menu by default */
+  display:    none;
+  visibility: hidden;
+}
+
+#modules-menu:checked ~ .dropdown-menu { /* display the modules list dropdown menu when clicked */
+  display: block;
+}
+
+.dropdown-toggle { /* clickable label that opens and closes the floating dropdown panel */
+  display:       inline-block;
+  cursor:        pointer;
+  user-select:   none;
+  font-size:     medium;
+  padding:       2px 8px;
+  border-radius: 4px;
+  transition:    box-shadow 0.1s ease-in-out;
+}
+
+.dropdown-link {
+  display:       block;
+  font-family:   monospace;
+  font-weight:   normal;
+  margin:        4px 8px;
+  padding:       2px 4px;
+  border-radius: 4px;
+}
+
+.dropdown-link:hover,
+.dropdown-toggle:hover {
+  background-color: var(--hover-bg);
+  box-shadow:       2px 2px 2px rgb(0 0 0 / 15%);
+}
+
+.dropdown-menu { /* floating panel */
+  display:       none;
+  position:      absolute;
+  top:           100%;
+  left:          50%;
+  transform:     translateX(-50%); /* centers the menu container under the "modules" button */
+  margin-top:    4px;
+  background:    var(--bg-header);
+  width:         max-content;
+  border:        1px solid rgb(from var(--text-color) r g b / 40%);
+  border-radius: 4px;
+  box-shadow:    4px 4px 10px rgb(0 0 0 / 30%);
+}

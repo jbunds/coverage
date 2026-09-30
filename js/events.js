@@ -22,11 +22,36 @@ document.getElementById('theme').addEventListener('click', () => {
   applyTheme(isDark ? 'light' : 'dark');
 });
 
-let expanded = false;
+const syncExpandButtonText = () => {
+  document.getElementById('expand').textContent = document.querySelector('.tree input[type="checkbox"]:checked') ? 'collapse' : 'expand';
+};
+
+document.querySelector('.tree')?.addEventListener('change', syncExpandButtonText);
+
 document.getElementById('expand').addEventListener('click', () => {
-  expanded = !expanded;
-  document.getElementById('expand').textContent = expanded ? 'collapse' : 'expand';
-  document.querySelectorAll('.tree input[type="checkbox"]').forEach(cb => { cb.checked = expanded; });
+  const shouldExpand = !document.querySelector('.tree input[type="checkbox"]:checked');
+  document.querySelectorAll('.tree input[type="checkbox"]').forEach(cb => { cb.checked = shouldExpand; });
+  syncExpandButtonText();
+});
+
+document.querySelector('.dropdown-menu')?.addEventListener('click', (e) => {
+  const targetID = e.target.closest('.dropdown-link')?.getAttribute('for');
+  if (!targetID) return;
+  e.preventDefault();
+  const target = document.getElementById(targetID);
+  if (target.checked) {
+    document.getElementById('modules-menu').checked = false;
+    return;
+  }
+  const targetLi = target.closest('li');
+  targetLi.parentElement.querySelectorAll(':scope > li > input').forEach(cb => { cb.checked = false; }); // uncheck only sibling module roots, not their subtrees
+  let el = targetLi;
+  while (el) {
+    el.querySelector(':scope > input').checked = true;
+    el = el.parentElement?.closest('li');
+  }
+  document.getElementById('modules-menu').checked = false;
+  syncExpandButtonText();
 });
 
 const applyLineNumbers = (on) => {

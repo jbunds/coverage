@@ -26,7 +26,7 @@ func TestFlags(t *testing.T) {
 			"-outdir",       "baz",
 		},
 		wantFV: &flagVals{
-			goModFile:        "foo",
+			goModFiles:       "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
 			sortOrder:        lex,
@@ -41,7 +41,7 @@ func TestFlags(t *testing.T) {
 			"boo",
 		},
 		wantFV: &flagVals{
-			goModFile:        "foo",
+			goModFiles:       "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
 			sortOrder:        lex,
@@ -73,7 +73,7 @@ func TestFlags(t *testing.T) {
 			"-n",
 		},
 		wantFV: &flagVals{
-			goModFile:        "foo",
+			goModFiles:       "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
 			sortOrder:        lex,
@@ -88,7 +88,7 @@ func TestFlags(t *testing.T) {
 			"-s",
 		},
 		wantFV: &flagVals{
-			goModFile:        "foo",
+			goModFiles:       "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
 			sortOrder:        lex,
@@ -103,7 +103,7 @@ func TestFlags(t *testing.T) {
 			"-order",        "lex",
 		},
 		wantFV: &flagVals{
-			goModFile:        "foo",
+			goModFiles:       "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
 			sortOrder:        lex,
@@ -117,7 +117,7 @@ func TestFlags(t *testing.T) {
 			"-order",        "shallowest",
 		},
 		wantFV: &flagVals{
-			goModFile:        "foo",
+			goModFiles:       "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
 			sortOrder:        shallowest,
@@ -131,7 +131,7 @@ func TestFlags(t *testing.T) {
 			"-order",        "deepest",
 		},
 		wantFV: &flagVals{
-			goModFile:        "foo",
+			goModFiles:       "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
 			sortOrder:        deepest,
@@ -145,7 +145,7 @@ func TestFlags(t *testing.T) {
 			"-order",        "lowest",
 		},
 		wantFV: &flagVals{
-			goModFile:        "foo",
+			goModFiles:       "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
 			sortOrder:        lowest,
@@ -159,7 +159,7 @@ func TestFlags(t *testing.T) {
 			"-order",        "highest",
 		},
 		wantFV: &flagVals{
-			goModFile:        "foo",
+			goModFiles:       "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
 			sortOrder:        highest,
@@ -173,7 +173,7 @@ func TestFlags(t *testing.T) {
 			"-order",        "shortest",
 		},
 		wantFV: &flagVals{
-			goModFile:        "foo",
+			goModFiles:       "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
 			sortOrder:        shortest,
@@ -187,7 +187,7 @@ func TestFlags(t *testing.T) {
 			"-order",        "longest",
 		},
 		wantFV: &flagVals{
-			goModFile:        "foo",
+			goModFiles:       "foo",
 			coverProfileFile: "bar",
 			outDir:           "baz",
 			sortOrder:        longest,
@@ -234,7 +234,7 @@ func TestFlags(t *testing.T) {
 			if diff := cmp.Diff(tt.wantOut, gotOut.String()); diff != "" {
 				t.Errorf("flags(%q) usage message mismatch (-want +got):\n%s", tt.name, diff)
 			}
-			if diff := cmp.Diff(tt.wantFV.goModFile, gotFV.goModFile); diff != "" {
+			if diff := cmp.Diff(tt.wantFV.goModFiles, gotFV.goModFiles); diff != "" {
 				t.Errorf("flags(%q) goMod mismatch (-want +got):\n%s", tt.name, diff)
 			}
 			if diff := cmp.Diff(tt.wantFV.coverProfileFile, gotFV.coverProfileFile); diff != "" {

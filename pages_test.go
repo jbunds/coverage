@@ -154,8 +154,8 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 	tests := []struct{
 		name          string
 		embeddedFiles fs.FS
-		modPath       string
-		repoURL       string
+		modPaths      []string
+		repoURLs      []string
 		openRootFails bool
 		rootCloseFunc func() error
 		createFails   bool
@@ -164,11 +164,11 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 	}{{
 		name:          "succeeds",
 		embeddedFiles: fstest.MapFS{ "html/index.html": &fstest.MapFile{
-			Data: []byte("ModPath: {{ .ModPath }}, RepoURL: {{ .RepoURL }}, TreeHTML: {{ .TreeHTML }}"),
+			Data: []byte("ModPath: {{ .ModPath }}, HeaderHTML: {{ .HeaderHTML }}, TreeHTML: {{ .TreeHTML }}"),
 		}},
-		modPath:       "github.com/foo/bar",
-		repoURL:       "https://github.com/foo/bar",
-		want:          "ModPath: github.com/foo/bar, RepoURL: https://github.com/foo/bar, TreeHTML: foo",
+		modPaths:      []string{"github.com/foo/bar"},
+		repoURLs:      []string{"https://github.com/foo/bar"},
+		want:          `ModPath:  // github.com/foo/bar, HeaderHTML: <code><a href="https://github.com/foo/bar">github.com/foo/bar</a></code>, TreeHTML: foo`,
 	}, {
 		name:          "template.ParseFS fails because index file does not exist",
 		embeddedFiles: fstest.MapFS{},
@@ -189,8 +189,8 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 			rg := &reportGenerator{
 				fsys:          mfs,
 				outRoot:       &mockRoot{name: "some/path"},
-				modPath:       tt.modPath,
-				repoURL:       tt.repoURL,
+				modPaths:      tt.modPaths,
+				repoURLs:      tt.repoURLs,
 				embeddedFiles: tt.embeddedFiles,
 			}
 			gotErr := rg.writeIndexHTMLFile("foo")

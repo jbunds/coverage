@@ -9,7 +9,7 @@ import (
 )
 
 type flagVals struct {
-	goModFile        string
+	goModFiles       string
 	coverProfileFile string
 	outDir           string
 	noBrowser        bool
@@ -31,10 +31,10 @@ func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error) {
 		fs.PrintDefaults()
 		fmt.Fprintln(fs.Output())
 	}
-	var goModFile, coverProfileFile, outDir string
+	var goModFiles, coverProfileFile, outDir string
 	var noBrowser, httpServer bool
 	var sortOrder sortOrder
-	fs.StringVar(&goModFile,        "gomod",        "",    "path to the module's go.mod file")
+	fs.StringVar(&goModFiles,       "gomod",        "",    "comma-delimited list of paths to go.mod files")
 	fs.StringVar(&coverProfileFile, "coverprofile", "",    "path to the coverage profile file")
 	fs.StringVar(&outDir,           "outdir",       "",    "path where HTML files will be written")
 	fs.BoolVar(  &noBrowser,        "n",            false, "suppress opening the browser (overrides -s)")
@@ -69,7 +69,7 @@ func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error) {
 	if err := fs.Parse(args); err != nil {
 		return nil, err
 	}
-	if goModFile == "" {
+	if goModFiles == "" {
 		fs.Usage()
 		return nil, errors.New("no value specified for -gomod")
 	}
@@ -82,7 +82,7 @@ func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error) {
 		return nil, errors.New("no value specified for -outdir")
 	}
 	fv = &flagVals{
-		goModFile:        goModFile,
+		goModFiles:       goModFiles,
 		coverProfileFile: coverProfileFile,
 		outDir:           outDir,
 		noBrowser:        noBrowser,

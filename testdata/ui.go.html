@@ -73,11 +73,11 @@
 <div class="line"><span class="hit">	)</span></div>
 <div class="line"><span class="hit">	ew.write(path)</span></div>
 <div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen - len(path) + 2))</span></div>
-<div class="line"><span class="hit">	pct       := strconv.FormatFloat(percent, &#39;f&#39;, 2, 64)</span></div>
+<div class="line"><span class="hit">	pct       := strconv.FormatFloat(percent, &#39;f&#39;, 2, 64) + &#34;%&#34;</span></div>
 <div class="line"><span class="hit">	colorCode := green</span></div>
 <div class="line"><span class="hit">	if percent &lt; 50 { colorCode = red</span><span class="hit"> }</span></div>
-<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, 6 - len(pct)))</span></div>
-<div class="line"><span class="hit">	ew.writeColor(pct + &#34;%&#34;, colorCode)</span></div>
+<div class="line"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, 7 - len(pct))) // 7 == len(&#34;100.00%&#34;)</span></div>
+<div class="line"><span class="hit">	ew.writeColor(pct, colorCode)</span></div>
 <div class="line"><span class="hit">	ew.write(&#34;\n&#34;</span><span class="hit">)</span></div>
 <div class="line">}</div>
 <div class="line"></div>
