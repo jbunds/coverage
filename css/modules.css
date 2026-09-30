@@ -12,7 +12,7 @@
   display: block;
 }
 
-.dropdown-toggle { /* clickable label that opens and closes the floating dropdown panel */
+.dropdown-toggle { /* pseudo button to open the modules list dropdown menu */
   display:       inline-block;
   cursor:        pointer;
   user-select:   none;
@@ -22,7 +22,21 @@
   transition:    box-shadow 0.1s ease-in-out;
 }
 
-.dropdown-link {
+.dropdown-menu { /* floating modules list dropdown menu */
+  display:       none;
+  position:      absolute;
+  top:           100%;
+  left:          50%;
+  transform:     translateX(-50%);
+  margin-top:    4px;
+  background:    var(--bg-header);
+  width:         max-content;
+  border:        1px solid rgb(from var(--text-color) r g b / 40%);
+  border-radius: 4px;
+  box-shadow:    4px 4px 10px rgb(0 0 0 / 30%);
+}
+
+.dropdown-link { /* individual menu items */
   display:       block;
   font-family:   monospace;
   font-weight:   normal;
@@ -35,18 +49,4 @@
 .dropdown-toggle:hover {
   background-color: var(--hover-bg);
   box-shadow:       2px 2px 2px rgb(0 0 0 / 15%);
-}
-
-.dropdown-menu { /* floating panel */
-  display:       none;
-  position:      absolute;
-  top:           100%;
-  left:          50%;
-  transform:     translateX(-50%); /* centers the menu container under the "modules" button */
-  margin-top:    4px;
-  background:    var(--bg-header);
-  width:         max-content;
-  border:        1px solid rgb(from var(--text-color) r g b / 40%);
-  border-radius: 4px;
-  box-shadow:    4px 4px 10px rgb(0 0 0 / 30%);
 }
