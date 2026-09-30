@@ -144,7 +144,7 @@ func openBrowser(url string) error {
 
 // findPortPID searches for a process listening on the specified port and returns its PID if found.
 func findPortPID(port int) (int, error) {
-	out, err := exec.Command("lsof", "-ti", fmt.Sprintf(":%d", port)).Output() // #nosec G204 - port is a const defined in maybeOpenBrowser()
+	out, err := exec.Command("lsof", "-ti", fmt.Sprintf(":%d", port)).Output() // #nosec G204 - port is a const defined in launchHTTPServer()
 	if err != nil { return 0, err }
 	var pid int
 	if _, err := fmt.Sscanf(strings.TrimSpace(string(out)), "%d", &pid); err != nil {

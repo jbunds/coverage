@@ -153,7 +153,7 @@
 <div class="line"></div>
 <div class="line">// findPortPID searches for a process listening on the specified port and returns its PID if found.</div>
 <div class="line">func findPortPID(port int) (int, error<span class="miss">) {</span></div>
-<div class="line"><span class="miss">	out, err := exec.Command(&#34;lsof&#34;, &#34;-ti&#34;, fmt.Sprintf(&#34;:%d&#34;, port)).Output() // #nosec G204 - port is a const defined in maybeOpenBrowser()</span></div>
+<div class="line"><span class="miss">	out, err := exec.Command(&#34;lsof&#34;, &#34;-ti&#34;, fmt.Sprintf(&#34;:%d&#34;, port)).Output() // #nosec G204 - port is a const defined in launchHTTPServer()</span></div>
 <div class="line"><span class="miss">	if err != nil { return 0, err</span><span class="miss"> }</span></div>
 <div class="line"><span class="miss">	var pid int</span></div>
 <div class="line"><span class="miss">	if _, err := fmt.Sscanf(strings.TrimSpace(string(out)), &#34;%d&#34;, &amp;pid); err != nil {</span></div>
