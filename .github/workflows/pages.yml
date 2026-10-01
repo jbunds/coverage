@@ -31,7 +31,7 @@ on:
         default:     ./...
       cover-pkg:
         type:        string
-        description: Go package scope
+        description: Go package scope (comma-delimited list of Go package patterns, passed to `go test -coverpkg`)
         required:    false
         default:     ./...
       coverage-threshold:
