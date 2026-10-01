@@ -1,9 +1,11 @@
 # all-in-one reusable workflow which does the following:
 #
 #   1. generates a Go test coverage HTML report via ./action.yml
+#      (resolved via jbunds/coverage@v1)
 #
-#   2. uses .github/actions/upload-pages/action.yml to upload
-#      the Go test coverage HTML report files to GitHub Pages
+#   2. uses ./.github/actions/upload-pages/action.yml
+#      (resolved via jbunds/coverage/.github/actions/upload-pages@v1)
+#      to upload the Go test coverage HTML report files to GitHub Pages
 #      per these standard actions:
 #
 #        - actions/configure-pages@v6
@@ -54,7 +56,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: checkout workspace repos
-        if: inputs.workspace-repos != ''
+        if:   inputs.workspace-repos != ''
         run: |
           while IFS= read -r repo; do
             [ -z "$repo" ] && continue
@@ -62,18 +64,6 @@ jobs:
             echo "checking out $repo -> ./$name"
             git clone --depth 1 "https://github.com/$repo.git" "$name"
           done <<< "${{ inputs.workspace-repos }}"
-
-#      - name: init Go workspace
-#        if: inputs.workspace-repos != ''
-#        run: |
-#          dirs="."
-#          for dir in */; do
-#            if [ -f "$dir/go.mod" ]; then
-#              dirs="$dirs $dir"
-#            fi
-#          done
-#          go work init $dirs
-#          cat go.work
 
       - name: Go test coverage report
         uses: jbunds/coverage@v1

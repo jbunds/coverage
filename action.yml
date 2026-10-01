@@ -20,6 +20,10 @@ inputs:
     description: path to the module's go.mod file
     required:    false
     default:     go.mod
+  test-pkgs:
+    description: Go package scope for test execution
+    required:    false
+    default:     ./...
   cover-pkg:
     description: Go package scope
     required:    false
@@ -52,6 +56,7 @@ runs:
       id:   coverage_profile
       uses: gwatts/go-coverage-action@v2
       with:
+        test-pkgs:          ${{ inputs.test-pkgs          }}
         cover-pkg:          ${{ inputs.cover-pkg          }}
         coverage-threshold: ${{ inputs.coverage-threshold }}
 

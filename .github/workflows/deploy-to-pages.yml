@@ -12,6 +12,7 @@ jobs:
     uses: ./.github/workflows/pages.yml
     with:
       go-mod:          go.work
+      test-pkgs:       ./... ./fractal/... ./progress/...
       cover-pkg:       ./... ./fractal/... ./progress/...
       workspace-repos: |
         jbunds/fractal
