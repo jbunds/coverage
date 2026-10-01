@@ -19,7 +19,7 @@ on:
     inputs:
       go-mod:
         type:        string
-        description: path to the module's go.mod file
+        description: path to the module's go.mod or go.work file
         required:    false
         default:     go.mod
       cover-pkg:
@@ -37,6 +37,11 @@ on:
         description: path to the root of the Go coverage report
         required:    false
         default:     coverage_report
+      workspace-repos:
+        type:        string
+        description: newline-separated list of GitHub repos ("owner/repo") to check out
+        required:    false
+        default:     ''
 
 concurrency: # avoid races
   group:              pages
@@ -47,6 +52,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      - name: checkout workspace repos
+        if: inputs.workspace-repos != ''
+        run: |
+          while IFS= read -r repo; do
+            name=$(basename "$repo")
+            echo "checking out $repo -> ./$name"
+            git clone --depth 1 "https://github.com/$repo.git" "$name"
+          done <<< "${{ inputs.workspace-repos }}"
+
+#      - name: init Go workspace
+#        if: inputs.workspace-repos != ''
+#        run: |
+#          dirs="."
+#          for dir in */; do
+#            if [ -f "$dir/go.mod" ]; then
+#              dirs="$dirs $dir"
+#            fi
+#          done
+#          go work init $dirs
+#          cat go.work
 
       - name: Go test coverage report
         uses: jbunds/coverage@v1

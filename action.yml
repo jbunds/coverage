@@ -57,7 +57,6 @@ runs:
 
     - name:  coverage report
       id:    coverage_report
-      shell: bash
       run: |
         go run github.com/jbunds/coverage@latest \
           -n \

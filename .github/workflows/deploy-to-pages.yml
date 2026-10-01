@@ -5,8 +5,14 @@ on:
     branches: [main]
     paths:
       - '**/*.go'
+      - '**/go.mod'
+      - 'go.work'
 jobs:
   pages:
     uses: ./.github/workflows/pages.yml
     with:
-      cover-pkg: .
+      go-mod:          go.work
+      cover-pkg:       ./... ./fractal/... ./progress/...
+      workspace-repos: |
+        jbunds/fractal
+        jbunds/progress

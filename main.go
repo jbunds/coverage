@@ -187,19 +187,38 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 
 // getModPaths reads the go.mod files to determine the module paths.
 func (rg *reportGenerator) getModPaths(fv *flagVals) error {
-	for _, goModFile := range splitGoModFiles(fv.goModFiles) {
-		f, err := rg.fsys.ReadFile(goModFile)
+	for _, file := range splitGoModFiles(fv.goModFiles) {
+		fileBytes, err := rg.fsys.ReadFile(file)
 		if err != nil {
-			return fmt.Errorf("cannot read %q: %w", goModFile, err)
+			return fmt.Errorf("cannot read %q: %w", file, err)
 		}
 
-		goMod, err := modfile.Parse(goModFile, f, nil)
-		if err              != nil ||
-			 goMod.Module == nil {
-			return fmt.Errorf("cannot parse %q: %w", goModFile, err)
+		if strings.HasSuffix(file, ".work") {
+			workFile, err := modfile.ParseWork(file, fileBytes, nil)
+			if err != nil {
+				return fmt.Errorf("cannot parse %q: %w", file, err)
+			}
+			for _, use := range workFile.Use {
+				goModFile      := filepath.Join(use.Path, "go.mod")
+				fileBytes, err := rg.fsys.ReadFile(goModFile)
+				if err != nil {
+					return fmt.Errorf("cannot read %q: %w", goModFile, err)
+				}
+				goMod, err := modfile.Parse(goModFile, fileBytes, nil)
+				if err          != nil ||
+				   goMod.Module == nil {
+					return fmt.Errorf("cannot parse %q: %w", goModFile, err)
+				}
+				rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path)
+			}
+		} else {
+			goMod, err := modfile.Parse(file, fileBytes, nil)
+			if err          != nil ||
+				 goMod.Module == nil {
+				return fmt.Errorf("cannot parse %q: %w", file, err)
+			}
+			rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path)
 		}
-
-		rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path)
 	}
 
 	return nil

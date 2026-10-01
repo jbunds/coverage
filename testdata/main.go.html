@@ -196,19 +196,38 @@
 <div class="line"></div>
 <div class="line">// getModPaths reads the go.mod files to determine the module paths.</div>
 <div class="line">func (rg *reportGenerator) getModPaths(fv *flagVals) error<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	for _, goModFile := range splitGoModFiles(fv.goModFiles) {</span></div>
-<div class="line"><span class="hit">		f, err := rg.fsys.ReadFile(goModFile)</span></div>
+<div class="line"><span class="hit">	for _, file := range splitGoModFiles(fv.goModFiles) {</span></div>
+<div class="line"><span class="hit">		fileBytes, err := rg.fsys.ReadFile(file)</span></div>
 <div class="line"><span class="hit">		if err != nil {</span></div>
-<div class="line"><span class="hit">			return fmt.Errorf(&#34;cannot read %q: %w&#34;, goModFile, err)</span></div>
+<div class="line"><span class="hit">			return fmt.Errorf(&#34;cannot read %q: %w&#34;, file, err)</span></div>
 <div class="line">		}</div>
 <div class="line"></div>
-<div class="line"><span class="hit">		goMod, err := modfile.Parse(goModFile, f, nil)</span></div>
-<div class="line"><span class="hit">		if err              != nil ||</span></div>
-<div class="line"><span class="hit">			 goMod.Module == nil {</span></div>
-<div class="line"><span class="hit">			return fmt.Errorf(&#34;cannot parse %q: %w&#34;, goModFile, err)</span></div>
+<div class="line"><span class="hit">		if strings.HasSuffix(file, &#34;.work&#34;</span><span class="miss">) {</span></div>
+<div class="line"><span class="miss">			workFile, err := modfile.ParseWork(file, fileBytes, nil)</span></div>
+<div class="line"><span class="miss">			if err != nil {</span></div>
+<div class="line"><span class="miss">				return fmt.Errorf(&#34;cannot parse %q: %w&#34;, file, err)</span></div>
+<div class="line">			}</div>
+<div class="line"><span class="miss">			for _, use := range workFile.Use {</span></div>
+<div class="line"><span class="miss">				goModFile      := filepath.Join(use.Path, &#34;go.mod&#34;)</span></div>
+<div class="line"><span class="miss">				fileBytes, err := rg.fsys.ReadFile(goModFile)</span></div>
+<div class="line"><span class="miss">				if err != nil {</span></div>
+<div class="line"><span class="miss">					return fmt.Errorf(&#34;cannot read %q: %w&#34;, goModFile, err)</span></div>
+<div class="line">				}</div>
+<div class="line"><span class="miss">				goMod, err := modfile.Parse(goModFile, fileBytes, nil)</span></div>
+<div class="line"><span class="miss">				if err          != nil ||</span></div>
+<div class="line"><span class="miss">				   goMod.Module == nil {</span></div>
+<div class="line"><span class="miss">					return fmt.Errorf(&#34;cannot parse %q: %w&#34;, goModFile, err)</span></div>
+<div class="line">				}</div>
+<div class="line"><span class="miss">				rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path</span><span class="miss">)</span></div>
+<div class="line">			}</div>
+<div class="line">		} else<span class="hit"> {</span></div>
+<div class="line"><span class="hit">			goMod, err := modfile.Parse(file, fileBytes, nil)</span></div>
+<div class="line"><span class="hit">			if err          != nil ||</span></div>
+<div class="line"><span class="hit">				 goMod.Module == nil {</span></div>
+<div class="line"><span class="hit">				return fmt.Errorf(&#34;cannot parse %q: %w&#34;, file, err)</span></div>
+<div class="line">			}</div>
+<div class="line"><span class="hit">			rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path</span><span class="hit">)</span></div>
 <div class="line">		}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">		rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path</span><span class="hit">)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	return nil</span></div>

@@ -34,12 +34,12 @@ func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error) {
 	var goModFiles, coverProfileFile, outDir string
 	var noBrowser, httpServer bool
 	var sortOrder sortOrder
-	fs.StringVar(&goModFiles,       "gomod",        "",    "comma-delimited list of paths to go.mod files")
-	fs.StringVar(&coverProfileFile, "coverprofile", "",    "path to the coverage profile file")
-	fs.StringVar(&outDir,           "outdir",       "",    "path where HTML files will be written")
-	fs.BoolVar(  &noBrowser,        "n",            false, "suppress opening the browser (overrides -s)")
-	fs.BoolVar(  &httpServer,       "s",            false, "serve the generated HTML via a Python HTTP server")
-	fs.Func(                        "order",               "per-file coverage stdout rows sort order", func(val string) error {
+	fs.StringVar(&goModFiles,       "gomod",        "go.mod", "path to a go.work file or a comma-delimited list of go.mod paths")
+	fs.StringVar(&coverProfileFile, "coverprofile", "",       "path to the coverage profile file")
+	fs.StringVar(&outDir,           "outdir",       "",       "path where HTML files will be written")
+	fs.BoolVar(  &noBrowser,        "n",            false,    "suppress opening the browser (overrides -s)")
+	fs.BoolVar(  &httpServer,       "s",            false,    "serve the generated HTML via a Python HTTP server")
+	fs.Func(                        "order",                  "per-file coverage stdout rows sort order", func(val string) error {
 		switch val {
 		case "lex":
 			sortOrder = lex

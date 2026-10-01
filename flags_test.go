@@ -49,7 +49,7 @@ func TestFlags(t *testing.T) {
 		wantOut: "ignored arguments: bug, boo\n",
 	}, {
 		name:    "missing -gomod",
-		err:     "no value specified for -gomod",
+		err:     "no value specified for -coverprofile",
 		wantOut: "missing -gomod usage:\n" + usage,
 	}, {
 		name:    "missing -coverprofile",
