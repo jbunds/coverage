@@ -64,7 +64,6 @@ jobs:
         if:   inputs.workspace-repos != ''
         run: |
           while IFS= read -r repo; do
-            [ -z "$repo" ] && continue
             name=$(basename "$repo")
             echo "checking out $repo -> ./$name"
             git clone --depth 1 "https://github.com/$repo.git" "$name"
