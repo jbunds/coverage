@@ -29,6 +29,8 @@ jobs:
           go-version-file: go.mod # https://github.com/marketplace/actions/setup-go-environment#supported-version-syntax
 
       - name: golangci-lint                    # https://golangci-lint.run/docs/
+        env:
+          GOWORK: off
         uses: golangci/golangci-lint-action@v9 # https://github.com/golangci/golangci-lint-action
         with:
           version: latest                      # https://github.com/golangci/golangci-lint-action#version
