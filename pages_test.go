@@ -55,7 +55,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 			},
 		},
 		modPath:     "foo",
-		pkgDirCache: map[string]string{ "foo/bar": "foo/bar" },
+		pkgDirCache: map[string]string{"foo/bar": "foo/bar"},
 		profiles:    []*cover.Profile{{
 			FileName:  "foo/bar/baz.go",
 			Blocks: []cover.ProfileBlock{{
@@ -101,18 +101,18 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 	}, {
 		name:     "source does not exist",
 		fsys:     fstest.MapFS{},
-		profiles: []*cover.Profile{{ FileName: "foo.go" }},
+		profiles: []*cover.Profile{{FileName: "foo.go"}},
 		wantErr:  true,
 	}, {
 		name:          "MkdirAll fails",
-		fsys:          fstest.MapFS{ "foo.go": &fstest.MapFile{} },
-		profiles:      []*cover.Profile{{ FileName: "foo.go" }},
+		fsys:          fstest.MapFS{"foo.go": &fstest.MapFile{}},
+		profiles:      []*cover.Profile{{FileName: "foo.go"}},
 		mkdirAllFails: true,
 		wantErr:       true,
 	}, {
 		name:           "WriteFile fails",
-		fsys:           fstest.MapFS{ "foo.go": &fstest.MapFile{} },
-		profiles:       []*cover.Profile{{ FileName: "foo.go" }},
+		fsys:           fstest.MapFS{"foo.go": &fstest.MapFile{}},
+		profiles:       []*cover.Profile{{FileName: "foo.go"}},
 		writeFileFails: true,
 		wantErr:        true,
 	}}
@@ -156,30 +156,57 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 		embeddedFiles fs.FS
 		modPaths      []string
 		repoURLs      []string
+		treeHTML      string
 		openRootFails bool
 		rootCloseFunc func() error
 		createFails   bool
 		want          string
 		wantErr       error
 	}{{
-		name:          "succeeds",
-		embeddedFiles: fstest.MapFS{ "html/index.html": &fstest.MapFile{
+		name:          "single go.mod file",
+		embeddedFiles: fstest.MapFS{"html/index.html": &fstest.MapFile{
 			Data: []byte("title: {{ .Title }}, headerHTML: {{ .HeaderHTML }}, treeHTML: {{ .TreeHTML }}"),
 		}},
 		modPaths:      []string{"github.com/foo/bar"},
 		repoURLs:      []string{"https://github.com/foo/bar"},
+		treeHTML:      "foo",
 		want:          `title: Go test coverage // github.com/foo/bar, headerHTML: <code><a href="https://github.com/foo/bar">github.com/foo/bar</a></code>, treeHTML: foo`,
 	}, {
+		name:          "multiple go.mod files",
+		embeddedFiles: fstest.MapFS{"html/index.html": &fstest.MapFile{
+			Data: []byte(strings.Join([]string{
+				`<title>{{ .Title }}</title>`,
+				"<div class=\"centered\">\n{{ .HeaderHTML }}\n</div>",
+				"<div id=\"tree-body\">\n{{ .TreeHTML }}\n</div>",
+			}, "\n")),
+		}},
+		modPaths: []string{"github.com/foo/bar", "github.com/baz/boo"},
+		treeHTML: "tree HTML",
+		want:     strings.Join([]string{
+			`<title>Go test coverage</title>`,
+			`<div class="centered">`,
+			`  <div class="dropdown-wrapper">`,
+			`    <input type="checkbox" id="modules-menu"/>`,
+			`    <label for="modules-menu" class="dropdown-toggle">modules</label>`,
+			`    <div class="dropdown-menu">`,
+			`      <label for="module-github-com-foo-bar" class="dropdown-link">github.com/foo/bar</label>`,
+			`      <label for="module-github-com-baz-boo" class="dropdown-link">github.com/baz/boo</label>`,
+			`    </div>`,
+			`  </div>`,
+			`</div>`,
+			`<div id="tree-body">`,
+			`tree HTML`,
+			`</div>`}, "\n"),
+	}, {
 		name:          "template.ParseFS fails because index file does not exist",
-		modPaths:      []string{"foo"},
-		repoURLs:      []string{"bar"},
+		modPaths:      []string{"github.com/foo/bar", "github.com/baz/boo"},
 		embeddedFiles: fstest.MapFS{},
 		wantErr:       fmt.Errorf("cannot parse %q: template: pattern matches no files: `html/index.html`", "html/index.html"),
 	}, {
 		name:          "Create fails",
 		modPaths:      []string{"foo"},
 		repoURLs:      []string{"bar"},
-		embeddedFiles: fstest.MapFS{ "html/index.html": &fstest.MapFile{} },
+		embeddedFiles: fstest.MapFS{"html/index.html": &fstest.MapFile{}},
 		createFails:   true,
 		wantErr:       fmt.Errorf("cannot create %q: Create failed", "some/path/index.html"),
 	}}
@@ -197,7 +224,7 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 				repoURLs:      tt.repoURLs,
 				embeddedFiles: tt.embeddedFiles,
 			}
-			gotErr := rg.writeIndexHTMLFile("foo")
+			gotErr := rg.writeIndexHTMLFile(tt.treeHTML)
 			if tt.wantErr == nil && gotErr != nil {
 				t.Fatalf("unexpected error: %v", gotErr)
 			}
@@ -222,21 +249,21 @@ func TestWriteTemplateFile(t *testing.T) {
 		name          string
 		embeddedFiles fs.FS
 		fileName      string
-		tmplData      struct{ VarExists string }
+		tmplData      struct{ SomeVar string }
 		want          string
 		wantErr       bool
 	}{
 		{
 			name:          "succeeds",
 			fileName:      "foo",
-			embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("VarExists: {{ .VarExists }}") }},
-			tmplData:      struct{ VarExists string }{ VarExists: "this var exists" },
-			want:          "VarExists: this var exists",
+			embeddedFiles: fstest.MapFS{"foo": &fstest.MapFile{Data: []byte("someVar: {{ .SomeVar }}") }},
+			tmplData:      struct{ SomeVar string }{SomeVar: "some var value"},
+			want:          "someVar: some var value",
 		},
 		{
 			name:          "template.Execute fails",
 			fileName:      "bar",
-			embeddedFiles: fstest.MapFS{ "bar": &fstest.MapFile{ Data: []byte("NoSuchData: {{ .NoSuchData }}") }},
+			embeddedFiles: fstest.MapFS{"bar": &fstest.MapFile{Data: []byte("NoSuchData: {{ .NoSuchData }}") }},
 			want:          "NoSuchData: ",
 			wantErr:       true,
 		},
