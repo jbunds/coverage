@@ -252,42 +252,40 @@
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// writeIndexHTMLFile writes the index HTML file, which contains three</div>
-<div class="line">// template parameters (ModPath, HeaderHTML, and TreeHTML), and hosts one</div>
+<div class="line">// template parameters (Title, HeaderHTML, and TreeHTML), and hosts one</div>
 <div class="line">// iframe within which the generated source code HTML files are rendered.</div>
 <div class="line">func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	var modPath  string</span></div>
+<div class="line"><span class="hit">	title := &#34;Go test coverage&#34;</span></div>
 <div class="line"><span class="hit">	var headerSB strings.Builder</span></div>
-<div class="line"><span class="hit">	if len(rg.modPaths) == 1 {</span></div>
-<div class="line"><span class="hit">		modPath = &#34; // &#34; + rg.modPaths[0]</span></div>
-<div class="line"><span class="hit">		headerSB.WriteString(`&lt;code&gt;&lt;a href=&#34;`)</span></div>
-<div class="line"><span class="hit">		headerSB.WriteString(rg.repoURLs[0])</span></div>
-<div class="line"><span class="hit">		headerSB.WriteString(`&#34;&gt;`)</span></div>
-<div class="line"><span class="hit">		headerSB.WriteString(rg.modPaths[0])</span></div>
-<div class="line"><span class="hit">		headerSB.WriteString(`&lt;/a&gt;&lt;/code&gt;`)</span></div>
-<div class="line">	} else<span class="hit"> {</span></div>
-<div class="line"><span class="hit">		headerSB.WriteString(&#34;  &lt;div class=\&#34;dropdown-wrapper\&#34;&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">		headerSB.WriteString(&#34;    &lt;input type=\&#34;checkbox\&#34; id=\&#34;modules-menu\&#34;/&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">		headerSB.WriteString(&#34;    &lt;label for=\&#34;modules-menu\&#34; class=\&#34;dropdown-toggle\&#34;&gt;modules&lt;/label&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">		headerSB.WriteString(&#34;    &lt;div class=\&#34;dropdown-menu\&#34;&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">		</span></div>
-<div class="line"><span class="hit">		for _, mod := range rg.modPaths</span><span class="miss"> {</span></div>
+<div class="line"><span class="hit">	if len(rg.modPaths) &gt; 1</span><span class="miss"> {</span></div>
+<div class="line"><span class="miss">		headerSB.WriteString(&#34;  &lt;div class=\&#34;dropdown-wrapper\&#34;&gt;\n&#34;)</span></div>
+<div class="line"><span class="miss">		headerSB.WriteString(&#34;    &lt;input type=\&#34;checkbox\&#34; id=\&#34;modules-menu\&#34;/&gt;\n&#34;)</span></div>
+<div class="line"><span class="miss">		headerSB.WriteString(&#34;    &lt;label for=\&#34;modules-menu\&#34; class=\&#34;dropdown-toggle\&#34;&gt;modules&lt;/label&gt;\n&#34;)</span></div>
+<div class="line"><span class="miss">		headerSB.WriteString(&#34;    &lt;div class=\&#34;dropdown-menu\&#34;&gt;\n&#34;)</span></div>
+<div class="line"><span class="miss">		for _, mod := range rg.modPaths {</span></div>
 <div class="line"><span class="miss">			headerSB.WriteString(`      &lt;label for=&#34;module-`)</span></div>
 <div class="line"><span class="miss">			headerSB.WriteString(normalizeModID(mod))</span></div>
 <div class="line"><span class="miss">			headerSB.WriteString(`&#34; class=&#34;dropdown-link&#34;&gt;`)</span></div>
 <div class="line"><span class="miss">			headerSB.WriteString(mod)</span></div>
 <div class="line"><span class="miss">			headerSB.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
 <div class="line">		}</div>
-<div class="line"><span class="hit">		</span></div>
-<div class="line"><span class="hit">		headerSB.WriteString(&#34;    &lt;/div&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">		headerSB.WriteString(&#34;  &lt;/div&gt;&#34;</span><span class="hit">)</span></div>
+<div class="line"><span class="miss">		headerSB.WriteString(&#34;    &lt;/div&gt;\n&#34;)</span></div>
+<div class="line"><span class="miss">		headerSB.WriteString(&#34;  &lt;/div&gt;&#34;</span><span class="miss">)</span></div>
+<div class="line">	} else<span class="hit"> {</span></div>
+<div class="line"><span class="hit">		title += &#34; // &#34; + rg.modPaths[0]</span></div>
+<div class="line"><span class="hit">		headerSB.WriteString(`&lt;code&gt;&lt;a href=&#34;`)</span></div>
+<div class="line"><span class="hit">		headerSB.WriteString(rg.repoURLs[0])</span></div>
+<div class="line"><span class="hit">		headerSB.WriteString(`&#34;&gt;`)</span></div>
+<div class="line"><span class="hit">		headerSB.WriteString(rg.modPaths[0])</span></div>
+<div class="line"><span class="hit">		headerSB.WriteString(`&lt;/a&gt;&lt;/code&gt;`)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	data := struct{</span></div>
-<div class="line"><span class="hit">		ModPath    string</span></div>
+<div class="line"><span class="hit">		Title      string</span></div>
 <div class="line"><span class="hit">		HeaderHTML string</span></div>
 <div class="line"><span class="hit">		TreeHTML   string</span></div>
 <div class="line"><span class="hit">	}{</span></div>
-<div class="line"><span class="hit">		ModPath:    modPath,</span></div>
+<div class="line"><span class="hit">		Title:      title,</span></div>
 <div class="line"><span class="hit">		HeaderHTML: headerSB.String(),</span></div>
 <div class="line"><span class="hit">		TreeHTML:   treeHTML</span><span class="hit">,</span></div>
 <div class="line">	}</div>

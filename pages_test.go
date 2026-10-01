@@ -164,17 +164,21 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 	}{{
 		name:          "succeeds",
 		embeddedFiles: fstest.MapFS{ "html/index.html": &fstest.MapFile{
-			Data: []byte("ModPath: {{ .ModPath }}, HeaderHTML: {{ .HeaderHTML }}, TreeHTML: {{ .TreeHTML }}"),
+			Data: []byte("title: {{ .Title }}, headerHTML: {{ .HeaderHTML }}, treeHTML: {{ .TreeHTML }}"),
 		}},
 		modPaths:      []string{"github.com/foo/bar"},
 		repoURLs:      []string{"https://github.com/foo/bar"},
-		want:          `ModPath:  // github.com/foo/bar, HeaderHTML: <code><a href="https://github.com/foo/bar">github.com/foo/bar</a></code>, TreeHTML: foo`,
+		want:          `title: Go test coverage // github.com/foo/bar, headerHTML: <code><a href="https://github.com/foo/bar">github.com/foo/bar</a></code>, treeHTML: foo`,
 	}, {
 		name:          "template.ParseFS fails because index file does not exist",
+		modPaths:      []string{"foo"},
+		repoURLs:      []string{"bar"},
 		embeddedFiles: fstest.MapFS{},
 		wantErr:       fmt.Errorf("cannot parse %q: template: pattern matches no files: `html/index.html`", "html/index.html"),
 	}, {
 		name:          "Create fails",
+		modPaths:      []string{"foo"},
+		repoURLs:      []string{"bar"},
 		embeddedFiles: fstest.MapFS{ "html/index.html": &fstest.MapFile{} },
 		createFails:   true,
 		wantErr:       fmt.Errorf("cannot create %q: Create failed", "some/path/index.html"),
