@@ -10,6 +10,9 @@
 [k8s]:                  https://github.com/kubernetes/kubernetes
 [light theme]:          ./screenshots/light_theme.jpg "light theme"
 [dark theme]:           ./screenshots/dark_theme.jpg "dark theme"
+[cover-pkg]:            https://github.com/gwatts/go-coverage-action/blob/main/action.yml#:~:#text=cover-pkg
+[test-pkgs]:            https://github.com/gwatts/go-coverage-action/blob/main/action.yml#:~:#text=test-pkgs
+[coverage-threshold]:   https://github.com/gwatts/go-coverage-action/blob/main/action.yml#:~:#text=coverage-threshold
 [gwatts-gocov-action]:  https://github.com/gwatts/go-coverage-action
 [gwatts-gocov-outputs]: https://github.com/gwatts/go-coverage-action/blob/main/action.yml
 [action]:               https://github.com/jbunds/coverage/blob/main/action.yml
@@ -102,7 +105,7 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
        coverage-report-outdir: 'coverage_report'  # optional; default is 'coverage_report'
    ```
 
-   The [`go-mod`][action], [`test-pkgs`][gwatts-gocov-outputs#:~:text=test-pkgs], [`cover-pkg`][gwatts-gocov-outputs#:~:text=cover-pkg], [`coverage-threshold`][gwatts-gocov-outputs#:~:text=coverage-threshold], and [`coverage-report-outdir`][workflow] parameters are all optional.
+   The [`go-mod`][action], [`test-pkgs`][test-pkgs], [`cover-pkg`][cover-pkg], [`coverage-threshold`][coverage-threshold], and [`coverage-report-outdir`][workflow] parameters are all optional.
 
    All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
 
