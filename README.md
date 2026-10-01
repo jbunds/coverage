@@ -27,7 +27,7 @@ The `coverage` Go module renders an HTML file for each `*.go` source file listed
 The program expects the specification of three flags with corresponding arguments (see [usage](#cli-usage) below):
 
 ```
--gomod         # path to the module's go.mod file
+-gomod         # path to a go.work file or a comma-delimited list of go.mod paths (default "go.mod")
 -coverprofile  # path to the coverage profile file
 -outdir        # path where HTML files will be written
 ```
@@ -75,7 +75,7 @@ coverage usage:
   -coverprofile string
     	path to the coverage profile file
   -gomod string
-    	path to the module's go.mod file
+    	path to a go.work file or a comma-delimited list of go.mod paths (default "go.mod")
   -n	suppress opening the browser (overrides -s)
   -order value
     	per-file coverage stdout rows sort order
@@ -102,7 +102,7 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
        coverage-report-outdir: 'coverage_report'  # optional; default is 'coverage_report'
    ```
 
-   The [`go-mod`][action], [`coverage-threshold`][gwatts-gocov-outputs], and [`coverage-report-outdir`][workflow] parameters are optional.
+   The [`go-mod`][action], [`test-pkgs`][gwatts-gocov-outputs], [`cover-pkg`][gwatts-gocov-outputs], [`coverage-threshold`][gwatts-gocov-outputs], and [`coverage-report-outdir`][workflow] parameters are all optional.
 
    All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
 
@@ -136,7 +136,7 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
 
    See [`jbunds/progress/.github/workflows/pages.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/pages.yml) for a working example.
 
-   See [jbunds.github.io/coverage/](https://jbunds.github.io/coverage/) or [jbunds.github.io/progress/](https://jbunds.github.io/progress/) for example HTML reports uploaded to Pages.
+   See [jbunds.github.io/coverage/](https://jbunds.github.io/coverage/) (multi-module) or [jbunds.github.io/progress/](https://jbunds.github.io/progress/) (single-module) for example HTML reports uploaded to Pages.
 
 ---
 
