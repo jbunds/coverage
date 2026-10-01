@@ -26,7 +26,7 @@ on:
         default:     go.mod
       test-pkgs:
         type:        string
-        description: space-separated Go package patterns for text execution
+        description: Go package patterns to test (newline-separated, passed to `go test`)
         required:    false
         default:     ./...
       cover-pkg:

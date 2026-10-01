@@ -21,7 +21,7 @@ inputs:
     required:    false
     default:     go.mod
   test-pkgs:
-    description: Go package scope for test execution
+    description: Go package patterns to test (newline-separated, passed to `go test`)
     required:    false
     default:     ./...
   cover-pkg:
