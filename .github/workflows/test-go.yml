@@ -37,6 +37,8 @@ jobs:
 
     - name: coverage report
       id:   coverage_report
+      env:
+        GOWORK: off
       uses: jbunds/coverage@v1 # self-hosting
       with:
         coverage-threshold: 50 # https://github.com/gwatts/go-coverage-action#usage
