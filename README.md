@@ -102,7 +102,7 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
        coverage-report-outdir: 'coverage_report'  # optional; default is 'coverage_report'
    ```
 
-   The [`go-mod`][action], [`test-pkgs`][gwatts-gocov-outputs], [`cover-pkg`][gwatts-gocov-outputs], [`coverage-threshold`][gwatts-gocov-outputs], and [`coverage-report-outdir`][workflow] parameters are all optional.
+   The [`go-mod`][action], [`test-pkgs`][gwatts-gocov-outputs#:~:text=test-pkgs], [`cover-pkg`][gwatts-gocov-outputs#:~:text=cover-pkg], [`coverage-threshold`][gwatts-gocov-outputs#:~:text=coverage-threshold], and [`coverage-report-outdir`][workflow] parameters are all optional.
 
    All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
 
