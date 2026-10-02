@@ -361,14 +361,14 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader) error {
 // shouldWrite reports whether the user-specified
 // outDir is the not OS-specific null device.
 func shouldWrite(fv *flagVals) bool {
-  switch {
-  case runtime.GOOS == "darwin"  && fv.outDir == "/dev/null":
-    return false
-  case runtime.GOOS == "linux"   && fv.outDir == "/dev/null":
+	switch {
+	case runtime.GOOS == "darwin"  && fv.outDir == "/dev/null":
+		return false
+	case runtime.GOOS == "linux"   && fv.outDir == "/dev/null":
 		return  false
-  case runtime.GOOS == "windows" && fv.outDir == "nul":
+	case runtime.GOOS == "windows" && fv.outDir == "nul":
 		return  false
-  }
+	}
 	return true
 }
 

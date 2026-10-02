@@ -370,14 +370,14 @@
 <div class="line">// shouldWrite reports whether the user-specified</div>
 <div class="line">// outDir is the not OS-specific null device.</div>
 <div class="line">func shouldWrite(fv *flagVals) bool<span class="hit"> {</span></div>
-<div class="line"><span class="hit">  switch</span> {</div>
-<div class="line">  case runtime.GOOS == &#34;darwin&#34;  &amp;&amp; fv.outDir == &#34;/dev/null&#34;<span class="miss">:</span></div>
-<div class="line"><span class="miss">    return false</span></div>
-<div class="line">  case runtime.GOOS == &#34;linux&#34;   &amp;&amp; fv.outDir == &#34;/dev/null&#34;<span class="miss">:</span></div>
+<div class="line"><span class="hit">	switch</span> {</div>
+<div class="line">	case runtime.GOOS == &#34;darwin&#34;  &amp;&amp; fv.outDir == &#34;/dev/null&#34;<span class="miss">:</span></div>
+<div class="line"><span class="miss">		return false</span></div>
+<div class="line">	case runtime.GOOS == &#34;linux&#34;   &amp;&amp; fv.outDir == &#34;/dev/null&#34;<span class="miss">:</span></div>
 <div class="line"><span class="miss">		return  false</span></div>
-<div class="line">  case runtime.GOOS == &#34;windows&#34; &amp;&amp; fv.outDir == &#34;nul&#34;<span class="miss">:</span></div>
+<div class="line">	case runtime.GOOS == &#34;windows&#34; &amp;&amp; fv.outDir == &#34;nul&#34;<span class="miss">:</span></div>
 <div class="line"><span class="miss">		return  false</span></div>
-<div class="line">  }</div>
+<div class="line">	}</div>
 <div class="line"><span class="hit">	return true</span></div>
 <div class="line">}</div>
 <div class="line"></div>
