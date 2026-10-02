@@ -139,22 +139,59 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 func TestGetModPaths(t *testing.T) {
 	t.Parallel()
 	tests := []struct{
-		name    string
-		fsys    fs.FS
-		want    []string
-		wantErr bool
+		name       string
+		fsys       fs.FS
+		goModFiles string
+		want       []string
+		wantErr    error
 	}{{
-		name: "succeeds",
-		fsys: fstest.MapFS{"go.mod": &fstest.MapFile{Data: []byte("module github.com/foo/bar")}},
-		want: []string{"github.com/foo/bar"},
+		name:       "single go.mod file",
+		fsys:       fstest.MapFS{"go.mod": &fstest.MapFile{Data: []byte("module github.com/foo/bar")}},
+		goModFiles: "go.mod",
+		want:       []string{"github.com/foo/bar"},
 	}, {
-		name:    "cannot read go.mod",
-		fsys:    fstest.MapFS{},
-		wantErr: true,
+		name:       "cannot read go.mod",
+		fsys:       fstest.MapFS{},
+		goModFiles: "go.mod",
+		wantErr:    errors.New(`cannot read "go.mod": open go.mod: file does not exist`),
 	}, {
-		name:    "cannot parse go.mod",
-		fsys:    fstest.MapFS{"go.mod": &fstest.MapFile{}},
-		wantErr: true,
+		name:       "cannot parse go.mod",
+		fsys:       fstest.MapFS{"go.mod": &fstest.MapFile{Data: []byte("bad_directive")}},
+		goModFiles: "go.mod",
+		wantErr:    errors.New(`cannot parse "go.mod": go.mod:1: unknown directive: bad_directive`),
+	}, {
+		name:       "go.work file",
+		fsys:       fstest.MapFS{
+			"go.work":    &fstest.MapFile{Data: []byte("use ./foo")},
+			"foo/go.mod": &fstest.MapFile{Data: []byte("module foo")},
+		},
+		goModFiles: "go.work",
+		want:       []string{"foo"},
+	}, {
+		name:       "cannot read go.work",
+		fsys:       fstest.MapFS{},
+		goModFiles: "go.work",
+		wantErr:    errors.New(`cannot read "go.work": open go.work: file does not exist`),
+	}, {
+		name:       "cannot parse go.work",
+		fsys:       fstest.MapFS{"go.work": &fstest.MapFile{Data: []byte("bad_directive")}},
+		goModFiles: "go.work",
+		wantErr:    errors.New(`cannot parse "go.work": go.work:1: unknown directive: bad_directive`),
+	}, {
+		name:       "cannot read go.mod file of used module",
+		fsys:       fstest.MapFS{
+			"go.work": &fstest.MapFile{Data: []byte("use ./foo")},
+		},
+		goModFiles: "go.work",
+		wantErr:    errors.New(`cannot read "foo/go.mod": open foo/go.mod: file does not exist`),
+	}, {
+		name:       "cannot parse go.mod file of used module",
+		fsys:       fstest.MapFS{
+			"go.work":    &fstest.MapFile{Data: []byte("use ./foo")},
+			"foo/go.mod": &fstest.MapFile{Data: []byte("bad_directive")},
+		},
+		goModFiles: "go.work",
+		wantErr:    errors.New(`cannot parse "foo/go.mod": foo/go.mod:1: unknown directive: bad_directive`),
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -162,9 +199,9 @@ func TestGetModPaths(t *testing.T) {
 			rg := &reportGenerator{
 				fsys: &mockFS{FS: tt.fsys},
 			}
-			err := rg.getModPaths(&flagVals{goModFiles: "go.mod"})
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getModPaths(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			err := rg.getModPaths(&flagVals{goModFiles: tt.goModFiles})
+			if got, want := errStr(err), errStr(tt.wantErr); got != want {
+				t.Errorf("getModPaths(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
 			}
 			if diff := cmp.Diff(tt.want, rg.modPaths); diff != "" {
 				t.Errorf("getModPaths(%q) mismatch (-want +got):\n%s", tt.name, diff)
@@ -242,7 +279,7 @@ func TestGetAllPkgPaths(t *testing.T) {
 		profilePath string
 		fsys        fs.FS
 		want        []string
-		wantErr     bool
+		wantErr     error
 	}{
 		{
 			name:        "succeeds",
@@ -266,7 +303,7 @@ func TestGetAllPkgPaths(t *testing.T) {
 			name:        "fails",
 			profilePath: "nope",
 			fsys:        fstest.MapFS{},
-			wantErr:     true,
+			wantErr:     errors.New("open nope: file does not exist"),
 		},
 	}
 	for _, tt := range tests {
@@ -277,8 +314,8 @@ func TestGetAllPkgPaths(t *testing.T) {
 				fsys:        &mockFS{FS: tt.fsys},
 			}
 			got, err := rg.getAllPkgPaths()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getAllPkgPaths(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			if gotErr, wantErr := errStr(err), errStr(tt.wantErr); gotErr != wantErr {
+				t.Errorf("getAllPkgPaths(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, gotErr, wantErr)
 			}
 			if diff := cmp.Diff(tt.want, got, cmpopts.SortSlices(strings.Compare)); diff != "" {
 				t.Errorf("getAllPkgPaths(%q) mismatch (-want +got):\n%s", tt.name, diff)
@@ -307,7 +344,7 @@ func TestPrimePkgDirCache(t *testing.T) {
 		profilePath string
 		fsys        fs.FS
 		want        map[string]string
-		wantErr     bool
+		wantErr     error
 	}{{
 		name:        "succeeds",
 		profilePath: "cov.out",
@@ -329,7 +366,7 @@ func TestPrimePkgDirCache(t *testing.T) {
 		name:        "cannot read coverage profile file",
 		profilePath: "nope",
 		fsys:        fstest.MapFS{},
-		wantErr:     true,
+		wantErr:     errors.New("open nope: file does not exist"),
 	}, {
 		name:        "packages.Load fails",
 		profilePath: "cov.out",
@@ -341,7 +378,7 @@ func TestPrimePkgDirCache(t *testing.T) {
 				}, "\n")),
 			},
 		},
-		wantErr: true,
+		wantErr: errors.New("packages.Load failed"),
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -352,15 +389,24 @@ func TestPrimePkgDirCache(t *testing.T) {
 				goModFiles:  []string{"go.mod"},
 			}
 			err := rg.primePkgDirCache(mockPkgLoader)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("primePkgDirCache(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			if gotErr, wantErr := errStr(err), errStr(tt.wantErr); gotErr != wantErr {
+				t.Errorf("primePkgDirCache(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, gotErr, wantErr)
 			}
-			if tt.wantErr { return }
+			if tt.wantErr != nil { return }
 			if diff := cmp.Diff(tt.want, rg.pkgDirCache); diff != "" {
 				t.Errorf("primePkgDirCache(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}
+}
+
+// errStr returns the error message, or "" if err is nil.
+//
+// errStr is intended for comparing error messages in tests where the SUT
+// produces formatted errors with no exported sentinel, which is the norm.
+func errStr(err error) string {
+	if err == nil { return "" }
+	return err.Error()
 }
 
 // custom cmp reporter which renders []string (line) diffs without truncation

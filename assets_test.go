@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"io/fs"
 	"testing"
 	"testing/fstest"
@@ -17,7 +18,7 @@ func TestWriteStaticFiles(t *testing.T) {
 		createFails   bool
 		closeFails    bool
 		badWriter     bool
-		wantErr       bool
+		wantErr       error
 		want          string
 	}{
 		{
@@ -31,27 +32,27 @@ func TestWriteStaticFiles(t *testing.T) {
 			embeddedFiles: fstest.MapFS{},
 			staticFiles:   []string{"foo"},
 			createFails:   true,
-			wantErr:       true,
+			wantErr:       errors.New(`cannot create "some/path/foo": Create failed`),
 		},
 		{
 			name:          "ReadFile fails",
 			embeddedFiles: fstest.MapFS{},
 			staticFiles:   []string{"foo"},
-			wantErr:       true,
+			wantErr:       errors.New(`cannot read "foo": open foo: file does not exist`),
 		},
 		{
 			name:          "Close fails",
 			embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{}},
 			staticFiles:   []string{"foo"},
 			closeFails:    true,
-			wantErr:       true,
+			wantErr:       errors.New(`cannot close file "some/path/foo": Close failed`),
 		},
 		{
 			name:          "fmt.Fprint fails",
 			embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
 			staticFiles:   []string{"foo"},
 			badWriter:     true,
-			wantErr:       true,
+			wantErr:       errors.New(`cannot write file "some/path/foo": i refuse to write`),
 		},
 	}
 	for _, tt := range tests {
@@ -69,8 +70,8 @@ func TestWriteStaticFiles(t *testing.T) {
 				staticFiles:   tt.staticFiles,
 			}
 			err := rg.writeStaticFiles()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("writeStaticFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+      if got, want := errStr(err), errStr(tt.wantErr); got != want {
+        t.Errorf("writeStaticFiles(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
 			}
 			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
 				t.Errorf("writeStaticFiles(%q) mismatch (-want +got):\n%s", tt.name, diff)

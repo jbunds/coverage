@@ -35,7 +35,7 @@ The program expects the specification of three flags with corresponding argument
 -outdir        # path where HTML files will be written
 ```
 
-The generated HTML files are marked up to identify which lines are covered by tests ($\color{seagreen}{\text{green}}$), and which lines are not ($\color{red}{\text{red}}$). Each HTML file is written to the specified path (per the `-outdir` flag) following the same directory structure as the source from which the coverage profile file (per the `-coverprofile` flag) was created.
+The generated HTML files are marked up to identify which statements are covered by tests ($\color{seagreen}{\text{green}}$), and which statements are not ($\color{red}{\text{red}}$). Each HTML file is written to the specified path (per the `-outdir` flag) following the same directory structure as the source from which the coverage profile file (per the `-coverprofile` flag) was created.
 
 The program then renders an `index.html` file to the specified path which provides a navigable view of the source rendered as a directory tree on the left, where each node is either a subdirectory (`📁 <subdirectory>`) or a source file (`<source file>.go`). Clicking on a subdirectory node expands its contents, and clicking on a source file node renders the marked up source in a child iframe positioned to the right of the directory tree.
 

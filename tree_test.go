@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"io/fs"
 	"math"
@@ -21,7 +22,7 @@ func TestBuildTree(t *testing.T) {
 		cov          map[string]coverage
 		readDirFails bool
 		want         string
-		wantErr      bool
+		wantErr      error
 	}{{
 		name: "succeeds",
 		fsys: fstest.MapFS{
@@ -87,7 +88,7 @@ func TestBuildTree(t *testing.T) {
 		name:         "ReadDir fails",
 		fsys:         fstest.MapFS{},
 		readDirFails: true,
-		wantErr:      true,
+		wantErr:      errors.New("ReadDir failed"),
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -103,14 +104,14 @@ func TestBuildTree(t *testing.T) {
 				covState: &coverageState{cov: tt.cov},
 			}
 			got, err := tb.buildTree(t.Context(), io.Discard)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("buildTree(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			if gotErr, wantErr := errStr(err), errStr(tt.wantErr); gotErr != wantErr {
+				t.Errorf("buildTree(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, gotErr, wantErr)
 			}
 			wantLines := strings.Split(tt.want, "\n")
 			gotLines  := strings.Split(got, "\n")
 			var rep reporter
 			if !cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep)) {
-				t.Errorf("mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
+				t.Errorf("buildTree(%q) mismatch (-want +got):\n%s", tt.name, strings.Join(rep.diffs, "\n"))
 			}
 		})
 	}
@@ -127,7 +128,7 @@ func TestProcessEntry(t *testing.T) {
 		cov             map[string]coverage
 		readDirFails    bool
 		want            *entryResult
-		wantErr         bool
+		wantErr         error
 	}{{
 		name:            "succeeds",
 		src:             "github.com/user/project/foo/bar/baz.go",
@@ -214,7 +215,7 @@ func TestProcessEntry(t *testing.T) {
 		initialDirEntry: &mockFileInfo{mode: fs.ModeDir},
 		fsys:            fstest.MapFS{"some/path/dir": &fstest.MapFile{Mode: fs.ModeDir}},
 		readDirFails:    true,
-		wantErr:         true,
+		wantErr:         errors.New("ReadDir failed"),
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -236,8 +237,8 @@ func TestProcessEntry(t *testing.T) {
 				prog:       prog,
 			}
 			got, err := tb.processEntry(t.Context(), st)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("processEntry(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			if gotErr, wantErr := errStr(err), errStr(tt.wantErr); gotErr != wantErr {
+        t.Errorf("processEntry(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, gotErr, wantErr)
 			}
 			if diff := cmp.Diff(tt.want, got, cmp.AllowUnexported(entryResult{})); diff != "" {
 				t.Errorf("processEntry(%q) mismatch (-want +got):\n%s", tt.name, diff)

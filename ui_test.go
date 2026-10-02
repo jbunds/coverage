@@ -24,7 +24,6 @@ func TestPrintCoverage(t *testing.T) {
 		totalCovered    uint64
 		totalStatements uint64
 		want            string
-		wantErr         bool
 	}{{
 		name:            "sort by shortest path",
 		order:           shortest,
@@ -105,8 +104,8 @@ func TestPrintCoverage(t *testing.T) {
 			cs.totalStatements.Store(tt.totalStatements)
 			got := new(bytes.Buffer)
 			err := cs.printCoverage(got)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("printCoverage(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			if err != nil {
+				t.Errorf("printCoverage(%q) returned unexpected error: %v", tt.name, err)
 			}
 			if diff := cmp.Diff(tt.want, got.String()); diff != "" {
 				t.Errorf("printCoverage(%q) mismatch (-want +got):\n%s", tt.name, diff)

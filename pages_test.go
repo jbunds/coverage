@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -23,7 +24,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 		mkdirAllFails  bool
 		writeFileFails bool
 		want           string
-		wantErr        bool
+		wantErr        error
 	}{{
 		name: "succeeds",
 		fsys: fstest.MapFS{
@@ -102,19 +103,19 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 		name:     "source does not exist",
 		fsys:     fstest.MapFS{},
 		profiles: []*cover.Profile{{FileName: "foo.go"}},
-		wantErr:  true,
+		wantErr:  errors.New(`cannot build HTML for "foo.go": open foo.go: file does not exist`),
 	}, {
 		name:          "MkdirAll fails",
 		fsys:          fstest.MapFS{"foo.go": &fstest.MapFile{}},
 		profiles:      []*cover.Profile{{FileName: "foo.go"}},
 		mkdirAllFails: true,
-		wantErr:       true,
+		wantErr:       errors.New(`cannot create directory "some/path": MkdirAll failed`),
 	}, {
 		name:           "WriteFile fails",
 		fsys:           fstest.MapFS{"foo.go": &fstest.MapFile{}},
 		profiles:       []*cover.Profile{{FileName: "foo.go"}},
 		writeFileFails: true,
-		wantErr:        true,
+		wantErr:        errors.New(`cannot write HTML file for "some/path/foo.go.html": WriteFile failed`),
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -136,8 +137,8 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				childJSFilename:  "child.js",
 			}
 			err := rg.writeCovHTMLFiles(t.Context(), io.Discard)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("writeCovHTMLFiles(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			if got, want := errStr(err), errStr(tt.wantErr); got != want {
+        t.Errorf("writeCovHTMLFiles(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
 			}
 			wantLines := strings.Split(strings.TrimSuffix(string(tt.want ), "\n"), "\n")
 			gotLines  := strings.Split(strings.TrimSuffix(string(mfs.data), "\n"), "\n")
@@ -225,16 +226,8 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 				embeddedFiles: tt.embeddedFiles,
 			}
 			gotErr := rg.writeIndexHTMLFile(tt.treeHTML)
-			if tt.wantErr == nil && gotErr != nil {
-				t.Fatalf("unexpected error: %v", gotErr)
-			}
-			if tt.wantErr != nil {
-				if gotErr == nil {
-					t.Fatalf("expected error %q, got nil", tt.wantErr)
-				}
-				if gotErr.Error() != tt.wantErr.Error() {
-					t.Errorf("writeIndexHTMLFile(%q) returned unexpected error: got %q, want %q", tt.name, gotErr.Error(), tt.wantErr.Error())
-				}
+			if got, want := errStr(gotErr), errStr(tt.wantErr); got != want {
+				t.Errorf("writeIndexHTMLFile(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
 			}
 			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
 				t.Errorf("writeIndexHTMLFile(%q) mismatch (-want +got):\n%s", tt.name, diff)
@@ -251,7 +244,7 @@ func TestWriteTemplateFile(t *testing.T) {
 		fileName      string
 		tmplData      struct{ SomeVar string }
 		want          string
-		wantErr       bool
+		wantErr       error
 	}{
 		{
 			name:          "succeeds",
@@ -265,7 +258,11 @@ func TestWriteTemplateFile(t *testing.T) {
 			fileName:      "bar",
 			embeddedFiles: fstest.MapFS{"bar": &fstest.MapFile{Data: []byte("NoSuchData: {{ .NoSuchData }}") }},
 			want:          "NoSuchData: ",
-			wantErr:       true,
+			wantErr:       errors.New(
+				`cannot render template: ` +
+				`template: bar:1:15: ` +
+				`executing "bar" at <.NoSuchData>: ` +
+				`can't evaluate field NoSuchData in type struct { SomeVar string }`),
 		},
 	}
 	for _, tt := range tests {
@@ -278,8 +275,8 @@ func TestWriteTemplateFile(t *testing.T) {
 				embeddedFiles: tt.embeddedFiles,
 			}
 			err := rg.writeTemplateFile(tt.fileName, tt.tmplData)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("writeTemplateFile(%q) returned unexpected error: %v; wantErr = %v", tt.name, err, tt.wantErr)
+			if got, want := errStr(err), errStr(tt.wantErr); got != want {
+				t.Errorf("writeTemplateFile(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
 			}
 			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
 				t.Errorf("writeTemplateFile(%q) mismatch (-want +got):\n%s", tt.name, diff)
