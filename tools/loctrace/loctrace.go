@@ -32,21 +32,21 @@ func main() {
 	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil                           ||
 		   info.IsDir()                         ||
+		   filepath.Dir(path) != "."            ||
 		   !strings.HasSuffix(path, ".go")      ||
 		    strings.HasSuffix(path, "_test.go") {
 			return nil
 		}
-		fset := token.NewFileSet()
+		fset   := token.NewFileSet()
 		f, err := parser.ParseFile(fset, path, nil, 0)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
 			return nil
 		}
 		for _, decl := range f.Decls {
-			fn, ok := decl.(*ast.FuncDecl)
-			if !ok { continue }
-			kind := "func"
-			name := fn.Name.Name
+			fn, ok := decl.(*ast.FuncDecl); if !ok { continue }
+			kind   := "func"
+			name   := fn.Name.Name
 			if fn.Recv != nil && len(fn.Recv.List) > 0 {
 				kind = "method"
 				switch t := fn.Recv.List[0].Type.(type) { // extract receiver type
@@ -63,7 +63,7 @@ func main() {
 			loc       := endLine - startLine + 1
 			function  := &function{
 				name:      name,
-				filename:  filepath.Base(path),
+				filename:  path,
 				kind:      kind,
 				loc:       loc,
 				startLine: startLine,
