@@ -26,6 +26,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -165,7 +166,7 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 	}
 
 	rg.covState.sort = fv.sortOrder.bind(rg.covState)
-	rg.write         = fv.outDir != "/dev/null" && fv.outDir != "nul"
+	rg.write         = shouldWrite(fv)
 
 	if rg.write {
 		info, err := rg.fsys.Stat(fv.outDir)
@@ -357,6 +358,22 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader) error {
 	return nil
 }
 
+// shouldWrite reports whether the user-specified
+// outDir is the not OS-specific null device.
+func shouldWrite(fv *flagVals) bool {
+  switch {
+  case runtime.GOOS == "darwin"  && fv.outDir == "/dev/null":
+    return false
+  case runtime.GOOS == "linux"   && fv.outDir == "/dev/null":
+		return  false
+  case runtime.GOOS == "windows" && fv.outDir == "nul":
+		return  false
+  }
+	return true
+}
+
+// splitGoModFiles splits the comma-delimited list of
+// user-specified go.mod files into a string slice.
 func splitGoModFiles(s string) []string {
 	files := strings.Split(s, ",")
 	for i, f := range files {

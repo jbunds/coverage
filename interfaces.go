@@ -24,9 +24,7 @@ type nullRoot struct{}
 func (nullRoot) Close() error { return nil }
 
 func (nullRoot) Name() string {
-	if runtime.GOOS == "windows" {
-		return "nul"
-	}
+	if runtime.GOOS == "windows" { return "nul" }
 	return "/dev/null"
 }
 

@@ -75,7 +75,9 @@ func writeRow(ew *errorWriter, path string, percent float64, maxPathLen int) {
 // maybeOpenBrowser opens the generated index.html file in the
 // default browser when stdout is a TTY and -n is not set.
 func (rg *reportGenerator) maybeOpenBrowser(fv *flagVals) error {
-	if fv.noBrowser || !isTerm(os.Stdin) {
+	if fv.noBrowser      ||
+	   !rg.write         ||
+	   !isTerm(os.Stdin) {
 		return nil
 	}
 

@@ -33,9 +33,7 @@
 <div class="line"><span class="miss">func (nullRoot) Close() error { return nil</span><span class="miss"> }</span></div>
 <div class="line"></div>
 <div class="line">func (nullRoot) Name() string<span class="miss"> {</span></div>
-<div class="line"><span class="miss">	if runtime.GOOS == &#34;windows&#34; {</span></div>
-<div class="line"><span class="miss">		return &#34;nul&#34;</span></div>
-<div class="line">	}</div>
+<div class="line"><span class="miss">	if runtime.GOOS == &#34;windows&#34; { return &#34;nul&#34;</span><span class="miss"> }</span></div>
 <div class="line"><span class="miss">	return &#34;/dev/null&#34;</span></div>
 <div class="line">}</div>
 <div class="line"></div>

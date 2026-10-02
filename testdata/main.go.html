@@ -35,6 +35,7 @@
 <div class="line">	&#34;os/exec&#34;</div>
 <div class="line">	&#34;os/signal&#34;</div>
 <div class="line">	&#34;path/filepath&#34;</div>
+<div class="line">	&#34;runtime&#34;</div>
 <div class="line">	&#34;strings&#34;</div>
 <div class="line">	&#34;sync/atomic&#34;</div>
 <div class="line">	&#34;syscall&#34;</div>
@@ -174,7 +175,7 @@
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">	rg.covState.sort = fv.sortOrder.bind(rg.covState)</span></div>
-<div class="line"><span class="hit">	rg.write         = fv.outDir != &#34;/dev/null&#34; &amp;&amp; fv.outDir != &#34;nul&#34;</span></div>
+<div class="line"><span class="hit">	rg.write         = shouldWrite(fv)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if rg.write {</span></div>
 <div class="line"><span class="hit">		info, err := rg.fsys.Stat(fv.outDir)</span></div>
@@ -366,6 +367,22 @@
 <div class="line"><span class="hit">	return nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
+<div class="line">// shouldWrite reports whether the user-specified</div>
+<div class="line">// outDir is the not OS-specific null device.</div>
+<div class="line">func shouldWrite(fv *flagVals) bool<span class="hit"> {</span></div>
+<div class="line"><span class="hit">  switch</span> {</div>
+<div class="line">  case runtime.GOOS == &#34;darwin&#34;  &amp;&amp; fv.outDir == &#34;/dev/null&#34;<span class="miss">:</span></div>
+<div class="line"><span class="miss">    return false</span></div>
+<div class="line">  case runtime.GOOS == &#34;linux&#34;   &amp;&amp; fv.outDir == &#34;/dev/null&#34;<span class="miss">:</span></div>
+<div class="line"><span class="miss">		return  false</span></div>
+<div class="line">  case runtime.GOOS == &#34;windows&#34; &amp;&amp; fv.outDir == &#34;nul&#34;<span class="miss">:</span></div>
+<div class="line"><span class="miss">		return  false</span></div>
+<div class="line">  }</div>
+<div class="line"><span class="hit">	return true</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// splitGoModFiles splits the comma-delimited list of</div>
+<div class="line">// user-specified go.mod files into a string slice.</div>
 <div class="line">func splitGoModFiles(s string) []string<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	files := strings.Split(s, &#34;,&#34;)</span></div>
 <div class="line"><span class="hit">	for i, f := range files {</span></div>
