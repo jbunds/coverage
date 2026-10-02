@@ -62,6 +62,10 @@ jobs:
         with:
           fetch-depth: 10 # https://github.com/gwatts/go-coverage-action#example-workflow
 
+      - uses: actions/setup-go@v7 # https://github.com/actions/setup-go
+        with:
+          go-version-file: ${{ inputs.go-mod || 'go.mod' }} # https://github.com/marketplace/actions/setup-go-environment#supported-version-syntax
+
       - name: checkout workspace repos
         if:   inputs.workspace-repos != ''
         run: |
