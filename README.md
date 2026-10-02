@@ -6,20 +6,20 @@
 [![lint](https://github.com/jbunds/coverage/actions/workflows/lint-go.yml/badge.svg)](https://github.com/jbunds/coverage/actions/workflows/lint-go.yml)
 [![linted with Biome](https://img.shields.io/badge/linted_with-Biome-lightseagreen?style=flat&logo=biome)](https://biomejs.dev)
 
-[simple-tree]:          https://github.com/psnet/simple-tree
-[k8s]:                  https://github.com/kubernetes/kubernetes
-[light theme]:          ./screenshots/light_theme.jpg "light theme"
-[dark theme]:           ./screenshots/dark_theme.jpg "dark theme"
-[cover-pkg]:            https://github.com/gwatts/go-coverage-action/blob/main/action.yml#:~:text=cover-pkg
-[test-pkgs]:            https://github.com/gwatts/go-coverage-action/blob/main/action.yml#:~:text=test-pkgs
-[coverage-threshold]:   https://github.com/gwatts/go-coverage-action/blob/main/action.yml#:~:text=coverage-threshold
-[gwatts-gocov-action]:  https://github.com/gwatts/go-coverage-action
-[gwatts-gocov-outputs]: https://github.com/gwatts/go-coverage-action/blob/main/action.yml
-[action]:               https://github.com/jbunds/coverage/blob/main/action.yml
-[workflow]:             https://github.com/jbunds/coverage/blob/main/.github/workflows/pages.yml
-[actions]:              https://docs.github.com/actions
-[workflows]:            https://docs.github.com/actions/concepts/workflows-and-actions/workflows
-[pages]:                https://docs.github.com/pages
+[simple-tree]:      https://github.com/psnet/simple-tree
+[k8s]:              https://github.com/kubernetes/kubernetes
+[light theme]:      ./screenshots/light_theme.jpg "light theme"
+[dark theme]:       ./screenshots/dark_theme.jpg   "dark theme"
+[gwatts-action]:    https://github.com/gwatts/go-coverage-action
+[gwatts-outputs]:   https://github.com/gwatts/go-coverage-action/blob/main/action.yml
+[gwatts-cover-pkg]: https://github.com/gwatts/go-coverage-action/blob/main/action.yml#:~:text=cover-pkg
+[gwatts-test-pkgs]: https://github.com/gwatts/go-coverage-action/blob/main/action.yml#:~:text=test-pkgs
+[gwatts-cov-thold]: https://github.com/gwatts/go-coverage-action/blob/main/action.yml#:~:text=coverage-threshold
+[action]:           https://github.com/jbunds/coverage/blob/main/action.yml
+[workflow]:         https://github.com/jbunds/coverage/blob/main/.github/workflows/pages.yml
+[actions]:          https://docs.github.com/actions
+[workflows]:        https://docs.github.com/actions/concepts/workflows-and-actions/workflows
+[pages]:            https://docs.github.com/pages
 
 #### Simple Web UI for Go Test Coverage
 
@@ -47,7 +47,7 @@ When served via HTTP, buttons are available to:
 - ![lines](doc/lines.svg) &nbsp;toggle between showing or hiding a column of line numbers along the left side of the source code
 - ![theme](doc/theme.svg) &nbsp;toggle between **light** and **dark** themes
 
-See also [![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jbunds/coverage) and [![Go Reference](https://pkg.go.dev/badge/github.com/jbunds/coverage.svg)](https://pkg.go.dev/github.com/jbunds/coverage)
+See also [![DeepWiki](doc/deepwiki.svg)](https://deepwiki.com/jbunds/coverage) and [![Go Reference](https://pkg.go.dev/badge/github.com/jbunds/coverage.svg)](https://pkg.go.dev/github.com/jbunds/coverage)
 
 ---
 
@@ -105,9 +105,9 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
        coverage-report-outdir: 'coverage_report'  # optional; default is 'coverage_report'
    ```
 
-   The [`go-mod`][action], [`test-pkgs`][test-pkgs], [`cover-pkg`][cover-pkg], [`coverage-threshold`][coverage-threshold], and [`coverage-report-outdir`][workflow] parameters are all optional.
+   The [`go-mod`][action], [`test-pkgs`][gwatts-test-pkgs], [`cover-pkg`][gwatts-cover-pkg], [`coverage-threshold`][gwatts-cov-thold], and [`coverage-report-outdir`][workflow] parameters are all optional.
 
-   All [outputs][gwatts-gocov-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-gocov-action] workflow step are available downstream via JSON decoding, e.g.:
+   All [outputs][gwatts-outputs] produced by the [`gwatts/go-coverage-action`][gwatts-action] workflow step are available downstream via JSON decoding, e.g.:
 
    ```
    ${{ fromJson(steps.coverage_report.outputs.all).gcov-pathname    }}
@@ -121,7 +121,7 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
 
    See [`jbunds/progress/.github/workflows/test-go.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/test-go.yml) for a working example.
 
-2. The [`jbunds/coverage/.github/workflows/pages.yml@v1`][workflow] reusable [GitHub Workflow][workflows] generates the test coverage report and also deploys it to [GitHub Pages][pages]. For example:
+2. The [`jbunds/coverage/.github/workflows/pages.yml@v1`][workflow] reusable [GitHub Workflow][workflows] generates the test coverage report and deploys it to [GitHub Pages][pages]. For example:
 
    ```
    - uses: jbunds/coverage/.github/workflows/pages.yml@v1
