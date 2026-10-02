@@ -78,10 +78,6 @@
 <div class="line"><span class="hit">	if err := fs.Parse(args); err != nil {</span></div>
 <div class="line"><span class="hit">		return nil, err</span></div>
 <div class="line">	}</div>
-<div class="line"><span class="hit">	if goModFiles == &#34;&#34;</span><span class="miss"> {</span></div>
-<div class="line"><span class="miss">		fs.Usage()</span></div>
-<div class="line"><span class="miss">		return nil, errors.New(&#34;no value specified for -gomod&#34;)</span></div>
-<div class="line">	}</div>
 <div class="line"><span class="hit">	if coverProfileFile == &#34;&#34; {</span></div>
 <div class="line"><span class="hit">		fs.Usage()</span></div>
 <div class="line"><span class="hit">		return nil, errors.New(&#34;no value specified for -coverprofile&#34;)</span></div>

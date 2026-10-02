@@ -69,10 +69,6 @@ func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error) {
 	if err := fs.Parse(args); err != nil {
 		return nil, err
 	}
-	if goModFiles == "" {
-		fs.Usage()
-		return nil, errors.New("no value specified for -gomod")
-	}
 	if coverProfileFile == "" {
 		fs.Usage()
 		return nil, errors.New("no value specified for -coverprofile")
