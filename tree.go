@@ -164,8 +164,7 @@ func (tb *treeBuilder) processDir(ctx context.Context, st *scanState, pkgPath, s
 	var dirCovered, dirStatements atomic.Uint64
 
 	if len(subDirEntries) > 0 {
-		budgets := splitBudget(st.budget, len(subDirEntries))
-    
+		budgets      := splitBudget(st.budget, len(subDirEntries))
 		childResults := make([]*entryResult, len(subDirEntries))
 
 		group, gCtx := errgroup.WithContext(ctx)
@@ -201,8 +200,6 @@ func (tb *treeBuilder) processDir(ctx context.Context, st *scanState, pkgPath, s
 			dirStatements.Add(res.total)
 			subDirSB.WriteString(res.html)
 		}
-	} else {
-		st.prog.Report(st.budget, pkgPath)
 	}
 
   res := &entryResult{
@@ -249,8 +246,6 @@ func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (
 // buildSubDirHTML wraps pre-rendered child nodes in a <li> subdirectory
 // tree-node, with its name and aggregated coverge percentage.
 func (hb *htmlBuilder) buildSubDirHTML(res *entryResult) {
-	if res.html == "" { return }
-
 	indent  := strings.Repeat("  ", hb.indent)
 	percent := formatCov(res.covered, res.total)
 

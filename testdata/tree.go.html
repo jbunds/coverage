@@ -173,8 +173,7 @@
 <div class="line"><span class="hit">	var dirCovered, dirStatements atomic.Uint64</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">	if len(subDirEntries) &gt; 0 {</span></div>
-<div class="line"><span class="hit">		budgets := splitBudget(st.budget, len(subDirEntries))</span></div>
-<div class="line"><span class="hit">    </span></div>
+<div class="line"><span class="hit">		budgets      := splitBudget(st.budget, len(subDirEntries))</span></div>
 <div class="line"><span class="hit">		childResults := make([]*entryResult, len(subDirEntries))</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">		group, gCtx := errgroup.WithContext(ctx)</span></div>
@@ -210,8 +209,6 @@
 <div class="line"><span class="hit">			dirStatements.Add(res.total)</span></div>
 <div class="line"><span class="hit">			subDirSB.WriteString(res.html)</span></div>
 <div class="line">		}</div>
-<div class="line">	} else<span class="hit"> {</span></div>
-<div class="line"><span class="hit">		st.prog.Report(st.budget, pkgPath)</span></div>
 <div class="line">	}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">  res := &amp;entryResult{</span></div>
@@ -258,8 +255,6 @@
 <div class="line">// buildSubDirHTML wraps pre-rendered child nodes in a &lt;li&gt; subdirectory</div>
 <div class="line">// tree-node, with its name and aggregated coverge percentage.</div>
 <div class="line">func (hb *htmlBuilder) buildSubDirHTML(res *entryResult<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	if res.html == &#34;&#34; { return</span><span class="hit"> }</span></div>
-<div class="line"></div>
 <div class="line"><span class="hit">	indent  := strings.Repeat(&#34;  &#34;, hb.indent)</span></div>
 <div class="line"><span class="hit">	percent := formatCov(res.covered, res.total)</span></div>
 <div class="line"></div>
@@ -293,7 +288,7 @@
 <div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
 <div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/li&gt;\n&#34;)</span></div>
 <div class="line"></div>
-<div class="line"><span class="hit">	res.html = sb.String</span><span class="hit">()</span></div>
+<div class="line"><span class="hit">	res.html = sb.String()</span></div>
 <div class="line">}</div>
 <div class="line"></div>
 <div class="line">// formatCov returns covered/total as a one-decimal percentage</div>

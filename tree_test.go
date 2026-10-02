@@ -164,47 +164,6 @@ func TestProcessEntry(t *testing.T) {
 				``}, "\n"),
 		},
 	}, {
-		// this scenario should be programmatically precluded by writeCovHTMLFiles's
-		// logic, since its output is based purely on per-source file coverage
-		// profiles, so empty subdirs should never be created in the output tree
-		//
-		// regardless, this test verifies processEntry produces no empty tree nodes
-		name:            "entry is DirEntry with empty subdir",
-		initialDir:      ".",
-		initialDirEntry: &mockFileInfo{mode: fs.ModeDir},
-		fsys:            fstest.MapFS{
-			"some/path/dir":             &fstest.MapFile{Mode: fs.ModeDir},
-			"some/path/dir/subdir":      &fstest.MapFile{Mode: fs.ModeDir}, // artificial empty subdir
-			"some/path/dir/foo.go.html": &fstest.MapFile{},
-		},
-		cov:             map[string]coverage{"dir/foo.go": {covered: 7, total: 13}},
-		want:            &entryResult{
-			covered:  7,
-			total:   13,
-			pkgPath: ".",
-			html:    strings.Join([]string{
-				`<li>`,
-				`  <input type="checkbox" id="tree-item-1"/>`,
-				`  <div class="tree-node">`,
-				`    <label for="tree-item-1"></label>`, // empty label
-				`    <span class="cov">53.8%</span>`,
-				`  </div>`,
-				`  <ul>`,
-				`    <li>`,
-				`      <input type="checkbox" id="tree-item-2"/>`,
-				`      <div class="tree-node">`,
-				`        <label for="tree-item-2">dir</label>`,
-				`        <span class="cov">53.8%</span>`,
-				`      </div>`,
-				`      <ul>`,
-				`        <li><div class="tree-node"><span class="src"><a href="dir/foo.go.html">foo.go</a></span> <span class="cov">53.8%</span></div></li>`,
-				`      </ul>`,
-				`    </li>`,
-				`  </ul>`,
-				`</li>`,
-				``}, "\n"),
-			},
-	}, {
 		name:            "entry is neither DirEntry nor *.go.html file",
 		initialDir:      "some/path/file",
 		initialDirEntry: &mockFileInfo{},
@@ -229,8 +188,7 @@ func TestProcessEntry(t *testing.T) {
 				outRoot:  &mockRoot{name: "some/path"},
 				covState: &coverageState{cov: tt.cov},
 			}
-			ctx  := t.Context()
-			prog := progress.New(ctx, 0, io.Discard); t.Cleanup(func() { prog.Close() })
+			prog := progress.New(t.Context(), 0, io.Discard); t.Cleanup(func() { prog.Close() })
 			st   := &scanState{
 				parentPath: tt.initialDir,
 				entry:      fs.FileInfoToDirEntry(tt.initialDirEntry),
