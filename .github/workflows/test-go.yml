@@ -33,7 +33,7 @@ jobs:
       id:   test
       env:
         GOWORK: off
-      run:  go test -race ./...
+      run:  go test -race
 
     - name: coverage report
       id:   coverage_report
