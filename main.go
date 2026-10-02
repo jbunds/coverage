@@ -1,8 +1,8 @@
 // Package main writes HTML files for each Go source file listed in the user-specified Go coverage profile file.
 //
-// This module also generates a directory tree HTML file rendered within an iframe of the index HTML file.
+// This module also generates a directory tree HTML file rendered within an iframe hosted by the rendered index HTML file.
 //
-// The header portion of the index HTML file will also render two buttons if the browser's CORS policies allow it. These buttons are:
+// The header portion of the index HTML file will also render three buttons if the browser's CORS policies allow it:
 //
 //   "expand" (or "collapse") - toggles opening (or closing) all subdirectories of the source tree
 //   "lines"                  - toggles showing or hiding a column of line numbers along the left side of the source code
