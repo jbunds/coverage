@@ -56,7 +56,7 @@
 <div class="line">		}</div>
 <div class="line"></div>
 <div class="line"><span class="hit">		startOffset := file.Offset(pos)</span></div>
-<div class="line"><span class="hit">		endOffset   := tokenEndOffset(src, startOffset, lit, tok)</span></div>
+<div class="line"><span class="hit">		endOffset   := startOffset + len(lit) // stable behavior since Go 1.0</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">		if lit       == &#34;&#34;          &amp;&amp;</span></div>
 <div class="line"><span class="hit">		   endOffset == startOffset {</span></div>
@@ -174,39 +174,6 @@
 <div class="line"><span class="hit">		})</span></div>
 <div class="line">	}</div>
 <div class="line"><span class="hit">	return</span></div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// tokenEndOffset returns the byte offset immediately past the end of the token.</div>
-<div class="line">//</div>
-<div class="line">// In practice, the scanner always returns a non-empty literal for</div>
-<div class="line">// all token types, so this is simply startOffset + len(lit).</div>
-<div class="line">//</div>
-<div class="line">// The comment-scanning branches below are defensive and should never execute.</div>
-<div class="line">func tokenEndOffset(src []byte, startOffset int, lit string, tok token.Token) int<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	if lit != &#34;&#34;            ||</span></div>
-<div class="line"><span class="hit">	   tok != token.COMMENT {</span></div>
-<div class="line"><span class="hit">		return startOffset + len(lit) // stable behavior since Go 1.0</span></div>
-<div class="line">	}</div>
-<div class="line">	// line comment: extend to (but not including) newline</div>
-<div class="line"><span class="miss">	if startOffset + 2 &lt;= len(src) &amp;&amp;</span></div>
-<div class="line"><span class="miss">	   src[startOffset    ] == &#39;/&#39; &amp;&amp;</span></div>
-<div class="line"><span class="miss">	   src[startOffset + 1] == &#39;/&#39; {</span></div>
-<div class="line"><span class="miss">		end := startOffset</span></div>
-<div class="line"><span class="miss">		for end &lt; len(src) &amp;&amp; src[end] != &#39;\n&#39; {</span></div>
-<div class="line"><span class="miss">			end++</span></div>
-<div class="line">		}</div>
-<div class="line"><span class="miss">		return end</span></div>
-<div class="line">	}</div>
-<div class="line">	// block comment: extend to closing */</div>
-<div class="line"><span class="miss">	end := startOffset</span></div>
-<div class="line"><span class="miss">	for end &lt; len(src) - 1 {</span></div>
-<div class="line"><span class="miss">		if src[end    ] == &#39;*&#39; &amp;&amp;</span></div>
-<div class="line"><span class="miss">		   src[end + 1] == &#39;/&#39; {</span></div>
-<div class="line"><span class="miss">			return end + 2</span></div>
-<div class="line">		}</div>
-<div class="line"><span class="miss">		end</span><span class="miss">++</span></div>
-<div class="line">	}</div>
-<div class="line"><span class="miss">	return len(src</span><span class="miss">)</span></div>
 <div class="line">}</div>
 <script src="../../../child.js"></script>
 </body>

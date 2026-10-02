@@ -47,7 +47,7 @@ func scanAndAnnotate(file *token.File, src []byte, blocks []*profileBlock) *byte
 		}
 
 		startOffset := file.Offset(pos)
-		endOffset   := tokenEndOffset(src, startOffset, lit, tok)
+		endOffset   := startOffset + len(lit) // stable behavior since Go 1.0
 
 		if lit       == ""          &&
 		   endOffset == startOffset {
@@ -165,37 +165,4 @@ func computeBlockOffsets(file *token.File, blocks []cover.ProfileBlock) (out []*
 		})
 	}
 	return
-}
-
-// tokenEndOffset returns the byte offset immediately past the end of the token.
-//
-// In practice, the scanner always returns a non-empty literal for
-// all token types, so this is simply startOffset + len(lit).
-//
-// The comment-scanning branches below are defensive and should never execute.
-func tokenEndOffset(src []byte, startOffset int, lit string, tok token.Token) int {
-	if lit != ""            ||
-	   tok != token.COMMENT {
-		return startOffset + len(lit) // stable behavior since Go 1.0
-	}
-	// line comment: extend to (but not including) newline
-	if startOffset + 2 <= len(src) &&
-	   src[startOffset    ] == '/' &&
-	   src[startOffset + 1] == '/' {
-		end := startOffset
-		for end < len(src) && src[end] != '\n' {
-			end++
-		}
-		return end
-	}
-	// block comment: extend to closing */
-	end := startOffset
-	for end < len(src) - 1 {
-		if src[end    ] == '*' &&
-		   src[end + 1] == '/' {
-			return end + 2
-		}
-		end++
-	}
-	return len(src)
 }
