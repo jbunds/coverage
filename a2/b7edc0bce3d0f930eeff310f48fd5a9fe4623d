@@ -1,1 +1,1 @@
-{"go-coverage-action-fmt":1,"coverage_pct":82.84118116520351,"pkg_stats":{"github.com/jbunds/coverage":[85.9983429991715],"github.com/jbunds/coverage/tools/loctrace":[0]},"skipped_count":0}
+{"go-coverage-action-fmt":1,"coverage_pct":81.32635253054102,"pkg_stats":{"github.com/jbunds/coverage":[85.9983429991715],"github.com/jbunds/coverage/tools/loctrace":[0],"github.com/jbunds/fractal":[36.829268292682926],"github.com/jbunds/progress":[99.17440660474716]},"skipped_count":0}
