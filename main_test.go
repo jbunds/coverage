@@ -136,7 +136,7 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 
 // tests
 
-func TestGetModPaths(t *testing.T) {
+func TestRegisterModPaths(t *testing.T) {
 	t.Parallel()
 	tests := []struct{
 		name       string
@@ -199,12 +199,12 @@ func TestGetModPaths(t *testing.T) {
 			rg := &reportGenerator{
 				fsys: &mockFS{FS: tt.fsys},
 			}
-			err := rg.getModPaths(&flagVals{goModFiles: tt.goModFiles})
+			err := rg.registerModPaths(&flagVals{goModFiles: tt.goModFiles})
 			if got, want := errStr(err), errStr(tt.wantErr); got != want {
-				t.Errorf("getModPaths(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
+				t.Errorf("registerModPaths(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
 			}
 			if diff := cmp.Diff(tt.want, rg.modPaths); diff != "" {
-				t.Errorf("getModPaths(%q) mismatch (-want +got):\n%s", tt.name, diff)
+				t.Errorf("registerModPaths(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}

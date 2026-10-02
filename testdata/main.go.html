@@ -101,7 +101,7 @@
 <div class="line"><span class="miss">	if err != nil { return fatal(2, &#34;cannot instantiate report generator: %v&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"><span class="miss">	defer rg.outRoot.Close()</span></div>
 <div class="line"></div>
-<div class="line"><span class="miss">	if err := rg.getModPaths(fv);                    err != nil { return fatal(3, &#34;cannot determine module path: %v&#34;,         err</span><span class="miss">) }</span></div>
+<div class="line"><span class="miss">	if err := rg.registerModPaths(fv);               err != nil { return fatal(3, &#34;cannot determine module path: %v&#34;,         err</span><span class="miss">) }</span></div>
 <div class="line"><span class="miss">	if err := rg.resolveRepoURLs(&amp;realRunner{}, fv); err != nil { return fatal(4, &#34;cannot resolve repository URL: %v&#34;,        err</span><span class="miss">) }</span></div>
 <div class="line"><span class="miss">	if err := rg.primePkgDirCache(packages.Load);    err != nil { return fatal(5, &#34;cannot prime package directory cache: %v&#34;, err</span><span class="miss">) }</span></div>
 <div class="line"></div>
@@ -194,42 +194,61 @@
 <div class="line"><span class="hit">	return rg, nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line">// getModPaths reads the go.mod files to determine the module paths.</div>
-<div class="line">func (rg *reportGenerator) getModPaths(fv *flagVals) error<span class="hit"> {</span></div>
+<div class="line">// registerModPaths parses the go.work or go.mod files</div>
+<div class="line">// and appends their module paths to modPaths.</div>
+<div class="line">func (rg *reportGenerator) registerModPaths(fv *flagVals) error<span class="hit"> {</span></div>
 <div class="line"><span class="hit">	for _, file := range splitGoModFiles(fv.goModFiles) {</span></div>
-<div class="line"><span class="hit">		fileBytes, err := rg.fsys.ReadFile(file)</span></div>
-<div class="line"><span class="hit">		if err != nil {</span></div>
-<div class="line"><span class="hit">			return fmt.Errorf(&#34;cannot read %q: %w&#34;, file, err)</span></div>
-<div class="line">		}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">		if strings.HasSuffix(file, &#34;.work&#34;</span><span class="miss">) {</span></div>
-<div class="line"><span class="miss">			workFile, err := modfile.ParseWork(file, fileBytes, nil)</span></div>
-<div class="line"><span class="miss">			if err != nil {</span></div>
-<div class="line"><span class="miss">				return fmt.Errorf(&#34;cannot parse %q: %w&#34;, file, err)</span></div>
+<div class="line"><span class="hit">		paths, err := rg.resolveGoModFiles(file)</span></div>
+<div class="line"><span class="hit">		if err != nil { return err</span><span class="hit"> }</span></div>
+<div class="line"><span class="hit">		for _, p := range paths {</span></div>
+<div class="line"><span class="hit">			if err := rg.appendModPath(p); err != nil {</span></div>
+<div class="line"><span class="hit">				return err</span></div>
 <div class="line">			}</div>
-<div class="line"><span class="miss">			for _, use := range workFile.Use {</span></div>
-<div class="line"><span class="miss">				goModFile      := filepath.Join(use.Path, &#34;go.mod&#34;)</span></div>
-<div class="line"><span class="miss">				fileBytes, err := rg.fsys.ReadFile(goModFile)</span></div>
-<div class="line"><span class="miss">				if err != nil {</span></div>
-<div class="line"><span class="miss">					return fmt.Errorf(&#34;cannot read %q: %w&#34;, goModFile, err)</span></div>
-<div class="line">				}</div>
-<div class="line"><span class="miss">				goMod, err := modfile.Parse(goModFile, fileBytes, nil)</span></div>
-<div class="line"><span class="miss">				if err          != nil ||</span></div>
-<div class="line"><span class="miss">				   goMod.Module == nil {</span></div>
-<div class="line"><span class="miss">					return fmt.Errorf(&#34;cannot parse %q: %w&#34;, goModFile, err)</span></div>
-<div class="line">				}</div>
-<div class="line"><span class="miss">				rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path</span><span class="miss">)</span></div>
-<div class="line">			}</div>
-<div class="line">		} else<span class="hit"> {</span></div>
-<div class="line"><span class="hit">			goMod, err := modfile.Parse(file, fileBytes, nil)</span></div>
-<div class="line"><span class="hit">			if err          != nil ||</span></div>
-<div class="line"><span class="hit">				 goMod.Module == nil {</span></div>
-<div class="line"><span class="hit">				return fmt.Errorf(&#34;cannot parse %q: %w&#34;, file, err)</span></div>
-<div class="line">			}</div>
-<div class="line"><span class="hit">			rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path</span><span class="hit">)</span></div>
 <div class="line">		}</div>
 <div class="line">	}</div>
 <div class="line"></div>
+<div class="line"><span class="hit">	return nil</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// resolveGoModFiles returns the go.mod paths for file: either the file</div>
+<div class="line">// itself if it&#39;s a go.mod file, or the modules listed in a go.work file.</div>
+<div class="line">func (rg *reportGenerator) resolveGoModFiles(file string) ([]string, error<span class="hit">) {</span></div>
+<div class="line"><span class="hit">	if !strings.HasSuffix(file, &#34;.work&#34;) {</span></div>
+<div class="line"><span class="hit">		return []string{file}, nil</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	data, err := rg.fsys.ReadFile(file)</span></div>
+<div class="line"><span class="hit">	if err != nil {</span></div>
+<div class="line"><span class="hit">		return nil, fmt.Errorf(&#34;cannot read %q: %w&#34;, file, err)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	workFile, err := modfile.ParseWork(file, data, nil)</span></div>
+<div class="line"><span class="hit">	if err != nil {</span></div>
+<div class="line"><span class="hit">		return nil, fmt.Errorf(&#34;cannot parse %q: %w&#34;, file, err)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	paths := make([]string, len(workFile.Use))</span></div>
+<div class="line"><span class="hit">	for i, use := range workFile.Use {</span></div>
+<div class="line"><span class="hit">		paths[i] = filepath.Join(use.Path, &#34;go.mod&#34;)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	return paths, nil</span></div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line">// appendModPath parses a go.mod file and appends its module path to modPaths.</div>
+<div class="line">func (rg *reportGenerator) appendModPath(goModFile string) error<span class="hit"> {</span></div>
+<div class="line"><span class="hit">	data, err := rg.fsys.ReadFile(goModFile)</span></div>
+<div class="line"><span class="hit">	if err != nil {</span></div>
+<div class="line"><span class="hit">		return fmt.Errorf(&#34;cannot read %q: %w&#34;, goModFile, err)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	goMod, err := modfile.Parse(goModFile, data, nil)</span></div>
+<div class="line"><span class="hit">	if err          != nil ||</span></div>
+<div class="line"><span class="hit">	   goMod.Module == nil {</span></div>
+<div class="line"><span class="hit">		return fmt.Errorf(&#34;cannot parse %q: %w&#34;, goModFile, err)</span></div>
+<div class="line">	}</div>
+<div class="line"></div>
+<div class="line"><span class="hit">	rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path)</span></div>
 <div class="line"><span class="hit">	return nil</span></div>
 <div class="line">}</div>
 <div class="line"></div>
@@ -271,7 +290,7 @@
 <div class="line"><span class="hit">		originURL = strings.TrimPrefix(originURL, &#34;git://&#34;)</span></div>
 <div class="line"></div>
 <div class="line"><span class="hit">		if !strings.HasPrefix(originURL, &#34;http://&#34; ) &amp;&amp;</span></div>
-<div class="line"><span class="hit">			 !strings.HasPrefix(originURL, &#34;https://&#34;) {</span></div>
+<div class="line"><span class="hit">		   !strings.HasPrefix(originURL, &#34;https://&#34;) {</span></div>
 <div class="line"><span class="hit">			originURL = &#34;https://&#34; + strings.Replace(originURL, &#34;:&#34;, &#34;/&#34;, 1)</span></div>
 <div class="line">		}</div>
 <div class="line"></div>

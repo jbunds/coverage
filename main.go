@@ -92,7 +92,7 @@ func run() int {
 	if err != nil { return fatal(2, "cannot instantiate report generator: %v", err) }
 	defer rg.outRoot.Close()
 
-	if err := rg.getModPaths(fv);                    err != nil { return fatal(3, "cannot determine module path: %v",         err) }
+	if err := rg.registerModPaths(fv);               err != nil { return fatal(3, "cannot determine module path: %v",         err) }
 	if err := rg.resolveRepoURLs(&realRunner{}, fv); err != nil { return fatal(4, "cannot resolve repository URL: %v",        err) }
 	if err := rg.primePkgDirCache(packages.Load);    err != nil { return fatal(5, "cannot prime package directory cache: %v", err) }
 
@@ -185,42 +185,61 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 	return rg, nil
 }
 
-// getModPaths reads the go.mod files to determine the module paths.
-func (rg *reportGenerator) getModPaths(fv *flagVals) error {
+// registerModPaths parses the go.work or go.mod files
+// and appends their module paths to modPaths.
+func (rg *reportGenerator) registerModPaths(fv *flagVals) error {
 	for _, file := range splitGoModFiles(fv.goModFiles) {
-		fileBytes, err := rg.fsys.ReadFile(file)
-		if err != nil {
-			return fmt.Errorf("cannot read %q: %w", file, err)
-		}
-
-		if strings.HasSuffix(file, ".work") {
-			workFile, err := modfile.ParseWork(file, fileBytes, nil)
-			if err != nil {
-				return fmt.Errorf("cannot parse %q: %w", file, err)
+		paths, err := rg.resolveGoModFiles(file)
+		if err != nil { return err }
+		for _, p := range paths {
+			if err := rg.appendModPath(p); err != nil {
+				return err
 			}
-			for _, use := range workFile.Use {
-				goModFile      := filepath.Join(use.Path, "go.mod")
-				fileBytes, err := rg.fsys.ReadFile(goModFile)
-				if err != nil {
-					return fmt.Errorf("cannot read %q: %w", goModFile, err)
-				}
-				goMod, err := modfile.Parse(goModFile, fileBytes, nil)
-				if err          != nil ||
-				   goMod.Module == nil {
-					return fmt.Errorf("cannot parse %q: %w", goModFile, err)
-				}
-				rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path)
-			}
-		} else {
-			goMod, err := modfile.Parse(file, fileBytes, nil)
-			if err          != nil ||
-				 goMod.Module == nil {
-				return fmt.Errorf("cannot parse %q: %w", file, err)
-			}
-			rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path)
 		}
 	}
 
+	return nil
+}
+
+// resolveGoModFiles returns the go.mod paths for file: either the file
+// itself if it's a go.mod file, or the modules listed in a go.work file.
+func (rg *reportGenerator) resolveGoModFiles(file string) ([]string, error) {
+	if !strings.HasSuffix(file, ".work") {
+		return []string{file}, nil
+	}
+
+	data, err := rg.fsys.ReadFile(file)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read %q: %w", file, err)
+	}
+
+	workFile, err := modfile.ParseWork(file, data, nil)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse %q: %w", file, err)
+	}
+
+	paths := make([]string, len(workFile.Use))
+	for i, use := range workFile.Use {
+		paths[i] = filepath.Join(use.Path, "go.mod")
+	}
+
+	return paths, nil
+}
+
+// appendModPath parses a go.mod file and appends its module path to modPaths.
+func (rg *reportGenerator) appendModPath(goModFile string) error {
+	data, err := rg.fsys.ReadFile(goModFile)
+	if err != nil {
+		return fmt.Errorf("cannot read %q: %w", goModFile, err)
+	}
+
+	goMod, err := modfile.Parse(goModFile, data, nil)
+	if err          != nil ||
+	   goMod.Module == nil {
+		return fmt.Errorf("cannot parse %q: %w", goModFile, err)
+	}
+
+	rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path)
 	return nil
 }
 
@@ -262,7 +281,7 @@ func (rg *reportGenerator) resolveRepoURLs(runner runner, fv *flagVals) error {
 		originURL = strings.TrimPrefix(originURL, "git://")
 
 		if !strings.HasPrefix(originURL, "http://" ) &&
-			 !strings.HasPrefix(originURL, "https://") {
+		   !strings.HasPrefix(originURL, "https://") {
 			originURL = "https://" + strings.Replace(originURL, ":", "/", 1)
 		}
 
