@@ -2,10 +2,12 @@
 
 # reusable composite action which does the following:
 #
-#   1. uses gwatts/go-coverage-action@v2 to create a Go test coverage
+#   1. expects callers to call actions/setup-go@v7 in a preceeding step
+#
+#   2. uses gwatts/go-coverage-action@v2 to create a Go test coverage
 #      profile file
 #
-#   2. runs `go run github.com/jbunds/coverage@latest` to generate a Go
+#   3. runs `go run github.com/jbunds/coverage@latest` to generate a Go
 #      test coverage HTML report from the generated coverage profile
 
 name:        Go test coverage HTML report
