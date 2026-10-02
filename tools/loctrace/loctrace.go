@@ -32,7 +32,7 @@ func main() {
 	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil                           ||
 		   info.IsDir()                         ||
-		   filepath.Dir(path) != "."            ||
+		   filepath.Dir(path) != root           ||
 		   !strings.HasSuffix(path, ".go")      ||
 		    strings.HasSuffix(path, "_test.go") {
 			return nil
