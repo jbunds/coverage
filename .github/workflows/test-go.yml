@@ -16,6 +16,10 @@ on:
 permissions:      # https://docs.github.com/actions/reference/workflows-and-actions/workflow-syntax#permissions
   contents: write # https://docs.github.com/rest/authentication/permissions-required-for-github-apps?apiVersion=2026-03-10#repository-permissions-for-contents
 
+concurrency: # avoid races
+  group:              coverage-notes
+  cancel-in-progress: false
+
 jobs:
   test:
     runs-on: ubuntu-latest # https://docs.github.com/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for--private-repositories

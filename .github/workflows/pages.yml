@@ -50,10 +50,6 @@ on:
         required:    false
         default:     ''
 
-concurrency: # avoid races
-  group:              pages
-  cancel-in-progress: false
-
 jobs:
   generate-and-upload:
     runs-on: ubuntu-latest

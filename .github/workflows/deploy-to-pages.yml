@@ -7,6 +7,9 @@ on:
       - '**/*.go'
       - '**/go.mod'
       - 'go.work'
+concurrency:
+  group:              coverage-notes
+  cancel-in-progress: false
 jobs:
   pages:
     uses: ./.github/workflows/pages.yml
