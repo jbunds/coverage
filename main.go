@@ -2,13 +2,11 @@
 //
 // This module also generates a directory tree HTML file rendered within an iframe hosted by the rendered index HTML file.
 //
-// The header portion of the index HTML file will also render three buttons if the browser's CORS policies allow it:
+// The header portion of the index HTML file will also render three buttons when served via HTTP and JavaScript is enabled:
 //
 //   "expand" (or "collapse") - toggles opening (or closing) all subdirectories of the source tree
 //   "lines"                  - toggles showing or hiding a column of line numbers along the left side of the source code
 //   "theme"                  - toggles between "light" and "dark" themes
-//
-// Note that the "expand" / "collapse", "lines", and "theme" buttons will not be rendered when the index page is loaded via the file:// scheme.
 package main
 
 import (

@@ -41,11 +41,11 @@ The program then renders an `index.html` file to the specified path which provid
 
 The rendered HTML files can be viewed in a browser, either directly via the `file://` scheme, or via an HTTP server using the `http://` scheme.
 
-When served via HTTP, buttons are available to:
+When served via HTTP and JavaScript is enabled, buttons are available to:
 
 - ![expand](doc/expand.svg) &nbsp;toggle between a fully-collapsed and fully-expanded source tree
-- ![lines](doc/lines.svg) &nbsp;toggle between showing or hiding a column of line numbers along the left side of the source code
-- ![theme](doc/theme.svg) &nbsp;toggle between **light** and **dark** themes
+- ![lines](doc/lines.svg)   &nbsp;toggle between showing or hiding a column of line numbers along the left side of the source code
+- ![theme](doc/theme.svg)   &nbsp;toggle between **light** and **dark** themes
 
 See also [![DeepWiki](doc/deepwiki.svg)](https://deepwiki.com/jbunds/coverage) and [![Go Reference](https://pkg.go.dev/badge/github.com/jbunds/coverage.svg)](https://pkg.go.dev/github.com/jbunds/coverage)
 
