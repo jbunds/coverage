@@ -107,7 +107,8 @@ func annotateSource(file *token.File, src []byte, blocks []*profileBlock, funcs 
 	for i, text := range annotated {
 		lines[i].text      = text
 		lines[i].funcIdx   = funcIndexForOffset(funcs, lineOffsets[i])
-		lines[i].isFuncEnd = lines[i].funcIdx >= 0 && lineOffsets[i + 1] >= funcs[lines[i].funcIdx].endOffset
+		lines[i].isFuncEnd = lines[i].funcIdx   >= 0 &&
+		                     lineOffsets[i + 1] >= funcs[lines[i].funcIdx].endOffset
 	}
 
 	return lines
@@ -149,6 +150,7 @@ func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, 
 		if hasNewline {
 			buf.WriteByte('\n')
 		}
+
 		relativeOffset += len(line)
 	}
 }
@@ -219,7 +221,8 @@ func computeFuncSpans(f *ast.File, file *token.File) []funcSpan {
 // funcIndexForOffset returns the index of the funcSpan containing offset, or -1 if none.
 func funcIndexForOffset(funcs []funcSpan, offset int) int {
 	for i, f := range funcs {
-		if offset >= f.startOffset && offset < f.endOffset {
+		if offset >= f.startOffset &&
+		   offset <  f.endOffset   {
 			return i
 		}
 	}

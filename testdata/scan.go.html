@@ -118,157 +118,160 @@
     <div class="line" data-line="107"><span class="hit">	for i, text := range annotated {</span></div>
     <div class="line" data-line="108"><span class="hit">		lines[i].text      = text</span></div>
     <div class="line" data-line="109"><span class="hit">		lines[i].funcIdx   = funcIndexForOffset(funcs, lineOffsets[i])</span></div>
-    <div class="line" data-line="110"><span class="hit">		lines[i].isFuncEnd = lines[i].funcIdx &gt;= 0 &amp;&amp; lineOffsets[i + 1] &gt;= funcs[lines[i].funcIdx].endOffset</span></div>
-    <div class="line" data-line="111">	}</div>
-    <div class="line" data-line="112"></div>
-    <div class="line" data-line="113"><span class="hit">	return lines</span></div>
-    <div class="line" data-line="114">}</div>
+    <div class="line" data-line="110"><span class="hit">		lines[i].isFuncEnd = lines[i].funcIdx   &gt;= 0 &amp;&amp;</span></div>
+    <div class="line" data-line="111"><span class="hit">		                     lineOffsets[i + 1] &gt;= funcs[lines[i].funcIdx].endOffset</span></div>
+    <div class="line" data-line="112">	}</div>
+    <div class="line" data-line="113"></div>
+    <div class="line" data-line="114"><span class="hit">	return lines</span></div>
+    <div class="line" data-line="115">}</div>
   </div>
 </div>
-<div class="line" data-line="115"></div>
-<div class="line" data-line="116">// writeTokenFragment splits fragments across newlines and resolves absolute sub-line boundaries.</div>
+<div class="line" data-line="116"></div>
+<div class="line" data-line="117">// writeTokenFragment splits fragments across newlines and resolves absolute sub-line boundaries.</div>
 <div class="func"><input type="checkbox" id="func-1" checked/>
-  <label for="func-1" class="line" data-line="117">func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, baseClass string, blocks []*profileBlock<span class="hit">) {</span></label>
+  <label for="func-1" class="line" data-line="118">func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, baseClass string, blocks []*profileBlock<span class="hit">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="118"><span class="hit">	lines          := bytes.SplitAfter(fragment, []byte(&#34;\n&#34;))</span></div>
-    <div class="line" data-line="119"><span class="hit">	relativeOffset := 0</span></div>
-    <div class="line" data-line="120"></div>
-    <div class="line" data-line="121"><span class="hit">	for _, line := range lines {</span></div>
-    <div class="line" data-line="122"><span class="hit">		if len(line) == 0 { continue</span> }</div>
-    <div class="line" data-line="123"></div>
-    <div class="line" data-line="124"><span class="hit">		hasNewline := bytes.HasSuffix(line, []byte(&#34;\n&#34;))</span></div>
-    <div class="line" data-line="125"><span class="hit">		content    := line</span></div>
-    <div class="line" data-line="126"><span class="hit">		if hasNewline {</span></div>
-    <div class="line" data-line="127"><span class="hit">			content = line[:len(line) - 1]</span></div>
-    <div class="line" data-line="128">		}</div>
-    <div class="line" data-line="129"></div>
-    <div class="line" data-line="130"><span class="hit">		if len(content) &gt; 0 {</span></div>
-    <div class="line" data-line="131"><span class="hit">			class := baseClass</span></div>
-    <div class="line" data-line="132"><span class="hit">			if class == &#34;&#34;</span> { // calculate the absolute position in the file for this whitespace line chunk</div>
-    <div class="line" data-line="133"><span class="hit">				absStart := baseFileOffset + relativeOffset</span></div>
-    <div class="line" data-line="134"><span class="hit">				absEnd   := absStart       + len(content)</span></div>
-    <div class="line" data-line="135"><span class="hit">				class     = coverClass(blocks, absStart, absEnd)</span></div>
-    <div class="line" data-line="136">			}</div>
-    <div class="line" data-line="137"></div>
-    <div class="line" data-line="138"><span class="hit">			if class != &#34;&#34; {</span></div>
-    <div class="line" data-line="139"><span class="hit">				buf.WriteString(`&lt;span class=&#34;`)</span></div>
-    <div class="line" data-line="140"><span class="hit">				buf.WriteString(class)</span></div>
-    <div class="line" data-line="141"><span class="hit">				buf.WriteString(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="142"><span class="hit">				template.HTMLEscape(buf, content)</span></div>
-    <div class="line" data-line="143"><span class="hit">				buf.WriteString(&#34;&lt;/span&gt;&#34;)</span></div>
-    <div class="line" data-line="144">			} else<span class="hit"> {</span></div>
-    <div class="line" data-line="145"><span class="hit">				template.HTMLEscape(buf, content)</span></div>
-    <div class="line" data-line="146">			}</div>
-    <div class="line" data-line="147">		}</div>
-    <div class="line" data-line="148"></div>
-    <div class="line" data-line="149"><span class="hit">		if hasNewline {</span></div>
-    <div class="line" data-line="150"><span class="hit">			buf.WriteByte(&#39;\n&#39;)</span></div>
-    <div class="line" data-line="151">		}</div>
-    <div class="line" data-line="152"><span class="hit">		relativeOffset += len(line</span><span class="hit">)</span></div>
-    <div class="line" data-line="153">	}</div>
-    <div class="line" data-line="154">}</div>
+    <div class="line" data-line="119"><span class="hit">	lines          := bytes.SplitAfter(fragment, []byte(&#34;\n&#34;))</span></div>
+    <div class="line" data-line="120"><span class="hit">	relativeOffset := 0</span></div>
+    <div class="line" data-line="121"></div>
+    <div class="line" data-line="122"><span class="hit">	for _, line := range lines {</span></div>
+    <div class="line" data-line="123"><span class="hit">		if len(line) == 0 { continue</span> }</div>
+    <div class="line" data-line="124"></div>
+    <div class="line" data-line="125"><span class="hit">		hasNewline := bytes.HasSuffix(line, []byte(&#34;\n&#34;))</span></div>
+    <div class="line" data-line="126"><span class="hit">		content    := line</span></div>
+    <div class="line" data-line="127"><span class="hit">		if hasNewline {</span></div>
+    <div class="line" data-line="128"><span class="hit">			content = line[:len(line) - 1]</span></div>
+    <div class="line" data-line="129">		}</div>
+    <div class="line" data-line="130"></div>
+    <div class="line" data-line="131"><span class="hit">		if len(content) &gt; 0 {</span></div>
+    <div class="line" data-line="132"><span class="hit">			class := baseClass</span></div>
+    <div class="line" data-line="133"><span class="hit">			if class == &#34;&#34;</span> { // calculate the absolute position in the file for this whitespace line chunk</div>
+    <div class="line" data-line="134"><span class="hit">				absStart := baseFileOffset + relativeOffset</span></div>
+    <div class="line" data-line="135"><span class="hit">				absEnd   := absStart       + len(content)</span></div>
+    <div class="line" data-line="136"><span class="hit">				class     = coverClass(blocks, absStart, absEnd)</span></div>
+    <div class="line" data-line="137">			}</div>
+    <div class="line" data-line="138"></div>
+    <div class="line" data-line="139"><span class="hit">			if class != &#34;&#34; {</span></div>
+    <div class="line" data-line="140"><span class="hit">				buf.WriteString(`&lt;span class=&#34;`)</span></div>
+    <div class="line" data-line="141"><span class="hit">				buf.WriteString(class)</span></div>
+    <div class="line" data-line="142"><span class="hit">				buf.WriteString(`&#34;&gt;`)</span></div>
+    <div class="line" data-line="143"><span class="hit">				template.HTMLEscape(buf, content)</span></div>
+    <div class="line" data-line="144"><span class="hit">				buf.WriteString(&#34;&lt;/span&gt;&#34;)</span></div>
+    <div class="line" data-line="145">			} else<span class="hit"> {</span></div>
+    <div class="line" data-line="146"><span class="hit">				template.HTMLEscape(buf, content)</span></div>
+    <div class="line" data-line="147">			}</div>
+    <div class="line" data-line="148">		}</div>
+    <div class="line" data-line="149"></div>
+    <div class="line" data-line="150"><span class="hit">		if hasNewline {</span></div>
+    <div class="line" data-line="151"><span class="hit">			buf.WriteByte(&#39;\n&#39;)</span></div>
+    <div class="line" data-line="152">		}</div>
+    <div class="line" data-line="153"></div>
+    <div class="line" data-line="154"><span class="hit">		relativeOffset += len(line</span><span class="hit">)</span></div>
+    <div class="line" data-line="155">	}</div>
+    <div class="line" data-line="156">}</div>
   </div>
 </div>
-<div class="line" data-line="155"></div>
-<div class="line" data-line="156">// coverClass performs an O(log n) lookup over the sorted blocks slice to determine the</div>
-<div class="line" data-line="157">// coverage state (&#34;hit&#34;, &#34;miss&#34;, or &#34;&#34;) of a specified byte offset range [start, end].</div>
-<div class="line" data-line="158">//</div>
-<div class="line" data-line="159">// precondition: blocks must be sorted in ascending order by endOffset.</div>
+<div class="line" data-line="157"></div>
+<div class="line" data-line="158">// coverClass performs an O(log n) lookup over the sorted blocks slice to determine the</div>
+<div class="line" data-line="159">// coverage state (&#34;hit&#34;, &#34;miss&#34;, or &#34;&#34;) of a specified byte offset range [start, end].</div>
+<div class="line" data-line="160">//</div>
+<div class="line" data-line="161">// precondition: blocks must be sorted in ascending order by endOffset.</div>
 <div class="func"><input type="checkbox" id="func-2" checked/>
-  <label for="func-2" class="line" data-line="160">func coverClass(blocks []*profileBlock, start, end int) string<span class="hit"> {</span></label>
+  <label for="func-2" class="line" data-line="162">func coverClass(blocks []*profileBlock, start, end int) string<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="161"><span class="hit">	idx := sort.Search(len(blocks), func(i int) bool {</span></div>
-    <div class="line" data-line="162"><span class="hit">		return blocks[i].endOffset &gt;= end</span></div>
-    <div class="line" data-line="163">	})</div>
-    <div class="line" data-line="164"><span class="hit">	if idx   &lt;  len(blocks)             &amp;&amp;</span></div>
-    <div class="line" data-line="165"><span class="hit">	   start &gt;= blocks[idx].startOffset &amp;&amp;</span></div>
-    <div class="line" data-line="166"><span class="hit">	   end   &lt;= blocks[idx].endOffset   {</span></div>
-    <div class="line" data-line="167"><span class="hit">		if blocks[idx].count &gt; 0 {</span></div>
-    <div class="line" data-line="168"><span class="hit">			return &#34;hit&#34;</span></div>
-    <div class="line" data-line="169">		}</div>
-    <div class="line" data-line="170"><span class="hit">		return &#34;miss&#34;</span></div>
-    <div class="line" data-line="171">	}</div>
-    <div class="line" data-line="172"><span class="hit">	return &#34;&#34;</span></div>
-    <div class="line" data-line="173">}</div>
+    <div class="line" data-line="163"><span class="hit">	idx := sort.Search(len(blocks), func(i int) bool {</span></div>
+    <div class="line" data-line="164"><span class="hit">		return blocks[i].endOffset &gt;= end</span></div>
+    <div class="line" data-line="165">	})</div>
+    <div class="line" data-line="166"><span class="hit">	if idx   &lt;  len(blocks)             &amp;&amp;</span></div>
+    <div class="line" data-line="167"><span class="hit">	   start &gt;= blocks[idx].startOffset &amp;&amp;</span></div>
+    <div class="line" data-line="168"><span class="hit">	   end   &lt;= blocks[idx].endOffset   {</span></div>
+    <div class="line" data-line="169"><span class="hit">		if blocks[idx].count &gt; 0 {</span></div>
+    <div class="line" data-line="170"><span class="hit">			return &#34;hit&#34;</span></div>
+    <div class="line" data-line="171">		}</div>
+    <div class="line" data-line="172"><span class="hit">		return &#34;miss&#34;</span></div>
+    <div class="line" data-line="173">	}</div>
+    <div class="line" data-line="174"><span class="hit">	return &#34;&#34;</span></div>
+    <div class="line" data-line="175">}</div>
   </div>
 </div>
-<div class="line" data-line="174"></div>
-<div class="line" data-line="175">// computeBlockOffsets converts cover.ProfileBlock line/column positions to byte offsets.</div>
-<div class="line" data-line="176">//</div>
-<div class="line" data-line="177">// The first block on a given line starts at the line&#39;s beginning rather than at its</div>
-<div class="line" data-line="178">// StartCol, since the `go tool cover` reports the column of the first token on the line.</div>
+<div class="line" data-line="176"></div>
+<div class="line" data-line="177">// computeBlockOffsets converts cover.ProfileBlock line/column positions to byte offsets.</div>
+<div class="line" data-line="178">//</div>
+<div class="line" data-line="179">// The first block on a given line starts at the line&#39;s beginning rather than at its</div>
+<div class="line" data-line="180">// StartCol, since the `go tool cover` reports the column of the first token on the line.</div>
 <div class="func"><input type="checkbox" id="func-3" checked/>
-  <label for="func-3" class="line" data-line="179">func computeBlockOffsets(file *token.File, blocks []cover.ProfileBlock) (out []*profileBlock<span class="hit">) {</span></label>
+  <label for="func-3" class="line" data-line="181">func computeBlockOffsets(file *token.File, blocks []cover.ProfileBlock) (out []*profileBlock<span class="hit">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="180"><span class="hit">	lineStarted := make(map[int]bool)</span></div>
-    <div class="line" data-line="181"><span class="hit">	out          = make([]*profileBlock, 0, len(blocks))</span></div>
-    <div class="line" data-line="182"></div>
-    <div class="line" data-line="183"><span class="hit">	for _, b := range blocks {</span></div>
-    <div class="line" data-line="184"><span class="hit">		startOffset := 0</span></div>
-    <div class="line" data-line="185"><span class="hit">		if !lineStarted[b.StartLine] {</span></div>
-    <div class="line" data-line="186"><span class="hit">			startOffset = file.Offset(file.LineStart(b.StartLine))</span></div>
-    <div class="line" data-line="187"><span class="hit">			lineStarted[b.StartLine] = true</span></div>
-    <div class="line" data-line="188">		} else<span class="hit"> {</span></div>
-    <div class="line" data-line="189"><span class="hit">			startOffset = file.Offset(file.LineStart(b.StartLine)) + (b.StartCol - 1)</span></div>
-    <div class="line" data-line="190">		}</div>
-    <div class="line" data-line="191"></div>
-    <div class="line" data-line="192"><span class="hit">		endOffset := file.Offset(file.LineStart(b.EndLine)) + (b.EndCol - 1)</span></div>
-    <div class="line" data-line="193"><span class="hit">		out = append(out, &amp;profileBlock{</span></div>
-    <div class="line" data-line="194"><span class="hit">			startOffset: startOffset,</span></div>
-    <div class="line" data-line="195"><span class="hit">			endOffset:   endOffset,</span></div>
-    <div class="line" data-line="196"><span class="hit">			count:       b.Count</span><span class="hit">,</span></div>
-    <div class="line" data-line="197"><span class="hit">		})</span></div>
-    <div class="line" data-line="198">	}</div>
-    <div class="line" data-line="199"><span class="hit">	return</span></div>
-    <div class="line" data-line="200">}</div>
+    <div class="line" data-line="182"><span class="hit">	lineStarted := make(map[int]bool)</span></div>
+    <div class="line" data-line="183"><span class="hit">	out          = make([]*profileBlock, 0, len(blocks))</span></div>
+    <div class="line" data-line="184"></div>
+    <div class="line" data-line="185"><span class="hit">	for _, b := range blocks {</span></div>
+    <div class="line" data-line="186"><span class="hit">		startOffset := 0</span></div>
+    <div class="line" data-line="187"><span class="hit">		if !lineStarted[b.StartLine] {</span></div>
+    <div class="line" data-line="188"><span class="hit">			startOffset = file.Offset(file.LineStart(b.StartLine))</span></div>
+    <div class="line" data-line="189"><span class="hit">			lineStarted[b.StartLine] = true</span></div>
+    <div class="line" data-line="190">		} else<span class="hit"> {</span></div>
+    <div class="line" data-line="191"><span class="hit">			startOffset = file.Offset(file.LineStart(b.StartLine)) + (b.StartCol - 1)</span></div>
+    <div class="line" data-line="192">		}</div>
+    <div class="line" data-line="193"></div>
+    <div class="line" data-line="194"><span class="hit">		endOffset := file.Offset(file.LineStart(b.EndLine)) + (b.EndCol - 1)</span></div>
+    <div class="line" data-line="195"><span class="hit">		out = append(out, &amp;profileBlock{</span></div>
+    <div class="line" data-line="196"><span class="hit">			startOffset: startOffset,</span></div>
+    <div class="line" data-line="197"><span class="hit">			endOffset:   endOffset,</span></div>
+    <div class="line" data-line="198"><span class="hit">			count:       b.Count</span><span class="hit">,</span></div>
+    <div class="line" data-line="199"><span class="hit">		})</span></div>
+    <div class="line" data-line="200">	}</div>
+    <div class="line" data-line="201"><span class="hit">	return</span></div>
+    <div class="line" data-line="202">}</div>
   </div>
 </div>
-<div class="line" data-line="201"></div>
-<div class="line" data-line="202">// computeFuncSpans returns one funcSpan per top-level function in the file.</div>
+<div class="line" data-line="203"></div>
+<div class="line" data-line="204">// computeFuncSpans returns one funcSpan per top-level function in the file.</div>
 <div class="func"><input type="checkbox" id="func-4" checked/>
-  <label for="func-4" class="line" data-line="203">func computeFuncSpans(f *ast.File, file *token.File) []funcSpan<span class="hit"> {</span></label>
+  <label for="func-4" class="line" data-line="205">func computeFuncSpans(f *ast.File, file *token.File) []funcSpan<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="204"><span class="hit">	var out []funcSpan</span></div>
-    <div class="line" data-line="205"><span class="hit">	ast.Inspect(f, func(n ast.Node) bool {</span></div>
-    <div class="line" data-line="206"><span class="hit">		fn, ok := n.(*ast.FuncDecl)</span></div>
-    <div class="line" data-line="207"><span class="hit">		if !ok { return true</span><span class="hit"> }</span></div>
-    <div class="line" data-line="208"></div>
-    <div class="line" data-line="209"><span class="hit">		out = append(out, funcSpan{</span></div>
-    <div class="line" data-line="210"><span class="hit">			name:        fn.Name.Name,</span></div>
-    <div class="line" data-line="211"><span class="hit">			startOffset: file.Offset(fn.Pos()),</span></div>
-    <div class="line" data-line="212"><span class="hit">			endOffset:   file.Offset(fn.End()),</span></div>
-    <div class="line" data-line="213"><span class="hit">		})</span></div>
-    <div class="line" data-line="214"><span class="hit">		return true</span></div>
-    <div class="line" data-line="215">	})</div>
-    <div class="line" data-line="216"><span class="hit">	return out</span></div>
-    <div class="line" data-line="217">}</div>
+    <div class="line" data-line="206"><span class="hit">	var out []funcSpan</span></div>
+    <div class="line" data-line="207"><span class="hit">	ast.Inspect(f, func(n ast.Node) bool {</span></div>
+    <div class="line" data-line="208"><span class="hit">		fn, ok := n.(*ast.FuncDecl)</span></div>
+    <div class="line" data-line="209"><span class="hit">		if !ok { return true</span><span class="hit"> }</span></div>
+    <div class="line" data-line="210"></div>
+    <div class="line" data-line="211"><span class="hit">		out = append(out, funcSpan{</span></div>
+    <div class="line" data-line="212"><span class="hit">			name:        fn.Name.Name,</span></div>
+    <div class="line" data-line="213"><span class="hit">			startOffset: file.Offset(fn.Pos()),</span></div>
+    <div class="line" data-line="214"><span class="hit">			endOffset:   file.Offset(fn.End()),</span></div>
+    <div class="line" data-line="215"><span class="hit">		})</span></div>
+    <div class="line" data-line="216"><span class="hit">		return true</span></div>
+    <div class="line" data-line="217">	})</div>
+    <div class="line" data-line="218"><span class="hit">	return out</span></div>
+    <div class="line" data-line="219">}</div>
   </div>
 </div>
-<div class="line" data-line="218"></div>
-<div class="line" data-line="219">// funcIndexForOffset returns the index of the funcSpan containing offset, or -1 if none.</div>
+<div class="line" data-line="220"></div>
+<div class="line" data-line="221">// funcIndexForOffset returns the index of the funcSpan containing offset, or -1 if none.</div>
 <div class="func"><input type="checkbox" id="func-5" checked/>
-  <label for="func-5" class="line" data-line="220">func funcIndexForOffset(funcs []funcSpan, offset int) int<span class="hit"> {</span></label>
+  <label for="func-5" class="line" data-line="222">func funcIndexForOffset(funcs []funcSpan, offset int) int<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="221"><span class="hit">	for i, f := range funcs {</span></div>
-    <div class="line" data-line="222"><span class="hit">		if offset &gt;= f.startOffset &amp;&amp; offset &lt; f.endOffset {</span></div>
-    <div class="line" data-line="223"><span class="hit">			return i</span></div>
-    <div class="line" data-line="224">		}</div>
-    <div class="line" data-line="225">	}</div>
-    <div class="line" data-line="226"><span class="hit">	return -1</span></div>
-    <div class="line" data-line="227">}</div>
+    <div class="line" data-line="223"><span class="hit">	for i, f := range funcs {</span></div>
+    <div class="line" data-line="224"><span class="hit">		if offset &gt;= f.startOffset &amp;&amp;</span></div>
+    <div class="line" data-line="225"><span class="hit">		   offset &lt;  f.endOffset   {</span></div>
+    <div class="line" data-line="226"><span class="hit">			return i</span></div>
+    <div class="line" data-line="227">		}</div>
+    <div class="line" data-line="228">	}</div>
+    <div class="line" data-line="229"><span class="hit">	return -1</span></div>
+    <div class="line" data-line="230">}</div>
   </div>
 </div>
-<div class="line" data-line="228"></div>
-<div class="line" data-line="229">// O(log n) implementation of funcIndexForOffset; above is O(n)</div>
-<div class="line" data-line="230">// func funcIndexForOffset(funcs []funcSpan, offset int) int {</div>
-<div class="line" data-line="231">//	i := sort.Search(len(funcs), func(j int) bool { // find the last func with startOffset &lt;= offset</div>
-<div class="line" data-line="232">//		return funcs[j].startOffset &gt; offset</div>
-<div class="line" data-line="233">//	}) - 1                                          // subtract 1 to get that last func</div>
-<div class="line" data-line="234">//	if i &gt;= 0 &amp;&amp; offset &lt; funcs[i].endOffset {      // verify offset actually falls within that function&#39;s span</div>
-<div class="line" data-line="235">//		return i</div>
-<div class="line" data-line="236">//	}</div>
-<div class="line" data-line="237">//	return -1</div>
-<div class="line" data-line="238">//}</div>
+<div class="line" data-line="231"></div>
+<div class="line" data-line="232">// O(log n) implementation of funcIndexForOffset; above is O(n)</div>
+<div class="line" data-line="233">// func funcIndexForOffset(funcs []funcSpan, offset int) int {</div>
+<div class="line" data-line="234">//	i := sort.Search(len(funcs), func(j int) bool { // find the last func with startOffset &lt;= offset</div>
+<div class="line" data-line="235">//		return funcs[j].startOffset &gt; offset</div>
+<div class="line" data-line="236">//	}) - 1                                          // subtract 1 to get that last func</div>
+<div class="line" data-line="237">//	if i &gt;= 0 &amp;&amp; offset &lt; funcs[i].endOffset {      // verify offset actually falls within that function&#39;s span</div>
+<div class="line" data-line="238">//		return i</div>
+<div class="line" data-line="239">//	}</div>
+<div class="line" data-line="240">//	return -1</div>
+<div class="line" data-line="241">//}</div>
 <script src="../../../child.js"></script>
 </body>
 </html>
