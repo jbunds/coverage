@@ -280,32 +280,29 @@ func TestGetAllPkgPaths(t *testing.T) {
 		fsys        fs.FS
 		want        []string
 		wantErr     error
-	}{
-		{
-			name:        "succeeds",
-			profilePath: "cov.out",
-			fsys:        fstest.MapFS{
-				"cov.out": &fstest.MapFile{
-					Data: []byte(strings.Join([]string{
-						"mode: set",
-						"github.com/foo/bar/baz.go:0",
-						"invalid line",
-						"github.com/foo/bar/boo/bug.go:0",
-					}, "\n")),
-				},
-			},
-			want: []string{
-				"github.com/foo/bar",
-				"github.com/foo/bar/boo",
+	}{{
+		name:        "succeeds",
+		profilePath: "cov.out",
+		fsys:        fstest.MapFS{
+			"cov.out": &fstest.MapFile{
+				Data: []byte(strings.Join([]string{
+					"mode: set",
+					"github.com/foo/bar/baz.go:0",
+					"invalid line",
+					"github.com/foo/bar/boo/bug.go:0",
+				}, "\n")),
 			},
 		},
-		{
-			name:        "fails",
-			profilePath: "nope",
-			fsys:        fstest.MapFS{},
-			wantErr:     errors.New("open nope: file does not exist"),
+		want: []string{
+			"github.com/foo/bar",
+			"github.com/foo/bar/boo",
 		},
-	}
+	}, {
+		name:        "fails",
+		profilePath: "nope",
+		fsys:        fstest.MapFS{},
+		wantErr:     errors.New("open nope: file does not exist"),
+	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
