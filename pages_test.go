@@ -257,26 +257,23 @@ func TestWriteTemplateFile(t *testing.T) {
 		tmplData      struct{ SomeVar string }
 		want          string
 		wantErr       error
-	}{
-		{
-			name:          "succeeds",
-			fileName:      "foo",
-			embeddedFiles: fstest.MapFS{"foo": &fstest.MapFile{Data: []byte("someVar: {{ .SomeVar }}") }},
-			tmplData:      struct{ SomeVar string }{SomeVar: "some var value"},
-			want:          "someVar: some var value",
-		},
-		{
-			name:          "template.Execute fails",
-			fileName:      "bar",
-			embeddedFiles: fstest.MapFS{"bar": &fstest.MapFile{Data: []byte("NoSuchData: {{ .NoSuchData }}") }},
-			want:          "NoSuchData: ",
-			wantErr:       errors.New(
-				`cannot render template: ` +
-				`template: bar:1:15: ` +
-				`executing "bar" at <.NoSuchData>: ` +
-				`can't evaluate field NoSuchData in type struct { SomeVar string }`),
-		},
-	}
+	}{{
+		name:          "succeeds",
+		fileName:      "foo",
+		embeddedFiles: fstest.MapFS{"foo": &fstest.MapFile{Data: []byte("someVar: {{ .SomeVar }}") }},
+		tmplData:      struct{ SomeVar string }{SomeVar: "some var value"},
+		want:          "someVar: some var value",
+	}, {
+		name:          "template.Execute fails",
+		fileName:      "bar",
+		embeddedFiles: fstest.MapFS{"bar": &fstest.MapFile{Data: []byte("NoSuchField: {{ .NoSuchField }}") }},
+		want:          "NoSuchField: ",
+		wantErr:       errors.New(
+			`cannot render template: `            +
+			`template: bar:1:16: `                +
+			`executing "bar" at <.NoSuchField>: ` +
+			`can't evaluate field NoSuchField in type struct { SomeVar string }`),
+	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
