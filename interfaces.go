@@ -34,7 +34,7 @@ type runner interface { Run(*exec.Cmd) error }
 
 type realRunner struct{}
 
-func (*realRunner) Run  (cmd *exec.Cmd) error { return cmd.Run()   }
+func (*realRunner) Run(  cmd *exec.Cmd) error { return cmd.Run()   }
 func (*realRunner) Start(cmd *exec.Cmd) error { return cmd.Start() }
 
 // writeFS defines an interface that extends fs.FS with writing capabilities.
