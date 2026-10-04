@@ -9,7 +9,7 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Sat Sep 26 17:41:42 CEST 2026
+Sun Oct  4 18:41:01 CEST 2026
 ```
 
 ```
@@ -17,73 +17,75 @@ $ scc --exclude-dir .git,testdata --include-ext go,html,css,js,yml,yaml --drynes
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Language                    Files        Lines     Blanks   Comments         Code Complexity Complexity/Lines
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Go                             18        3,426        324        162        2,940        433            14.73
-(ULOC)                                   1,910
+Go                             19        3,748        376        185        3,187        470            14.75
+(ULOC)                                   2,166
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-main_test.go                               410         37          3          370         40            10.81
-tree_test.go                               397          8          7          382         25             6.54
-main.go                                    309         56         31          222         65            29.28
-tree.go                                    300         48         23          229         40            17.47
+main_test.go                               439         38          7          394         40            10.15
+main.go                                    382         64         38          280         87            31.07
+pages.go                                   367         50         35          282         61            21.63
+tree_test.go                               319          7          2          310         21             6.77
+tree.go                                    305         52         22          231         39            16.88
 flags_test.go                              298          5          0          293         26             8.87
-pages.go                                   291         40         35          216         43            19.91
-pages_test.go                              258          5          0          253         24             9.49
-scan.go                                    201         24         20          157         46            29.30
-ui.go                                      170         24          9          137         34            24.82
-ui_test.go                                 116          3          0          113          6             5.31
+pages_test.go                              298          5          0          293         14             4.78
+scan.go                                    238         33         25          180         42            23.33
+ui.go                                      172         24          9          139         33            23.74
+trie.go                                    132         20         13           99         18            18.18
 sort.go                                    115         17         17           81         17            20.99
+ui_test.go                                 115          3          0          112          5             4.46
 sort_test.go                               111          5          0          106         11            10.38
-flags.go                                   107          4          3          100         13            13.00
-interfaces.go                               93         21          9           63          2             3.17
-tools/loctrace/loctrace.go                  81          7          3           71         13            18.31
-assets_test.go                              80          3          0           77          6             7.79
-integration_test.go                         67         14          1           52         13            25.00
+flags.go                                   103          4          3           96         11            11.46
+tools/loctrace/loctrace.go                  91          8          3           80         16            20.00
+interfaces.go                               91         21          9           61          2             3.28
+assets_test.go                              81          3          0           78          5             6.41
+integration_test.go                         69         14          1           54         13            24.07
 assets.go                                   22          3          1           18          9            50.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-YAML                           12          512         48         31          433          0             0.00
-(ULOC)                                     330
+YAML                           12          563         49         35          479          0             0.00
+(ULOC)                                     366
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-.golangci.yml                              123          1          2          120          0             0.00
-.github/workflows/pages.yml                 77          7         13           57          0             0.00
-action.yml                                  66          7          8           51          0             0.00
-.github/workflows/test-go.yml               50          9          1           40          0             0.00
+.golangci.yml                              125          1          2          122          0             0.00
+.github/workflows/pages.yml                101          8         15           78          0             0.00
+action.yml                                  66          6         10           50          0             0.00
+.github/workflows/test-go.yml               60         10          1           49          0             0.00
 .pre-commit-config.yaml                     38          1          2           35          0             0.00
-.github/workflows/lint-go.yml               35          7          2           26          0             0.00
+.github/workflows/lint-go.yml               37          7          2           28          0             0.00
 ~/actions/upload-pages/action.yml           26          5          2           19          0             0.00
+~ub/workflows/deploy-to-pages.yml           25          0          0           25          0             0.00
 ~lidate-actions-and-workflows.yml           24          2          0           22          0             0.00
 .github/workflows/lint-css.yml              23          3          0           20          0             0.00
 .github/workflows/lint-js.yml               22          5          0           17          0             0.00
 .github/dependabot.yml                      16          1          1           14          0             0.00
-~ub/workflows/deploy-to-pages.yml           12          0          0           12          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-JavaScript                      5          370         42         50          278         33            11.87
-(ULOC)                                     271
+JavaScript                      5          401         46         50          305         40            13.11
+(ULOC)                                     292
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 tools/demo/render.js                       187         24         39          124          0             0.00
 tools/demo/helpers.js                      109          5         11           93         12            12.90
-js/events.js                                42          9          0           33          9            27.27
+js/events.js                                73         13          0           60         16            26.67
 tools/validate.js                           19          3          0           16          2            12.50
 js/child.js                                 13          1          0           12         10            83.33
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-CSS                             2          298         42          1          255          0             0.00
-(ULOC)                                     195
+CSS                             3          349         48          1          300          0             0.00
+(ULOC)                                     228
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-css/style.css                              184         23          0          161          0             0.00
+css/style.css                              183         23          0          160          0             0.00
 css/tree.css                               114         19          1           94          0             0.00
+css/modules.css                             52          6          0           46          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-HTML                            2           39          0          0           39          0             0.00
-(ULOC)                                      30
+HTML                            2           43          0          0           43          0             0.00
+(ULOC)                                      33
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-html/index.html                             29          0          0           29          0             0.00
+html/index.html                             33          0          0           33          0             0.00
 html/code.html                              10          0          0           10          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                          39        4,645        456        244        3,945        466            11.81
+Total                          41        5,104        519        271        4,314        510            11.82
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Unique Lines of Code (ULOC)              2,729
-DRYness %                                 0.59
+Unique Lines of Code (ULOC)              3,076
+DRYness %                                 0.60
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $114,153
-Estimated Schedule Effort (organic) 6.03 months
-Estimated People Required (organic) 1.68
-Processed 145,694 bytes, 0.146 megabytes (SI)
+Estimated Cost to Develop (organic) $125,390
+Estimated Schedule Effort (organic) 6.25 months
+Estimated People Required (organic) 1.78
+Processed 162,826 bytes, 0.163 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```
