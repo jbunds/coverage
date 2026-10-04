@@ -211,7 +211,7 @@ func (tb *treeBuilder) processDir(ctx context.Context, st *scanState, pkgPath, s
   }
   
   hb := &htmlBuilder{indent: st.indent, itemID: itemID, subDir: srcBasename}
-  hb.buildSubDirHTML(res)
+  hb.renderSubDirHTML(res)
 
   return res, nil
 }
@@ -243,9 +243,9 @@ func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (
 	}, nil
 }
 
-// buildSubDirHTML wraps pre-rendered child nodes in a <li> subdirectory
+// renderSubDirHTML wraps pre-rendered child nodes in a <li> subdirectory
 // tree-node, with its name and aggregated coverge percentage.
-func (hb *htmlBuilder) buildSubDirHTML(res *entryResult) {
+func (hb *htmlBuilder) renderSubDirHTML(res *entryResult) {
 	indent  := strings.Repeat("  ", hb.indent)
 	percent := formatCov(res.covered, res.total)
 

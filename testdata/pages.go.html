@@ -207,235 +207,237 @@
 <div class="func"><input type="checkbox" id="func-9" checked/>
   <label for="func-9" class="line" data-line="164">func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progress, i int, unit workUnit, perFileCov []coverage) error<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="165"><span class="hit">	fileStatements, fileCovered := countStatements(unit.profile.Blocks)</span></div>
-    <div class="line" data-line="166"><span class="hit">	prog.AddTotal(uint64(fileStatements))</span></div>
-    <div class="line" data-line="167"></div>
-    <div class="line" data-line="168"><span class="hit">	var buf bytes.Buffer</span></div>
-    <div class="line" data-line="169"><span class="hit">	ew := newErrorWriter(&amp;buf)</span></div>
-    <div class="line" data-line="170"><span class="hit">	if err := rg.buildCovHTML(ctx, ew, unit.profile, unit.profile.FileName); err != nil {</span></div>
-    <div class="line" data-line="171"><span class="hit">		return fmt.Errorf(&#34;cannot build HTML for %q: %w&#34;, unit.profile.FileName, err)</span></div>
-    <div class="line" data-line="172">	}</div>
-    <div class="line" data-line="173"><span class="hit">	if rg.write {</span></div>
-    <div class="line" data-line="174"><span class="hit">		if err := rg.fsys.WriteFile(unit.outPath, buf.Bytes(), 0600); err != nil {</span></div>
-    <div class="line" data-line="175"><span class="hit">			return fmt.Errorf(&#34;cannot write HTML file for %q: %w&#34;, unit.outPath, err)</span></div>
-    <div class="line" data-line="176">		}</div>
-    <div class="line" data-line="177">	}</div>
-    <div class="line" data-line="178"></div>
-    <div class="line" data-line="179"><span class="hit">	prog.Report(float64(fileStatements), unit.profile.FileName)</span></div>
-    <div class="line" data-line="180"><span class="hit">	rg.covState.totalCovered.Add(fileCovered)</span></div>
-    <div class="line" data-line="181"><span class="hit">	rg.covState.totalStatements.Add(fileStatements)</span></div>
-    <div class="line" data-line="182"><span class="hit">	perFileCov[i] = coverage{covered: fileCovered, total: fileStatements}</span></div>
-    <div class="line" data-line="183"><span class="hit">	return nil</span></div>
-    <div class="line" data-line="184">}</div>
+    <div class="line" data-line="165"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+    <div class="line" data-line="166"></div>
+    <div class="line" data-line="167"><span class="hit">	fileStatements, fileCovered := countStatements(unit.profile.Blocks)</span></div>
+    <div class="line" data-line="168"><span class="hit">	prog.AddTotal(uint64(fileStatements))</span></div>
+    <div class="line" data-line="169"></div>
+    <div class="line" data-line="170"><span class="hit">	pkgPath  := filepath.Dir( unit.profile.FileName)</span></div>
+    <div class="line" data-line="171"><span class="hit">	fileName := filepath.Base(unit.profile.FileName)</span></div>
+    <div class="line" data-line="172"><span class="hit">	srcFile  := filepath.Join(rg.pkgDirCache[pkgPath], fileName)</span></div>
+    <div class="line" data-line="173"></div>
+    <div class="line" data-line="174"><span class="hit">	src, err := rg.fsys.ReadFile(srcFile)</span></div>
+    <div class="line" data-line="175"><span class="hit">	if err != nil { return fmt.Errorf(&#34;cannot read %q: %w&#34;, srcFile, err</span><span class="hit">) }</span></div>
+    <div class="line" data-line="176"></div>
+    <div class="line" data-line="177"><span class="hit">	var buf bytes.Buffer</span></div>
+    <div class="line" data-line="178"><span class="hit">	ew := newErrorWriter(&amp;buf)</span></div>
+    <div class="line" data-line="179"></div>
+    <div class="line" data-line="180"><span class="hit">	relPath := strings.Repeat(&#34;../&#34;, strings.Count(unit.profile.FileName, &#34;/&#34;))</span></div>
+    <div class="line" data-line="181"><span class="hit">	writePreamble(ew, relPath + rg.iconFilename, unit.profile.FileName, relPath + rg.styleCSSFilename)</span></div>
+    <div class="line" data-line="182"></div>
+    <div class="line" data-line="183"><span class="hit">	fset         := token.NewFileSet()</span></div>
+    <div class="line" data-line="184"><span class="hit">	fileAST, err := parser.ParseFile(fset, fileName, src, parser.ParseComments); if err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+    <div class="line" data-line="185"><span class="hit">	file         := fset.File(fileAST.Pos())</span></div>
+    <div class="line" data-line="186"></div>
+    <div class="line" data-line="187"><span class="hit">	if err := renderCovHTML(ctx, ew, annotateSource(file, src,</span></div>
+    <div class="line" data-line="188"><span class="hit">		computeBlockOffsets(file, unit.profile.Blocks),</span></div>
+    <div class="line" data-line="189"><span class="hit">		computeFuncSpans(fileAST, file))); err != nil</span><span class="miss"> {</span></div>
+    <div class="line" data-line="190"><span class="miss">		return err</span></div>
+    <div class="line" data-line="191">	}</div>
+    <div class="line" data-line="192"></div>
+    <div class="line" data-line="193"><span class="hit">	writePostamble(ew, relPath + rg.childJSFilename)</span></div>
+    <div class="line" data-line="194"></div>
+    <div class="line" data-line="195"><span class="hit">	if rg.write {</span></div>
+    <div class="line" data-line="196"><span class="hit">		if err := rg.fsys.WriteFile(unit.outPath, buf.Bytes(), 0600); err != nil {</span></div>
+    <div class="line" data-line="197"><span class="hit">			return fmt.Errorf(&#34;cannot write HTML file for %q: %w&#34;, unit.outPath, err)</span></div>
+    <div class="line" data-line="198">		}</div>
+    <div class="line" data-line="199">	}</div>
+    <div class="line" data-line="200"></div>
+    <div class="line" data-line="201"><span class="hit">	prog.Report(float64(fileStatements), unit.profile.FileName)</span></div>
+    <div class="line" data-line="202"><span class="hit">	rg.covState.totalCovered.Add(fileCovered)</span></div>
+    <div class="line" data-line="203"><span class="hit">	rg.covState.totalStatements.Add(fileStatements)</span></div>
+    <div class="line" data-line="204"><span class="hit">	perFileCov[i] = coverage{covered: fileCovered, total: fileStatements}</span></div>
+    <div class="line" data-line="205"><span class="hit">	return nil</span></div>
+    <div class="line" data-line="206">}</div>
   </div>
 </div>
-<div class="line" data-line="185"></div>
-<div class="line" data-line="186">// buildCovHTML builds the HTML content for a single *.go.html file, with</div>
-<div class="line" data-line="187">// green (covered) and red (uncovered) lines to indicate test coverage.</div>
+<div class="line" data-line="207"></div>
+<div class="line" data-line="208">// renderCovHTML renders the HTML content for a single *.go.html file, with</div>
+<div class="line" data-line="209">// green (covered) and red (uncovered) lines to indicate test coverage.</div>
 <div class="func"><input type="checkbox" id="func-10" checked/>
-  <label for="func-10" class="line" data-line="188">func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath string) error<span class="hit"> {</span></label>
+  <label for="func-10" class="line" data-line="210">func renderCovHTML(ctx context.Context, ew stickyWriter, lines []annotatedLine) error<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="189"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
-    <div class="line" data-line="190"></div>
-    <div class="line" data-line="191"><span class="hit">	pkgPath  := filepath.Dir( profile.FileName)</span></div>
-    <div class="line" data-line="192"><span class="hit">	fileName := filepath.Base(profile.FileName)</span></div>
-    <div class="line" data-line="193"></div>
-    <div class="line" data-line="194"><span class="hit">	src, err := rg.fsys.ReadFile(filepath.Join(rg.pkgDirCache[pkgPath], fileName))</span></div>
-    <div class="line" data-line="195"><span class="hit">	if err != nil { return err</span><span class="hit"> }</span></div>
-    <div class="line" data-line="196"></div>
-    <div class="line" data-line="197"><span class="hit">	relPath := strings.Repeat(&#34;../&#34;, strings.Count(srcPath, &#34;/&#34;))</span></div>
-    <div class="line" data-line="198"><span class="hit">	writePreamble(ew, relPath + rg.iconFilename, srcPath, relPath + rg.styleCSSFilename)</span></div>
-    <div class="line" data-line="199"></div>
-    <div class="line" data-line="200"><span class="hit">	fset         := token.NewFileSet()</span></div>
-    <div class="line" data-line="201"><span class="hit">	fileAST, err := parser.ParseFile(fset, fileName, src, parser.ParseComments); if err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
-    <div class="line" data-line="202"><span class="hit">	file         := fset.File(fileAST.Pos())</span></div>
-    <div class="line" data-line="203"><span class="hit">	buf          := scanAndAnnotate(file, src, computeBlockOffsets(file, profile.Blocks), computeFuncSpans(fileAST, file))</span></div>
-    <div class="line" data-line="204"></div>
-    <div class="line" data-line="205"><span class="hit">	var (</span></div>
-    <div class="line" data-line="206"><span class="hit">		funcID           int</span></div>
-    <div class="line" data-line="207"><span class="hit">		inFunc           bool</span></div>
-    <div class="line" data-line="208"><span class="hit">		funcLabelEmitted bool</span></div>
-    <div class="line" data-line="209"><span class="hit">		funcBodyOpened   bool</span></div>
-    <div class="line" data-line="210"><span class="hit">	)</span></div>
-    <div class="line" data-line="211"></div>
-    <div class="line" data-line="212"><span class="hit">	lineNum := 1</span></div>
-    <div class="line" data-line="213"></div>
-    <div class="line" data-line="214"><span class="hit">	for line := range bytes.SplitSeq(bytes.TrimRight(buf.Bytes(), &#34;\n&#34;), []byte{&#39;\n&#39;}) {</span></div>
-    <div class="line" data-line="215"><span class="hit">		if bytes.HasPrefix(line, []byte(`&lt;div class=&#34;func&#34;&gt;`)) {</span></div>
-    <div class="line" data-line="216"><span class="hit">			inFunc           = true</span></div>
-    <div class="line" data-line="217"><span class="hit">			funcLabelEmitted = false</span></div>
-    <div class="line" data-line="218"><span class="hit">			funcBodyOpened   = false</span></div>
-    <div class="line" data-line="219"><span class="hit">			ew.write(string(line))</span></div>
-    <div class="line" data-line="220"><span class="hit">			ew.write(&#34;\n&#34;)</span></div>
-    <div class="line" data-line="221"><span class="hit">			continue</span></div>
-    <div class="line" data-line="222">		}</div>
-    <div class="line" data-line="223"></div>
-    <div class="line" data-line="224"><span class="hit">		if string(line) == &#34;&lt;/div&gt;&lt;/div&gt;&#34; &amp;&amp; inFunc {</span></div>
-    <div class="line" data-line="225"><span class="hit">			inFunc = false</span></div>
-    <div class="line" data-line="226"><span class="hit">			funcID++</span></div>
-    <div class="line" data-line="227"><span class="hit">			if funcBodyOpened {</span></div>
-    <div class="line" data-line="228"><span class="hit">				ew.write(&#34;  &lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="229">			}</div>
-    <div class="line" data-line="230"><span class="hit">			ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="231"><span class="hit">			continue</span></div>
-    <div class="line" data-line="232">		}</div>
-    <div class="line" data-line="233"></div>
-    <div class="line" data-line="234"><span class="hit">		if inFunc &amp;&amp; !funcLabelEmitted {</span></div>
-    <div class="line" data-line="235"><span class="hit">			funcLabelEmitted = true</span></div>
+    <div class="line" data-line="211"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+    <div class="line" data-line="212"></div>
+    <div class="line" data-line="213"><span class="hit">	prevFunc     := -1</span></div>
+    <div class="line" data-line="214"><span class="hit">	firstLineIdx := -1 // index of the current func&#39;s label line</span></div>
+    <div class="line" data-line="215"></div>
+    <div class="line" data-line="216"><span class="hit">	for i, line := range lines {</span></div>
+    <div class="line" data-line="217"><span class="hit">		if line.funcIdx &gt;= 0        &amp;&amp;</span></div>
+    <div class="line" data-line="218"><span class="hit">		   line.funcIdx != prevFunc</span> { // new function starts</div>
+    <div class="line" data-line="219"><span class="hit">			prevFunc     = line.funcIdx</span></div>
+    <div class="line" data-line="220"><span class="hit">			firstLineIdx = i</span></div>
+    <div class="line" data-line="221"><span class="hit">			ew.write(`&lt;div class=&#34;func&#34;&gt;&lt;input type=&#34;checkbox&#34; id=&#34;func-`)</span></div>
+    <div class="line" data-line="222"><span class="hit">			ew.write(strconv.Itoa(line.funcIdx))</span></div>
+    <div class="line" data-line="223"><span class="hit">			ew.write(&#34;\&#34; checked/&gt;\n&#34;)</span></div>
+    <div class="line" data-line="224">		}</div>
+    <div class="line" data-line="225"></div>
+    <div class="line" data-line="226"><span class="hit">		if line.funcIdx &lt; 0</span> { // outside any function: plain line</div>
+    <div class="line" data-line="227"><span class="hit">			ew.write(`&lt;div class=&#34;line&#34; data-line=&#34;`)</span></div>
+    <div class="line" data-line="228"><span class="hit">			ew.write(strconv.Itoa(i + 1))</span></div>
+    <div class="line" data-line="229"><span class="hit">			ew.write(`&#34;&gt;`)</span></div>
+    <div class="line" data-line="230"><span class="hit">			ew.write(line.text)</span></div>
+    <div class="line" data-line="231"><span class="hit">			ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
+    <div class="line" data-line="232"><span class="hit">			continue</span></div>
+    <div class="line" data-line="233">		}</div>
+    <div class="line" data-line="234"></div>
+    <div class="line" data-line="235"><span class="hit">		if i == firstLineIdx {</span></div>
     <div class="line" data-line="236"><span class="hit">			ew.write(`  &lt;label for=&#34;func-`)</span></div>
-    <div class="line" data-line="237"><span class="hit">			ew.write(strconv.Itoa(funcID))</span></div>
+    <div class="line" data-line="237"><span class="hit">			ew.write(strconv.Itoa(line.funcIdx))</span></div>
     <div class="line" data-line="238"><span class="hit">			ew.write(`&#34; class=&#34;line&#34; data-line=&#34;`)</span></div>
-    <div class="line" data-line="239"><span class="hit">			ew.write(strconv.Itoa(lineNum))</span></div>
+    <div class="line" data-line="239"><span class="hit">			ew.write(strconv.Itoa(i + 1))</span></div>
     <div class="line" data-line="240"><span class="hit">			ew.write(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="241"><span class="hit">			ew.write(string(line))</span></div>
+    <div class="line" data-line="241"><span class="hit">			ew.write(line.text)</span></div>
     <div class="line" data-line="242"><span class="hit">			ew.write(&#34;&lt;/label&gt;\n&#34;)</span></div>
-    <div class="line" data-line="243"><span class="hit">			lineNum++</span></div>
-    <div class="line" data-line="244"><span class="hit">			continue</span></div>
-    <div class="line" data-line="245">		}</div>
-    <div class="line" data-line="246"></div>
-    <div class="line" data-line="247"><span class="hit">		if inFunc &amp;&amp; !funcBodyOpened {</span></div>
-    <div class="line" data-line="248"><span class="hit">			ew.write(&#34;  &lt;div class=\&#34;func-body\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="249"><span class="hit">			funcBodyOpened = true</span></div>
-    <div class="line" data-line="250">		}</div>
-    <div class="line" data-line="251"><span class="hit">		if inFunc { ew.write(&#34;    &#34;</span><span class="hit">) }</span></div>
-    <div class="line" data-line="252"><span class="hit">		ew.write(`&lt;div class=&#34;line&#34; data-line=&#34;`)</span></div>
-    <div class="line" data-line="253"><span class="hit">		ew.write(strconv.Itoa(lineNum))</span></div>
-    <div class="line" data-line="254"><span class="hit">		ew.write(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="255"><span class="hit">		ew.write(string(line))</span></div>
-    <div class="line" data-line="256"><span class="hit">		ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="257"><span class="hit">		lineNum</span><span class="hit">++</span></div>
-    <div class="line" data-line="258">	}</div>
-    <div class="line" data-line="259"></div>
-    <div class="line" data-line="260"><span class="hit">	writePostamble(ew, relPath + rg.childJSFilename)</span></div>
-    <div class="line" data-line="261"><span class="hit">	return ew.err</span><span class="hit">()</span></div>
-    <div class="line" data-line="262">}</div>
+    <div class="line" data-line="243"><span class="hit">			if i + 1 &lt; len(lines) &amp;&amp; lines[i + 1].funcIdx == line.funcIdx {</span></div>
+    <div class="line" data-line="244"><span class="hit">				ew.write(&#34;  &lt;div class=\&#34;func-body\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="245">			}</div>
+    <div class="line" data-line="246">		} else<span class="hit"> {</span></div>
+    <div class="line" data-line="247"><span class="hit">			ew.write(`    &lt;div class=&#34;line&#34; data-line=&#34;`)</span></div>
+    <div class="line" data-line="248"><span class="hit">			ew.write(strconv.Itoa(i + 1))</span></div>
+    <div class="line" data-line="249"><span class="hit">			ew.write(`&#34;&gt;`)</span></div>
+    <div class="line" data-line="250"><span class="hit">			ew.write(line.text)</span></div>
+    <div class="line" data-line="251"><span class="hit">			ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
+    <div class="line" data-line="252">		}</div>
+    <div class="line" data-line="253"></div>
+    <div class="line" data-line="254"><span class="hit">		if line.isFuncEnd {</span></div>
+    <div class="line" data-line="255"><span class="hit">			if i &gt; firstLineIdx</span> { // body lines existed; close func-body</div>
+    <div class="line" data-line="256"><span class="hit">				ew.write(&#34;  &lt;/div&gt;\n&#34;)</span></div>
+    <div class="line" data-line="257">			}</div>
+    <div class="line" data-line="258"><span class="hit">			ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
+    <div class="line" data-line="259"><span class="hit">			prevFunc = -1</span></div>
+    <div class="line" data-line="260">		}</div>
+    <div class="line" data-line="261">	}</div>
+    <div class="line" data-line="262"></div>
+    <div class="line" data-line="263"><span class="hit">	return ew.err</span><span class="hit">()</span></div>
+    <div class="line" data-line="264">}</div>
   </div>
 </div>
-<div class="line" data-line="263"></div>
-<div class="line" data-line="264">// writePreamble writes the preamble portion of the</div>
-<div class="line" data-line="265">// HTML content common to every Go source HTML file.</div>
+<div class="line" data-line="265"></div>
+<div class="line" data-line="266">// writePreamble writes the preamble portion of the</div>
+<div class="line" data-line="267">// HTML content common to every Go source HTML file.</div>
 <div class="func"><input type="checkbox" id="func-11" checked/>
-  <label for="func-11" class="line" data-line="266">func writePreamble(ew stickyWriter, iconPath, srcPath, cssPath string<span class="hit">) {</span></label>
+  <label for="func-11" class="line" data-line="268">func writePreamble(ew stickyWriter, iconPath, srcPath, cssPath string<span class="hit">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="267"><span class="hit">	ew.write(&#34;&lt;!DOCTYPE html&gt;\n&#34;)</span></div>
-    <div class="line" data-line="268"><span class="hit">	ew.write(&#34;&lt;html lang=\&#34;en\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="269"><span class="hit">	ew.write(&#34;&lt;head&gt;\n&#34;)</span></div>
-    <div class="line" data-line="270"><span class="hit">	ew.write(&#34;&lt;meta charset=\&#34;utf-8\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="271"><span class="hit">	ew.write(`&lt;link rel=&#34;icon&#34;       href=&#34;`)</span></div>
-    <div class="line" data-line="272"><span class="hit">	ew.write(iconPath)</span></div>
-    <div class="line" data-line="273"><span class="hit">	ew.write(&#34;\&#34; type=\&#34;image/vnd.microsoft.icon\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="274"><span class="hit">	ew.write(`&lt;link rel=&#34;stylesheet&#34; href=&#34;`)</span></div>
-    <div class="line" data-line="275"><span class="hit">	ew.write(cssPath)</span></div>
-    <div class="line" data-line="276"><span class="hit">	ew.write(&#34;\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="277"><span class="hit">	ew.write(&#34;&lt;title&gt;&#34;)</span></div>
-    <div class="line" data-line="278"><span class="hit">	ew.write(srcPath)</span></div>
-    <div class="line" data-line="279"><span class="hit">	ew.write(&#34;&lt;/title&gt;\n&#34;)</span></div>
-    <div class="line" data-line="280"><span class="hit">	ew.write(&#34;&lt;/head&gt;\n&#34;)</span></div>
-    <div class="line" data-line="281"><span class="hit">	ew.write(&#34;&lt;body id=\&#34;code\&#34; class=\&#34;line-numbers\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="282">}</div>
+    <div class="line" data-line="269"><span class="hit">	ew.write(&#34;&lt;!DOCTYPE html&gt;\n&#34;)</span></div>
+    <div class="line" data-line="270"><span class="hit">	ew.write(&#34;&lt;html lang=\&#34;en\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="271"><span class="hit">	ew.write(&#34;&lt;head&gt;\n&#34;)</span></div>
+    <div class="line" data-line="272"><span class="hit">	ew.write(&#34;&lt;meta charset=\&#34;utf-8\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="273"><span class="hit">	ew.write(`&lt;link rel=&#34;icon&#34;       href=&#34;`)</span></div>
+    <div class="line" data-line="274"><span class="hit">	ew.write(iconPath)</span></div>
+    <div class="line" data-line="275"><span class="hit">	ew.write(&#34;\&#34; type=\&#34;image/vnd.microsoft.icon\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="276"><span class="hit">	ew.write(`&lt;link rel=&#34;stylesheet&#34; href=&#34;`)</span></div>
+    <div class="line" data-line="277"><span class="hit">	ew.write(cssPath)</span></div>
+    <div class="line" data-line="278"><span class="hit">	ew.write(&#34;\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="279"><span class="hit">	ew.write(&#34;&lt;title&gt;&#34;)</span></div>
+    <div class="line" data-line="280"><span class="hit">	ew.write(srcPath)</span></div>
+    <div class="line" data-line="281"><span class="hit">	ew.write(&#34;&lt;/title&gt;\n&#34;)</span></div>
+    <div class="line" data-line="282"><span class="hit">	ew.write(&#34;&lt;/head&gt;\n&#34;)</span></div>
+    <div class="line" data-line="283"><span class="hit">	ew.write(&#34;&lt;body id=\&#34;code\&#34; class=\&#34;line-numbers\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="284">}</div>
   </div>
 </div>
-<div class="line" data-line="283"></div>
-<div class="line" data-line="284">// writePostamble writes the postamble portion of the</div>
-<div class="line" data-line="285">// HTML content common to every Go source HTML file.</div>
+<div class="line" data-line="285"></div>
+<div class="line" data-line="286">// writePostamble writes the postamble portion of the</div>
+<div class="line" data-line="287">// HTML content common to every Go source HTML file.</div>
 <div class="func"><input type="checkbox" id="func-12" checked/>
-  <label for="func-12" class="line" data-line="286">func writePostamble(ew stickyWriter, childJSPath string<span class="hit">) {</span></label>
+  <label for="func-12" class="line" data-line="288">func writePostamble(ew stickyWriter, childJSPath string<span class="hit">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="287"><span class="hit">	ew.write(`&lt;script src=&#34;`)</span></div>
-    <div class="line" data-line="288"><span class="hit">	ew.write(childJSPath) // DOM-dependent</span></div>
-    <div class="line" data-line="289"><span class="hit">	ew.write(&#34;\&#34;&gt;&lt;/script&gt;\n&#34;)</span></div>
-    <div class="line" data-line="290"><span class="hit">	ew.write(&#34;&lt;/body&gt;\n&#34;)</span></div>
-    <div class="line" data-line="291"><span class="hit">	ew.write(&#34;&lt;/html&gt;&#34;)</span></div>
-    <div class="line" data-line="292">}</div>
+    <div class="line" data-line="289"><span class="hit">	ew.write(`&lt;script src=&#34;`)</span></div>
+    <div class="line" data-line="290"><span class="hit">	ew.write(childJSPath) // DOM-dependent</span></div>
+    <div class="line" data-line="291"><span class="hit">	ew.write(&#34;\&#34;&gt;&lt;/script&gt;\n&#34;)</span></div>
+    <div class="line" data-line="292"><span class="hit">	ew.write(&#34;&lt;/body&gt;\n&#34;)</span></div>
+    <div class="line" data-line="293"><span class="hit">	ew.write(&#34;&lt;/html&gt;&#34;)</span></div>
+    <div class="line" data-line="294">}</div>
   </div>
 </div>
-<div class="line" data-line="293"></div>
-<div class="line" data-line="294">// writeIndexHTMLFile writes the index HTML file, which contains three</div>
-<div class="line" data-line="295">// template parameters (Title, HeaderHTML, and TreeHTML), and hosts one</div>
-<div class="line" data-line="296">// iframe within which the generated source code HTML files are rendered.</div>
+<div class="line" data-line="295"></div>
+<div class="line" data-line="296">// writeIndexHTMLFile writes the index HTML file, which contains three</div>
+<div class="line" data-line="297">// template parameters (Title, HeaderHTML, and TreeHTML), and hosts one</div>
+<div class="line" data-line="298">// iframe within which the generated source code HTML files are rendered.</div>
 <div class="func"><input type="checkbox" id="func-13" checked/>
-  <label for="func-13" class="line" data-line="297">func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error<span class="hit"> {</span></label>
+  <label for="func-13" class="line" data-line="299">func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="298"><span class="hit">	title := &#34;Go test coverage&#34;</span></div>
-    <div class="line" data-line="299"><span class="hit">	var headerSB strings.Builder</span></div>
-    <div class="line" data-line="300"><span class="hit">	if len(rg.modPaths) &gt; 1 {</span></div>
-    <div class="line" data-line="301"><span class="hit">		headerSB.WriteString(&#34;  &lt;div class=\&#34;dropdown-wrapper\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="302"><span class="hit">		headerSB.WriteString(&#34;    &lt;input type=\&#34;checkbox\&#34; id=\&#34;modules-menu\&#34;/&gt;\n&#34;)</span></div>
-    <div class="line" data-line="303"><span class="hit">		headerSB.WriteString(&#34;    &lt;label for=\&#34;modules-menu\&#34; class=\&#34;dropdown-toggle\&#34;&gt;modules&lt;/label&gt;\n&#34;)</span></div>
-    <div class="line" data-line="304"><span class="hit">		headerSB.WriteString(&#34;    &lt;div class=\&#34;dropdown-menu\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="305"><span class="hit">		for _, mod := range rg.modPaths {</span></div>
-    <div class="line" data-line="306"><span class="hit">			headerSB.WriteString(`      &lt;label for=&#34;module-`)</span></div>
-    <div class="line" data-line="307"><span class="hit">			headerSB.WriteString(normalizeModID(mod))</span></div>
-    <div class="line" data-line="308"><span class="hit">			headerSB.WriteString(`&#34; class=&#34;dropdown-link&#34;&gt;`)</span></div>
-    <div class="line" data-line="309"><span class="hit">			headerSB.WriteString(mod)</span></div>
-    <div class="line" data-line="310"><span class="hit">			headerSB.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
-    <div class="line" data-line="311">		}</div>
-    <div class="line" data-line="312"><span class="hit">		headerSB.WriteString(&#34;    &lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="313"><span class="hit">		headerSB.WriteString(&#34;  &lt;/div&gt;&#34;</span><span class="hit">)</span></div>
-    <div class="line" data-line="314">	} else<span class="hit"> {</span></div>
-    <div class="line" data-line="315"><span class="hit">		title += &#34; // &#34; + rg.modPaths[0]</span></div>
-    <div class="line" data-line="316"><span class="hit">		headerSB.WriteString(`&lt;code&gt;&lt;a target=&#34;_blank&#34; href=&#34;`)</span></div>
-    <div class="line" data-line="317"><span class="hit">		headerSB.WriteString(rg.repoURLs[0])</span></div>
-    <div class="line" data-line="318"><span class="hit">		headerSB.WriteString(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="319"><span class="hit">		headerSB.WriteString(rg.modPaths[0])</span></div>
-    <div class="line" data-line="320"><span class="hit">		headerSB.WriteString(`&lt;/a&gt;&lt;/code&gt;`)</span></div>
-    <div class="line" data-line="321">	}</div>
-    <div class="line" data-line="322"></div>
-    <div class="line" data-line="323"><span class="hit">	data := struct{</span></div>
-    <div class="line" data-line="324"><span class="hit">		Title      string</span></div>
-    <div class="line" data-line="325"><span class="hit">		HeaderHTML string</span></div>
-    <div class="line" data-line="326"><span class="hit">		TreeHTML   string</span></div>
-    <div class="line" data-line="327"><span class="hit">	}{</span></div>
-    <div class="line" data-line="328"><span class="hit">		Title:      title,</span></div>
-    <div class="line" data-line="329"><span class="hit">		HeaderHTML: headerSB.String(),</span></div>
-    <div class="line" data-line="330"><span class="hit">		TreeHTML:   treeHTML</span><span class="hit">,</span></div>
-    <div class="line" data-line="331">	}</div>
-    <div class="line" data-line="332"></div>
-    <div class="line" data-line="333"><span class="hit">	return rg.writeTemplateFile(&#34;html/index.html&#34;, data</span><span class="hit">)</span></div>
-    <div class="line" data-line="334">}</div>
+    <div class="line" data-line="300"><span class="hit">	title := &#34;Go test coverage&#34;</span></div>
+    <div class="line" data-line="301"><span class="hit">	var headerSB strings.Builder</span></div>
+    <div class="line" data-line="302"><span class="hit">	if len(rg.modPaths) &gt; 1 {</span></div>
+    <div class="line" data-line="303"><span class="hit">		headerSB.WriteString(&#34;  &lt;div class=\&#34;dropdown-wrapper\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="304"><span class="hit">		headerSB.WriteString(&#34;    &lt;input type=\&#34;checkbox\&#34; id=\&#34;modules-menu\&#34;/&gt;\n&#34;)</span></div>
+    <div class="line" data-line="305"><span class="hit">		headerSB.WriteString(&#34;    &lt;label for=\&#34;modules-menu\&#34; class=\&#34;dropdown-toggle\&#34;&gt;modules&lt;/label&gt;\n&#34;)</span></div>
+    <div class="line" data-line="306"><span class="hit">		headerSB.WriteString(&#34;    &lt;div class=\&#34;dropdown-menu\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="307"><span class="hit">		for _, mod := range rg.modPaths {</span></div>
+    <div class="line" data-line="308"><span class="hit">			headerSB.WriteString(`      &lt;label for=&#34;module-`)</span></div>
+    <div class="line" data-line="309"><span class="hit">			headerSB.WriteString(normalizeModID(mod))</span></div>
+    <div class="line" data-line="310"><span class="hit">			headerSB.WriteString(`&#34; class=&#34;dropdown-link&#34;&gt;`)</span></div>
+    <div class="line" data-line="311"><span class="hit">			headerSB.WriteString(mod)</span></div>
+    <div class="line" data-line="312"><span class="hit">			headerSB.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
+    <div class="line" data-line="313">		}</div>
+    <div class="line" data-line="314"><span class="hit">		headerSB.WriteString(&#34;    &lt;/div&gt;\n&#34;)</span></div>
+    <div class="line" data-line="315"><span class="hit">		headerSB.WriteString(&#34;  &lt;/div&gt;&#34;</span><span class="hit">)</span></div>
+    <div class="line" data-line="316">	} else<span class="hit"> {</span></div>
+    <div class="line" data-line="317"><span class="hit">		title += &#34; // &#34; + rg.modPaths[0]</span></div>
+    <div class="line" data-line="318"><span class="hit">		headerSB.WriteString(`&lt;code&gt;&lt;a target=&#34;_blank&#34; href=&#34;`)</span></div>
+    <div class="line" data-line="319"><span class="hit">		headerSB.WriteString(rg.repoURLs[0])</span></div>
+    <div class="line" data-line="320"><span class="hit">		headerSB.WriteString(`&#34;&gt;`)</span></div>
+    <div class="line" data-line="321"><span class="hit">		headerSB.WriteString(rg.modPaths[0])</span></div>
+    <div class="line" data-line="322"><span class="hit">		headerSB.WriteString(`&lt;/a&gt;&lt;/code&gt;`)</span></div>
+    <div class="line" data-line="323">	}</div>
+    <div class="line" data-line="324"></div>
+    <div class="line" data-line="325"><span class="hit">	data := struct{</span></div>
+    <div class="line" data-line="326"><span class="hit">		Title      string</span></div>
+    <div class="line" data-line="327"><span class="hit">		HeaderHTML string</span></div>
+    <div class="line" data-line="328"><span class="hit">		TreeHTML   string</span></div>
+    <div class="line" data-line="329"><span class="hit">	}{</span></div>
+    <div class="line" data-line="330"><span class="hit">		Title:      title,</span></div>
+    <div class="line" data-line="331"><span class="hit">		HeaderHTML: headerSB.String(),</span></div>
+    <div class="line" data-line="332"><span class="hit">		TreeHTML:   treeHTML</span><span class="hit">,</span></div>
+    <div class="line" data-line="333">	}</div>
+    <div class="line" data-line="334"></div>
+    <div class="line" data-line="335"><span class="hit">	return rg.writeTemplateFile(&#34;html/index.html&#34;, data</span><span class="hit">)</span></div>
+    <div class="line" data-line="336">}</div>
   </div>
 </div>
-<div class="line" data-line="335"></div>
-<div class="line" data-line="336">// writeTemplateFile writes the specified template file.</div>
+<div class="line" data-line="337"></div>
+<div class="line" data-line="338">// writeTemplateFile writes the specified template file.</div>
 <div class="func"><input type="checkbox" id="func-14" checked/>
-  <label for="func-14" class="line" data-line="337">func (rg *reportGenerator) writeTemplateFile(file string, data any) error<span class="hit"> {</span></label>
+  <label for="func-14" class="line" data-line="339">func (rg *reportGenerator) writeTemplateFile(file string, data any) error<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="338"><span class="hit">	outFile := filepath.Join(rg.outRoot.Name(), filepath.Base(file))</span></div>
-    <div class="line" data-line="339"><span class="hit">	t, err  := template.ParseFS(rg.embeddedFiles, file)</span></div>
-    <div class="line" data-line="340"><span class="hit">	if                            err != nil { return fmt.Errorf(&#34;cannot parse %q: %w&#34;,     file, err</span><span class="hit">) }</span></div>
-    <div class="line" data-line="341"><span class="hit">	f, err := rg.fsys.Create(outFile)</span></div>
-    <div class="line" data-line="342"><span class="hit">	if                            err != nil { return fmt.Errorf(&#34;cannot create %q: %w&#34;, outFile, err</span><span class="hit">) }</span></div>
-    <div class="line" data-line="343"><span class="hit">	if err := t.Execute(f, data); err != nil { return fmt.Errorf(&#34;cannot render template: %w&#34;,    err</span><span class="hit">) }</span></div>
-    <div class="line" data-line="344"></div>
-    <div class="line" data-line="345"><span class="hit">	return f.Close</span><span class="hit">()</span></div>
-    <div class="line" data-line="346">}</div>
+    <div class="line" data-line="340"><span class="hit">	outFile := filepath.Join(rg.outRoot.Name(), filepath.Base(file))</span></div>
+    <div class="line" data-line="341"><span class="hit">	t, err  := template.ParseFS(rg.embeddedFiles, file)</span></div>
+    <div class="line" data-line="342"><span class="hit">	if                            err != nil { return fmt.Errorf(&#34;cannot parse %q: %w&#34;,     file, err</span><span class="hit">) }</span></div>
+    <div class="line" data-line="343"><span class="hit">	f, err := rg.fsys.Create(outFile)</span></div>
+    <div class="line" data-line="344"><span class="hit">	if                            err != nil { return fmt.Errorf(&#34;cannot create %q: %w&#34;, outFile, err</span><span class="hit">) }</span></div>
+    <div class="line" data-line="345"><span class="hit">	if err := t.Execute(f, data); err != nil { return fmt.Errorf(&#34;cannot render template: %w&#34;,    err</span><span class="hit">) }</span></div>
+    <div class="line" data-line="346"></div>
+    <div class="line" data-line="347"><span class="hit">	return f.Close</span><span class="hit">()</span></div>
+    <div class="line" data-line="348">}</div>
   </div>
 </div>
-<div class="line" data-line="347"></div>
-<div class="line" data-line="348">// countStatements returns the total and covered statement counts.</div>
-<div class="line" data-line="349">// A block is covered if its Count is greater than zero.</div>
+<div class="line" data-line="349"></div>
+<div class="line" data-line="350">// countStatements returns the total and covered statement counts.</div>
+<div class="line" data-line="351">// A block is covered if its Count is greater than zero.</div>
 <div class="func"><input type="checkbox" id="func-15" checked/>
-  <label for="func-15" class="line" data-line="350">func countStatements(blocks []cover.ProfileBlock) (total, covered uint64<span class="hit">) {</span></label>
+  <label for="func-15" class="line" data-line="352">func countStatements(blocks []cover.ProfileBlock) (total, covered uint64<span class="hit">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="351"><span class="hit">	for _, b := range blocks {</span></div>
-    <div class="line" data-line="352"><span class="hit">		total += toUint64(b.NumStmt)</span></div>
-    <div class="line" data-line="353"><span class="hit">		if b.Count &gt; 0 {</span></div>
-    <div class="line" data-line="354"><span class="hit">			covered += toUint64(b.NumStmt)</span></div>
-    <div class="line" data-line="355">		}</div>
-    <div class="line" data-line="356">	}</div>
-    <div class="line" data-line="357"><span class="hit">	return</span></div>
-    <div class="line" data-line="358">}</div>
+    <div class="line" data-line="353"><span class="hit">	for _, b := range blocks {</span></div>
+    <div class="line" data-line="354"><span class="hit">		total += toUint64(b.NumStmt)</span></div>
+    <div class="line" data-line="355"><span class="hit">		if b.Count &gt; 0 {</span></div>
+    <div class="line" data-line="356"><span class="hit">			covered += toUint64(b.NumStmt)</span></div>
+    <div class="line" data-line="357">		}</div>
+    <div class="line" data-line="358">	}</div>
+    <div class="line" data-line="359"><span class="hit">	return</span></div>
+    <div class="line" data-line="360">}</div>
   </div>
 </div>
-<div class="line" data-line="359"></div>
-<div class="line" data-line="360">// toUint64 safely casts an int to a uint64 by guarding</div>
-<div class="line" data-line="361">// against overflow when n is negative.</div>
+<div class="line" data-line="361"></div>
+<div class="line" data-line="362">// toUint64 safely casts an int to a uint64 by guarding</div>
+<div class="line" data-line="363">// against overflow when n is negative.</div>
 <div class="func"><input type="checkbox" id="func-16" checked/>
-  <label for="func-16" class="line" data-line="362">func toUint64(n int) uint64<span class="hit"> {</span></label>
+  <label for="func-16" class="line" data-line="364">func toUint64(n int) uint64<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="363"><span class="hit">	if n &lt; 0</span><span class="miss"> { return 0</span> } // satisfy the gosec linter&#39;s overflow conversion check (G115)</div>
-    <div class="line" data-line="364"><span class="hit">	return uint64(n</span><span class="hit">)</span></div>
-    <div class="line" data-line="365">}</div>
+    <div class="line" data-line="365"><span class="hit">	if n &lt; 0</span><span class="miss"> { return 0</span> } // satisfy the gosec linter&#39;s overflow conversion check (G115)</div>
+    <div class="line" data-line="366"><span class="hit">	return uint64(n</span><span class="hit">)</span></div>
+    <div class="line" data-line="367">}</div>
   </div>
 </div>
 <script src="../../../child.js"></script>

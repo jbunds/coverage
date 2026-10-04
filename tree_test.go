@@ -291,7 +291,7 @@ func TestSplitBudget(t *testing.T) {
 	}
 }
 
-func TestBuildSubDirHTML(t *testing.T) {
+func TestRenderSubDirHTML(t *testing.T) {
 	t.Parallel()
 	subDirHTML := "subdirectory HTML\n"
 	res        := &entryResult{html: subDirHTML, covered: 1, total: 3}
@@ -309,11 +309,11 @@ func TestBuildSubDirHTML(t *testing.T) {
 		``,
 	}
 	hb       := &htmlBuilder{itemID: "3", subDir: "foo"}
-	hb.buildSubDirHTML(res)
+	hb.renderSubDirHTML(res)
 	got      := res.html
 	gotLines := strings.Split(got, "\n")
 	var rep reporter
 	if !cmp.Equal(wantLines, gotLines, cmp.Reporter(&rep)) {
-		t.Errorf("buildSubDirHTML() mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
+		t.Errorf("renderSubDirHTML() mismatch (-want +got):\n%s", strings.Join(rep.diffs, "\n"))
 	}
 }

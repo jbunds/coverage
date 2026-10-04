@@ -162,14 +162,36 @@ func (rg *reportGenerator) genHTMLFiles(ctx context.Context, units []workUnit, p
 // processUnit builds and writes the coverage HTML for a single work unit,
 // reports progress, and updates the aggregate coverage atomics.
 func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progress, i int, unit workUnit, perFileCov []coverage) error {
+	if err := ctx.Err(); err != nil { return err }
+
 	fileStatements, fileCovered := countStatements(unit.profile.Blocks)
 	prog.AddTotal(uint64(fileStatements))
 
+	pkgPath  := filepath.Dir( unit.profile.FileName)
+	fileName := filepath.Base(unit.profile.FileName)
+	srcFile  := filepath.Join(rg.pkgDirCache[pkgPath], fileName)
+
+	src, err := rg.fsys.ReadFile(srcFile)
+	if err != nil { return fmt.Errorf("cannot read %q: %w", srcFile, err) }
+
 	var buf bytes.Buffer
 	ew := newErrorWriter(&buf)
-	if err := rg.buildCovHTML(ctx, ew, unit.profile, unit.profile.FileName); err != nil {
-		return fmt.Errorf("cannot build HTML for %q: %w", unit.profile.FileName, err)
+
+	relPath := strings.Repeat("../", strings.Count(unit.profile.FileName, "/"))
+	writePreamble(ew, relPath + rg.iconFilename, unit.profile.FileName, relPath + rg.styleCSSFilename)
+
+	fset         := token.NewFileSet()
+	fileAST, err := parser.ParseFile(fset, fileName, src, parser.ParseComments); if err != nil { return err }
+	file         := fset.File(fileAST.Pos())
+
+	if err := renderCovHTML(ctx, ew, annotateSource(file, src,
+		computeBlockOffsets(file, unit.profile.Blocks),
+		computeFuncSpans(fileAST, file))); err != nil {
+		return err
 	}
+
+	writePostamble(ew, relPath + rg.childJSFilename)
+
 	if rg.write {
 		if err := rg.fsys.WriteFile(unit.outPath, buf.Bytes(), 0600); err != nil {
 			return fmt.Errorf("cannot write HTML file for %q: %w", unit.outPath, err)
@@ -183,81 +205,61 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 	return nil
 }
 
-// buildCovHTML builds the HTML content for a single *.go.html file, with
+// renderCovHTML renders the HTML content for a single *.go.html file, with
 // green (covered) and red (uncovered) lines to indicate test coverage.
-func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, profile *cover.Profile, srcPath string) error {
+func renderCovHTML(ctx context.Context, ew stickyWriter, lines []annotatedLine) error {
 	if err := ctx.Err(); err != nil { return err }
 
-	pkgPath  := filepath.Dir( profile.FileName)
-	fileName := filepath.Base(profile.FileName)
+	prevFunc     := -1
+	firstLineIdx := -1 // index of the current func's label line
 
-	src, err := rg.fsys.ReadFile(filepath.Join(rg.pkgDirCache[pkgPath], fileName))
-	if err != nil { return err }
-
-	relPath := strings.Repeat("../", strings.Count(srcPath, "/"))
-	writePreamble(ew, relPath + rg.iconFilename, srcPath, relPath + rg.styleCSSFilename)
-
-	fset         := token.NewFileSet()
-	fileAST, err := parser.ParseFile(fset, fileName, src, parser.ParseComments); if err != nil { return err }
-	file         := fset.File(fileAST.Pos())
-	buf          := scanAndAnnotate(file, src, computeBlockOffsets(file, profile.Blocks), computeFuncSpans(fileAST, file))
-
-	var (
-		funcID           int
-		inFunc           bool
-		funcLabelEmitted bool
-		funcBodyOpened   bool
-	)
-
-	lineNum := 1
-
-	for line := range bytes.SplitSeq(bytes.TrimRight(buf.Bytes(), "\n"), []byte{'\n'}) {
-		if bytes.HasPrefix(line, []byte(`<div class="func">`)) {
-			inFunc           = true
-			funcLabelEmitted = false
-			funcBodyOpened   = false
-			ew.write(string(line))
-			ew.write("\n")
-			continue
+	for i, line := range lines {
+		if line.funcIdx >= 0        &&
+		   line.funcIdx != prevFunc { // new function starts
+			prevFunc     = line.funcIdx
+			firstLineIdx = i
+			ew.write(`<div class="func"><input type="checkbox" id="func-`)
+			ew.write(strconv.Itoa(line.funcIdx))
+			ew.write("\" checked/>\n")
 		}
 
-		if string(line) == "</div></div>" && inFunc {
-			inFunc = false
-			funcID++
-			if funcBodyOpened {
-				ew.write("  </div>\n")
-			}
+		if line.funcIdx < 0 { // outside any function: plain line
+			ew.write(`<div class="line" data-line="`)
+			ew.write(strconv.Itoa(i + 1))
+			ew.write(`">`)
+			ew.write(line.text)
 			ew.write("</div>\n")
 			continue
 		}
 
-		if inFunc && !funcLabelEmitted {
-			funcLabelEmitted = true
+		if i == firstLineIdx {
 			ew.write(`  <label for="func-`)
-			ew.write(strconv.Itoa(funcID))
+			ew.write(strconv.Itoa(line.funcIdx))
 			ew.write(`" class="line" data-line="`)
-			ew.write(strconv.Itoa(lineNum))
+			ew.write(strconv.Itoa(i + 1))
 			ew.write(`">`)
-			ew.write(string(line))
+			ew.write(line.text)
 			ew.write("</label>\n")
-			lineNum++
-			continue
+			if i + 1 < len(lines) && lines[i + 1].funcIdx == line.funcIdx {
+				ew.write("  <div class=\"func-body\">\n")
+			}
+		} else {
+			ew.write(`    <div class="line" data-line="`)
+			ew.write(strconv.Itoa(i + 1))
+			ew.write(`">`)
+			ew.write(line.text)
+			ew.write("</div>\n")
 		}
 
-		if inFunc && !funcBodyOpened {
-			ew.write("  <div class=\"func-body\">\n")
-			funcBodyOpened = true
+		if line.isFuncEnd {
+			if i > firstLineIdx { // body lines existed; close func-body
+				ew.write("  </div>\n")
+			}
+			ew.write("</div>\n")
+			prevFunc = -1
 		}
-		if inFunc { ew.write("    ") }
-		ew.write(`<div class="line" data-line="`)
-		ew.write(strconv.Itoa(lineNum))
-		ew.write(`">`)
-		ew.write(string(line))
-		ew.write("</div>\n")
-		lineNum++
 	}
 
-	writePostamble(ew, relPath + rg.childJSFilename)
 	return ew.err()
 }
 

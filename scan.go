@@ -6,7 +6,7 @@ import (
 	"go/scanner"
 	"go/token"
 	"sort"
-	"strconv"
+	"strings"
 	"text/template"
 
 	"golang.org/x/tools/cover"
@@ -23,17 +23,29 @@ type funcSpan struct {
 	startOffset, endOffset int
 }
 
-// scanAndAnnotate returns an HTML-annotated version of src, grouping consecutive
-// tokens that share the same coverage class into a single span fragment.
-func scanAndAnnotate(file *token.File, src []byte, blocks []*profileBlock, funcs []funcSpan) *bytes.Buffer {
+// annotatedLine is a coverage-annotated single line of source code with func metadata.
+type annotatedLine struct {
+	text      string // annotated HTML for this line (spans, etc)
+	funcIdx   int    // index into funcs, or -1 if not in a function
+	isFuncEnd bool   // true on the last line of a function
+}
+
+// annotateSource scans src and returns one annotatedLine per source line.
+func annotateSource(file *token.File, src []byte, blocks []*profileBlock, funcs []funcSpan) []annotatedLine {
 	var (
 		pendingBuf        bytes.Buffer
 		pendingClass      string
 		pendingBaseOffset int
 		lastOffset        int
-		funcIdx           int
-		inFunc            bool
 	)
+
+	lineOffsets := make([]int, 0, 256)
+	lineOffsets  = append(lineOffsets, 0)
+	for i, ch := range src {
+		if ch == '\n' {
+			lineOffsets = append(lineOffsets, i + 1)
+		}
+	}
 
 	buf   := new(bytes.Buffer)
 	flush := func() {
@@ -64,18 +76,6 @@ func scanAndAnnotate(file *token.File, src []byte, blocks []*profileBlock, funcs
 			continue
 		}
 
-		if !inFunc && funcIdx < len(funcs) && startOffset >= funcs[funcIdx].startOffset {
-			lastOffset = writeFuncStart(buf, flush, src, blocks, startOffset, lastOffset, funcIdx)
-			inFunc     = true
-		}
-
-		if inFunc && funcIdx < len(funcs) && startOffset >= funcs[funcIdx].endOffset {
-			startOffset,
-			lastOffset,
-			funcIdx = writeFuncEnd(buf, flush, src, blocks, startOffset, endOffset, lastOffset, funcIdx)
-			inFunc  = false
-		}
-
 		coverClass := coverClass(blocks, startOffset, endOffset)
 
 		if coverClass != pendingClass {
@@ -100,7 +100,17 @@ func scanAndAnnotate(file *token.File, src []byte, blocks []*profileBlock, funcs
 
 		lastOffset = endOffset
 	}
-	return buf
+
+	annotated := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
+	lines     := make([]annotatedLine, len(annotated))
+
+	for i, text := range annotated {
+		lines[i].text      = text
+		lines[i].funcIdx   = funcIndexForOffset(funcs, lineOffsets[i])
+		lines[i].isFuncEnd = lines[i].funcIdx >= 0 && lineOffsets[i + 1] >= funcs[lines[i].funcIdx].endOffset
+	}
+
+	return lines
 }
 
 // writeTokenFragment splits fragments across newlines and resolves absolute sub-line boundaries.
@@ -206,66 +216,23 @@ func computeFuncSpans(f *ast.File, file *token.File) []funcSpan {
 	return out
 }
 
-// writeFuncStart emits the opening <div class="func"> wrapper
-// (with hidden checkbox) for the function at funcs[funcIdx].
-//
-// It first truncates any gap between lastOffset and startOffset at
-// the last newline, ensures a leading newline, then writes the
-// source from lastOffset to startOffset, and returns lastOffset.
-func writeFuncStart(buf *bytes.Buffer, flush func(), src []byte, blocks []*profileBlock, startOffset, lastOffset, funcIdx int) int {
-	flush()
-	if startOffset > lastOffset {
-		gap := src[lastOffset:startOffset]
-		if lastNL := bytes.LastIndexByte(gap, '\n'); lastNL >= 0 {
-			writeTokenFragment(buf, gap[:lastNL + 1], lastOffset, "", blocks)
-			lastOffset += lastNL + 1
+// funcIndexForOffset returns the index of the funcSpan containing offset, or -1 if none.
+func funcIndexForOffset(funcs []funcSpan, offset int) int {
+	for i, f := range funcs {
+		if offset >= f.startOffset && offset < f.endOffset {
+			return i
 		}
 	}
-	if buf.Len() > 0 && buf.Bytes()[buf.Len() - 1] != '\n' {
-		buf.WriteRune('\n')
-	}
-	buf.WriteString(`<div class="func"><input type="checkbox" id="func-`)
-	buf.WriteString(strconv.Itoa(funcIdx))
-	buf.WriteString("\" checked/>\n")
-	if startOffset > lastOffset {
-		writeTokenFragment(buf, src[lastOffset:startOffset], lastOffset, "", blocks)
-		lastOffset = startOffset
-	}
-	return lastOffset
+	return -1
 }
 
-// writeFuncEnd emits the closing </div></div> for the function at funcs[funcIdx].
-//
-// It consumes source up to and including the first newline at or before
-// endOffset (or up to endOffset if none is found), writes the closing
-// div tags for the nested div.func > div pair, and returns startOffset
-// (clamped to at least lastOffset), lastOffset, and incremented funcIdx.
-func writeFuncEnd(buf *bytes.Buffer, flush func(), src []byte, blocks []*profileBlock, startOffset, endOffset, lastOffset, funcIdx int) (int, int, int) {
-	flush()
-	nlIdx := bytes.IndexByte(src[lastOffset:], '\n')
-	if nlIdx >= 0 && lastOffset + nlIdx <= endOffset {
-		target := lastOffset + nlIdx
-		if target > lastOffset {
-			writeTokenFragment(buf, src[lastOffset:target], lastOffset, "", blocks)
-			lastOffset = target
-		}
-		if buf.Len() > 0 && buf.Bytes()[buf.Len() - 1] != '\n' {
-			buf.WriteRune('\n')
-		}
-		buf.WriteString("</div></div>\n")
-		lastOffset++
-		if startOffset < lastOffset {
-			startOffset = lastOffset
-		}
-	} else {
-		if startOffset > lastOffset {
-			writeTokenFragment(buf, src[lastOffset:startOffset], lastOffset, "", blocks)
-			lastOffset = startOffset
-		}
-		if buf.Len() > 0 && buf.Bytes()[buf.Len() - 1] != '\n' {
-			buf.WriteRune('\n')
-		}
-		buf.WriteString("</div></div>\n")
-	}
-	return startOffset, lastOffset, funcIdx + 1
-}
+// O(log n) implementation of funcIndexForOffset; above is O(n)
+// func funcIndexForOffset(funcs []funcSpan, offset int) int {
+//	i := sort.Search(len(funcs), func(j int) bool { // find the last func with startOffset <= offset
+//		return funcs[j].startOffset > offset
+//	}) - 1                                          // subtract 1 to get that last func
+//	if i >= 0 && offset < funcs[i].endOffset {      // verify offset actually falls within that function's span
+//		return i
+//	}
+//	return -1
+//}

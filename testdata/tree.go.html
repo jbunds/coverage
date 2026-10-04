@@ -234,7 +234,7 @@
     <div class="line" data-line="211">  }</div>
     <div class="line" data-line="212"><span class="hit">  </span></div>
     <div class="line" data-line="213"><span class="hit">  hb := &amp;htmlBuilder{indent: st.indent, itemID: itemID, subDir: srcBasename}</span></div>
-    <div class="line" data-line="214"><span class="hit">  hb.buildSubDirHTML(res)</span></div>
+    <div class="line" data-line="214"><span class="hit">  hb.renderSubDirHTML(res)</span></div>
     <div class="line" data-line="215"></div>
     <div class="line" data-line="216"><span class="hit">  return res, nil</span></div>
     <div class="line" data-line="217">}</div>
@@ -272,10 +272,10 @@
   </div>
 </div>
 <div class="line" data-line="245"></div>
-<div class="line" data-line="246">// buildSubDirHTML wraps pre-rendered child nodes in a &lt;li&gt; subdirectory</div>
+<div class="line" data-line="246">// renderSubDirHTML wraps pre-rendered child nodes in a &lt;li&gt; subdirectory</div>
 <div class="line" data-line="247">// tree-node, with its name and aggregated coverge percentage.</div>
 <div class="func"><input type="checkbox" id="func-5" checked/>
-  <label for="func-5" class="line" data-line="248">func (hb *htmlBuilder) buildSubDirHTML(res *entryResult<span class="hit">) {</span></label>
+  <label for="func-5" class="line" data-line="248">func (hb *htmlBuilder) renderSubDirHTML(res *entryResult<span class="hit">) {</span></label>
   <div class="func-body">
     <div class="line" data-line="249"><span class="hit">	indent  := strings.Repeat(&#34;  &#34;, hb.indent)</span></div>
     <div class="line" data-line="250"><span class="hit">	percent := formatCov(res.covered, res.total)</span></div>
