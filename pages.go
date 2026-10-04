@@ -153,15 +153,15 @@ func (rg *reportGenerator) genHTMLFiles(ctx context.Context, units []workUnit, p
 			break
 		}
 		group.Go(func() error {
-			return rg.processUnit(gCtx, prog, i, unit, perFileCov)
+			return rg.processUnit(gCtx, prog, unit, &perFileCov[i])
 		})
 	}
 	return perFileCov, group.Wait()
 }
 
-// processUnit builds and writes the coverage HTML for a single work unit,
+// processUnit renders and writes the coverage HTML for a single work unit,
 // reports progress, and updates the aggregate coverage atomics.
-func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progress, i int, unit workUnit, perFileCov []coverage) error {
+func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progress, unit workUnit, cov *coverage) error {
 	if err := ctx.Err(); err != nil { return err }
 
 	fileStatements, fileCovered := countStatements(unit.profile.Blocks)
@@ -201,7 +201,7 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 	prog.Report(float64(fileStatements), unit.profile.FileName)
 	rg.covState.totalCovered.Add(fileCovered)
 	rg.covState.totalStatements.Add(fileStatements)
-	perFileCov[i] = coverage{covered: fileCovered, total: fileStatements}
+	*cov = coverage{covered: fileCovered, total: fileStatements}
 	return nil
 }
 
@@ -211,7 +211,7 @@ func renderCovHTML(ctx context.Context, ew stickyWriter, lines []annotatedLine) 
 	if err := ctx.Err(); err != nil { return err }
 
 	prevFunc     := -1
-	firstLineIdx := -1 // index of the current func's label line
+	firstLineIdx := -1 // index of current function's signature
 
 	for i, line := range lines {
 		if line.funcIdx >= 0        &&
@@ -252,7 +252,7 @@ func renderCovHTML(ctx context.Context, ew stickyWriter, lines []annotatedLine) 
 		}
 
 		if line.isFuncEnd {
-			if i > firstLineIdx { // body lines existed; close func-body
+			if i > firstLineIdx { // function signature and body span more than one line: close func-body
 				ew.write("  </div>\n")
 			}
 			ew.write("</div>\n")

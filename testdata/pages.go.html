@@ -194,7 +194,7 @@
     <div class="line" data-line="153"><span class="miss">			break</span></div>
     <div class="line" data-line="154">		}</div>
     <div class="line" data-line="155"><span class="hit">		group.Go(func() error {</span></div>
-    <div class="line" data-line="156"><span class="hit">			return rg.processUnit(gCtx, prog, i, unit, perFileCov)</span></div>
+    <div class="line" data-line="156"><span class="hit">			return rg.processUnit(gCtx, prog, unit, &amp;perFileCov[i])</span></div>
     <div class="line" data-line="157">		})</div>
     <div class="line" data-line="158">	}</div>
     <div class="line" data-line="159"><span class="hit">	return perFileCov, group.Wait</span><span class="hit">()</span></div>
@@ -202,10 +202,10 @@
   </div>
 </div>
 <div class="line" data-line="161"></div>
-<div class="line" data-line="162">// processUnit builds and writes the coverage HTML for a single work unit,</div>
+<div class="line" data-line="162">// processUnit renders and writes the coverage HTML for a single work unit,</div>
 <div class="line" data-line="163">// reports progress, and updates the aggregate coverage atomics.</div>
 <div class="func"><input type="checkbox" id="func-9" checked/>
-  <label for="func-9" class="line" data-line="164">func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progress, i int, unit workUnit, perFileCov []coverage) error<span class="hit"> {</span></label>
+  <label for="func-9" class="line" data-line="164">func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progress, unit workUnit, cov *coverage) error<span class="hit"> {</span></label>
   <div class="func-body">
     <div class="line" data-line="165"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
     <div class="line" data-line="166"></div>
@@ -246,7 +246,7 @@
     <div class="line" data-line="201"><span class="hit">	prog.Report(float64(fileStatements), unit.profile.FileName)</span></div>
     <div class="line" data-line="202"><span class="hit">	rg.covState.totalCovered.Add(fileCovered)</span></div>
     <div class="line" data-line="203"><span class="hit">	rg.covState.totalStatements.Add(fileStatements)</span></div>
-    <div class="line" data-line="204"><span class="hit">	perFileCov[i] = coverage{covered: fileCovered, total: fileStatements}</span></div>
+    <div class="line" data-line="204"><span class="hit">	*cov = coverage{covered: fileCovered, total: fileStatements}</span></div>
     <div class="line" data-line="205"><span class="hit">	return nil</span></div>
     <div class="line" data-line="206">}</div>
   </div>
@@ -260,7 +260,7 @@
     <div class="line" data-line="211"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
     <div class="line" data-line="212"></div>
     <div class="line" data-line="213"><span class="hit">	prevFunc     := -1</span></div>
-    <div class="line" data-line="214"><span class="hit">	firstLineIdx := -1 // index of the current func&#39;s label line</span></div>
+    <div class="line" data-line="214"><span class="hit">	firstLineIdx := -1 // index of current function&#39;s signature</span></div>
     <div class="line" data-line="215"></div>
     <div class="line" data-line="216"><span class="hit">	for i, line := range lines {</span></div>
     <div class="line" data-line="217"><span class="hit">		if line.funcIdx &gt;= 0        &amp;&amp;</span></div>
@@ -301,7 +301,7 @@
     <div class="line" data-line="252">		}</div>
     <div class="line" data-line="253"></div>
     <div class="line" data-line="254"><span class="hit">		if line.isFuncEnd {</span></div>
-    <div class="line" data-line="255"><span class="hit">			if i &gt; firstLineIdx</span> { // body lines existed; close func-body</div>
+    <div class="line" data-line="255"><span class="hit">			if i &gt; firstLineIdx</span> { // function signature and body span more than one line: close func-body</div>
     <div class="line" data-line="256"><span class="hit">				ew.write(&#34;  &lt;/div&gt;\n&#34;)</span></div>
     <div class="line" data-line="257">			}</div>
     <div class="line" data-line="258"><span class="hit">			ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
