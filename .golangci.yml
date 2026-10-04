@@ -112,6 +112,7 @@ linters:
           files:
             - "**/integration_test.go"
           allow:
+            - go/build
             - io
             - os
             - os/exec

@@ -20,41 +20,35 @@ func TestWriteStaticFiles(t *testing.T) {
 		badWriter     bool
 		wantErr       error
 		want          string
-	}{
-		{
-			name:          "succeeds",
-			embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
-			staticFiles:   []string{"foo"},
-			want:          "bar",
-		},
-		{
-			name:          "Create fails",
-			embeddedFiles: fstest.MapFS{},
-			staticFiles:   []string{"foo"},
-			createFails:   true,
-			wantErr:       errors.New(`cannot create "some/path/foo": Create failed`),
-		},
-		{
-			name:          "ReadFile fails",
-			embeddedFiles: fstest.MapFS{},
-			staticFiles:   []string{"foo"},
-			wantErr:       errors.New(`cannot read "foo": open foo: file does not exist`),
-		},
-		{
-			name:          "Close fails",
-			embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{}},
-			staticFiles:   []string{"foo"},
-			closeFails:    true,
-			wantErr:       errors.New(`cannot close file "some/path/foo": Close failed`),
-		},
-		{
-			name:          "fmt.Fprint fails",
-			embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
-			staticFiles:   []string{"foo"},
-			badWriter:     true,
-			wantErr:       errors.New(`cannot write file "some/path/foo": i refuse to write`),
-		},
-	}
+	}{{
+		name:          "succeeds",
+		embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
+		staticFiles:   []string{"foo"},
+		want:          "bar",
+	}, {
+		name:          "Create fails",
+		embeddedFiles: fstest.MapFS{},
+		staticFiles:   []string{"foo"},
+		createFails:   true,
+		wantErr:       errors.New(`cannot create "some/path/foo": Create failed`),
+	}, {
+		name:          "ReadFile fails",
+		embeddedFiles: fstest.MapFS{},
+		staticFiles:   []string{"foo"},
+		wantErr:       errors.New(`cannot read "foo": open foo: file does not exist`),
+	}, {
+		name:          "Close fails",
+		embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{}},
+		staticFiles:   []string{"foo"},
+		closeFails:    true,
+		wantErr:       errors.New(`cannot close file "some/path/foo": Close failed`),
+	}, {
+		name:          "fmt.Fprint fails",
+		embeddedFiles: fstest.MapFS{ "foo": &fstest.MapFile{ Data: []byte("bar") }},
+		staticFiles:   []string{"foo"},
+		badWriter:     true,
+		wantErr:       errors.New(`cannot write file "some/path/foo": i refuse to write`),
+	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()

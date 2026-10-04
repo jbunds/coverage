@@ -1,6 +1,7 @@
 package main
 
 import (
+	"go/build"
 	"io"
 	"os"
 	"os/exec"
@@ -16,31 +17,22 @@ import (
 func TestIntegrationTest(t *testing.T) {
 	t.Parallel()
 
+	pkg, err := build.ImportDir(".", 0); if err != nil { t.Fatal(err) }
+
+	tests := make([]struct{ name string }, len(pkg.GoFiles))
+	for i, file := range pkg.GoFiles {
+		tests[i] = struct{ name string }{name: file}
+	}
+
 	fv := &flagVals{
 		goModFiles:       "go.mod",
 		coverProfileFile: "testdata/cov.out",
 		outDir:           t.TempDir(),
 	}
 
-	rg, err := newReportGenerator(fv)
-	if err != nil { t.Fatal(err) }
-
-	if err := rg.registerModPaths(fv);                       err != nil { t.Fatal(err) }
-	if err := rg.writeCovHTMLFiles(t.Context(), io.Discard); err != nil { t.Fatal(err) }
-
-	tests := []struct{
-		name string
-	}{
-		{name:     "assets.go"},
-		{name:      "flags.go"},
-		{name: "interfaces.go"},
-		{name:       "main.go"},
-		{name:      "pages.go"},
-		{name:       "scan.go"},
-		{name:       "tree.go"},
-		{name:       "trie.go"},
-		{name:         "ui.go"},
-	}
+	rg, err := newReportGenerator(fv);                     if err != nil { t.Fatal(err) }
+	if  err := rg.registerModPaths(fv);                       err != nil { t.Fatal(err) }
+	if  err := rg.writeCovHTMLFiles(t.Context(), io.Discard); err != nil { t.Fatal(err) }
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
