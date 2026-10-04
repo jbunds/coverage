@@ -45,6 +45,7 @@ When served via HTTP and JavaScript is enabled, buttons are available to:
 
 - ![expand](doc/expand.svg) &nbsp;toggle between a fully-collapsed and fully-expanded source tree
 - ![lines](doc/lines.svg)   &nbsp;toggle between showing or hiding a column of line numbers along the left side of the source code
+- ![funcs](doc/funcs.svg)   &nbsp;toggle between showing or hiding the bodies of all top-level functions and methods in the source code
 - ![theme](doc/theme.svg)   &nbsp;toggle between **light** and **dark** themes
 
 See also [![DeepWiki](doc/deepwiki.svg)](https://deepwiki.com/jbunds/coverage) and [![Go Reference](https://pkg.go.dev/badge/github.com/jbunds/coverage.svg)](https://pkg.go.dev/github.com/jbunds/coverage)
