@@ -7,138 +7,154 @@
 <title>github.com/jbunds/coverage/trie.go</title>
 </head>
 <body id="code" class="line-numbers">
-<div class="line">package main</div>
-<div class="line"></div>
-<div class="line">import (</div>
-<div class="line">	&#34;maps&#34;</div>
-<div class="line">	&#34;slices&#34;</div>
-<div class="line">	&#34;strconv&#34;</div>
-<div class="line">	&#34;strings&#34;</div>
-<div class="line">	&#34;sync/atomic&#34;</div>
-<div class="line">)</div>
-<div class="line"></div>
-<div class="line">// trieNode represents a single directory or source file in the source tree.</div>
-<div class="line">type trieNode struct {</div>
-<div class="line">	segment   string               // package path segment</div>
-<div class="line">	modPath   string               // module path (https://go.dev/ref/mod#module-path) used to generate IDs for the &#34;modules&#34; menu</div>
-<div class="line">	html      string               // pre-rendered HTML fragment</div>
-<div class="line">	isModRoot bool                 // identifies this node as the module root</div>
-<div class="line">	children  map[string]*trieNode // child nodes</div>
-<div class="line">	covered   uint64               // covered statements</div>
-<div class="line">	total     uint64               // total statements</div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// renderHTML renders the root &lt;ul&gt; containing all direct children of</div>
-<div class="line">// the root node, sorted lexicographically. counter is used to assign</div>
-<div class="line">// unique IDs to non-module-root nodes.</div>
-<div class="line">func (tn *trieNode) renderHTML(counter *atomic.Uint64) string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	if tn == nil</span><span class="miss"> { return &#34;&#34;</span><span class="miss"> }</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	var sb strings.Builder</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;&lt;ul class=\&#34;tree\&#34;&gt;\n&#34;)</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	for _, k := range slices.Sorted(maps.Keys(tn.children)) {</span></div>
-<div class="line"><span class="hit">		tn.children[k].assemble(&amp;sb, 2, counter)</span></div>
-<div class="line">	}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/ul&gt;&#34;)</span></div>
-<div class="line"><span class="hit">	return sb.String</span><span class="hit">()</span></div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// assemble recursively renders this node&#39;s &lt;li&gt; element (checkbox, label,</div>
-<div class="line">// and child &lt;ul&gt;) at the given indentation depth. Module-root node IDs</div>
-<div class="line">// are normalized to a valid URI anchor string; all other nodes receive</div>
-<div class="line">// a sequential ID from counter.</div>
-<div class="line">func (tn *trieNode) assemble(sb *strings.Builder, depth int, counter *atomic.Uint64<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	if tn == nil</span><span class="miss"> { return</span><span class="miss"> }</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	indent := strings.Repeat(&#34; &#34;, depth)</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	var itemID string</span></div>
-<div class="line"><span class="hit">	if tn.isModRoot {</span></div>
-<div class="line"><span class="hit">		itemID = normalizeModID(tn.modPath)</span></div>
-<div class="line">	} else<span class="hit"> {</span></div>
-<div class="line"><span class="hit">		itemID = &#34;tree-item-&#34; + strconv.FormatUint(counter.Add(1), 10)</span></div>
-<div class="line">	}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(`&lt;li id=&#34;`)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(itemID)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;\&#34;&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(`  &lt;input type=&#34;checkbox&#34; id=&#34;module-`)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(itemID)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;\&#34;/&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;  &lt;div class=\&#34;tree-node\&#34;&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(`    &lt;label for=&#34;module-`)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(itemID)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(`&#34;&gt;`)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(tn.segment)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	if tn.html != &#34;&#34;</span> { // ignore structural namespace segments preceeding the module root</div>
-<div class="line"><span class="hit">		sb.WriteString(indent)</span></div>
-<div class="line"><span class="hit">		sb.WriteString(`    &lt;span class=&#34;cov&#34;&gt;`)</span></div>
-<div class="line"><span class="hit">		sb.WriteString(formatCov(tn.covered, tn.total))</span></div>
-<div class="line"><span class="hit">		sb.WriteString(&#34;&lt;/span&gt;\n&#34;)</span></div>
-<div class="line">	}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;  &lt;/div&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;  &lt;ul&gt;\n&#34;)</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	for _, k := range slices.Sorted(maps.Keys(tn.children)) {</span></div>
-<div class="line"><span class="hit">		tn.children[k].assemble(sb, depth + 4, counter)</span></div>
-<div class="line">	}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">	if tn.html != &#34;&#34; {</span></div>
-<div class="line"><span class="hit">		sb.WriteString(tn.html)</span></div>
-<div class="line">	}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;  &lt;/ul&gt;\n&#34;)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(indent)</span></div>
-<div class="line"><span class="hit">	sb.WriteString(&#34;&lt;/li&gt;\n&#34;</span><span class="hit">)</span></div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// insert walks modPath segment by segment, creating intermediate nodes as</div>
-<div class="line">// needed, and aggregates coverage stats at every ancestor node, up to the</div>
-<div class="line">// module root node.</div>
-<div class="line">func (tn *trieNode) insert(modPath string, dirHTML string, covered, total uint64<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	node := tn</span></div>
-<div class="line"></div>
-<div class="line"><span class="hit">	for segment := range strings.SplitSeq(modPath, &#34;/&#34;) {</span></div>
-<div class="line"><span class="hit">		child, ok := node.children[segment]</span></div>
-<div class="line"><span class="hit">		if !ok {</span></div>
-<div class="line"><span class="hit">			child = &amp;trieNode{segment: segment, children: make(map[string]*trieNode)}</span></div>
-<div class="line"><span class="hit">			node.children[segment] = child</span></div>
-<div class="line">		}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">		node.covered += covered // aggregate coverage stats for higher-level shared parent paths</span></div>
-<div class="line"><span class="hit">		node.total   += total</span></div>
-<div class="line"><span class="hit">		node          = child</span></div>
-<div class="line">	}</div>
-<div class="line"></div>
-<div class="line"><span class="hit">	node.covered  += covered</span></div>
-<div class="line"><span class="hit">	node.total    += total</span></div>
-<div class="line"><span class="hit">	node.html      = dirHTML</span></div>
-<div class="line"><span class="hit">	node.isModRoot = true</span></div>
-<div class="line"><span class="hit">	node.modPath   = modPath</span></div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// normalizeModID converts a module path (https://go.dev/ref/mod#module-path)</div>
-<div class="line">// to a valid URI anchor string by replacing &#34;/&#34; and &#34;.&#34; with &#34;-&#34;.</div>
-<div class="line">func normalizeModID(modPath string) string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return strings.Map(func(r rune) rune {</span></div>
-<div class="line"><span class="hit">		if r == &#39;/&#39; || r == &#39;.&#39; {</span></div>
-<div class="line"><span class="hit">			return  &#39;-&#39;</span></div>
-<div class="line">		}</div>
-<div class="line"><span class="hit">		return r</span></div>
-<div class="line">	}, modPath)</div>
-<div class="line">}</div>
+<div class="line" data-line="1">package main</div>
+<div class="line" data-line="2"></div>
+<div class="line" data-line="3">import (</div>
+<div class="line" data-line="4">	&#34;maps&#34;</div>
+<div class="line" data-line="5">	&#34;slices&#34;</div>
+<div class="line" data-line="6">	&#34;strconv&#34;</div>
+<div class="line" data-line="7">	&#34;strings&#34;</div>
+<div class="line" data-line="8">	&#34;sync/atomic&#34;</div>
+<div class="line" data-line="9">)</div>
+<div class="line" data-line="10"></div>
+<div class="line" data-line="11">// trieNode represents a single directory or source file in the source tree.</div>
+<div class="line" data-line="12">type trieNode struct {</div>
+<div class="line" data-line="13">	segment   string               // package path segment</div>
+<div class="line" data-line="14">	modPath   string               // module path (https://go.dev/ref/mod#module-path) used to generate IDs for the &#34;modules&#34; menu</div>
+<div class="line" data-line="15">	html      string               // pre-rendered HTML fragment</div>
+<div class="line" data-line="16">	isModRoot bool                 // identifies this node as the module root</div>
+<div class="line" data-line="17">	children  map[string]*trieNode // child nodes</div>
+<div class="line" data-line="18">	covered   uint64               // covered statements</div>
+<div class="line" data-line="19">	total     uint64               // total statements</div>
+<div class="line" data-line="20">}</div>
+<div class="line" data-line="21"></div>
+<div class="line" data-line="22">// renderHTML renders the root &lt;ul&gt; containing all direct children of</div>
+<div class="line" data-line="23">// the root node, sorted lexicographically. counter is used to assign</div>
+<div class="line" data-line="24">// unique IDs to non-module-root nodes.</div>
+<div class="func"><input type="checkbox" id="func-0" checked/>
+  <label for="func-0" class="line" data-line="25">func (tn *trieNode) renderHTML(counter *atomic.Uint64) string<span class="hit"> {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="26"><span class="hit">	if tn == nil</span><span class="miss"> { return &#34;&#34;</span><span class="miss"> }</span></div>
+    <div class="line" data-line="27"></div>
+    <div class="line" data-line="28"><span class="hit">	var sb strings.Builder</span></div>
+    <div class="line" data-line="29"><span class="hit">	sb.WriteString(&#34;&lt;ul class=\&#34;tree\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="30"></div>
+    <div class="line" data-line="31"><span class="hit">	for _, k := range slices.Sorted(maps.Keys(tn.children)) {</span></div>
+    <div class="line" data-line="32"><span class="hit">		tn.children[k].assemble(&amp;sb, 2, counter)</span></div>
+    <div class="line" data-line="33">	}</div>
+    <div class="line" data-line="34"></div>
+    <div class="line" data-line="35"><span class="hit">	sb.WriteString(&#34;&lt;/ul&gt;&#34;)</span></div>
+    <div class="line" data-line="36"><span class="hit">	return sb.String</span><span class="hit">()</span></div>
+    <div class="line" data-line="37">}</div>
+  </div>
+</div>
+<div class="line" data-line="38"></div>
+<div class="line" data-line="39">// assemble recursively renders this node&#39;s &lt;li&gt; element (checkbox, label,</div>
+<div class="line" data-line="40">// and child &lt;ul&gt;) at the given indentation depth. Module-root node IDs</div>
+<div class="line" data-line="41">// are normalized to a valid URI anchor string; all other nodes receive</div>
+<div class="line" data-line="42">// a sequential ID from counter.</div>
+<div class="func"><input type="checkbox" id="func-1" checked/>
+  <label for="func-1" class="line" data-line="43">func (tn *trieNode) assemble(sb *strings.Builder, depth int, counter *atomic.Uint64<span class="hit">) {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="44"><span class="hit">	if tn == nil</span><span class="miss"> { return</span><span class="miss"> }</span></div>
+    <div class="line" data-line="45"></div>
+    <div class="line" data-line="46"><span class="hit">	indent := strings.Repeat(&#34; &#34;, depth)</span></div>
+    <div class="line" data-line="47"></div>
+    <div class="line" data-line="48"><span class="hit">	var itemID string</span></div>
+    <div class="line" data-line="49"><span class="hit">	if tn.isModRoot {</span></div>
+    <div class="line" data-line="50"><span class="hit">		itemID = normalizeModID(tn.modPath)</span></div>
+    <div class="line" data-line="51">	} else<span class="hit"> {</span></div>
+    <div class="line" data-line="52"><span class="hit">		itemID = &#34;tree-item-&#34; + strconv.FormatUint(counter.Add(1), 10)</span></div>
+    <div class="line" data-line="53">	}</div>
+    <div class="line" data-line="54"></div>
+    <div class="line" data-line="55"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="56"><span class="hit">	sb.WriteString(`&lt;li id=&#34;`)</span></div>
+    <div class="line" data-line="57"><span class="hit">	sb.WriteString(itemID)</span></div>
+    <div class="line" data-line="58"><span class="hit">	sb.WriteString(&#34;\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="59"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="60"><span class="hit">	sb.WriteString(`  &lt;input type=&#34;checkbox&#34; id=&#34;module-`)</span></div>
+    <div class="line" data-line="61"><span class="hit">	sb.WriteString(itemID)</span></div>
+    <div class="line" data-line="62"><span class="hit">	sb.WriteString(&#34;\&#34;/&gt;\n&#34;)</span></div>
+    <div class="line" data-line="63"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="64"><span class="hit">	sb.WriteString(&#34;  &lt;div class=\&#34;tree-node\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="65"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="66"><span class="hit">	sb.WriteString(`    &lt;label for=&#34;module-`)</span></div>
+    <div class="line" data-line="67"><span class="hit">	sb.WriteString(itemID)</span></div>
+    <div class="line" data-line="68"><span class="hit">	sb.WriteString(`&#34;&gt;`)</span></div>
+    <div class="line" data-line="69"><span class="hit">	sb.WriteString(tn.segment)</span></div>
+    <div class="line" data-line="70"><span class="hit">	sb.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
+    <div class="line" data-line="71"></div>
+    <div class="line" data-line="72"><span class="hit">	if tn.html != &#34;&#34;</span> { // ignore structural namespace segments preceeding the module root</div>
+    <div class="line" data-line="73"><span class="hit">		sb.WriteString(indent)</span></div>
+    <div class="line" data-line="74"><span class="hit">		sb.WriteString(`    &lt;span class=&#34;cov&#34;&gt;`)</span></div>
+    <div class="line" data-line="75"><span class="hit">		sb.WriteString(formatCov(tn.covered, tn.total))</span></div>
+    <div class="line" data-line="76"><span class="hit">		sb.WriteString(&#34;&lt;/span&gt;\n&#34;)</span></div>
+    <div class="line" data-line="77">	}</div>
+    <div class="line" data-line="78"></div>
+    <div class="line" data-line="79"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="80"><span class="hit">	sb.WriteString(&#34;  &lt;/div&gt;\n&#34;)</span></div>
+    <div class="line" data-line="81"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="82"><span class="hit">	sb.WriteString(&#34;  &lt;ul&gt;\n&#34;)</span></div>
+    <div class="line" data-line="83"></div>
+    <div class="line" data-line="84"><span class="hit">	for _, k := range slices.Sorted(maps.Keys(tn.children)) {</span></div>
+    <div class="line" data-line="85"><span class="hit">		tn.children[k].assemble(sb, depth + 4, counter)</span></div>
+    <div class="line" data-line="86">	}</div>
+    <div class="line" data-line="87"></div>
+    <div class="line" data-line="88"><span class="hit">	if tn.html != &#34;&#34; {</span></div>
+    <div class="line" data-line="89"><span class="hit">		sb.WriteString(tn.html)</span></div>
+    <div class="line" data-line="90">	}</div>
+    <div class="line" data-line="91"></div>
+    <div class="line" data-line="92"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="93"><span class="hit">	sb.WriteString(&#34;  &lt;/ul&gt;\n&#34;)</span></div>
+    <div class="line" data-line="94"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="95"><span class="hit">	sb.WriteString(&#34;&lt;/li&gt;\n&#34;</span><span class="hit">)</span></div>
+    <div class="line" data-line="96">}</div>
+  </div>
+</div>
+<div class="line" data-line="97"></div>
+<div class="line" data-line="98">// insert walks modPath segment by segment, creating intermediate nodes as</div>
+<div class="line" data-line="99">// needed, and aggregates coverage stats at every ancestor node, up to the</div>
+<div class="line" data-line="100">// module root node.</div>
+<div class="func"><input type="checkbox" id="func-2" checked/>
+  <label for="func-2" class="line" data-line="101">func (tn *trieNode) insert(modPath string, dirHTML string, covered, total uint64<span class="hit">) {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="102"><span class="hit">	node := tn</span></div>
+    <div class="line" data-line="103"></div>
+    <div class="line" data-line="104"><span class="hit">	for segment := range strings.SplitSeq(modPath, &#34;/&#34;) {</span></div>
+    <div class="line" data-line="105"><span class="hit">		child, ok := node.children[segment]</span></div>
+    <div class="line" data-line="106"><span class="hit">		if !ok {</span></div>
+    <div class="line" data-line="107"><span class="hit">			child = &amp;trieNode{segment: segment, children: make(map[string]*trieNode)}</span></div>
+    <div class="line" data-line="108"><span class="hit">			node.children[segment] = child</span></div>
+    <div class="line" data-line="109">		}</div>
+    <div class="line" data-line="110"></div>
+    <div class="line" data-line="111"><span class="hit">		node.covered += covered // aggregate coverage stats for higher-level shared parent paths</span></div>
+    <div class="line" data-line="112"><span class="hit">		node.total   += total</span></div>
+    <div class="line" data-line="113"><span class="hit">		node          = child</span></div>
+    <div class="line" data-line="114">	}</div>
+    <div class="line" data-line="115"></div>
+    <div class="line" data-line="116"><span class="hit">	node.covered  += covered</span></div>
+    <div class="line" data-line="117"><span class="hit">	node.total    += total</span></div>
+    <div class="line" data-line="118"><span class="hit">	node.html      = dirHTML</span></div>
+    <div class="line" data-line="119"><span class="hit">	node.isModRoot = true</span></div>
+    <div class="line" data-line="120"><span class="hit">	node.modPath   = modPath</span></div>
+    <div class="line" data-line="121">}</div>
+  </div>
+</div>
+<div class="line" data-line="122"></div>
+<div class="line" data-line="123">// normalizeModID converts a module path (https://go.dev/ref/mod#module-path)</div>
+<div class="line" data-line="124">// to a valid URI anchor string by replacing &#34;/&#34; and &#34;.&#34; with &#34;-&#34;.</div>
+<div class="func"><input type="checkbox" id="func-3" checked/>
+  <label for="func-3" class="line" data-line="125">func normalizeModID(modPath string) string<span class="hit"> {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="126"><span class="hit">	return strings.Map(func(r rune) rune {</span></div>
+    <div class="line" data-line="127"><span class="hit">		if r == &#39;/&#39; || r == &#39;.&#39; {</span></div>
+    <div class="line" data-line="128"><span class="hit">			return  &#39;-&#39;</span></div>
+    <div class="line" data-line="129">		}</div>
+    <div class="line" data-line="130"><span class="hit">		return r</span></div>
+    <div class="line" data-line="131">	}, modPath)</div>
+    <div class="line" data-line="132">}</div>
+  </div>
+</div>
 <script src="../../../child.js"></script>
 </body>
 </html>

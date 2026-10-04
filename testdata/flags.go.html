@@ -7,109 +7,117 @@
 <title>github.com/jbunds/coverage/flags.go</title>
 </head>
 <body id="code" class="line-numbers">
-<div class="line">package main</div>
-<div class="line"></div>
-<div class="line">import (</div>
-<div class="line">	&#34;errors&#34;</div>
-<div class="line">	&#34;flag&#34;</div>
-<div class="line">	&#34;fmt&#34;</div>
-<div class="line">	&#34;path/filepath&#34;</div>
-<div class="line">	&#34;strings&#34;</div>
-<div class="line">)</div>
-<div class="line"></div>
-<div class="line">type flagVals struct {</div>
-<div class="line">	goModFiles       string</div>
-<div class="line">	coverProfileFile string</div>
-<div class="line">	outDir           string</div>
-<div class="line">	noBrowser        bool</div>
-<div class="line">	httpServer       bool</div>
-<div class="line">	sortOrder        sortOrder</div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// flags parses command line flags.</div>
-<div class="line">func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error<span class="hit">) {</span></div>
-<div class="line"><span class="hit">	allowedSortOrders := []string{ // must cohere with the `sortOrder` enum in sort.go</span></div>
-<div class="line"><span class="hit">		&#34;lex&#34;,</span></div>
-<div class="line"><span class="hit">		&#34;shallowest&#34;, &#34;deepest&#34;,</span></div>
-<div class="line"><span class="hit">		&#34;lowest&#34;,     &#34;highest&#34;,</span></div>
-<div class="line"><span class="hit">		&#34;shortest&#34;,   &#34;longest&#34;</span><span class="hit">,</span></div>
-<div class="line">	}</div>
-<div class="line">	// tests may call fs.SetOutput(); it is not called here</div>
-<div class="line"><span class="hit">	fs.Usage = func() {</span></div>
-<div class="line"><span class="hit">		fmt.Fprintf(fs.Output(), &#34;%s usage:\n\n&#34;, filepath.Base(fs.Name()))</span></div>
-<div class="line"><span class="hit">		fs.PrintDefaults()</span></div>
-<div class="line"><span class="hit">		fmt.Fprintln(fs.Output())</span></div>
-<div class="line">	}</div>
-<div class="line"><span class="hit">	var goModFiles, coverProfileFile, outDir string</span></div>
-<div class="line"><span class="hit">	var noBrowser, httpServer bool</span></div>
-<div class="line"><span class="hit">	var sortOrder sortOrder</span></div>
-<div class="line"><span class="hit">	fs.StringVar(&amp;goModFiles,       &#34;gomod&#34;,        &#34;go.mod&#34;, &#34;path to a go.work file or a comma-delimited list of go.mod paths&#34;)</span></div>
-<div class="line"><span class="hit">	fs.StringVar(&amp;coverProfileFile, &#34;coverprofile&#34;, &#34;&#34;,       &#34;path to the coverage profile file&#34;)</span></div>
-<div class="line"><span class="hit">	fs.StringVar(&amp;outDir,           &#34;outdir&#34;,       &#34;&#34;,       &#34;path where HTML files will be written&#34;)</span></div>
-<div class="line"><span class="hit">	fs.BoolVar(  &amp;noBrowser,        &#34;n&#34;,            false,    &#34;suppress opening the browser (overrides -s)&#34;)</span></div>
-<div class="line"><span class="hit">	fs.BoolVar(  &amp;httpServer,       &#34;s&#34;,            false,    &#34;serve the generated HTML via a Python HTTP server&#34;)</span></div>
-<div class="line"><span class="hit">	fs.Func(                        &#34;order&#34;,                  &#34;per-file coverage stdout rows sort order&#34;, func(val string) error {</span></div>
-<div class="line"><span class="hit">		switch val</span> {</div>
-<div class="line">		case &#34;lex&#34;<span class="hit">:</span></div>
-<div class="line"><span class="hit">			sortOrder = lex</span></div>
-<div class="line"><span class="hit">			return nil</span></div>
-<div class="line">		case &#34;shallowest&#34;<span class="hit">:</span></div>
-<div class="line"><span class="hit">			sortOrder = shallowest</span></div>
-<div class="line"><span class="hit">			return nil</span></div>
-<div class="line">		case &#34;deepest&#34;<span class="hit">:</span></div>
-<div class="line"><span class="hit">			sortOrder = deepest</span></div>
-<div class="line"><span class="hit">			return nil</span></div>
-<div class="line">		case &#34;lowest&#34;<span class="hit">:</span></div>
-<div class="line"><span class="hit">			sortOrder = lowest</span></div>
-<div class="line"><span class="hit">			return nil</span></div>
-<div class="line">		case &#34;highest&#34;<span class="hit">:</span></div>
-<div class="line"><span class="hit">			sortOrder = highest</span></div>
-<div class="line"><span class="hit">			return nil</span></div>
-<div class="line">		case &#34;shortest&#34;<span class="hit">:</span></div>
-<div class="line"><span class="hit">			sortOrder = shortest</span></div>
-<div class="line"><span class="hit">			return nil</span></div>
-<div class="line">		case &#34;longest&#34;<span class="hit">:</span></div>
-<div class="line"><span class="hit">			sortOrder = longest</span></div>
-<div class="line"><span class="hit">			return nil</span></div>
-<div class="line">		default<span class="hit">:</span></div>
-<div class="line"><span class="hit">			return fmt.Errorf(&#34;invalid sort order specified\nmust be one of (%s)&#34;, strings.Join(allowedSortOrders, &#34;, &#34;</span><span class="hit">))</span></div>
-<div class="line">		}</div>
-<div class="line">	})</div>
-<div class="line"><span class="hit">	if err := fs.Parse(args); err != nil {</span></div>
-<div class="line"><span class="hit">		return nil, err</span></div>
-<div class="line">	}</div>
-<div class="line"><span class="hit">	if coverProfileFile == &#34;&#34; {</span></div>
-<div class="line"><span class="hit">		fs.Usage()</span></div>
-<div class="line"><span class="hit">		return nil, errors.New(&#34;no value specified for -coverprofile&#34;)</span></div>
-<div class="line">	}</div>
-<div class="line"><span class="hit">	if outDir == &#34;&#34; {</span></div>
-<div class="line"><span class="hit">		fs.Usage()</span></div>
-<div class="line"><span class="hit">		return nil, errors.New(&#34;no value specified for -outdir&#34;)</span></div>
-<div class="line">	}</div>
-<div class="line"><span class="hit">	fv = &amp;flagVals{</span></div>
-<div class="line"><span class="hit">		goModFiles:       goModFiles,</span></div>
-<div class="line"><span class="hit">		coverProfileFile: coverProfileFile,</span></div>
-<div class="line"><span class="hit">		outDir:           outDir,</span></div>
-<div class="line"><span class="hit">		noBrowser:        noBrowser,</span></div>
-<div class="line"><span class="hit">		httpServer:       httpServer,</span></div>
-<div class="line"><span class="hit">		sortOrder:        sortOrder</span><span class="hit">,</span></div>
-<div class="line">	}</div>
-<div class="line"><span class="hit">	if len(fs.Args()) &gt; 0 {</span></div>
-<div class="line"><span class="hit">		fmt.Fprintf(fs.Output(), &#34;ignored arguments: %s\n&#34;, strings.Join(fs.Args(), &#34;, &#34;))</span></div>
-<div class="line">	}</div>
-<div class="line"><span class="hit">	return</span></div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// filterArgs discards any arguments up to and including &#34;--&#34;.</div>
-<div class="line">func filterArgs(args []string) []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	for i, arg := range args {</span></div>
-<div class="line"><span class="hit">		if arg == &#34;--&#34; {</span></div>
-<div class="line"><span class="hit">			args = args[i + 1:]</span></div>
-<div class="line"><span class="hit">			break</span></div>
-<div class="line">		}</div>
-<div class="line">	}</div>
-<div class="line"><span class="hit">	return args</span></div>
-<div class="line">}</div>
+<div class="line" data-line="1">package main</div>
+<div class="line" data-line="2"></div>
+<div class="line" data-line="3">import (</div>
+<div class="line" data-line="4">	&#34;errors&#34;</div>
+<div class="line" data-line="5">	&#34;flag&#34;</div>
+<div class="line" data-line="6">	&#34;fmt&#34;</div>
+<div class="line" data-line="7">	&#34;path/filepath&#34;</div>
+<div class="line" data-line="8">	&#34;strings&#34;</div>
+<div class="line" data-line="9">)</div>
+<div class="line" data-line="10"></div>
+<div class="line" data-line="11">type flagVals struct {</div>
+<div class="line" data-line="12">	goModFiles       string</div>
+<div class="line" data-line="13">	coverProfileFile string</div>
+<div class="line" data-line="14">	outDir           string</div>
+<div class="line" data-line="15">	noBrowser        bool</div>
+<div class="line" data-line="16">	httpServer       bool</div>
+<div class="line" data-line="17">	sortOrder        sortOrder</div>
+<div class="line" data-line="18">}</div>
+<div class="line" data-line="19"></div>
+<div class="line" data-line="20">// flags parses command line flags.</div>
+<div class="func"><input type="checkbox" id="func-0" checked/>
+  <label for="func-0" class="line" data-line="21">func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error<span class="hit">) {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="22"><span class="hit">	allowedSortOrders := []string{ // must cohere with the `sortOrder` enum in sort.go</span></div>
+    <div class="line" data-line="23"><span class="hit">		&#34;lex&#34;,</span></div>
+    <div class="line" data-line="24"><span class="hit">		&#34;shallowest&#34;, &#34;deepest&#34;,</span></div>
+    <div class="line" data-line="25"><span class="hit">		&#34;lowest&#34;,     &#34;highest&#34;,</span></div>
+    <div class="line" data-line="26"><span class="hit">		&#34;shortest&#34;,   &#34;longest&#34;</span><span class="hit">,</span></div>
+    <div class="line" data-line="27">	}</div>
+    <div class="line" data-line="28">	// tests may call fs.SetOutput(); it is not called here</div>
+    <div class="line" data-line="29"><span class="hit">	fs.Usage = func() {</span></div>
+    <div class="line" data-line="30"><span class="hit">		fmt.Fprintf(fs.Output(), &#34;%s usage:\n\n&#34;, filepath.Base(fs.Name()))</span></div>
+    <div class="line" data-line="31"><span class="hit">		fs.PrintDefaults()</span></div>
+    <div class="line" data-line="32"><span class="hit">		fmt.Fprintln(fs.Output())</span></div>
+    <div class="line" data-line="33">	}</div>
+    <div class="line" data-line="34"><span class="hit">	var goModFiles, coverProfileFile, outDir string</span></div>
+    <div class="line" data-line="35"><span class="hit">	var noBrowser, httpServer bool</span></div>
+    <div class="line" data-line="36"><span class="hit">	var sortOrder sortOrder</span></div>
+    <div class="line" data-line="37"><span class="hit">	fs.StringVar(&amp;goModFiles,       &#34;gomod&#34;,        &#34;go.mod&#34;, &#34;path to a go.work file or a comma-delimited list of go.mod paths&#34;)</span></div>
+    <div class="line" data-line="38"><span class="hit">	fs.StringVar(&amp;coverProfileFile, &#34;coverprofile&#34;, &#34;&#34;,       &#34;path to the coverage profile file&#34;)</span></div>
+    <div class="line" data-line="39"><span class="hit">	fs.StringVar(&amp;outDir,           &#34;outdir&#34;,       &#34;&#34;,       &#34;path where HTML files will be written&#34;)</span></div>
+    <div class="line" data-line="40"><span class="hit">	fs.BoolVar(  &amp;noBrowser,        &#34;n&#34;,            false,    &#34;suppress opening the browser (overrides -s)&#34;)</span></div>
+    <div class="line" data-line="41"><span class="hit">	fs.BoolVar(  &amp;httpServer,       &#34;s&#34;,            false,    &#34;serve the generated HTML via a Python HTTP server&#34;)</span></div>
+    <div class="line" data-line="42"><span class="hit">	fs.Func(                        &#34;order&#34;,                  &#34;per-file coverage stdout rows sort order&#34;, func(val string) error {</span></div>
+    <div class="line" data-line="43"><span class="hit">		switch val</span> {</div>
+    <div class="line" data-line="44">		case &#34;lex&#34;<span class="hit">:</span></div>
+    <div class="line" data-line="45"><span class="hit">			sortOrder = lex</span></div>
+    <div class="line" data-line="46"><span class="hit">			return nil</span></div>
+    <div class="line" data-line="47">		case &#34;shallowest&#34;<span class="hit">:</span></div>
+    <div class="line" data-line="48"><span class="hit">			sortOrder = shallowest</span></div>
+    <div class="line" data-line="49"><span class="hit">			return nil</span></div>
+    <div class="line" data-line="50">		case &#34;deepest&#34;<span class="hit">:</span></div>
+    <div class="line" data-line="51"><span class="hit">			sortOrder = deepest</span></div>
+    <div class="line" data-line="52"><span class="hit">			return nil</span></div>
+    <div class="line" data-line="53">		case &#34;lowest&#34;<span class="hit">:</span></div>
+    <div class="line" data-line="54"><span class="hit">			sortOrder = lowest</span></div>
+    <div class="line" data-line="55"><span class="hit">			return nil</span></div>
+    <div class="line" data-line="56">		case &#34;highest&#34;<span class="hit">:</span></div>
+    <div class="line" data-line="57"><span class="hit">			sortOrder = highest</span></div>
+    <div class="line" data-line="58"><span class="hit">			return nil</span></div>
+    <div class="line" data-line="59">		case &#34;shortest&#34;<span class="hit">:</span></div>
+    <div class="line" data-line="60"><span class="hit">			sortOrder = shortest</span></div>
+    <div class="line" data-line="61"><span class="hit">			return nil</span></div>
+    <div class="line" data-line="62">		case &#34;longest&#34;<span class="hit">:</span></div>
+    <div class="line" data-line="63"><span class="hit">			sortOrder = longest</span></div>
+    <div class="line" data-line="64"><span class="hit">			return nil</span></div>
+    <div class="line" data-line="65">		default<span class="hit">:</span></div>
+    <div class="line" data-line="66"><span class="hit">			return fmt.Errorf(&#34;invalid sort order specified\nmust be one of (%s)&#34;, strings.Join(allowedSortOrders, &#34;, &#34;</span><span class="hit">))</span></div>
+    <div class="line" data-line="67">		}</div>
+    <div class="line" data-line="68">	})</div>
+    <div class="line" data-line="69"><span class="hit">	if err := fs.Parse(args); err != nil {</span></div>
+    <div class="line" data-line="70"><span class="hit">		return nil, err</span></div>
+    <div class="line" data-line="71">	}</div>
+    <div class="line" data-line="72"><span class="hit">	if coverProfileFile == &#34;&#34; {</span></div>
+    <div class="line" data-line="73"><span class="hit">		fs.Usage()</span></div>
+    <div class="line" data-line="74"><span class="hit">		return nil, errors.New(&#34;no value specified for -coverprofile&#34;)</span></div>
+    <div class="line" data-line="75">	}</div>
+    <div class="line" data-line="76"><span class="hit">	if outDir == &#34;&#34; {</span></div>
+    <div class="line" data-line="77"><span class="hit">		fs.Usage()</span></div>
+    <div class="line" data-line="78"><span class="hit">		return nil, errors.New(&#34;no value specified for -outdir&#34;)</span></div>
+    <div class="line" data-line="79">	}</div>
+    <div class="line" data-line="80"><span class="hit">	fv = &amp;flagVals{</span></div>
+    <div class="line" data-line="81"><span class="hit">		goModFiles:       goModFiles,</span></div>
+    <div class="line" data-line="82"><span class="hit">		coverProfileFile: coverProfileFile,</span></div>
+    <div class="line" data-line="83"><span class="hit">		outDir:           outDir,</span></div>
+    <div class="line" data-line="84"><span class="hit">		noBrowser:        noBrowser,</span></div>
+    <div class="line" data-line="85"><span class="hit">		httpServer:       httpServer,</span></div>
+    <div class="line" data-line="86"><span class="hit">		sortOrder:        sortOrder</span><span class="hit">,</span></div>
+    <div class="line" data-line="87">	}</div>
+    <div class="line" data-line="88"><span class="hit">	if len(fs.Args()) &gt; 0 {</span></div>
+    <div class="line" data-line="89"><span class="hit">		fmt.Fprintf(fs.Output(), &#34;ignored arguments: %s\n&#34;, strings.Join(fs.Args(), &#34;, &#34;))</span></div>
+    <div class="line" data-line="90">	}</div>
+    <div class="line" data-line="91"><span class="hit">	return</span></div>
+    <div class="line" data-line="92">}</div>
+  </div>
+</div>
+<div class="line" data-line="93"></div>
+<div class="line" data-line="94">// filterArgs discards any arguments up to and including &#34;--&#34;.</div>
+<div class="func"><input type="checkbox" id="func-1" checked/>
+  <label for="func-1" class="line" data-line="95">func filterArgs(args []string) []string<span class="hit"> {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="96"><span class="hit">	for i, arg := range args {</span></div>
+    <div class="line" data-line="97"><span class="hit">		if arg == &#34;--&#34; {</span></div>
+    <div class="line" data-line="98"><span class="hit">			args = args[i + 1:]</span></div>
+    <div class="line" data-line="99"><span class="hit">			break</span></div>
+    <div class="line" data-line="100">		}</div>
+    <div class="line" data-line="101">	}</div>
+    <div class="line" data-line="102"><span class="hit">	return args</span></div>
+    <div class="line" data-line="103">}</div>
+  </div>
+</div>
 <script src="../../../child.js"></script>
 </body>
 </html>

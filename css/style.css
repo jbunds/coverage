@@ -143,8 +143,22 @@ a:hover {
   line-height:       1.5;
   height:            1.5em;
   white-space:       pre;    /* preserves all whitespace in the original source code */
-  counter-increment: line;
 }
+
+.line::before {
+  position:     absolute;
+  left:         -3.5rem;
+  content:      attr(data-line);
+  width:        2.5rem; /* gutter */
+  text-align:   right;
+  color:        var(--text-color);
+  opacity:      0.45;
+  border-right: 1px solid rgb(from var(--text-color) r g b / 20%);
+  user-select:  none;   /* prevent line numbers from being selected while copying */
+}
+
+body:not(.line-numbers) .line         { margin-left: 0.25rem; }
+body:not(.line-numbers) .line::before { display:        none; }
 
 .hit,
 .miss {
@@ -163,22 +177,7 @@ a:hover {
   background-color: rgb(from var(--cov-miss-bg) r g b / 30%);
 }
 
-.line::before {
-  position:     absolute;
-  left:         -3.5rem;
-  content:      counter(line);
-  width:        2.5rem; /* gutter */
-  text-align:   right;
-  color:        var(--text-color);
-  opacity:      0.45;
-  border-right: 1px solid rgb(from var(--text-color) r g b / 20%);
-  user-select:  none;   /* prevent line numbers from being selected while copying */
-}
-
-body:not(.line-numbers) .line {
-  margin-left: 0.25rem;
-}
-
-body:not(.line-numbers) .line::before {
-  display: none;
-}
+.func .func-body                 { display: none;    }
+.func input                      { display: none;    }
+.func input:checked ~ .func-body { display: block;   }
+.func label.line                 { cursor:  pointer; }

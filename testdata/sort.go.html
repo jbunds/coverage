@@ -7,121 +7,153 @@
 <title>github.com/jbunds/coverage/sort.go</title>
 </head>
 <body id="code" class="line-numbers">
-<div class="line">package main</div>
-<div class="line"></div>
-<div class="line">import (</div>
-<div class="line">	&#34;cmp&#34;</div>
-<div class="line">	&#34;maps&#34;</div>
-<div class="line">	&#34;slices&#34;</div>
-<div class="line">	&#34;strings&#34;</div>
-<div class="line">)</div>
-<div class="line"></div>
-<div class="line">// sortOrder selects the order in which rows of file paths</div>
-<div class="line">// and their coverage stats are printed to stdout.</div>
-<div class="line">type sortOrder int</div>
-<div class="line"></div>
-<div class="line">const ( // must cohere with `allowedSortOrders` in flags.go</div>
-<div class="line">	// lex sorts file paths lexicographically (default).</div>
-<div class="line">	lex sortOrder = iota</div>
-<div class="line"></div>
-<div class="line">	// shallowest sorts file paths by path depth (shallowest to deepest).</div>
-<div class="line">	shallowest</div>
-<div class="line"></div>
-<div class="line">	// deepest sorts file paths by path depth (deepest to shallowest).</div>
-<div class="line">	deepest</div>
-<div class="line"></div>
-<div class="line">	// lowest sorts file paths by coverage (lowest to highest).</div>
-<div class="line">	lowest</div>
-<div class="line"></div>
-<div class="line">	// highest sorts file paths by coverage (highest to lowest).</div>
-<div class="line">	highest</div>
-<div class="line"></div>
-<div class="line">	// shortest sorts file paths by path length (shortest to longest).</div>
-<div class="line">	shortest</div>
-<div class="line"></div>
-<div class="line">	// longest sorts file paths by path length (longest to shortest).</div>
-<div class="line">	longest</div>
-<div class="line">)</div>
-<div class="line"></div>
-<div class="line">// sortLex sorts file paths lexicographically.</div>
-<div class="line">func (cs *coverageState) sortLex() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), strings.Compare)</span></div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// sortByShallowPath first sorts file paths by path depth (shallowest first) and then lexicographically.</div>
-<div class="line">func (cs *coverageState) sortByShallowPath() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
-<div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthA, depthB</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
-<div class="line">	})</div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// sortByDeepPath first sorts file paths by path depth (deepest first) and then lexicographically.</div>
-<div class="line">func (cs *coverageState) sortByDeepPath() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
-<div class="line"><span class="hit">		if depthA != depthB { return cmp.Compare(depthB, depthA</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
-<div class="line">	})</div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// sortByLowCov first sorts file paths by coverage (lowest first) and then lexicographically.</div>
-<div class="line">func (cs *coverageState) sortByLowCov() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="hit">		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered</span></div>
-<div class="line"><span class="hit">		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total</span></div>
-<div class="line"><span class="hit">		aPct, bPct         := 0.0, 0.0</span></div>
-<div class="line"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		if aPct != bPct { return cmp.Compare(aPct, bPct</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
-<div class="line">	})</div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// sortByHighCov first sorts file paths by coverage (highest first) and then lexicographically.</div>
-<div class="line">func (cs *coverageState) sortByHighCov() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="hit">		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered</span></div>
-<div class="line"><span class="hit">		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total</span></div>
-<div class="line"><span class="hit">		aPct, bPct         := 0.0, 0.0</span></div>
-<div class="line"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		if aPct != bPct { return cmp.Compare(bPct, aPct</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
-<div class="line">	})</div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// sortByShortPath first sorts file paths by path length (shortest first) and then lexicographically.</div>
-<div class="line">func (cs *coverageState) sortByShortPath() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="hit">		aLen, bLen := len(a), len(b)</span></div>
-<div class="line"><span class="hit">		if aLen != bLen { return cmp.Compare(aLen, bLen</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
-<div class="line">	})</div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// sortByLongPath first sorts file paths by path length (longest first) and then lexicographically.</div>
-<div class="line">func (cs *coverageState) sortByLongPath() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
-<div class="line"><span class="hit">		aLen, bLen := len(a), len(b)</span></div>
-<div class="line"><span class="hit">		if aLen != bLen { return cmp.Compare(bLen, aLen</span><span class="hit">) }</span></div>
-<div class="line"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
-<div class="line">	})</div>
-<div class="line">}</div>
-<div class="line"></div>
-<div class="line">// bind returns the sort function for the given order; unrecognized orders default to lex.</div>
-<div class="line">func (o sortOrder) bind(cs *coverageState) func() []string<span class="hit"> {</span></div>
-<div class="line"><span class="hit">	switch o {</span></div>
-<div class="line"><span class="hit">	case shallowest: return cs.sortByShallowPath</span></div>
-<div class="line"><span class="hit">	case deepest:    return cs.sortByDeepPath</span></div>
-<div class="line"><span class="hit">	case lowest:     return cs.sortByLowCov</span></div>
-<div class="line"><span class="hit">	case highest:    return cs.sortByHighCov</span></div>
-<div class="line"><span class="hit">	case shortest:   return cs.sortByShortPath</span></div>
-<div class="line"><span class="hit">	case longest:    return cs.sortByLongPath</span></div>
-<div class="line"><span class="hit">	default:         return cs.sortLex</span></div>
-<div class="line">	}</div>
-<div class="line">}</div>
+<div class="line" data-line="1">package main</div>
+<div class="line" data-line="2"></div>
+<div class="line" data-line="3">import (</div>
+<div class="line" data-line="4">	&#34;cmp&#34;</div>
+<div class="line" data-line="5">	&#34;maps&#34;</div>
+<div class="line" data-line="6">	&#34;slices&#34;</div>
+<div class="line" data-line="7">	&#34;strings&#34;</div>
+<div class="line" data-line="8">)</div>
+<div class="line" data-line="9"></div>
+<div class="line" data-line="10">// sortOrder selects the order in which rows of file paths</div>
+<div class="line" data-line="11">// and their coverage stats are printed to stdout.</div>
+<div class="line" data-line="12">type sortOrder int</div>
+<div class="line" data-line="13"></div>
+<div class="line" data-line="14">const ( // must cohere with `allowedSortOrders` in flags.go</div>
+<div class="line" data-line="15">	// lex sorts file paths lexicographically (default).</div>
+<div class="line" data-line="16">	lex sortOrder = iota</div>
+<div class="line" data-line="17"></div>
+<div class="line" data-line="18">	// shallowest sorts file paths by path depth (shallowest to deepest).</div>
+<div class="line" data-line="19">	shallowest</div>
+<div class="line" data-line="20"></div>
+<div class="line" data-line="21">	// deepest sorts file paths by path depth (deepest to shallowest).</div>
+<div class="line" data-line="22">	deepest</div>
+<div class="line" data-line="23"></div>
+<div class="line" data-line="24">	// lowest sorts file paths by coverage (lowest to highest).</div>
+<div class="line" data-line="25">	lowest</div>
+<div class="line" data-line="26"></div>
+<div class="line" data-line="27">	// highest sorts file paths by coverage (highest to lowest).</div>
+<div class="line" data-line="28">	highest</div>
+<div class="line" data-line="29"></div>
+<div class="line" data-line="30">	// shortest sorts file paths by path length (shortest to longest).</div>
+<div class="line" data-line="31">	shortest</div>
+<div class="line" data-line="32"></div>
+<div class="line" data-line="33">	// longest sorts file paths by path length (longest to shortest).</div>
+<div class="line" data-line="34">	longest</div>
+<div class="line" data-line="35">)</div>
+<div class="line" data-line="36"></div>
+<div class="line" data-line="37">// sortLex sorts file paths lexicographically.</div>
+<div class="func"><input type="checkbox" id="func-0" checked/>
+  <label for="func-0" class="line" data-line="38">func (cs *coverageState) sortLex() []string<span class="hit"> {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="39"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), strings.Compare)</span></div>
+    <div class="line" data-line="40">}</div>
+  </div>
+</div>
+<div class="line" data-line="41"></div>
+<div class="line" data-line="42">// sortByShallowPath first sorts file paths by path depth (shallowest first) and then lexicographically.</div>
+<div class="func"><input type="checkbox" id="func-1" checked/>
+  <label for="func-1" class="line" data-line="43">func (cs *coverageState) sortByShallowPath() []string<span class="hit"> {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="44"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
+    <div class="line" data-line="45"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
+    <div class="line" data-line="46"><span class="hit">		if depthA != depthB { return cmp.Compare(depthA, depthB</span><span class="hit">) }</span></div>
+    <div class="line" data-line="47"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
+    <div class="line" data-line="48">	})</div>
+    <div class="line" data-line="49">}</div>
+  </div>
+</div>
+<div class="line" data-line="50"></div>
+<div class="line" data-line="51">// sortByDeepPath first sorts file paths by path depth (deepest first) and then lexicographically.</div>
+<div class="func"><input type="checkbox" id="func-2" checked/>
+  <label for="func-2" class="line" data-line="52">func (cs *coverageState) sortByDeepPath() []string<span class="hit"> {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="53"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
+    <div class="line" data-line="54"><span class="hit">		depthA, depthB := strings.Count(a, &#34;/&#34;), strings.Count(b, &#34;/&#34;)</span></div>
+    <div class="line" data-line="55"><span class="hit">		if depthA != depthB { return cmp.Compare(depthB, depthA</span><span class="hit">) }</span></div>
+    <div class="line" data-line="56"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
+    <div class="line" data-line="57">	})</div>
+    <div class="line" data-line="58">}</div>
+  </div>
+</div>
+<div class="line" data-line="59"></div>
+<div class="line" data-line="60">// sortByLowCov first sorts file paths by coverage (lowest first) and then lexicographically.</div>
+<div class="func"><input type="checkbox" id="func-3" checked/>
+  <label for="func-3" class="line" data-line="61">func (cs *coverageState) sortByLowCov() []string<span class="hit"> {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="62"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
+    <div class="line" data-line="63"><span class="hit">		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered</span></div>
+    <div class="line" data-line="64"><span class="hit">		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total</span></div>
+    <div class="line" data-line="65"><span class="hit">		aPct, bPct         := 0.0, 0.0</span></div>
+    <div class="line" data-line="66"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
+    <div class="line" data-line="67"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
+    <div class="line" data-line="68"><span class="hit">		if aPct != bPct { return cmp.Compare(aPct, bPct</span><span class="hit">) }</span></div>
+    <div class="line" data-line="69"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
+    <div class="line" data-line="70">	})</div>
+    <div class="line" data-line="71">}</div>
+  </div>
+</div>
+<div class="line" data-line="72"></div>
+<div class="line" data-line="73">// sortByHighCov first sorts file paths by coverage (highest first) and then lexicographically.</div>
+<div class="func"><input type="checkbox" id="func-4" checked/>
+  <label for="func-4" class="line" data-line="74">func (cs *coverageState) sortByHighCov() []string<span class="hit"> {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="75"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
+    <div class="line" data-line="76"><span class="hit">		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered</span></div>
+    <div class="line" data-line="77"><span class="hit">		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total</span></div>
+    <div class="line" data-line="78"><span class="hit">		aPct, bPct         := 0.0, 0.0</span></div>
+    <div class="line" data-line="79"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
+    <div class="line" data-line="80"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
+    <div class="line" data-line="81"><span class="hit">		if aPct != bPct { return cmp.Compare(bPct, aPct</span><span class="hit">) }</span></div>
+    <div class="line" data-line="82"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
+    <div class="line" data-line="83">	})</div>
+    <div class="line" data-line="84">}</div>
+  </div>
+</div>
+<div class="line" data-line="85"></div>
+<div class="line" data-line="86">// sortByShortPath first sorts file paths by path length (shortest first) and then lexicographically.</div>
+<div class="func"><input type="checkbox" id="func-5" checked/>
+  <label for="func-5" class="line" data-line="87">func (cs *coverageState) sortByShortPath() []string<span class="hit"> {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="88"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
+    <div class="line" data-line="89"><span class="hit">		aLen, bLen := len(a), len(b)</span></div>
+    <div class="line" data-line="90"><span class="hit">		if aLen != bLen { return cmp.Compare(aLen, bLen</span><span class="hit">) }</span></div>
+    <div class="line" data-line="91"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
+    <div class="line" data-line="92">	})</div>
+    <div class="line" data-line="93">}</div>
+  </div>
+</div>
+<div class="line" data-line="94"></div>
+<div class="line" data-line="95">// sortByLongPath first sorts file paths by path length (longest first) and then lexicographically.</div>
+<div class="func"><input type="checkbox" id="func-6" checked/>
+  <label for="func-6" class="line" data-line="96">func (cs *coverageState) sortByLongPath() []string<span class="hit"> {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="97"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
+    <div class="line" data-line="98"><span class="hit">		aLen, bLen := len(a), len(b)</span></div>
+    <div class="line" data-line="99"><span class="hit">		if aLen != bLen { return cmp.Compare(bLen, aLen</span><span class="hit">) }</span></div>
+    <div class="line" data-line="100"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
+    <div class="line" data-line="101">	})</div>
+    <div class="line" data-line="102">}</div>
+  </div>
+</div>
+<div class="line" data-line="103"></div>
+<div class="line" data-line="104">// bind returns the sort function for the given order; unrecognized orders default to lex.</div>
+<div class="func"><input type="checkbox" id="func-7" checked/>
+  <label for="func-7" class="line" data-line="105">func (o sortOrder) bind(cs *coverageState) func() []string<span class="hit"> {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="106"><span class="hit">	switch o {</span></div>
+    <div class="line" data-line="107"><span class="hit">	case shallowest: return cs.sortByShallowPath</span></div>
+    <div class="line" data-line="108"><span class="hit">	case deepest:    return cs.sortByDeepPath</span></div>
+    <div class="line" data-line="109"><span class="hit">	case lowest:     return cs.sortByLowCov</span></div>
+    <div class="line" data-line="110"><span class="hit">	case highest:    return cs.sortByHighCov</span></div>
+    <div class="line" data-line="111"><span class="hit">	case shortest:   return cs.sortByShortPath</span></div>
+    <div class="line" data-line="112"><span class="hit">	case longest:    return cs.sortByLongPath</span></div>
+    <div class="line" data-line="113"><span class="hit">	default:         return cs.sortLex</span></div>
+    <div class="line" data-line="114">	}</div>
+    <div class="line" data-line="115">}</div>
+  </div>
+</div>
 <script src="../../../child.js"></script>
 </body>
 </html>

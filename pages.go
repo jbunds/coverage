@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"go/parser"
 	"go/token"
 	"io"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -190,24 +192,71 @@ func (rg *reportGenerator) buildCovHTML(ctx context.Context, ew stickyWriter, pr
 	fileName := filepath.Base(profile.FileName)
 
 	src, err := rg.fsys.ReadFile(filepath.Join(rg.pkgDirCache[pkgPath], fileName))
-	if err != nil {
-		return err
-	}
-
-	fset := token.NewFileSet()
-	file := fset.AddFile(fileName, fset.Base(), len(src))
-	file.SetLinesForContent(src)
-
-	blocks := computeBlockOffsets(file, profile.Blocks)
-	buf    := scanAndAnnotate(file, src, blocks)
+	if err != nil { return err }
 
 	relPath := strings.Repeat("../", strings.Count(srcPath, "/"))
 	writePreamble(ew, relPath + rg.iconFilename, srcPath, relPath + rg.styleCSSFilename)
+
+	fset         := token.NewFileSet()
+	fileAST, err := parser.ParseFile(fset, fileName, src, parser.ParseComments); if err != nil { return err }
+	file         := fset.File(fileAST.Pos())
+	buf          := scanAndAnnotate(file, src, computeBlockOffsets(file, profile.Blocks), computeFuncSpans(fileAST, file))
+
+	var (
+		funcID           int
+		inFunc           bool
+		funcLabelEmitted bool
+		funcBodyOpened   bool
+	)
+
+	lineNum := 1
+
 	for line := range bytes.SplitSeq(bytes.TrimRight(buf.Bytes(), "\n"), []byte{'\n'}) {
-		ew.write(`<div class="line">`)
+		if bytes.HasPrefix(line, []byte(`<div class="func">`)) {
+			inFunc           = true
+			funcLabelEmitted = false
+			funcBodyOpened   = false
+			ew.write(string(line))
+			ew.write("\n")
+			continue
+		}
+
+		if string(line) == "</div></div>" && inFunc {
+			inFunc = false
+			funcID++
+			if funcBodyOpened {
+				ew.write("  </div>\n")
+			}
+			ew.write("</div>\n")
+			continue
+		}
+
+		if inFunc && !funcLabelEmitted {
+			funcLabelEmitted = true
+			ew.write(`  <label for="func-`)
+			ew.write(strconv.Itoa(funcID))
+			ew.write(`" class="line" data-line="`)
+			ew.write(strconv.Itoa(lineNum))
+			ew.write(`">`)
+			ew.write(string(line))
+			ew.write("</label>\n")
+			lineNum++
+			continue
+		}
+
+		if inFunc && !funcBodyOpened {
+			ew.write("  <div class=\"func-body\">\n")
+			funcBodyOpened = true
+		}
+		if inFunc { ew.write("    ") }
+		ew.write(`<div class="line" data-line="`)
+		ew.write(strconv.Itoa(lineNum))
+		ew.write(`">`)
 		ew.write(string(line))
 		ew.write("</div>\n")
+		lineNum++
 	}
+
 	writePostamble(ew, relPath + rg.childJSFilename)
 	return ew.err()
 }
@@ -264,7 +313,7 @@ func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
 		headerSB.WriteString("  </div>")
 	} else {
 		title += " // " + rg.modPaths[0]
-		headerSB.WriteString(`<code><a href="`)
+		headerSB.WriteString(`<code><a target="_blank" href="`)
 		headerSB.WriteString(rg.repoURLs[0])
 		headerSB.WriteString(`">`)
 		headerSB.WriteString(rg.modPaths[0])

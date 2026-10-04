@@ -10,7 +10,7 @@ const codeFrame = document.getElementById('code');
 const applyTheme = (theme) => {
   document.documentElement.setAttribute('theme', theme);
   store.set('user-theme', theme);
-  codeFrame.contentWindow.postMessage({ type: 'TOGGLE_THEME', theme }, '*');
+  codeFrame.contentWindow.postMessage({ type: 'TOGGLE_THEME', theme }, location.origin);
 };
 
 const savedTheme = store.get('user-theme');
@@ -57,11 +57,17 @@ document.querySelector('.dropdown-menu')?.addEventListener('click', (e) => {
 const applyLineNumbers = (on) => {
   document.documentElement.setAttribute('line-numbers', on ? '1' : '0');
   store.set('line-numbers', on ? '1' : '0');
-  codeFrame.contentWindow.postMessage({ type: 'TOGGLE_LINE_NUMBERS', lineNumbers: on }, '*');
+  codeFrame.contentWindow.postMessage({ type: 'TOGGLE_LINE_NUMBERS', lineNumbers: on }, location.origin);
 };
 
 applyLineNumbers(store.get('line-numbers', '1') === '1');
 
 document.getElementById('lines').addEventListener('click', () => {
   applyLineNumbers(document.documentElement.getAttribute('line-numbers') !== '1');
+});
+
+document.getElementById('funcs').addEventListener('click', () => {
+  const boxes       = codeFrame.contentDocument.querySelectorAll('.func input[type="checkbox"]');
+  const shouldCheck = [...boxes].some(b => !b.checked);
+  for (const b of boxes) b.checked = shouldCheck;
 });
