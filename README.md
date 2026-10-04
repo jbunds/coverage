@@ -120,7 +120,7 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
 
    etc.
 
-   See [`jbunds/progress/.github/workflows/test-go.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/test-go.yml) for a working example.
+   See [`jbunds/progress/.github/workflows/test-go.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/test-go.yml#:~:text=jbunds/coverage) for a working example.
 
 2. The [`jbunds/coverage/.github/workflows/pages.yml@v1`][workflow] reusable [GitHub Workflow][workflows] generates the test coverage report and deploys it to [GitHub Pages][pages]. For example:
 
@@ -138,7 +138,7 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
        coverage-report-outdir: 'coverage_report'  # optional; default is 'coverage_report'
    ```
 
-   See [`jbunds/progress/.github/workflows/pages.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/pages.yml) for a working example.
+   See [`jbunds/progress/.github/workflows/pages.yml`](https://github.com/jbunds/progress/blob/main/.github/workflows/pages.yml#:~:text=jbunds/coverage) for a working example.
 
    See [jbunds.github.io/coverage/](https://jbunds.github.io/coverage/) (multi-module) or [jbunds.github.io/progress/](https://jbunds.github.io/progress/) (single-module) for example HTML reports uploaded to Pages.
 
