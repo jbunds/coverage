@@ -202,8 +202,7 @@ func computeBlockOffsets(file *token.File, blocks []cover.ProfileBlock) (out []*
 }
 
 // computeFuncSpans returns one funcSpan per top-level function in the file.
-func computeFuncSpans(f *ast.File, file *token.File) []funcSpan {
-	var out []funcSpan
+func computeFuncSpans(f *ast.File, file *token.File) (out []funcSpan) {
 	ast.Inspect(f, func(n ast.Node) bool {
 		fn, ok := n.(*ast.FuncDecl)
 		if !ok { return true }
@@ -215,7 +214,7 @@ func computeFuncSpans(f *ast.File, file *token.File) []funcSpan {
 		})
 		return true
 	})
-	return out
+	return
 }
 
 // funcIndexForOffset returns the index of the funcSpan containing offset, or -1 if none.

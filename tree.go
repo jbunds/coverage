@@ -222,6 +222,7 @@ func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (
 	percent := formatCov(cov.covered, cov.total)
 
 	var sb strings.Builder
+
 	sb.Grow(st.indent * 2 + 128) // rough pre-allocation to avoid reallocations; should cover most cases
 	sb.WriteString(strings.Repeat("  ", st.indent))
 	sb.WriteString(`<li><div class="tree-node"><span class="src"><a href="`)

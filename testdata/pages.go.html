@@ -219,8 +219,8 @@
     <div class="line" data-line="174"><span class="hit">	src, err := rg.fsys.ReadFile(srcFile)</span></div>
     <div class="line" data-line="175"><span class="hit">	if err != nil { return fmt.Errorf(&#34;cannot read %q: %w&#34;, srcFile, err</span><span class="hit">) }</span></div>
     <div class="line" data-line="176"></div>
-    <div class="line" data-line="177"><span class="hit">	var buf bytes.Buffer</span></div>
-    <div class="line" data-line="178"><span class="hit">	ew := newErrorWriter(&amp;buf)</span></div>
+    <div class="line" data-line="177"><span class="hit">	buf := new(bytes.Buffer)</span></div>
+    <div class="line" data-line="178"><span class="hit">	ew  := newErrorWriter(buf)</span></div>
     <div class="line" data-line="179"></div>
     <div class="line" data-line="180"><span class="hit">	relPath := strings.Repeat(&#34;../&#34;, strings.Count(unit.profile.FileName, &#34;/&#34;))</span></div>
     <div class="line" data-line="181"><span class="hit">	writePreamble(ew, relPath + rg.iconFilename, unit.profile.FileName, relPath + rg.styleCSSFilename)</span></div>
@@ -359,28 +359,28 @@
   <label for="func-13" class="line" data-line="299">func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error<span class="hit"> {</span></label>
   <div class="func-body">
     <div class="line" data-line="300"><span class="hit">	title := &#34;Go test coverage&#34;</span></div>
-    <div class="line" data-line="301"><span class="hit">	var headerSB strings.Builder</span></div>
+    <div class="line" data-line="301"><span class="hit">	var sb strings.Builder</span></div>
     <div class="line" data-line="302"><span class="hit">	if len(rg.modPaths) &gt; 1 {</span></div>
-    <div class="line" data-line="303"><span class="hit">		headerSB.WriteString(&#34;  &lt;div class=\&#34;dropdown-wrapper\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="304"><span class="hit">		headerSB.WriteString(&#34;    &lt;input type=\&#34;checkbox\&#34; id=\&#34;modules-menu\&#34;/&gt;\n&#34;)</span></div>
-    <div class="line" data-line="305"><span class="hit">		headerSB.WriteString(&#34;    &lt;label for=\&#34;modules-menu\&#34; class=\&#34;dropdown-toggle\&#34;&gt;modules&lt;/label&gt;\n&#34;)</span></div>
-    <div class="line" data-line="306"><span class="hit">		headerSB.WriteString(&#34;    &lt;div class=\&#34;dropdown-menu\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="303"><span class="hit">		sb.WriteString(&#34;  &lt;div class=\&#34;dropdown-wrapper\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="304"><span class="hit">		sb.WriteString(&#34;    &lt;input type=\&#34;checkbox\&#34; id=\&#34;modules-menu\&#34;/&gt;\n&#34;)</span></div>
+    <div class="line" data-line="305"><span class="hit">		sb.WriteString(&#34;    &lt;label for=\&#34;modules-menu\&#34; class=\&#34;dropdown-toggle\&#34;&gt;modules&lt;/label&gt;\n&#34;)</span></div>
+    <div class="line" data-line="306"><span class="hit">		sb.WriteString(&#34;    &lt;div class=\&#34;dropdown-menu\&#34;&gt;\n&#34;)</span></div>
     <div class="line" data-line="307"><span class="hit">		for _, mod := range rg.modPaths {</span></div>
-    <div class="line" data-line="308"><span class="hit">			headerSB.WriteString(`      &lt;label for=&#34;module-`)</span></div>
-    <div class="line" data-line="309"><span class="hit">			headerSB.WriteString(normalizeModID(mod))</span></div>
-    <div class="line" data-line="310"><span class="hit">			headerSB.WriteString(`&#34; class=&#34;dropdown-link&#34;&gt;`)</span></div>
-    <div class="line" data-line="311"><span class="hit">			headerSB.WriteString(mod)</span></div>
-    <div class="line" data-line="312"><span class="hit">			headerSB.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
+    <div class="line" data-line="308"><span class="hit">			sb.WriteString(`      &lt;label for=&#34;module-`)</span></div>
+    <div class="line" data-line="309"><span class="hit">			sb.WriteString(normalizeModID(mod))</span></div>
+    <div class="line" data-line="310"><span class="hit">			sb.WriteString(`&#34; class=&#34;dropdown-link&#34;&gt;`)</span></div>
+    <div class="line" data-line="311"><span class="hit">			sb.WriteString(mod)</span></div>
+    <div class="line" data-line="312"><span class="hit">			sb.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
     <div class="line" data-line="313">		}</div>
-    <div class="line" data-line="314"><span class="hit">		headerSB.WriteString(&#34;    &lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="315"><span class="hit">		headerSB.WriteString(&#34;  &lt;/div&gt;&#34;</span><span class="hit">)</span></div>
+    <div class="line" data-line="314"><span class="hit">		sb.WriteString(&#34;    &lt;/div&gt;\n&#34;)</span></div>
+    <div class="line" data-line="315"><span class="hit">		sb.WriteString(&#34;  &lt;/div&gt;&#34;</span><span class="hit">)</span></div>
     <div class="line" data-line="316">	} else<span class="hit"> {</span></div>
     <div class="line" data-line="317"><span class="hit">		title += &#34; // &#34; + rg.modPaths[0]</span></div>
-    <div class="line" data-line="318"><span class="hit">		headerSB.WriteString(`&lt;code&gt;&lt;a target=&#34;_blank&#34; href=&#34;`)</span></div>
-    <div class="line" data-line="319"><span class="hit">		headerSB.WriteString(rg.repoURLs[0])</span></div>
-    <div class="line" data-line="320"><span class="hit">		headerSB.WriteString(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="321"><span class="hit">		headerSB.WriteString(rg.modPaths[0])</span></div>
-    <div class="line" data-line="322"><span class="hit">		headerSB.WriteString(`&lt;/a&gt;&lt;/code&gt;`)</span></div>
+    <div class="line" data-line="318"><span class="hit">		sb.WriteString(`&lt;code&gt;&lt;a target=&#34;_blank&#34; href=&#34;`)</span></div>
+    <div class="line" data-line="319"><span class="hit">		sb.WriteString(rg.repoURLs[0])</span></div>
+    <div class="line" data-line="320"><span class="hit">		sb.WriteString(`&#34;&gt;`)</span></div>
+    <div class="line" data-line="321"><span class="hit">		sb.WriteString(rg.modPaths[0])</span></div>
+    <div class="line" data-line="322"><span class="hit">		sb.WriteString(`&lt;/a&gt;&lt;/code&gt;`)</span></div>
     <div class="line" data-line="323">	}</div>
     <div class="line" data-line="324"></div>
     <div class="line" data-line="325"><span class="hit">	data := struct{</span></div>
@@ -389,7 +389,7 @@
     <div class="line" data-line="328"><span class="hit">		TreeHTML   string</span></div>
     <div class="line" data-line="329"><span class="hit">	}{</span></div>
     <div class="line" data-line="330"><span class="hit">		Title:      title,</span></div>
-    <div class="line" data-line="331"><span class="hit">		HeaderHTML: headerSB.String(),</span></div>
+    <div class="line" data-line="331"><span class="hit">		HeaderHTML: sb.String(),</span></div>
     <div class="line" data-line="332"><span class="hit">		TreeHTML:   treeHTML</span><span class="hit">,</span></div>
     <div class="line" data-line="333">	}</div>
     <div class="line" data-line="334"></div>

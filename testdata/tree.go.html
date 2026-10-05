@@ -249,99 +249,100 @@
     <div class="line" data-line="222"><span class="hit">	percent := formatCov(cov.covered, cov.total)</span></div>
     <div class="line" data-line="223"></div>
     <div class="line" data-line="224"><span class="hit">	var sb strings.Builder</span></div>
-    <div class="line" data-line="225"><span class="hit">	sb.Grow(st.indent * 2 + 128) // rough pre-allocation to avoid reallocations; should cover most cases</span></div>
-    <div class="line" data-line="226"><span class="hit">	sb.WriteString(strings.Repeat(&#34;  &#34;, st.indent))</span></div>
-    <div class="line" data-line="227"><span class="hit">	sb.WriteString(`&lt;li&gt;&lt;div class=&#34;tree-node&#34;&gt;&lt;span class=&#34;src&#34;&gt;&lt;a href=&#34;`)</span></div>
-    <div class="line" data-line="228"><span class="hit">	sb.WriteString(filepath.Join(st.parentPath, st.entry.Name()))</span></div>
-    <div class="line" data-line="229"><span class="hit">	sb.WriteString(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="230"><span class="hit">	sb.WriteString(srcBasename)</span></div>
-    <div class="line" data-line="231"><span class="hit">	sb.WriteString(`&lt;/a&gt;&lt;/span&gt; &lt;span class=&#34;cov&#34;&gt;`)</span></div>
-    <div class="line" data-line="232"><span class="hit">	sb.WriteString(percent)</span></div>
-    <div class="line" data-line="233"><span class="hit">	sb.WriteString(&#34;&lt;/span&gt;&lt;/div&gt;&lt;/li&gt;\n&#34;)</span></div>
-    <div class="line" data-line="234"></div>
-    <div class="line" data-line="235"><span class="hit">	st.prog.Report(st.budget, pkgPath)</span></div>
-    <div class="line" data-line="236"></div>
-    <div class="line" data-line="237"><span class="hit">	return &amp;entryResult{</span></div>
-    <div class="line" data-line="238"><span class="hit">		pkgPath:     pkgPath,</span></div>
-    <div class="line" data-line="239"><span class="hit">		srcBasename: srcBasename,</span></div>
-    <div class="line" data-line="240"><span class="hit">		html:        sb.String(),</span></div>
-    <div class="line" data-line="241"><span class="hit">		covered:     cov.covered,</span></div>
-    <div class="line" data-line="242"><span class="hit">		total:       cov.total,</span></div>
-    <div class="line" data-line="243"><span class="hit">	}, nil</span></div>
-    <div class="line" data-line="244">}</div>
+    <div class="line" data-line="225"></div>
+    <div class="line" data-line="226"><span class="hit">	sb.Grow(st.indent * 2 + 128) // rough pre-allocation to avoid reallocations; should cover most cases</span></div>
+    <div class="line" data-line="227"><span class="hit">	sb.WriteString(strings.Repeat(&#34;  &#34;, st.indent))</span></div>
+    <div class="line" data-line="228"><span class="hit">	sb.WriteString(`&lt;li&gt;&lt;div class=&#34;tree-node&#34;&gt;&lt;span class=&#34;src&#34;&gt;&lt;a href=&#34;`)</span></div>
+    <div class="line" data-line="229"><span class="hit">	sb.WriteString(filepath.Join(st.parentPath, st.entry.Name()))</span></div>
+    <div class="line" data-line="230"><span class="hit">	sb.WriteString(`&#34;&gt;`)</span></div>
+    <div class="line" data-line="231"><span class="hit">	sb.WriteString(srcBasename)</span></div>
+    <div class="line" data-line="232"><span class="hit">	sb.WriteString(`&lt;/a&gt;&lt;/span&gt; &lt;span class=&#34;cov&#34;&gt;`)</span></div>
+    <div class="line" data-line="233"><span class="hit">	sb.WriteString(percent)</span></div>
+    <div class="line" data-line="234"><span class="hit">	sb.WriteString(&#34;&lt;/span&gt;&lt;/div&gt;&lt;/li&gt;\n&#34;)</span></div>
+    <div class="line" data-line="235"></div>
+    <div class="line" data-line="236"><span class="hit">	st.prog.Report(st.budget, pkgPath)</span></div>
+    <div class="line" data-line="237"></div>
+    <div class="line" data-line="238"><span class="hit">	return &amp;entryResult{</span></div>
+    <div class="line" data-line="239"><span class="hit">		pkgPath:     pkgPath,</span></div>
+    <div class="line" data-line="240"><span class="hit">		srcBasename: srcBasename,</span></div>
+    <div class="line" data-line="241"><span class="hit">		html:        sb.String(),</span></div>
+    <div class="line" data-line="242"><span class="hit">		covered:     cov.covered,</span></div>
+    <div class="line" data-line="243"><span class="hit">		total:       cov.total,</span></div>
+    <div class="line" data-line="244"><span class="hit">	}, nil</span></div>
+    <div class="line" data-line="245">}</div>
   </div>
 </div>
-<div class="line" data-line="245"></div>
-<div class="line" data-line="246">// renderSubDirHTML wraps pre-rendered child nodes in a &lt;li&gt; subdirectory</div>
-<div class="line" data-line="247">// tree-node, with its name and aggregated coverge percentage.</div>
+<div class="line" data-line="246"></div>
+<div class="line" data-line="247">// renderSubDirHTML wraps pre-rendered child nodes in a &lt;li&gt; subdirectory</div>
+<div class="line" data-line="248">// tree-node, with its name and aggregated coverge percentage.</div>
 <div class="func"><input type="checkbox" id="func-5" checked/>
-  <label for="func-5" class="line" data-line="248">func (hb *htmlBuilder) renderSubDirHTML(res *entryResult<span class="hit">) {</span></label>
+  <label for="func-5" class="line" data-line="249">func (hb *htmlBuilder) renderSubDirHTML(res *entryResult<span class="hit">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="249"><span class="hit">	indent  := strings.Repeat(&#34;  &#34;, hb.indent)</span></div>
-    <div class="line" data-line="250"><span class="hit">	percent := formatCov(res.covered, res.total)</span></div>
-    <div class="line" data-line="251"></div>
-    <div class="line" data-line="252"><span class="hit">	var sb strings.Builder</span></div>
-    <div class="line" data-line="253"></div>
-    <div class="line" data-line="254"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="255"><span class="hit">	sb.WriteString(&#34;&lt;li&gt;\n&#34;)</span></div>
-    <div class="line" data-line="256"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="257"><span class="hit">	sb.WriteString(`  &lt;input type=&#34;checkbox&#34; id=&#34;`)</span></div>
-    <div class="line" data-line="258"><span class="hit">	sb.WriteString(hb.itemID)</span></div>
-    <div class="line" data-line="259"><span class="hit">	sb.WriteString(&#34;\&#34;/&gt;\n&#34;)</span></div>
-    <div class="line" data-line="260"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="261"><span class="hit">	sb.WriteString(&#34;  &lt;div class=\&#34;tree-node\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="262"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="263"><span class="hit">	sb.WriteString(`    &lt;label for=&#34;`)</span></div>
-    <div class="line" data-line="264"><span class="hit">	sb.WriteString(hb.itemID)</span></div>
-    <div class="line" data-line="265"><span class="hit">	sb.WriteString(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="266"><span class="hit">	sb.WriteString(hb.subDir)</span></div>
-    <div class="line" data-line="267"><span class="hit">	sb.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
-    <div class="line" data-line="268"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="269"><span class="hit">	sb.WriteString(`    &lt;span class=&#34;cov&#34;&gt;`)</span></div>
-    <div class="line" data-line="270"><span class="hit">	sb.WriteString(percent)</span></div>
-    <div class="line" data-line="271"><span class="hit">	sb.WriteString(&#34;&lt;/span&gt;\n&#34;)</span></div>
-    <div class="line" data-line="272"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="273"><span class="hit">	sb.WriteString(&#34;  &lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="274"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="275"><span class="hit">	sb.WriteString(&#34;  &lt;ul&gt;\n&#34;)</span></div>
-    <div class="line" data-line="276"><span class="hit">	sb.WriteString(res.html)</span></div>
-    <div class="line" data-line="277"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="278"><span class="hit">	sb.WriteString(&#34;  &lt;/ul&gt;\n&#34;)</span></div>
-    <div class="line" data-line="279"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="280"><span class="hit">	sb.WriteString(&#34;&lt;/li&gt;\n&#34;)</span></div>
-    <div class="line" data-line="281"></div>
-    <div class="line" data-line="282"><span class="hit">	res.html = sb.String()</span></div>
-    <div class="line" data-line="283">}</div>
+    <div class="line" data-line="250"><span class="hit">	indent  := strings.Repeat(&#34;  &#34;, hb.indent)</span></div>
+    <div class="line" data-line="251"><span class="hit">	percent := formatCov(res.covered, res.total)</span></div>
+    <div class="line" data-line="252"></div>
+    <div class="line" data-line="253"><span class="hit">	var sb strings.Builder</span></div>
+    <div class="line" data-line="254"></div>
+    <div class="line" data-line="255"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="256"><span class="hit">	sb.WriteString(&#34;&lt;li&gt;\n&#34;)</span></div>
+    <div class="line" data-line="257"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="258"><span class="hit">	sb.WriteString(`  &lt;input type=&#34;checkbox&#34; id=&#34;`)</span></div>
+    <div class="line" data-line="259"><span class="hit">	sb.WriteString(hb.itemID)</span></div>
+    <div class="line" data-line="260"><span class="hit">	sb.WriteString(&#34;\&#34;/&gt;\n&#34;)</span></div>
+    <div class="line" data-line="261"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="262"><span class="hit">	sb.WriteString(&#34;  &lt;div class=\&#34;tree-node\&#34;&gt;\n&#34;)</span></div>
+    <div class="line" data-line="263"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="264"><span class="hit">	sb.WriteString(`    &lt;label for=&#34;`)</span></div>
+    <div class="line" data-line="265"><span class="hit">	sb.WriteString(hb.itemID)</span></div>
+    <div class="line" data-line="266"><span class="hit">	sb.WriteString(`&#34;&gt;`)</span></div>
+    <div class="line" data-line="267"><span class="hit">	sb.WriteString(hb.subDir)</span></div>
+    <div class="line" data-line="268"><span class="hit">	sb.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
+    <div class="line" data-line="269"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="270"><span class="hit">	sb.WriteString(`    &lt;span class=&#34;cov&#34;&gt;`)</span></div>
+    <div class="line" data-line="271"><span class="hit">	sb.WriteString(percent)</span></div>
+    <div class="line" data-line="272"><span class="hit">	sb.WriteString(&#34;&lt;/span&gt;\n&#34;)</span></div>
+    <div class="line" data-line="273"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="274"><span class="hit">	sb.WriteString(&#34;  &lt;/div&gt;\n&#34;)</span></div>
+    <div class="line" data-line="275"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="276"><span class="hit">	sb.WriteString(&#34;  &lt;ul&gt;\n&#34;)</span></div>
+    <div class="line" data-line="277"><span class="hit">	sb.WriteString(res.html)</span></div>
+    <div class="line" data-line="278"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="279"><span class="hit">	sb.WriteString(&#34;  &lt;/ul&gt;\n&#34;)</span></div>
+    <div class="line" data-line="280"><span class="hit">	sb.WriteString(indent)</span></div>
+    <div class="line" data-line="281"><span class="hit">	sb.WriteString(&#34;&lt;/li&gt;\n&#34;)</span></div>
+    <div class="line" data-line="282"></div>
+    <div class="line" data-line="283"><span class="hit">	res.html = sb.String()</span></div>
+    <div class="line" data-line="284">}</div>
   </div>
 </div>
-<div class="line" data-line="284"></div>
-<div class="line" data-line="285">// formatCov returns covered/total as a one-decimal percentage</div>
-<div class="line" data-line="286">// string (e.g. &#34;12.3%&#34;, or &#34;0.0%&#34; if total is zero).</div>
+<div class="line" data-line="285"></div>
+<div class="line" data-line="286">// formatCov returns covered/total as a one-decimal percentage</div>
+<div class="line" data-line="287">// string (e.g. &#34;12.3%&#34;, or &#34;0.0%&#34; if total is zero).</div>
 <div class="func"><input type="checkbox" id="func-6" checked/>
-  <label for="func-6" class="line" data-line="287">func formatCov(covered, total uint64) string<span class="hit"> {</span></label>
+  <label for="func-6" class="line" data-line="288">func formatCov(covered, total uint64) string<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="288"><span class="hit">	if total == 0 {</span></div>
-    <div class="line" data-line="289"><span class="hit">		return &#34;0.0%&#34;</span></div>
-    <div class="line" data-line="290">	}</div>
-    <div class="line" data-line="291"><span class="hit">	return strconv.FormatFloat(float64(covered) / float64(total) * 100, &#39;f&#39;, 1, 64) + &#34;%&#34;</span></div>
-    <div class="line" data-line="292">}</div>
+    <div class="line" data-line="289"><span class="hit">	if total == 0 {</span></div>
+    <div class="line" data-line="290"><span class="hit">		return &#34;0.0%&#34;</span></div>
+    <div class="line" data-line="291">	}</div>
+    <div class="line" data-line="292"><span class="hit">	return strconv.FormatFloat(float64(covered) / float64(total) * 100, &#39;f&#39;, 1, 64) + &#34;%&#34;</span></div>
+    <div class="line" data-line="293">}</div>
   </div>
 </div>
-<div class="line" data-line="293"></div>
-<div class="line" data-line="294">// splitBudget divides a progress budget into n child allocations,</div>
-<div class="line" data-line="295">// with the last child absorbing any remainder.</div>
+<div class="line" data-line="294"></div>
+<div class="line" data-line="295">// splitBudget divides a progress budget into n child allocations,</div>
+<div class="line" data-line="296">// with the last child absorbing any remainder.</div>
 <div class="func"><input type="checkbox" id="func-7" checked/>
-  <label for="func-7" class="line" data-line="296">func splitBudget(total float64, n int) []float64<span class="hit"> {</span></label>
+  <label for="func-7" class="line" data-line="297">func splitBudget(total float64, n int) []float64<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="297"><span class="hit">	if n &lt;= 0 { return []float64</span>{} } // defensive; callers are expected to pass n ≥ 1</div>
-    <div class="line" data-line="298"><span class="hit">	budgets := make([]float64, n)</span></div>
-    <div class="line" data-line="299"><span class="hit">	per     := total / float64(n)</span></div>
-    <div class="line" data-line="300"><span class="hit">	for i := range budgets {</span></div>
-    <div class="line" data-line="301"><span class="hit">		budgets[i] = per</span></div>
-    <div class="line" data-line="302">	}</div>
-    <div class="line" data-line="303"><span class="hit">	budgets[n - 1] = math.FMA(per, -float64(n - 1), total) // last child absorbs any remainder</span></div>
-    <div class="line" data-line="304"><span class="hit">	return budgets</span></div>
-    <div class="line" data-line="305">}</div>
+    <div class="line" data-line="298"><span class="hit">	if n &lt;= 0 { return []float64</span>{} } // defensive; callers are expected to pass n ≥ 1</div>
+    <div class="line" data-line="299"><span class="hit">	budgets := make([]float64, n)</span></div>
+    <div class="line" data-line="300"><span class="hit">	per     := total / float64(n)</span></div>
+    <div class="line" data-line="301"><span class="hit">	for i := range budgets {</span></div>
+    <div class="line" data-line="302"><span class="hit">		budgets[i] = per</span></div>
+    <div class="line" data-line="303">	}</div>
+    <div class="line" data-line="304"><span class="hit">	budgets[n - 1] = math.FMA(per, -float64(n - 1), total) // last child absorbs any remainder</span></div>
+    <div class="line" data-line="305"><span class="hit">	return budgets</span></div>
+    <div class="line" data-line="306">}</div>
   </div>
 </div>
 <script src="../../../child.js"></script>

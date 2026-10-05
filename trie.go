@@ -26,6 +26,7 @@ func (tn *trieNode) renderHTML(counter *atomic.Uint64) string {
 	if tn == nil { return "" }
 
 	var sb strings.Builder
+
 	sb.WriteString("<ul class=\"tree\">\n")
 
 	for _, k := range slices.Sorted(maps.Keys(tn.children)) {
@@ -33,6 +34,7 @@ func (tn *trieNode) renderHTML(counter *atomic.Uint64) string {
 	}
 
 	sb.WriteString("</ul>")
+
 	return sb.String()
 }
 
@@ -69,7 +71,7 @@ func (tn *trieNode) assemble(sb *strings.Builder, depth int, counter *atomic.Uin
 	sb.WriteString(tn.segment)
 	sb.WriteString("</label>\n")
 
-	if tn.html != "" { // ignore structural namespace segments preceeding the module root
+	if tn.html != "" { // ignore namespace segments preceeding the module root
 		sb.WriteString(indent)
 		sb.WriteString(`    <span class="cov">`)
 		sb.WriteString(formatCov(tn.covered, tn.total))

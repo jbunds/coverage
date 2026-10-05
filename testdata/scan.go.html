@@ -228,50 +228,49 @@
 <div class="line" data-line="203"></div>
 <div class="line" data-line="204">// computeFuncSpans returns one funcSpan per top-level function in the file.</div>
 <div class="func"><input type="checkbox" id="func-4" checked/>
-  <label for="func-4" class="line" data-line="205">func computeFuncSpans(f *ast.File, file *token.File) []funcSpan<span class="hit"> {</span></label>
+  <label for="func-4" class="line" data-line="205">func computeFuncSpans(f *ast.File, file *token.File) (out []funcSpan<span class="hit">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="206"><span class="hit">	var out []funcSpan</span></div>
-    <div class="line" data-line="207"><span class="hit">	ast.Inspect(f, func(n ast.Node) bool {</span></div>
-    <div class="line" data-line="208"><span class="hit">		fn, ok := n.(*ast.FuncDecl)</span></div>
-    <div class="line" data-line="209"><span class="hit">		if !ok { return true</span><span class="hit"> }</span></div>
-    <div class="line" data-line="210"></div>
-    <div class="line" data-line="211"><span class="hit">		out = append(out, funcSpan{</span></div>
-    <div class="line" data-line="212"><span class="hit">			name:        fn.Name.Name,</span></div>
-    <div class="line" data-line="213"><span class="hit">			startOffset: file.Offset(fn.Pos()),</span></div>
-    <div class="line" data-line="214"><span class="hit">			endOffset:   file.Offset(fn.End()),</span></div>
-    <div class="line" data-line="215"><span class="hit">		})</span></div>
-    <div class="line" data-line="216"><span class="hit">		return true</span></div>
-    <div class="line" data-line="217">	})</div>
-    <div class="line" data-line="218"><span class="hit">	return out</span></div>
-    <div class="line" data-line="219">}</div>
+    <div class="line" data-line="206"><span class="hit">	ast.Inspect(f, func(n ast.Node) bool {</span></div>
+    <div class="line" data-line="207"><span class="hit">		fn, ok := n.(*ast.FuncDecl)</span></div>
+    <div class="line" data-line="208"><span class="hit">		if !ok { return true</span><span class="hit"> }</span></div>
+    <div class="line" data-line="209"></div>
+    <div class="line" data-line="210"><span class="hit">		out = append(out, funcSpan{</span></div>
+    <div class="line" data-line="211"><span class="hit">			name:        fn.Name.Name,</span></div>
+    <div class="line" data-line="212"><span class="hit">			startOffset: file.Offset(fn.Pos()),</span></div>
+    <div class="line" data-line="213"><span class="hit">			endOffset:   file.Offset(fn.End()),</span></div>
+    <div class="line" data-line="214"><span class="hit">		})</span></div>
+    <div class="line" data-line="215"><span class="hit">		return true</span></div>
+    <div class="line" data-line="216">	})</div>
+    <div class="line" data-line="217"><span class="hit">	return</span></div>
+    <div class="line" data-line="218">}</div>
   </div>
 </div>
-<div class="line" data-line="220"></div>
-<div class="line" data-line="221">// funcIndexForOffset returns the index of the funcSpan containing offset, or -1 if none.</div>
+<div class="line" data-line="219"></div>
+<div class="line" data-line="220">// funcIndexForOffset returns the index of the funcSpan containing offset, or -1 if none.</div>
 <div class="func"><input type="checkbox" id="func-5" checked/>
-  <label for="func-5" class="line" data-line="222">func funcIndexForOffset(funcs []funcSpan, offset int) int<span class="hit"> {</span></label>
+  <label for="func-5" class="line" data-line="221">func funcIndexForOffset(funcs []funcSpan, offset int) int<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="223"><span class="hit">	for i, f := range funcs {</span></div>
-    <div class="line" data-line="224"><span class="hit">		if offset &gt;= f.startOffset &amp;&amp;</span></div>
-    <div class="line" data-line="225"><span class="hit">		   offset &lt;  f.endOffset   {</span></div>
-    <div class="line" data-line="226"><span class="hit">			return i</span></div>
-    <div class="line" data-line="227">		}</div>
-    <div class="line" data-line="228">	}</div>
-    <div class="line" data-line="229"><span class="hit">	return -1</span></div>
-    <div class="line" data-line="230">}</div>
+    <div class="line" data-line="222"><span class="hit">	for i, f := range funcs {</span></div>
+    <div class="line" data-line="223"><span class="hit">		if offset &gt;= f.startOffset &amp;&amp;</span></div>
+    <div class="line" data-line="224"><span class="hit">		   offset &lt;  f.endOffset   {</span></div>
+    <div class="line" data-line="225"><span class="hit">			return i</span></div>
+    <div class="line" data-line="226">		}</div>
+    <div class="line" data-line="227">	}</div>
+    <div class="line" data-line="228"><span class="hit">	return -1</span></div>
+    <div class="line" data-line="229">}</div>
   </div>
 </div>
-<div class="line" data-line="231"></div>
-<div class="line" data-line="232">// O(log n) implementation of funcIndexForOffset; above is O(n)</div>
-<div class="line" data-line="233">// func funcIndexForOffset(funcs []funcSpan, offset int) int {</div>
-<div class="line" data-line="234">//	i := sort.Search(len(funcs), func(j int) bool { // find the last func with startOffset &lt;= offset</div>
-<div class="line" data-line="235">//		return funcs[j].startOffset &gt; offset</div>
-<div class="line" data-line="236">//	}) - 1                                          // subtract 1 to get that last func</div>
-<div class="line" data-line="237">//	if i &gt;= 0 &amp;&amp; offset &lt; funcs[i].endOffset {      // verify offset actually falls within that function&#39;s span</div>
-<div class="line" data-line="238">//		return i</div>
-<div class="line" data-line="239">//	}</div>
-<div class="line" data-line="240">//	return -1</div>
-<div class="line" data-line="241">//}</div>
+<div class="line" data-line="230"></div>
+<div class="line" data-line="231">// O(log n) implementation of funcIndexForOffset; above is O(n)</div>
+<div class="line" data-line="232">// func funcIndexForOffset(funcs []funcSpan, offset int) int {</div>
+<div class="line" data-line="233">//	i := sort.Search(len(funcs), func(j int) bool { // find the last func with startOffset &lt;= offset</div>
+<div class="line" data-line="234">//		return funcs[j].startOffset &gt; offset</div>
+<div class="line" data-line="235">//	}) - 1                                          // subtract 1 to get that last func</div>
+<div class="line" data-line="236">//	if i &gt;= 0 &amp;&amp; offset &lt; funcs[i].endOffset {      // verify offset actually falls within that function&#39;s span</div>
+<div class="line" data-line="237">//		return i</div>
+<div class="line" data-line="238">//	}</div>
+<div class="line" data-line="239">//	return -1</div>
+<div class="line" data-line="240">//}</div>
 <script src="../../../child.js"></script>
 </body>
 </html>

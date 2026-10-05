@@ -61,11 +61,11 @@ func (cs *coverageState) sortByDeepPath() []string {
 func (cs *coverageState) sortByLowCov() []string {
 	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {
 		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered
-		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total
-		aPct, bPct         := 0.0, 0.0
-		if aTotal > 0 { aPct = float64(aCovered) / float64(aTotal) }
-		if bTotal > 0 { bPct = float64(bCovered) / float64(bTotal) }
-		if aPct != bPct { return cmp.Compare(aPct, bPct) }
+		aTotal,   bTotal   := cs.cov[a].total,   cs.cov[b].total
+		aPercent, bPercent := 0.0, 0.0
+		if aTotal   >  0        { aPercent = float64(aCovered) / float64(aTotal) }
+		if bTotal   >  0        { bPercent = float64(bCovered) / float64(bTotal) }
+		if aPercent != bPercent { return cmp.Compare(aPercent, bPercent) }
 		return strings.Compare(a, b)
 	})
 }
@@ -74,11 +74,11 @@ func (cs *coverageState) sortByLowCov() []string {
 func (cs *coverageState) sortByHighCov() []string {
 	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {
 		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered
-		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total
-		aPct, bPct         := 0.0, 0.0
-		if aTotal > 0 { aPct = float64(aCovered) / float64(aTotal) }
-		if bTotal > 0 { bPct = float64(bCovered) / float64(bTotal) }
-		if aPct != bPct { return cmp.Compare(bPct, aPct) }
+		aTotal,   bTotal   := cs.cov[a].total,   cs.cov[b].total
+		aPercent, bPercent := 0.0, 0.0
+		if aTotal   > 0         { aPercent = float64(aCovered) / float64(aTotal) }
+		if bTotal   > 0         { bPercent = float64(bCovered) / float64(bTotal) }
+		if aPercent != bPercent { return cmp.Compare(bPercent, aPercent) }
 		return strings.Compare(a, b)
 	})
 }

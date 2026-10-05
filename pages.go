@@ -174,8 +174,8 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 	src, err := rg.fsys.ReadFile(srcFile)
 	if err != nil { return fmt.Errorf("cannot read %q: %w", srcFile, err) }
 
-	var buf bytes.Buffer
-	ew := newErrorWriter(&buf)
+	buf := new(bytes.Buffer)
+	ew  := newErrorWriter(buf)
 
 	relPath := strings.Repeat("../", strings.Count(unit.profile.FileName, "/"))
 	writePreamble(ew, relPath + rg.iconFilename, unit.profile.FileName, relPath + rg.styleCSSFilename)
@@ -298,28 +298,28 @@ func writePostamble(ew stickyWriter, childJSPath string) {
 // iframe within which the generated source code HTML files are rendered.
 func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
 	title := "Go test coverage"
-	var headerSB strings.Builder
+	var sb strings.Builder
 	if len(rg.modPaths) > 1 {
-		headerSB.WriteString("  <div class=\"dropdown-wrapper\">\n")
-		headerSB.WriteString("    <input type=\"checkbox\" id=\"modules-menu\"/>\n")
-		headerSB.WriteString("    <label for=\"modules-menu\" class=\"dropdown-toggle\">modules</label>\n")
-		headerSB.WriteString("    <div class=\"dropdown-menu\">\n")
+		sb.WriteString("  <div class=\"dropdown-wrapper\">\n")
+		sb.WriteString("    <input type=\"checkbox\" id=\"modules-menu\"/>\n")
+		sb.WriteString("    <label for=\"modules-menu\" class=\"dropdown-toggle\">modules</label>\n")
+		sb.WriteString("    <div class=\"dropdown-menu\">\n")
 		for _, mod := range rg.modPaths {
-			headerSB.WriteString(`      <label for="module-`)
-			headerSB.WriteString(normalizeModID(mod))
-			headerSB.WriteString(`" class="dropdown-link">`)
-			headerSB.WriteString(mod)
-			headerSB.WriteString("</label>\n")
+			sb.WriteString(`      <label for="module-`)
+			sb.WriteString(normalizeModID(mod))
+			sb.WriteString(`" class="dropdown-link">`)
+			sb.WriteString(mod)
+			sb.WriteString("</label>\n")
 		}
-		headerSB.WriteString("    </div>\n")
-		headerSB.WriteString("  </div>")
+		sb.WriteString("    </div>\n")
+		sb.WriteString("  </div>")
 	} else {
 		title += " // " + rg.modPaths[0]
-		headerSB.WriteString(`<code><a target="_blank" href="`)
-		headerSB.WriteString(rg.repoURLs[0])
-		headerSB.WriteString(`">`)
-		headerSB.WriteString(rg.modPaths[0])
-		headerSB.WriteString(`</a></code>`)
+		sb.WriteString(`<code><a target="_blank" href="`)
+		sb.WriteString(rg.repoURLs[0])
+		sb.WriteString(`">`)
+		sb.WriteString(rg.modPaths[0])
+		sb.WriteString(`</a></code>`)
 	}
 
 	data := struct{
@@ -328,7 +328,7 @@ func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
 		TreeHTML   string
 	}{
 		Title:      title,
-		HeaderHTML: headerSB.String(),
+		HeaderHTML: sb.String(),
 		TreeHTML:   treeHTML,
 	}
 

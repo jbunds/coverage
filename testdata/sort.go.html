@@ -84,11 +84,11 @@
   <div class="func-body">
     <div class="line" data-line="62"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
     <div class="line" data-line="63"><span class="hit">		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered</span></div>
-    <div class="line" data-line="64"><span class="hit">		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total</span></div>
-    <div class="line" data-line="65"><span class="hit">		aPct, bPct         := 0.0, 0.0</span></div>
-    <div class="line" data-line="66"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
-    <div class="line" data-line="67"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
-    <div class="line" data-line="68"><span class="hit">		if aPct != bPct { return cmp.Compare(aPct, bPct</span><span class="hit">) }</span></div>
+    <div class="line" data-line="64"><span class="hit">		aTotal,   bTotal   := cs.cov[a].total,   cs.cov[b].total</span></div>
+    <div class="line" data-line="65"><span class="hit">		aPercent, bPercent := 0.0, 0.0</span></div>
+    <div class="line" data-line="66"><span class="hit">		if aTotal   &gt;  0        { aPercent = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
+    <div class="line" data-line="67"><span class="hit">		if bTotal   &gt;  0        { bPercent = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
+    <div class="line" data-line="68"><span class="hit">		if aPercent != bPercent { return cmp.Compare(aPercent, bPercent</span><span class="hit">) }</span></div>
     <div class="line" data-line="69"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
     <div class="line" data-line="70">	})</div>
     <div class="line" data-line="71">}</div>
@@ -101,11 +101,11 @@
   <div class="func-body">
     <div class="line" data-line="75"><span class="hit">	return slices.SortedFunc(maps.Keys(cs.cov), func(a, b string) int {</span></div>
     <div class="line" data-line="76"><span class="hit">		aCovered, bCovered := cs.cov[a].covered, cs.cov[b].covered</span></div>
-    <div class="line" data-line="77"><span class="hit">		aTotal, bTotal     := cs.cov[a].total,   cs.cov[b].total</span></div>
-    <div class="line" data-line="78"><span class="hit">		aPct, bPct         := 0.0, 0.0</span></div>
-    <div class="line" data-line="79"><span class="hit">		if aTotal &gt; 0 { aPct = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
-    <div class="line" data-line="80"><span class="hit">		if bTotal &gt; 0 { bPct = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
-    <div class="line" data-line="81"><span class="hit">		if aPct != bPct { return cmp.Compare(bPct, aPct</span><span class="hit">) }</span></div>
+    <div class="line" data-line="77"><span class="hit">		aTotal,   bTotal   := cs.cov[a].total,   cs.cov[b].total</span></div>
+    <div class="line" data-line="78"><span class="hit">		aPercent, bPercent := 0.0, 0.0</span></div>
+    <div class="line" data-line="79"><span class="hit">		if aTotal   &gt; 0         { aPercent = float64(aCovered) / float64(aTotal</span><span class="hit">) }</span></div>
+    <div class="line" data-line="80"><span class="hit">		if bTotal   &gt; 0         { bPercent = float64(bCovered) / float64(bTotal</span><span class="hit">) }</span></div>
+    <div class="line" data-line="81"><span class="hit">		if aPercent != bPercent { return cmp.Compare(bPercent, aPercent</span><span class="hit">) }</span></div>
     <div class="line" data-line="82"><span class="hit">		return strings.Compare(a, b</span><span class="hit">)</span></div>
     <div class="line" data-line="83">	})</div>
     <div class="line" data-line="84">}</div>
