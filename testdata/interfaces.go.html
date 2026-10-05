@@ -45,99 +45,106 @@
 <div class="line" data-line="30"></div>
 <div class="line" data-line="31">type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)</div>
 <div class="line" data-line="32"></div>
-<div class="line" data-line="33">type runner interface { Run(*exec.Cmd) error }</div>
-<div class="line" data-line="34"></div>
-<div class="line" data-line="35">type realRunner struct{}</div>
-<div class="line" data-line="36"></div>
+<div class="line" data-line="33">type runner interface {</div>
+<div class="line" data-line="34">	Run(   *exec.Cmd)          error</div>
+<div class="line" data-line="35">	Start( *exec.Cmd)          error</div>
+<div class="line" data-line="36">	Output(*exec.Cmd) ([]byte, error)</div>
+<div class="line" data-line="37">}</div>
+<div class="line" data-line="38"></div>
+<div class="line" data-line="39">type realRunner struct{}</div>
+<div class="line" data-line="40"></div>
 <div class="func"><input type="checkbox" id="func-2" checked/>
-  <label for="func-2" class="line" data-line="37"><span class="miss">func (*realRunner) Run(  cmd *exec.Cmd) error { return cmd.Run</span><span class="miss">()   }</span></label>
+  <label for="func-2" class="line" data-line="41"><span class="miss">func (*realRunner) Run(   cmd *exec.Cmd)          error  { return cmd.Run</span><span class="miss">()    }</span></label>
 </div>
 <div class="func"><input type="checkbox" id="func-3" checked/>
-  <label for="func-3" class="line" data-line="38"><span class="miss">func (*realRunner) Start(cmd *exec.Cmd) error { return cmd.Start</span><span class="miss">() }</span></label>
+  <label for="func-3" class="line" data-line="42"><span class="miss">func (*realRunner) Start( cmd *exec.Cmd)          error  { return cmd.Start</span><span class="miss">()  }</span></label>
 </div>
-<div class="line" data-line="39"></div>
-<div class="line" data-line="40">// writeFS defines an interface that extends fs.FS with writing capabilities.</div>
-<div class="line" data-line="41">// This abstraction is necessary to allow for mocking the file system within</div>
-<div class="line" data-line="42">// unit tests, as the standard &#34;os&#34; package cannot be directly mocked.</div>
-<div class="line" data-line="43">type writeFS interface {</div>
-<div class="line" data-line="44">	fs.FS</div>
-<div class="line" data-line="45">	Create   (string)                      (io.WriteCloser, error)</div>
-<div class="line" data-line="46">	MkdirAll (string,         fs.FileMode)                  error</div>
-<div class="line" data-line="47">	ReadDir  (string)                      ([]fs.DirEntry,  error)</div>
-<div class="line" data-line="48">	ReadFile (string)                      ([]byte,         error)</div>
-<div class="line" data-line="49">	WriteFile(string, []byte, fs.FileMode)                  error</div>
-<div class="line" data-line="50">	OpenRoot (string)                      (rootHandle,     error)</div>
-<div class="line" data-line="51">	Open     (string)                      (fs.File,        error)</div>
-<div class="line" data-line="52">	Stat     (string)                      (fs.FileInfo,    error)</div>
-<div class="line" data-line="53">}</div>
-<div class="line" data-line="54"></div>
-<div class="line" data-line="55">// localFS provides a concrete implementation of the writeFS</div>
-<div class="line" data-line="56">// interface by wrapping the standard &#34;os&#34; package. This allows</div>
-<div class="line" data-line="57">// the SUT to perform actual system operations while remaining</div>
-<div class="line" data-line="58">// easily testable via alternative implementations.</div>
-<div class="line" data-line="59">type localFS struct{}</div>
-<div class="line" data-line="60"></div>
 <div class="func"><input type="checkbox" id="func-4" checked/>
-  <label for="func-4" class="line" data-line="61">func (lfs *localFS) OpenRoot(name string) (rootHandle, error<span class="miss"> ) {</span></label>
-  <div class="func-body">
-    <div class="line" data-line="62"><span class="miss">	return os.OpenRoot(name)</span></div>
-    <div class="line" data-line="63">}</div>
-  </div>
+  <label for="func-4" class="line" data-line="43"><span class="miss">func (*realRunner) Output(cmd *exec.Cmd) ([]byte, error) { return cmd.Output</span><span class="miss">() }</span></label>
 </div>
-<div class="line" data-line="64"></div>
+<div class="line" data-line="44"></div>
+<div class="line" data-line="45">// writeFS defines an interface that extends fs.FS with writing capabilities.</div>
+<div class="line" data-line="46">// This abstraction is necessary to allow for mocking the file system within</div>
+<div class="line" data-line="47">// unit tests, as the standard &#34;os&#34; package cannot be directly mocked.</div>
+<div class="line" data-line="48">type writeFS interface {</div>
+<div class="line" data-line="49">	fs.FS</div>
+<div class="line" data-line="50">	Create   (string)                      (io.WriteCloser, error)</div>
+<div class="line" data-line="51">	MkdirAll (string,         fs.FileMode)                  error</div>
+<div class="line" data-line="52">	ReadDir  (string)                      ([]fs.DirEntry,  error)</div>
+<div class="line" data-line="53">	ReadFile (string)                      ([]byte,         error)</div>
+<div class="line" data-line="54">	WriteFile(string, []byte, fs.FileMode)                  error</div>
+<div class="line" data-line="55">	OpenRoot (string)                      (rootHandle,     error)</div>
+<div class="line" data-line="56">	Open     (string)                      (fs.File,        error)</div>
+<div class="line" data-line="57">	Stat     (string)                      (fs.FileInfo,    error)</div>
+<div class="line" data-line="58">}</div>
+<div class="line" data-line="59"></div>
+<div class="line" data-line="60">// localFS provides a concrete implementation of the writeFS</div>
+<div class="line" data-line="61">// interface by wrapping the standard &#34;os&#34; package. This allows</div>
+<div class="line" data-line="62">// the SUT to perform actual system operations while remaining</div>
+<div class="line" data-line="63">// easily testable via alternative implementations.</div>
+<div class="line" data-line="64">type localFS struct{}</div>
+<div class="line" data-line="65"></div>
 <div class="func"><input type="checkbox" id="func-5" checked/>
-  <label for="func-5" class="line" data-line="65">func (lfs *localFS) Open(name string) (fs.File, error<span class="miss">) {</span></label>
+  <label for="func-5" class="line" data-line="66">func (lfs *localFS) OpenRoot(name string) (rootHandle, error<span class="miss"> ) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="66"><span class="miss">	return os.Open(filepath.Clean(name))</span></div>
-    <div class="line" data-line="67">}</div>
+    <div class="line" data-line="67"><span class="miss">	return os.OpenRoot(name)</span></div>
+    <div class="line" data-line="68">}</div>
   </div>
 </div>
-<div class="line" data-line="68"></div>
+<div class="line" data-line="69"></div>
 <div class="func"><input type="checkbox" id="func-6" checked/>
-  <label for="func-6" class="line" data-line="69">func (lfs *localFS) Create(name string) (io.WriteCloser, error<span class="miss">) {</span></label>
+  <label for="func-6" class="line" data-line="70">func (lfs *localFS) Open(name string) (fs.File, error<span class="miss">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="70"><span class="miss">	return os.Create(filepath.Clean(name))</span></div>
-    <div class="line" data-line="71">}</div>
+    <div class="line" data-line="71"><span class="miss">	return os.Open(filepath.Clean(name))</span></div>
+    <div class="line" data-line="72">}</div>
   </div>
 </div>
-<div class="line" data-line="72"></div>
+<div class="line" data-line="73"></div>
 <div class="func"><input type="checkbox" id="func-7" checked/>
-  <label for="func-7" class="line" data-line="73">func (lfs *localFS) MkdirAll(path string, perm fs.FileMode) error<span class="hit"> {</span></label>
+  <label for="func-7" class="line" data-line="74">func (lfs *localFS) Create(name string) (io.WriteCloser, error<span class="miss">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="74"><span class="hit">	return os.MkdirAll(path, perm)</span></div>
-    <div class="line" data-line="75">}</div>
+    <div class="line" data-line="75"><span class="miss">	return os.Create(filepath.Clean(name))</span></div>
+    <div class="line" data-line="76">}</div>
   </div>
 </div>
-<div class="line" data-line="76"></div>
+<div class="line" data-line="77"></div>
 <div class="func"><input type="checkbox" id="func-8" checked/>
-  <label for="func-8" class="line" data-line="77">func (lfs *localFS) ReadDir(name string) ([]fs.DirEntry, error<span class="miss">) {</span></label>
+  <label for="func-8" class="line" data-line="78">func (lfs *localFS) MkdirAll(path string, perm fs.FileMode) error<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="78"><span class="miss">	return os.ReadDir(name)</span></div>
-    <div class="line" data-line="79">}</div>
+    <div class="line" data-line="79"><span class="hit">	return os.MkdirAll(path, perm)</span></div>
+    <div class="line" data-line="80">}</div>
   </div>
 </div>
-<div class="line" data-line="80"></div>
+<div class="line" data-line="81"></div>
 <div class="func"><input type="checkbox" id="func-9" checked/>
-  <label for="func-9" class="line" data-line="81">func (lfs *localFS) ReadFile(name string) ([]byte, error<span class="hit">) {</span></label>
+  <label for="func-9" class="line" data-line="82">func (lfs *localFS) ReadDir(name string) ([]fs.DirEntry, error<span class="miss">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="82"><span class="hit">	return os.ReadFile(name) // #nosec G304 - all input is either user-specified or generated herein</span></div>
-    <div class="line" data-line="83">}</div>
+    <div class="line" data-line="83"><span class="miss">	return os.ReadDir(name)</span></div>
+    <div class="line" data-line="84">}</div>
   </div>
 </div>
-<div class="line" data-line="84"></div>
+<div class="line" data-line="85"></div>
 <div class="func"><input type="checkbox" id="func-10" checked/>
-  <label for="func-10" class="line" data-line="85">func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error<span class="hit"> {</span></label>
+  <label for="func-10" class="line" data-line="86">func (lfs *localFS) ReadFile(name string) ([]byte, error<span class="hit">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="86"><span class="hit">	return os.WriteFile(name, data, perm)</span></div>
-    <div class="line" data-line="87">}</div>
+    <div class="line" data-line="87"><span class="hit">	return os.ReadFile(name) // #nosec G304 - all input is either user-specified or generated herein</span></div>
+    <div class="line" data-line="88">}</div>
   </div>
 </div>
-<div class="line" data-line="88"></div>
+<div class="line" data-line="89"></div>
 <div class="func"><input type="checkbox" id="func-11" checked/>
-  <label for="func-11" class="line" data-line="89">func (lfs *localFS) Stat(name string) (fs.FileInfo, error<span class="hit">) {</span></label>
+  <label for="func-11" class="line" data-line="90">func (lfs *localFS) WriteFile(name string, data []byte, perm fs.FileMode) error<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="90"><span class="hit">	return os.Stat(name)</span></div>
-    <div class="line" data-line="91">}</div>
+    <div class="line" data-line="91"><span class="hit">	return os.WriteFile(name, data, perm)</span></div>
+    <div class="line" data-line="92">}</div>
+  </div>
+</div>
+<div class="line" data-line="93"></div>
+<div class="func"><input type="checkbox" id="func-12" checked/>
+  <label for="func-12" class="line" data-line="94">func (lfs *localFS) Stat(name string) (fs.FileInfo, error<span class="hit">) {</span></label>
+  <div class="func-body">
+    <div class="line" data-line="95"><span class="hit">	return os.Stat(name)</span></div>
+    <div class="line" data-line="96">}</div>
   </div>
 </div>
 <script src="../../../child.js"></script>

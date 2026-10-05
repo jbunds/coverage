@@ -92,7 +92,7 @@
 <div class="line" data-line="75">// maybeOpenBrowser opens the generated index.html file in the</div>
 <div class="line" data-line="76">// default browser when stdout is a TTY and -n is not set.</div>
 <div class="func"><input type="checkbox" id="func-2" checked/>
-  <label for="func-2" class="line" data-line="77">func (rg *reportGenerator) maybeOpenBrowser(fv *flagVals) error<span class="miss"> {</span></label>
+  <label for="func-2" class="line" data-line="77">func (rg *reportGenerator) maybeOpenBrowser(runner runner, fv *flagVals) error<span class="miss"> {</span></label>
   <div class="func-body">
     <div class="line" data-line="78"><span class="miss">	if fv.noBrowser      ||</span></div>
     <div class="line" data-line="79"><span class="miss">	   !rg.write         ||</span></div>
@@ -101,7 +101,7 @@
     <div class="line" data-line="82">	}</div>
     <div class="line" data-line="83"></div>
     <div class="line" data-line="84"><span class="miss">	if fv.httpServer {</span></div>
-    <div class="line" data-line="85"><span class="miss">		return launchHTTPServer(rg.outRoot.Name())</span></div>
+    <div class="line" data-line="85"><span class="miss">		return launchHTTPServer(runner, rg.outRoot.Name())</span></div>
     <div class="line" data-line="86">	}</div>
     <div class="line" data-line="87"></div>
     <div class="line" data-line="88"><span class="miss">	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), &#34;index.html&#34;))</span></div>
@@ -111,104 +111,108 @@
     <div class="line" data-line="92"><span class="miss">	if runtime.GOOS == &#34;linux&#34; {</span></div>
     <div class="line" data-line="93"><span class="miss">		absPath = &#34;file://&#34; + absPath // Linux requires explicit file:// scheme prefix</span></div>
     <div class="line" data-line="94">	}</div>
-    <div class="line" data-line="95"><span class="miss">	return openBrowser(absPath</span><span class="miss">)</span></div>
+    <div class="line" data-line="95"><span class="miss">	return openBrowser(runner, absPath</span><span class="miss">)</span></div>
     <div class="line" data-line="96">}</div>
   </div>
 </div>
 <div class="line" data-line="97"></div>
 <div class="line" data-line="98">// launchHTTPServer launches a Python HTTP server when -s is set and -n is not set.</div>
 <div class="func"><input type="checkbox" id="func-3" checked/>
-  <label for="func-3" class="line" data-line="99">func launchHTTPServer(outDir string) error<span class="miss"> {</span></label>
+  <label for="func-3" class="line" data-line="99">func launchHTTPServer(runner runner, outDir string) error<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="100"><span class="miss">	python := &#34;python3&#34;</span></div>
-    <div class="line" data-line="101"><span class="miss">	if runtime.GOOS == &#34;windows&#34; {</span></div>
+    <div class="line" data-line="100"><span class="hit">	python := &#34;python3&#34;</span></div>
+    <div class="line" data-line="101"><span class="hit">	if runtime.GOOS == &#34;windows&#34;</span><span class="miss"> {</span></div>
     <div class="line" data-line="102"><span class="miss">		python = &#34;python&#34;</span></div>
     <div class="line" data-line="103">	}</div>
-    <div class="line" data-line="104"><span class="miss">	pyPath, err := exec.LookPath(python)</span></div>
-    <div class="line" data-line="105"><span class="miss">	if err != nil {</span></div>
+    <div class="line" data-line="104"><span class="hit">	pyPath, err := exec.LookPath(python)</span></div>
+    <div class="line" data-line="105"><span class="hit">	if err != nil</span><span class="miss"> {</span></div>
     <div class="line" data-line="106"><span class="miss">		return err</span></div>
     <div class="line" data-line="107">	}</div>
     <div class="line" data-line="108"></div>
-    <div class="line" data-line="109"><span class="miss">	const port = 8000 // https://docs.python.org/3/library/http.server.html#cmdoption-http.server-arg-port</span></div>
+    <div class="line" data-line="109"><span class="hit">	const port = &#34;8000&#34; // https://docs.python.org/3/library/http.server.html#cmdoption-http.server-arg-port</span></div>
     <div class="line" data-line="110"></div>
-    <div class="line" data-line="111"><span class="miss">	url := fmt.Sprintf(&#34;http://localhost:%d&#34;, port)</span></div>
+    <div class="line" data-line="111"><span class="hit">	url := &#34;http://localhost:&#34; + port</span></div>
     <div class="line" data-line="112"></div>
-    <div class="line" data-line="113"><span class="miss">	if runtime.GOOS != &#34;windows&#34; {</span></div>
-    <div class="line" data-line="114"><span class="miss">		if pid, err := findPortPID(port); err == nil</span> { // macOS / Linux: check for existing process listening on port 8000</div>
-    <div class="line" data-line="115"><span class="miss">			fmt.Fprintf(os.Stderr, &#34;process already listening on port %d (PID: %d)\n&#34;, port, pid)</span></div>
-    <div class="line" data-line="116"><span class="miss">			return openBrowser(url) // assume the process listening on port 8000 is an HTTP server rather than launch a new one</span></div>
-    <div class="line" data-line="117">		}</div>
-    <div class="line" data-line="118">	}</div>
-    <div class="line" data-line="119"></div>
-    <div class="line" data-line="120"><span class="miss">	cmd := exec.Command(pyPath, &#34;-m&#34;, &#34;http.server&#34;, &#34;-d&#34;, outDir) // #nosec G204 G702 - no shell (no injection); outDir confined to outRoot (no path escape)</span></div>
+    <div class="line" data-line="113"><span class="hit">	if runtime.GOOS != &#34;windows&#34; {</span></div>
+    <div class="line" data-line="114"><span class="hit">		if pid, err := findPortPID(runner, port); err == nil</span> { // macOS / Linux: check for existing process listening on port 8000</div>
+    <div class="line" data-line="115"><span class="hit">			if isTerm(os.Stderr</span><span class="miss">) {</span></div>
+    <div class="line" data-line="116"><span class="miss">				fmt.Fprintf(os.Stderr, &#34;process already listening on port %s (PID: %d)\n&#34;, port, pid)</span></div>
+    <div class="line" data-line="117">			}</div>
+    <div class="line" data-line="118"><span class="hit">			return openBrowser(runner, url</span>) // assume the process listening on port 8000 is an HTTP server rather than launch a new one</div>
+    <div class="line" data-line="119">		}</div>
+    <div class="line" data-line="120">	}</div>
     <div class="line" data-line="121"></div>
-    <div class="line" data-line="122"><span class="miss">	if err := new(realRunner).Start(cmd); err != nil</span> { // Windows: fire-and-forget, no PID reporting</div>
-    <div class="line" data-line="123"><span class="miss">		return err</span></div>
-    <div class="line" data-line="124">	}</div>
-    <div class="line" data-line="125"><span class="miss">	if runtime.GOOS != &#34;windows&#34; {</span></div>
-    <div class="line" data-line="126"><span class="miss">		fmt.Fprintf(os.Stderr, &#34;HTTP server listening on port %d (PID: %d)\n&#34;, port, cmd.Process.Pid)</span></div>
-    <div class="line" data-line="127">	}</div>
-    <div class="line" data-line="128"><span class="miss">	return openBrowser(url</span><span class="miss">)</span></div>
-    <div class="line" data-line="129">}</div>
+    <div class="line" data-line="122"><span class="hit">	cmd := exec.Command(pyPath, &#34;-m&#34;, &#34;http.server&#34;, &#34;-d&#34;, outDir) // #nosec G204 G702 - no shell (no injection); outDir confined to outRoot (no path escape)</span></div>
+    <div class="line" data-line="123"></div>
+    <div class="line" data-line="124"><span class="hit">	if err := runner.Start(cmd); err != nil {</span></div>
+    <div class="line" data-line="125"><span class="hit">		return err</span></div>
+    <div class="line" data-line="126">	}</div>
+    <div class="line" data-line="127"></div>
+    <div class="line" data-line="128"><span class="hit">	if runtime.GOOS != &#34;windows&#34; &amp;&amp; isTerm(os.Stderr</span><span class="miss">) {</span></div>
+    <div class="line" data-line="129"><span class="miss">		fmt.Fprintf(os.Stderr, &#34;HTTP server listening on port %s (PID: %d)\n&#34;, port, cmd.Process.Pid)</span></div>
+    <div class="line" data-line="130">	}</div>
+    <div class="line" data-line="131"></div>
+    <div class="line" data-line="132"><span class="hit">	return openBrowser(runner, url</span><span class="hit">)</span></div>
+    <div class="line" data-line="133">}</div>
   </div>
 </div>
-<div class="line" data-line="130"></div>
-<div class="line" data-line="131">// openBrowser opens the default browser with the specified URL.</div>
+<div class="line" data-line="134"></div>
+<div class="line" data-line="135">// openBrowser opens the default browser with the specified URL.</div>
 <div class="func"><input type="checkbox" id="func-4" checked/>
-  <label for="func-4" class="line" data-line="132">func openBrowser(url string) error<span class="miss"> {</span></label>
+  <label for="func-4" class="line" data-line="136">func openBrowser(runner runner, url string) error<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="133"><span class="miss">	var cmd *exec.Cmd</span></div>
-    <div class="line" data-line="134"><span class="miss">	switch os := runtime.GOOS; os</span> {</div>
-    <div class="line" data-line="135">	case &#34;darwin&#34;<span class="miss">:</span></div>
-    <div class="line" data-line="136"><span class="miss">		cmd = exec.Command(&#34;open&#34;,         url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
-    <div class="line" data-line="137">	case &#34;windows&#34;<span class="miss">:</span></div>
-    <div class="line" data-line="138"><span class="miss">		cmd = exec.Command(&#34;explorer.exe&#34;, url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
-    <div class="line" data-line="139">	case &#34;linux&#34;<span class="miss">:</span></div>
-    <div class="line" data-line="140"><span class="miss">		cmd = exec.Command(&#34;xdg-open&#34;,     url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
-    <div class="line" data-line="141">	default<span class="miss">:</span></div>
-    <div class="line" data-line="142"><span class="miss">		return fmt.Errorf(&#34;unrecognized OS: %s&#34;, os</span><span class="miss">)</span></div>
-    <div class="line" data-line="143">	}</div>
-    <div class="line" data-line="144"><span class="miss">	return new(realRunner).Run(cmd</span><span class="miss">)</span></div>
-    <div class="line" data-line="145">}</div>
+    <div class="line" data-line="137"><span class="hit">	var cmd *exec.Cmd</span></div>
+    <div class="line" data-line="138"><span class="hit">	switch os := runtime.GOOS; os</span> {</div>
+    <div class="line" data-line="139">	case &#34;darwin&#34;<span class="hit">:</span></div>
+    <div class="line" data-line="140"><span class="hit">		cmd = exec.Command(&#34;open&#34;,         url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
+    <div class="line" data-line="141">	case &#34;windows&#34;<span class="miss">:</span></div>
+    <div class="line" data-line="142"><span class="miss">		cmd = exec.Command(&#34;explorer.exe&#34;, url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
+    <div class="line" data-line="143">	case &#34;linux&#34;<span class="miss">:</span></div>
+    <div class="line" data-line="144"><span class="miss">		cmd = exec.Command(&#34;xdg-open&#34;,     url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
+    <div class="line" data-line="145">	default<span class="miss">:</span></div>
+    <div class="line" data-line="146"><span class="miss">		return fmt.Errorf(&#34;unrecognized OS: %s&#34;, os</span><span class="miss">)</span></div>
+    <div class="line" data-line="147">	}</div>
+    <div class="line" data-line="148"><span class="hit">	return runner.Run(cmd</span><span class="hit">)</span></div>
+    <div class="line" data-line="149">}</div>
   </div>
 </div>
-<div class="line" data-line="146"></div>
-<div class="line" data-line="147">// findPortPID searches for a process listening on the specified port and returns its PID if found.</div>
+<div class="line" data-line="150"></div>
+<div class="line" data-line="151">// findPortPID searches for a process listening on the specified port and returns its PID if found.</div>
 <div class="func"><input type="checkbox" id="func-5" checked/>
-  <label for="func-5" class="line" data-line="148">func findPortPID(port int) (int, error<span class="miss">) {</span></label>
+  <label for="func-5" class="line" data-line="152">func findPortPID(runner runner, port string) (int, error<span class="hit">) {</span></label>
   <div class="func-body">
-    <div class="line" data-line="149"><span class="miss">	out, err := exec.Command(&#34;lsof&#34;, &#34;-ti&#34;, fmt.Sprintf(&#34;:%d&#34;, port)).Output() // #nosec G204 - port is a const defined in launchHTTPServer()</span></div>
-    <div class="line" data-line="150"><span class="miss">	if err != nil { return 0, err</span><span class="miss"> }</span></div>
-    <div class="line" data-line="151"><span class="miss">	var pid int</span></div>
-    <div class="line" data-line="152"><span class="miss">	if _, err := fmt.Sscanf(strings.TrimSpace(string(out)), &#34;%d&#34;, &amp;pid); err != nil {</span></div>
-    <div class="line" data-line="153"><span class="miss">		return 0, err</span></div>
-    <div class="line" data-line="154">	}</div>
-    <div class="line" data-line="155"><span class="miss">	return pid, nil</span></div>
-    <div class="line" data-line="156">}</div>
+    <div class="line" data-line="153"><span class="hit">	out, err := runner.Output(exec.Command(&#34;lsof&#34;, &#34;-ti&#34;, &#34;:&#34; + port)) // #nosec G204 - port is a const defined in launchHTTPServer()</span></div>
+    <div class="line" data-line="154"><span class="hit">	if err != nil { return -1, err</span><span class="hit"> }</span></div>
+    <div class="line" data-line="155"><span class="hit">	var pid int</span></div>
+    <div class="line" data-line="156"><span class="hit">	if _, err := fmt.Sscanf(strings.TrimSpace(string(out)), &#34;%d&#34;, &amp;pid); err != nil {</span></div>
+    <div class="line" data-line="157"><span class="hit">		return -1, err</span></div>
+    <div class="line" data-line="158">	}</div>
+    <div class="line" data-line="159"><span class="hit">	return pid, nil</span></div>
+    <div class="line" data-line="160">}</div>
   </div>
 </div>
-<div class="line" data-line="157"></div>
-<div class="line" data-line="158">// isTerm determines if the specified writer is connected to a terminal.</div>
+<div class="line" data-line="161"></div>
+<div class="line" data-line="162">// isTerm determines if the specified writer is connected to a terminal.</div>
 <div class="func"><input type="checkbox" id="func-6" checked/>
-  <label for="func-6" class="line" data-line="159">func isTerm(v any) bool<span class="hit"> {</span></label>
+  <label for="func-6" class="line" data-line="163">func isTerm(v any) bool<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="160"><span class="hit">	if testing.Testing()                     ||</span></div>
-    <div class="line" data-line="161"><span class="hit">	   os.Getenv(&#34;GITHUB_ACTIONS&#34;) == &#34;true&#34; || // https://docs.github.com/actions/reference/workflows-and-actions/variables</span></div>
-    <div class="line" data-line="162"><span class="hit">	   os.Getenv(&#34;CI&#34;            ) == &#34;true&#34; { return false</span><span class="hit"> }</span></div>
-    <div class="line" data-line="163"><span class="miss">	fd := getFD(v)</span></div>
-    <div class="line" data-line="164"><span class="miss">	if fd &lt; 0 { return false</span><span class="miss"> }</span></div>
-    <div class="line" data-line="165"><span class="miss">	return term.IsTerminal(fd</span><span class="miss">)</span></div>
-    <div class="line" data-line="166">}</div>
+    <div class="line" data-line="164"><span class="hit">	if testing.Testing()                     ||</span></div>
+    <div class="line" data-line="165"><span class="hit">	   os.Getenv(&#34;GITHUB_ACTIONS&#34;) == &#34;true&#34; || // https://docs.github.com/actions/reference/workflows-and-actions/variables</span></div>
+    <div class="line" data-line="166"><span class="hit">	   os.Getenv(&#34;CI&#34;            ) == &#34;true&#34; { return false</span><span class="hit"> }</span></div>
+    <div class="line" data-line="167"><span class="miss">	fd := getFD(v)</span></div>
+    <div class="line" data-line="168"><span class="miss">	if fd &lt; 0 { return false</span><span class="miss"> }</span></div>
+    <div class="line" data-line="169"><span class="miss">	return term.IsTerminal(fd</span><span class="miss">)</span></div>
+    <div class="line" data-line="170">}</div>
   </div>
 </div>
-<div class="line" data-line="167"></div>
-<div class="line" data-line="168">// getFD returns the file descriptor of the provided argument.</div>
+<div class="line" data-line="171"></div>
+<div class="line" data-line="172">// getFD returns the file descriptor of the provided argument.</div>
 <div class="func"><input type="checkbox" id="func-7" checked/>
-  <label for="func-7" class="line" data-line="169">func getFD(w any) int<span class="miss"> {</span></label>
+  <label for="func-7" class="line" data-line="173">func getFD(v any) int<span class="hit"> {</span></label>
   <div class="func-body">
-    <div class="line" data-line="170"><span class="miss">	if f, ok := w.(interface{ Fd() uintptr }); ok { return int(f.Fd</span><span class="miss">()) }</span></div>
-    <div class="line" data-line="171"><span class="miss">	return -1</span></div>
-    <div class="line" data-line="172">}</div>
+    <div class="line" data-line="174"><span class="hit">	if f, ok := v.(interface{ Fd() uintptr }); ok { return int(f.Fd</span><span class="hit">()) }</span></div>
+    <div class="line" data-line="175"><span class="hit">	return -1</span></div>
+    <div class="line" data-line="176">}</div>
   </div>
 </div>
 <script src="../../../child.js"></script>

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -134,17 +135,45 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 	return m.writer.Write(p)
 }
 
+type mockOutput struct {
+	stdout, stderr string
+	err            error
+}
+
 type mockRunner struct {
-	stdout,
-	stderr  string
-	err     error
+	pid,
+	idx     int
+	calls   []string
+	outputs []mockOutput
 }
 
 func (m *mockRunner) Run(cmd *exec.Cmd) error {
-	_, _ = io.WriteString(cmd.Stdout, m.stdout)
-	_, _ = io.WriteString(cmd.Stderr, m.stderr)
-	return m.err
+	m.calls = append(m.calls, cmd.String())
+	out    := m.outputs[m.idx]
+	m.idx++
+	if cmd.Stdout != nil { _, _ = io.WriteString(cmd.Stdout, out.stdout) }
+	if cmd.Stderr != nil { _, _ = io.WriteString(cmd.Stderr, out.stderr) }
+	return out.err
 }
+
+func (m *mockRunner) Start(cmd *exec.Cmd) error {
+	m.calls     = append(m.calls, cmd.String())
+	cmd.Process = &os.Process{Pid: m.pid}
+	out        := m.outputs[m.idx]
+	m.idx++
+	return out.err
+}
+
+func (m *mockRunner) Output(cmd *exec.Cmd) ([]byte, error) {
+	m.calls = append(m.calls, cmd.String())
+	out    := m.outputs[m.idx]
+	m.idx++
+	return []byte(out.stdout), out.err
+}
+
+type mockFD struct{ fd uintptr }
+
+func (m mockFD) Fd() uintptr { return m.fd }
 
 // tests
 
@@ -230,31 +259,33 @@ func TestResolveRepoURLs(t *testing.T) {
 		want    []string
 	}{{
 		name:   "local SSH standard (SCP style)",
-		runner: &mockRunner{stdout: "git@github.com:foo/bar.git"},
+		runner: &mockRunner{outputs: []mockOutput{{stdout: "git@github.com:foo/bar.git"}}},
 		want:   []string{"https://github.com/foo/bar"},
 	}, {
 		name:   "local SSH standard (no extension)",
-		runner: &mockRunner{stdout: "git@github.com:foo/bar"},
+		runner: &mockRunner{outputs: []mockOutput{{stdout: "git@github.com:foo/bar"}}},
 		want:   []string{"https://github.com/foo/bar"},
 	}, {
 		name:   "local SSH explicit protocol",
-		runner: &mockRunner{stdout: "ssh://git@github.com:foo/bar.git"},
+		runner: &mockRunner{outputs: []mockOutput{{stdout: "ssh://git@github.com:foo/bar.git"}}},
 		want:   []string{"https://github.com/foo/bar"},
 	}, {
 		name:   "local HTTPS standard",
-		runner: &mockRunner{stdout: "https://github.com/foo/bar.git"},
+		runner: &mockRunner{outputs: []mockOutput{{stdout: "https://github.com/foo/bar.git"}}},
 		want:   []string{"https://github.com/foo/bar"},
 	}, {
 		name:   "GitHub CI runner (token authentication)",
-		runner: &mockRunner{stdout: "https://x-access-token:ghp_1234567890@github.com/foo/bar.git"}, // #nosec G101 - false positive (hardcoded creds)
+		runner: &mockRunner{outputs: []mockOutput{{
+			stdout: "https://x-access-token:ghp_0123456789@github.com/foo/bar.git", // #nosec G101 - false positive (hardcoded creds)
+		}}},
 		want:   []string{"https://github.com/foo/bar"},
 	}, {
 		name:   "GitHub CI runner (standard checkout)",
-		runner: &mockRunner{stdout: "https://github.com/foo/bar.git"},
+		runner: &mockRunner{outputs: []mockOutput{{stdout: "https://github.com/foo/bar.git"}}},
 		want:   []string{"https://github.com/foo/bar"},
 	}, {
 		name:    "git config fails",
-		runner:  &mockRunner{err: errors.New("git config failed")},
+		runner:  &mockRunner{outputs: []mockOutput{{err: errors.New("git config failed")}}},
 		want:    []string{"https://github.com/foo/bar"},
 	}}
 	for _, tt := range tests {

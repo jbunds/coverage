@@ -30,12 +30,17 @@ func (nullRoot) Name() string {
 
 type pkgLoader func(cfg *packages.Config, patterns ...string) ([]*packages.Package, error)
 
-type runner interface { Run(*exec.Cmd) error }
+type runner interface {
+	Run(   *exec.Cmd)          error
+	Start( *exec.Cmd)          error
+	Output(*exec.Cmd) ([]byte, error)
+}
 
 type realRunner struct{}
 
-func (*realRunner) Run(  cmd *exec.Cmd) error { return cmd.Run()   }
-func (*realRunner) Start(cmd *exec.Cmd) error { return cmd.Start() }
+func (*realRunner) Run(   cmd *exec.Cmd)          error  { return cmd.Run()    }
+func (*realRunner) Start( cmd *exec.Cmd)          error  { return cmd.Start()  }
+func (*realRunner) Output(cmd *exec.Cmd) ([]byte, error) { return cmd.Output() }
 
 // writeFS defines an interface that extends fs.FS with writing capabilities.
 // This abstraction is necessary to allow for mocking the file system within

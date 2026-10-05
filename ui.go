@@ -74,7 +74,7 @@ func writeRow(ew *errorWriter, path string, percent float64, maxPathLen int) {
 
 // maybeOpenBrowser opens the generated index.html file in the
 // default browser when stdout is a TTY and -n is not set.
-func (rg *reportGenerator) maybeOpenBrowser(fv *flagVals) error {
+func (rg *reportGenerator) maybeOpenBrowser(runner runner, fv *flagVals) error {
 	if fv.noBrowser      ||
 	   !rg.write         ||
 	   !isTerm(os.Stdin) {
@@ -82,7 +82,7 @@ func (rg *reportGenerator) maybeOpenBrowser(fv *flagVals) error {
 	}
 
 	if fv.httpServer {
-		return launchHTTPServer(rg.outRoot.Name())
+		return launchHTTPServer(runner, rg.outRoot.Name())
 	}
 
 	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), "index.html"))
@@ -92,11 +92,11 @@ func (rg *reportGenerator) maybeOpenBrowser(fv *flagVals) error {
 	if runtime.GOOS == "linux" {
 		absPath = "file://" + absPath // Linux requires explicit file:// scheme prefix
 	}
-	return openBrowser(absPath)
+	return openBrowser(runner, absPath)
 }
 
 // launchHTTPServer launches a Python HTTP server when -s is set and -n is not set.
-func launchHTTPServer(outDir string) error {
+func launchHTTPServer(runner runner, outDir string) error {
 	python := "python3"
 	if runtime.GOOS == "windows" {
 		python = "python"
@@ -106,30 +106,34 @@ func launchHTTPServer(outDir string) error {
 		return err
 	}
 
-	const port = 8000 // https://docs.python.org/3/library/http.server.html#cmdoption-http.server-arg-port
+	const port = "8000" // https://docs.python.org/3/library/http.server.html#cmdoption-http.server-arg-port
 
-	url := fmt.Sprintf("http://localhost:%d", port)
+	url := "http://localhost:" + port
 
 	if runtime.GOOS != "windows" {
-		if pid, err := findPortPID(port); err == nil { // macOS / Linux: check for existing process listening on port 8000
-			fmt.Fprintf(os.Stderr, "process already listening on port %d (PID: %d)\n", port, pid)
-			return openBrowser(url) // assume the process listening on port 8000 is an HTTP server rather than launch a new one
+		if pid, err := findPortPID(runner, port); err == nil { // macOS / Linux: check for existing process listening on port 8000
+			if isTerm(os.Stderr) {
+				fmt.Fprintf(os.Stderr, "process already listening on port %s (PID: %d)\n", port, pid)
+			}
+			return openBrowser(runner, url) // assume the process listening on port 8000 is an HTTP server rather than launch a new one
 		}
 	}
 
 	cmd := exec.Command(pyPath, "-m", "http.server", "-d", outDir) // #nosec G204 G702 - no shell (no injection); outDir confined to outRoot (no path escape)
 
-	if err := new(realRunner).Start(cmd); err != nil { // Windows: fire-and-forget, no PID reporting
+	if err := runner.Start(cmd); err != nil {
 		return err
 	}
-	if runtime.GOOS != "windows" {
-		fmt.Fprintf(os.Stderr, "HTTP server listening on port %d (PID: %d)\n", port, cmd.Process.Pid)
+
+	if runtime.GOOS != "windows" && isTerm(os.Stderr) {
+		fmt.Fprintf(os.Stderr, "HTTP server listening on port %s (PID: %d)\n", port, cmd.Process.Pid)
 	}
-	return openBrowser(url)
+
+	return openBrowser(runner, url)
 }
 
 // openBrowser opens the default browser with the specified URL.
-func openBrowser(url string) error {
+func openBrowser(runner runner, url string) error {
 	var cmd *exec.Cmd
 	switch os := runtime.GOOS; os {
 	case "darwin":
@@ -141,16 +145,16 @@ func openBrowser(url string) error {
 	default:
 		return fmt.Errorf("unrecognized OS: %s", os)
 	}
-	return new(realRunner).Run(cmd)
+	return runner.Run(cmd)
 }
 
 // findPortPID searches for a process listening on the specified port and returns its PID if found.
-func findPortPID(port int) (int, error) {
-	out, err := exec.Command("lsof", "-ti", fmt.Sprintf(":%d", port)).Output() // #nosec G204 - port is a const defined in launchHTTPServer()
-	if err != nil { return 0, err }
+func findPortPID(runner runner, port string) (int, error) {
+	out, err := runner.Output(exec.Command("lsof", "-ti", ":" + port)) // #nosec G204 - port is a const defined in launchHTTPServer()
+	if err != nil { return -1, err }
 	var pid int
 	if _, err := fmt.Sscanf(strings.TrimSpace(string(out)), "%d", &pid); err != nil {
-		return 0, err
+		return -1, err
 	}
 	return pid, nil
 }
@@ -166,7 +170,7 @@ func isTerm(v any) bool {
 }
 
 // getFD returns the file descriptor of the provided argument.
-func getFD(w any) int {
-	if f, ok := w.(interface{ Fd() uintptr }); ok { return int(f.Fd()) }
+func getFD(v any) int {
+	if f, ok := v.(interface{ Fd() uintptr }); ok { return int(f.Fd()) }
 	return -1
 }

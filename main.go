@@ -12,7 +12,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"embed"
 	"errors"
@@ -124,7 +123,7 @@ func run() int {
 		}
 	}
 
-	if err := rg.maybeOpenBrowser(fv); err != nil { return fatal(11, "cannot open browser: %v", err) }
+	if err := rg.maybeOpenBrowser(&realRunner{}, fv); err != nil { return fatal(11, "cannot open browser: %v", err) }
 
 	return 0
 }
@@ -256,22 +255,16 @@ func (rg *reportGenerator) resolveRepoURLs(runner runner, fv *flagVals) error {
 	//
 	//   https://pkg.go.dev/cmd/go#hdr-Fully_qualified_import_paths
 
-	var stdout, stderr bytes.Buffer
-
 	for i, goModFile := range splitGoModFiles(fv.goModFiles) {
-		stdout.Reset()
-		stderr.Reset()
 		cmd       := exec.Command("git", "config", "--get", "remote.origin.url")
 		cmd.Dir    = filepath.Dir(goModFile)
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-
-		if err := runner.Run(cmd); err != nil {
+		out, err  := runner.Output(cmd)
+		if err != nil {
 			rg.repoURLs = append(rg.repoURLs, "https://" + rg.modPaths[i]) // fallback to module path
-			return nil
+			continue
 		}
 
-		originURL := strings.TrimSpace(stdout.String())
+		originURL := strings.TrimSpace(string(out))
 
 		if idx := strings.Index(originURL, "@"); idx != -1 {
 			originURL = originURL[idx + 1:]

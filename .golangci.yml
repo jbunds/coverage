@@ -97,6 +97,7 @@ linters:
             - io
             - io/fs
             - math
+            - os
             - os/exec
             - reflect
             - runtime
