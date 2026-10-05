@@ -23,7 +23,7 @@ repos:
     hooks:
       - id:             golangci-lint
         name:           go lint
-        entry:          golangci-lint run --verbose
+        entry:          golangci-lint run
         language:       golang
         types:          [go]
         pass_filenames: false
@@ -31,7 +31,7 @@ repos:
     hooks:
       - id:             go-test
         name:           go test
-        entry:          go test -race ./...
+        entry:          go test -race .
         files:          \.go$|^go\.(?:mod|sum)$
         language:       system
         pass_filenames: false
