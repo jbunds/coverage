@@ -9,11 +9,11 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Mon Oct  5 15:10:18 CEST 2026
+Mon Oct  5 15:14:26 CEST 2026
 ```
 
 ```
-$ scc --exclude-dir .git,testdata --include-ext go,html,css,js,yml,yaml --dryness --by-file --wide
+$ scc --exclude-dir .git,testdata --include-ext go,html,css,js,sh,yml,yaml --dryness --by-file --wide
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Language                    Files        Lines     Blanks   Comments         Code Complexity Complexity/Lines
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -65,6 +65,15 @@ js/events.js                                73         13          0           6
 tools/validate.js                           19          3          0           16          2            12.50
 js/child.js                                 13          1          0           12         10            83.33
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Shell                           5          173         41         43           89         14            15.73
+(ULOC)                                     115
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+tools/tests.sh                              60         11          2           47         10            21.28
+tools/demo/demo.sh                          57         17         26           14          0             0.00
+tools/untree.sh                             31          9          5           17          2            11.76
+tools/demo/bunch.sh                         13          2          6            5          1            20.00
+integration_test.sh                         12          2          4            6          1            16.67
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 CSS                             3          349         48          1          300          0             0.00
 (ULOC)                                     228
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -78,14 +87,14 @@ HTML                            2           43          0          0           4
 html/index.html                             33          0          0           33          0             0.00
 html/code.html                              10          0          0           10          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                          41        5,263        533        271        4,459        531            11.91
+Total                          46        5,436        574        314        4,548        545            11.98
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Unique Lines of Code (ULOC)              3,130
-DRYness %                                 0.59
+Unique Lines of Code (ULOC)              3,243
+DRYness %                                 0.60
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $129,819
-Estimated Schedule Effort (organic) 6.33 months
-Estimated People Required (organic) 1.82
-Processed 167,495 bytes, 0.167 megabytes (SI)
+Estimated Cost to Develop (organic) $132,541
+Estimated Schedule Effort (organic) 6.38 months
+Estimated People Required (organic) 1.85
+Processed 173,148 bytes, 0.173 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```
