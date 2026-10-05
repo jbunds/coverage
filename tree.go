@@ -75,6 +75,7 @@ func (tb *treeBuilder) buildTree(ctx context.Context, progressOutput io.Writer) 
 
 		var modCovered, modTotal uint64
 		var sb strings.Builder
+
 		for _, res := range results {
 			sb.WriteString(res.html)
 			modCovered += res.covered

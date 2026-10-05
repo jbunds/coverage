@@ -134,6 +134,18 @@ func (m *mockFile) Write(p []byte) (n int, err error) {
 	return m.writer.Write(p)
 }
 
+type mockRunner struct {
+	stdout,
+	stderr  string
+	err     error
+}
+
+func (m *mockRunner) Run(cmd *exec.Cmd) error {
+	_, _ = io.WriteString(cmd.Stdout, m.stdout)
+	_, _ = io.WriteString(cmd.Stderr, m.stderr)
+	return m.err
+}
+
 // tests
 
 func TestRegisterModPaths(t *testing.T) {
@@ -208,18 +220,6 @@ func TestRegisterModPaths(t *testing.T) {
 			}
 		})
 	}
-}
-
-type mockRunner struct {
-	stdout,
-	stderr  string
-	err     error
-}
-
-func (f *mockRunner) Run(cmd *exec.Cmd) error {
-	_, _ = io.WriteString(cmd.Stdout, f.stdout)
-	_, _ = io.WriteString(cmd.Stderr, f.stderr)
-	return f.err
 }
 
 func TestResolveRepoURLs(t *testing.T) {
