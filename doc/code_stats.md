@@ -9,7 +9,7 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Sun Oct  4 18:41:01 CEST 2026
+Mon Oct  5 15:10:18 CEST 2026
 ```
 
 ```
@@ -17,33 +17,33 @@ $ scc --exclude-dir .git,testdata --include-ext go,html,css,js,yml,yaml --drynes
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Language                    Files        Lines     Blanks   Comments         Code Complexity Complexity/Lines
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Go                             19        3,748        376        185        3,187        470            14.75
-(ULOC)                                   2,166
+Go                             19        3,905        390        185        3,330        491            14.74
+(ULOC)                                   2,219
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-main_test.go                               439         38          7          394         40            10.15
-main.go                                    382         64         38          280         87            31.07
+main_test.go                               467         43          7          417         44            10.55
+main.go                                    375         62         38          275         87            31.64
 pages.go                                   367         50         35          282         61            21.63
 tree_test.go                               319          7          2          310         21             6.77
-tree.go                                    305         52         22          231         39            16.88
+tree.go                                    307         54         22          231         39            16.88
 flags_test.go                              298          5          0          293         26             8.87
-pages_test.go                              298          5          0          293         14             4.78
-scan.go                                    238         33         25          180         42            23.33
-ui.go                                      172         24          9          139         33            23.74
-trie.go                                    132         20         13           99         18            18.18
+pages_test.go                              295          5          0          290         14             4.83
+ui_test.go                                 253          7          0          246         19             7.72
+scan.go                                    240         34         25          181         40            22.10
+ui.go                                      176         26          9          141         35            24.82
+trie.go                                    134         22         13           99         18            18.18
 sort.go                                    115         17         17           81         17            20.99
-ui_test.go                                 115          3          0          112          5             4.46
 sort_test.go                               111          5          0          106         11            10.38
 flags.go                                   103          4          3           96         11            11.46
+interfaces.go                               96         21          9           66          2             3.03
 tools/loctrace/loctrace.go                  91          8          3           80         16            20.00
-interfaces.go                               91         21          9           61          2             3.28
-assets_test.go                              81          3          0           78          5             6.41
-integration_test.go                         69         14          1           54         13            24.07
+assets_test.go                              75          3          0           72          5             6.94
+integration_test.go                         61         14          1           46         16            34.78
 assets.go                                   22          3          1           18          9            50.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-YAML                           12          563         49         35          479          0             0.00
-(ULOC)                                     366
+YAML                           12          565         49         35          481          0             0.00
+(ULOC)                                     367
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-.golangci.yml                              125          1          2          122          0             0.00
+.golangci.yml                              127          1          2          124          0             0.00
 .github/workflows/pages.yml                101          8         15           78          0             0.00
 action.yml                                  66          6         10           50          0             0.00
 .github/workflows/test-go.yml               60         10          1           49          0             0.00
@@ -78,14 +78,14 @@ HTML                            2           43          0          0           4
 html/index.html                             33          0          0           33          0             0.00
 html/code.html                              10          0          0           10          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                          41        5,104        519        271        4,314        510            11.82
+Total                          41        5,263        533        271        4,459        531            11.91
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Unique Lines of Code (ULOC)              3,076
-DRYness %                                 0.60
+Unique Lines of Code (ULOC)              3,130
+DRYness %                                 0.59
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $125,390
-Estimated Schedule Effort (organic) 6.25 months
-Estimated People Required (organic) 1.78
-Processed 162,826 bytes, 0.163 megabytes (SI)
+Estimated Cost to Develop (organic) $129,819
+Estimated Schedule Effort (organic) 6.33 months
+Estimated People Required (organic) 1.82
+Processed 167,495 bytes, 0.167 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```
