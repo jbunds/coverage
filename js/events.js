@@ -14,11 +14,15 @@ const applyTheme = (theme) => {
 };
 
 const savedTheme = store.get('user-theme');
-if (savedTheme) applyTheme(savedTheme);
+if (savedTheme) {
+  applyTheme(savedTheme);
+} else {
+  applyTheme(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+}
 
 document.getElementById('theme').addEventListener('click', () => {
   const current = document.documentElement.getAttribute('theme');
-  const isDark  = current === 'dark' || (!current && matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark  = current === 'dark';
   applyTheme(isDark ? 'light' : 'dark');
 });
 

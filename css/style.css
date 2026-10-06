@@ -1,27 +1,14 @@
 :root {
-  --bg-color:    beige;
-  --bg-header:   papayawhip;
-  --text-color:  darkslategrey;
-  --hover-bg:    wheat;
-  --cov-hit:     green;
+  --bg-color:    black;
+  --bg-header:   black;
+  --text-color:  lightyellow;
+  --hover-bg:    dimgrey;
+  --cov-hit:     limegreen;
   --cov-miss:    red;
-  --cov-hit-bg:  darkolivegreen;
+  --cov-hit-bg:  darkgreen;
   --cov-miss-bg: firebrick;
 
   color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-color:    black;
-    --bg-header:   black;
-    --text-color:  lightyellow;
-    --hover-bg:    dimgrey;
-    --cov-hit:     limegreen;
-    --cov-miss:    red;
-    --cov-hit-bg:  darkgreen;
-    --cov-miss-bg: firebrick;
-  }
 }
 
 [theme="light"] {
@@ -32,17 +19,6 @@
   --cov-hit:     green;
   --cov-miss:    red;
   --cov-hit-bg:  darkolivegreen;
-  --cov-miss-bg: firebrick;
-}
-
-[theme="dark"] {
-  --bg-color:    black;
-  --bg-header:   black;
-  --text-color:  lightyellow;
-  --hover-bg:    dimgrey;
-  --cov-hit:     limegreen;
-  --cov-miss:    red;
-  --cov-hit-bg:  darkgreen;
   --cov-miss-bg: firebrick;
 }
 
@@ -65,10 +41,8 @@ img {
 iframe {
   width:         100%;
   height:        100%;
+  border: 0;
   border-top:    1px solid #444;
-  border-bottom: 0;
-  border-left:   0;
-  border-right:  0;
   box-sizing:    border-box;
 }
 
@@ -78,6 +52,14 @@ iframe {
   font-size:       large;
   font-weight:     bold;
 }
+
+#buttons {
+  display:      none;
+  justify-self: end;
+  gap:          12px;
+}
+
+#buttons.visible { display: flex; }
 
 a {
   display:         inline-block;
@@ -96,22 +78,14 @@ a:hover {
   display:               grid;
   height:                100vh;
   margin:                0;
-  grid-template-rows:    50px 1fr;
+  grid-template-rows:    50px 1fr auto;
   grid-template-columns: auto 1fr;
   background-color:      var(--bg-color);
   color:                 var(--text-color);
   font-family:           monospace;
 }
 
-#buttons {
-  display:      none;
-  justify-self: end;
-  gap:          12px;
-}
-
-#buttons.visible { display: flex; }
-
-#tree { /* <iframe id="tree"> */
+#tree {
   background-color: var(--bg-color);
   border-right:     1px solid #444;
   border-top:       1px solid #444;
@@ -127,22 +101,34 @@ a:hover {
   white-space: nowrap;
 }
 
-#code, /* <iframe id="code"> and <body id="code"> */
-#tree-body {
+#code { /* <iframe id="code"> and <body id="code"> */
   background-color: var(--bg-color);
   color:            var(--text-color);
   font-family:      monospace;
 }
 
+#footer {
+  grid-row:         3;
+  grid-column:      1;
+  display:          flex;
+  align-items:      center;
+  justify-content:  center;
+  gap:              6px;
+  padding:          8px 10px;
+  border-top:       1px solid #444;
+  border-right:     1px solid #444;
+  background-color: var(--bg-color);
+}
+
 .line {
-  display:           block;
-  position:          relative;
-  margin-left:       3.5rem; /* 2.5rem gutter + 1rem gap */
-  tab-size:          4;
-  font-size:         medium;
-  line-height:       1.5;
-  height:            1.5em;
-  white-space:       pre;    /* preserves all whitespace in the original source code */
+  display:     block;
+  position:    relative;
+  margin-left: 3.5rem; /* 2.5rem gutter + 1rem gap */
+  tab-size:    4;
+  font-size:   medium;
+  line-height: 1.5;
+  height:      1.5em;
+  white-space: pre;    /* preserves all whitespace in the original source code */
 }
 
 .line::before {
