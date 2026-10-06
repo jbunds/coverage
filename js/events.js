@@ -21,9 +21,7 @@ if (savedTheme) {
 }
 
 document.getElementById('theme').addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('theme');
-  const isDark  = current === 'dark';
-  applyTheme(isDark ? 'light' : 'dark');
+  applyTheme(document.documentElement.getAttribute('theme') === 'dark' ? 'light' : 'dark');
 });
 
 const syncExpandButtonText = () => {
