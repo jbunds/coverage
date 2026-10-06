@@ -1,7 +1,5 @@
 /* TODO(jeff): refactor, simplify, and encapsulate with more finely-grained CSS selectors */
 
-.tree input[type="checkbox"] { display: none }
-
 .tree,
 .tree ul,
 .tree li {
@@ -9,6 +7,8 @@
   margin:     0;
   padding:    0;
 }
+
+.tree input[type="checkbox"] { display: none }
 
 .tree ul { /* collapsed state */
   display:      none;
