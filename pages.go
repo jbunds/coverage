@@ -305,11 +305,11 @@ func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
 		sb.WriteString("    <label for=\"modules-menu\" class=\"dropdown-toggle\">modules</label>\n")
 		sb.WriteString("    <div class=\"dropdown-menu\">\n")
 		for _, mod := range rg.modPaths {
-			sb.WriteString(`      <label for="module-`)
+			sb.WriteString(`      <span data-for="module-`)
 			sb.WriteString(normalizeModID(mod))
 			sb.WriteString(`" class="dropdown-link">`)
 			sb.WriteString(mod)
-			sb.WriteString("</label>\n")
+			sb.WriteString("</span>\n")
 		}
 		sb.WriteString("    </div>\n")
 		sb.WriteString("  </div>")

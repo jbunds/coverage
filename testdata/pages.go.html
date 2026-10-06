@@ -366,11 +366,11 @@
     <div class="line" data-line="305"><span class="hit">		sb.WriteString(&#34;    &lt;label for=\&#34;modules-menu\&#34; class=\&#34;dropdown-toggle\&#34;&gt;modules&lt;/label&gt;\n&#34;)</span></div>
     <div class="line" data-line="306"><span class="hit">		sb.WriteString(&#34;    &lt;div class=\&#34;dropdown-menu\&#34;&gt;\n&#34;)</span></div>
     <div class="line" data-line="307"><span class="hit">		for _, mod := range rg.modPaths {</span></div>
-    <div class="line" data-line="308"><span class="hit">			sb.WriteString(`      &lt;label for=&#34;module-`)</span></div>
+    <div class="line" data-line="308"><span class="hit">			sb.WriteString(`      &lt;span data-for=&#34;module-`)</span></div>
     <div class="line" data-line="309"><span class="hit">			sb.WriteString(normalizeModID(mod))</span></div>
     <div class="line" data-line="310"><span class="hit">			sb.WriteString(`&#34; class=&#34;dropdown-link&#34;&gt;`)</span></div>
     <div class="line" data-line="311"><span class="hit">			sb.WriteString(mod)</span></div>
-    <div class="line" data-line="312"><span class="hit">			sb.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
+    <div class="line" data-line="312"><span class="hit">			sb.WriteString(&#34;&lt;/span&gt;\n&#34;)</span></div>
     <div class="line" data-line="313">		}</div>
     <div class="line" data-line="314"><span class="hit">		sb.WriteString(&#34;    &lt;/div&gt;\n&#34;)</span></div>
     <div class="line" data-line="315"><span class="hit">		sb.WriteString(&#34;  &lt;/div&gt;&#34;</span><span class="hit">)</span></div>

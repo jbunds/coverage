@@ -39,9 +39,8 @@ document.getElementById('expand').addEventListener('click', () => {
 });
 
 document.querySelector('.dropdown-menu')?.addEventListener('click', (e) => {
-  const targetID = e.target.closest('.dropdown-link')?.getAttribute('for');
+  const targetID = e.target.closest('.dropdown-link')?.dataset.for;
   if (!targetID) return;
-  e.preventDefault();
   const target = document.getElementById(targetID);
   if (target.checked) {
     document.getElementById('modules-menu').checked = false;
