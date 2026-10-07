@@ -58,11 +58,9 @@ header {
 }
 
 #buttons {
-  appearance:         none;
-  -webkit-appearance: none;
-  display:            none;
-  justify-self:       end;
-  gap:                12px;
+  display:      none;
+  justify-self: end;
+  gap:          12px;
 }
 
 #buttons button {
