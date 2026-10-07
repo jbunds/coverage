@@ -72,15 +72,23 @@
   box-shadow:       2px 2px 2px rgb(0 0 0 / 15%);
 }
 
-.tree label::before {
+.tree .icon {
   display:        inline-block;
   width:          2ch;
-  content:        "\1F4C1"; /* closed folder */
   vertical-align: middle;
-  font-weight:    normal;
 }
 
-.tree input:checked ~ .tree-node label::before { content: "\1F4C2" } /* open folder */
+.tree .icon::before {
+  content: "\1F4C1"; /* closed folder */
+}
+
+@supports (hanging-punctuation: first) and (font: -apple-system-body) and (-webkit-appearance: none) {
+  .tree .icon::before {
+    font-size: 0.8em;
+  }
+}
+
+.tree input:checked ~ .tree-node .icon::before { content: "\1F4C2" } /* open folder */
 
 .tree .src:focus-within { /* persists background color highlight after clicking on a link */
   background-color: var(--hover-bg);

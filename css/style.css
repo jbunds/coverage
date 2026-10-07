@@ -1,25 +1,31 @@
 :root {
-  --bg-color:    black;
-  --bg-header:   black;
-  --text-color:  lightyellow;
-  --hover-bg:    dimgrey;
-  --cov-hit:     limegreen;
-  --cov-miss:    red;
-  --cov-hit-bg:  darkgreen;
-  --cov-miss-bg: firebrick;
+  --bg-color:        black;
+  --bg-header:       black;
+  --text-color:      lightyellow;
+  --hover-bg:        dimgrey;
+  --btn-bg:          dimgrey;
+  --btn-hover-color: black;
+  --btn-hover-bg:    lightgrey;
+  --cov-hit:         limegreen;
+  --cov-miss:        red;
+  --cov-hit-bg:      darkgreen;
+  --cov-miss-bg:     firebrick;
 
   color-scheme: light dark;
 }
 
 [theme="light"] {
-  --bg-color:    beige;
-  --bg-header:   papayawhip;
-  --text-color:  darkslategrey;
-  --hover-bg:    wheat;
-  --cov-hit:     green;
-  --cov-miss:    red;
-  --cov-hit-bg:  darkolivegreen;
-  --cov-miss-bg: firebrick;
+  --bg-color:        beige;
+  --bg-header:       papayawhip;
+  --text-color:      darkslategrey;
+  --hover-bg:        wheat;
+  --btn-bg:          dimgrey;
+  --btn-hover-color: var(--text-color);
+  --btn-hover-bg:    navajowhite;
+  --cov-hit:         green;
+  --cov-miss:        red;
+  --cov-hit-bg:      darkolivegreen;
+  --cov-miss-bg:     firebrick;
 }
 
 #index { /* index.html: <body id="index"> */
@@ -52,12 +58,35 @@ header {
 }
 
 #buttons {
-  display:      none;
-  justify-self: end;
-  gap:          12px;
+  appearance:         none;
+  -webkit-appearance: none;
+  display:            none;
+  justify-self:       end;
+  gap:                12px;
+}
+
+#buttons button {
+  font-size:        inherit;
+  border-radius:    4px;
+  border:           none;
+  padding:          4px 10px;
+  background-color: var(--btn-bg);
+  box-shadow:       2px 2px 5px rgb(0 0 0 / 30%);
+  transition:       box-shadow 0.1s, transform 0.1s;
 }
 
 #buttons.visible { display: flex; }
+
+#buttons button:hover {
+  color:            var(--btn-hover-color);
+  background-color: var(--btn-hover-bg);
+  box-shadow:       2px 2px 2px rgb(0 0 0 / 15%);
+}
+
+#buttons button:active {
+  box-shadow: 0 0 0 rgb(0 0 0 / 20%);
+  transform:  translateY(3px);
+}
 
 #tree {
   background-color: var(--bg-color);

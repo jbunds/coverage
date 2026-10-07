@@ -264,7 +264,7 @@ func (hb *htmlBuilder) renderSubDirHTML(res *entryResult) {
 	sb.WriteString(indent)
 	sb.WriteString(`    <label for="`)
 	sb.WriteString(hb.itemID)
-	sb.WriteString(`">`)
+	sb.WriteString(`"><span class="icon"></span>`)
 	sb.WriteString(hb.subDir)
 	sb.WriteString("</label>\n")
 	sb.WriteString(indent)

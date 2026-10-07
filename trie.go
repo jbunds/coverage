@@ -67,7 +67,7 @@ func (tn *trieNode) assemble(sb *strings.Builder, depth int, counter *atomic.Uin
 	sb.WriteString(indent)
 	sb.WriteString(`    <label for="module-`)
 	sb.WriteString(itemID)
-	sb.WriteString(`">`)
+	sb.WriteString(`"><span class="icon"></span>`)
 	sb.WriteString(tn.segment)
 	sb.WriteString("</label>\n")
 

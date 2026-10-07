@@ -39,12 +39,7 @@ document.getElementById('expand').addEventListener('click', () => {
 document.querySelector('.dropdown-menu')?.addEventListener('click', (e) => {
   const targetID = e.target.closest('.dropdown-link')?.dataset.for;
   if (!targetID) return;
-  const target = document.getElementById(targetID);
-  if (target.checked) {
-    document.getElementById('modules-menu').checked = false;
-    return;
-  }
-  const targetLi = target.closest('li');
+  const targetLi = document.getElementById(targetID).closest('li');
   targetLi.parentElement.querySelectorAll(':scope > li > input').forEach(cb => { cb.checked = false; }); // uncheck only sibling module roots, not their subtrees
   let el = targetLi;
   while (el) {

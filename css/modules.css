@@ -27,7 +27,7 @@
   position:      absolute;
   top:           100%;
   left:          50%;
-  transform:     translateX(-50%);
+  transform:     translateX(-50%); /* center the dropdown menu beneath the center of the "modules" pseudo button */
   margin-top:    4px;
   background:    var(--bg-header);
   width:         max-content;
