@@ -64,13 +64,15 @@ header {
 }
 
 #buttons button {
-  font-size:        inherit;
-  border-radius:    4px;
-  border:           none;
-  padding:          4px 10px;
-  background-color: var(--btn-bg);
-  box-shadow:       2px 2px 5px rgb(0 0 0 / 30%);
-  transition:       box-shadow 0.1s, transform 0.1s;
+  appearance:                  none;
+  -webkit-tap-highlight-color: transparent;
+  font-size:                   inherit;
+  border-radius:               4px;
+  border:                      none;
+  padding:                     4px 10px;
+  background-color:            var(--btn-bg);
+  box-shadow:                  2px 2px 5px rgb(0 0 0 / 30%);
+  transition:                  box-shadow 0.1s, transform 0.1s;
 }
 
 #buttons.visible { display: flex; }
@@ -83,7 +85,7 @@ header {
 
 #buttons button:active {
   box-shadow: 0 0 0 rgb(0 0 0 / 20%);
-  transform:  translateY(3px);
+  transform:  translateY(1px);
 }
 
 #tree {

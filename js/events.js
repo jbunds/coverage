@@ -50,6 +50,10 @@ document.querySelector('.dropdown-menu')?.addEventListener('click', (e) => {
   syncExpandButtonText();
 });
 
+document.querySelector('.dropdown-wrapper')?.addEventListener('mouseleave', () => {
+  document.getElementById('modules-menu').checked = false;
+});
+
 const applyLineNumbers = (on) => {
   document.documentElement.setAttribute('line-numbers', on ? '1' : '0');
   store.set('line-numbers', on ? '1' : '0');

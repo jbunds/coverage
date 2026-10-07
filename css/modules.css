@@ -22,6 +22,10 @@
   transition:    box-shadow 0.1s ease-in-out;
 }
 
+.dropdown-toggle:active {
+  transform: translateY(1px);
+}
+
 .dropdown-menu { /* floating modules list dropdown menu */
   display:       none;
   position:      absolute;
@@ -34,6 +38,13 @@
   border:        1px solid rgb(from var(--text-color) r g b / 40%);
   border-radius: 4px;
   box-shadow:    4px 4px 10px rgb(0 0 0 / 30%);
+}
+
+.dropdown-menu::before {
+  content:  "";
+  position: absolute;
+  inset:    -4px 0 auto 0;
+  height:   4px;
 }
 
 .dropdown-link { /* individual menu items */
