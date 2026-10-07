@@ -51,6 +51,11 @@
   content:    "";
 }
 
+/* https://issues.chromium.org/issues/1142756
+   https://issues.chromium.org/issues/40045219
+   https://issues.chromium.org/issues/40131567
+   https://issues.chromium.org/issues/40461560 */
+
 .tree label { /* folder emojis & labels */
   display:        inline-block;
   user-select:    none;

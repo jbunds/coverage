@@ -146,12 +146,12 @@ Aside from the [CLI interface](#cli-usage) outlined above, there are two ways to
 
 #### But _Why?_
 
-The motivation behind the `coverage` module was to provide a richer UI than that produced by `go tool cover -html`, with minimal JavaScript ([73 lines](https://github.com/jbunds/coverage/tree/main/js) in total as of this writing, most of which is either trivial button event-listener boilerplate used to toggle CSS selectors, or theme and line numbers user preference persistence).
+The motivation behind the `coverage` module was to provide a richer UI than that produced by `go tool cover -html`, with minimal JavaScript ([71 lines](https://github.com/jbunds/coverage/tree/main/js) in total as of this writing, most of which is either trivial button event-listener boilerplate used to toggle CSS selectors, or theme and line numbers user preference persistence).
 
 [`r`'s opinion](https://go.dev/issue/25368#issuecomment-393720254)
 
 ##### Prior Art
 
-The CSS code ([~300 lines](https://github.com/jbunds/coverage/tree/main/css) in total as of this writing) was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it clearly still needs to be polished. But I am definitely _not_ a CSS expert, and it fulfills the required behavior as-is.
+The CSS code ([327 lines](https://github.com/jbunds/coverage/tree/main/css) in total as of this writing) was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it clearly still needs to be polished. But I am definitely _not_ a CSS expert, and it fulfills the required behavior as-is.
 
 [go-better-html-coverage](https://github.com/chmouel/go-better-html-coverage) is similar but provides a much richer UI afforded by its extensive use of JavaScript. I couldn't get it to work with the [Kubernetes][k8s] codebase.
