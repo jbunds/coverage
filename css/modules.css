@@ -12,6 +12,18 @@
   display: block;
 }
 
+.dropdown-wrapper {
+  position: relative;
+  padding:  0 5em;
+}
+
+.dropdown-wrapper::after {
+  content:  "";
+  position: absolute;
+  inset:    auto 0 -1em 0;
+  height:   1em;
+}
+
 .dropdown-toggle { /* pseudo button to open the modules list dropdown menu */
   display:       inline-block;
   cursor:        pointer;
@@ -38,13 +50,6 @@
   border:        1px solid rgb(from var(--text-color) r g b / 40%);
   border-radius: 4px;
   box-shadow:    4px 4px 10px rgb(0 0 0 / 30%);
-}
-
-.dropdown-menu::before {
-  content:  "";
-  position: absolute;
-  inset:    -4px 0 auto 0;
-  height:   4px;
 }
 
 .dropdown-link { /* individual menu items */
