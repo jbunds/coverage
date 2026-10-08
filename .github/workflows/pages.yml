@@ -79,6 +79,7 @@ jobs:
           cover-pkg:              ${{ inputs.cover-pkg              || './...'           }}
           coverage-threshold:     ${{ inputs.coverage-threshold     || '0'               }}
           coverage-report-outdir: ${{ inputs.coverage-report-outdir || 'coverage_report' }}
+          workspace-repos:        ${{ inputs.workspace-repos                             }}
 
       - name: upload to GitHub Pages
         uses: jbunds/coverage/.github/actions/upload-pages@v1

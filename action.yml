@@ -38,6 +38,11 @@ inputs:
     description: path to the root of the Go coverage report
     required:    false
     default:     coverage_report
+  workspace-repos:
+    type:        string
+    description: newline-separated list of GitHub repos ("owner/repo") to check out
+    required:    false
+    default:     ''
 
 outputs:
   all:           # accessed downstream via ${{ fromJson(steps.coverage_report.outputs.all).report-pathname }} for example
@@ -50,18 +55,14 @@ runs:
     - name:  init workspace
       id:    init_workspace
       shell: bash
+      if:    inputs.workspace-repos != ''
       run: |
-        dirs=$(printf '%s\n' "${{ inputs.test-pkgs }}" | sed -n 's|^\./\([^/]*\)/.*|\1|p')
-        if [ -n "$dirs" ]; then
-          has_submod=false
-          for d in $dirs; do
-            [ -f "$d/go.mod" ] && has_submod=true
-          done
-          if [ "$has_submod" = true ]; then
-            echo "detected sub-modules; creating go.work"
-            go work init . $(echo "$dirs" | sed 's|^|./|')
-          fi
-        fi
+        dirs=''
+        while IFS= read -r repo; do
+          dirs="$dirs ./$(basename "$repo")"
+        done <<< "${{ inputs.workspace-repos }}"
+        go work init . $dirs
+
     - name: coverage profile
       id:   coverage_profile
       uses: gwatts/go-coverage-action@v2
