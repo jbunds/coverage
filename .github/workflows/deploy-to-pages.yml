@@ -8,7 +8,6 @@ on:
     paths:
       - '**/*.go'
       - '**/go.mod'
-      - 'go.work'
 concurrency:
   group:              coverage-notes
   cancel-in-progress: false
@@ -16,8 +15,8 @@ jobs:
   pages:
     uses: ./.github/workflows/pages.yml
     with:
-      go-mod:          go.work
-      cover-pkg:       .,./fractal/...,./progress/...
+      go-mod:          go.mod,fractal/go.mod,progress/go.mod
+      cover-pkg:       .,fractal/...,progress/...
       test-pkgs: |-
         .
         ./fractal/...
