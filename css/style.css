@@ -74,15 +74,17 @@ button {
   transition:                  box-shadow 0.1s, transform 0.1s;
 }
 
-button:hover {
-  color:            var(--btn-hover-color);
-  background-color: var(--btn-hover-bg);
-  box-shadow:       2px 2px 2px rgb(0 0 0 / 15%);
-}
-
 button:active {
   box-shadow: 0 0 0 rgb(0 0 0 / 20%);
   transform:  translateY(1px);
+}
+
+@media (hover: hover) {
+  button:hover {
+    color:            var(--btn-hover-color);
+    background-color: var(--btn-hover-bg);
+    box-shadow:       2px 2px 2px rgb(0 0 0 / 15%);
+  }
 }
 
 #buttons {
