@@ -1,8 +1,11 @@
 :root {
+  color-scheme:      dark;
+
   --bg-color:        black;
   --bg-header:       black;
   --text-color:      lightyellow;
   --hover-bg:        dimgrey;
+  --btn-color:       var(--text-color);
   --btn-bg:          dimgrey;
   --btn-hover-color: black;
   --btn-hover-bg:    lightgrey;
@@ -10,15 +13,16 @@
   --cov-miss:        red;
   --cov-hit-bg:      darkgreen;
   --cov-miss-bg:     firebrick;
-
-  color-scheme: light dark;
 }
 
 [theme="light"] {
+  color-scheme:      light;
+
   --bg-color:        beige;
   --bg-header:       papayawhip;
   --text-color:      darkslategrey;
   --hover-bg:        wheat;
+  --btn-color:       lightyellow;
   --btn-bg:          dimgrey;
   --btn-hover-color: var(--text-color);
   --btn-hover-bg:    navajowhite;
@@ -57,15 +61,10 @@ header {
   font-weight:     bold;
 }
 
-#buttons {
-  display:      none;
-  justify-self: end;
-  gap:          12px;
-}
-
-#buttons button {
+button {
   appearance:                  none;
   -webkit-tap-highlight-color: transparent;
+  color:                       var(--btn-color);
   font-size:                   inherit;
   border-radius:               4px;
   border:                      none;
@@ -75,18 +74,24 @@ header {
   transition:                  box-shadow 0.1s, transform 0.1s;
 }
 
-#buttons.visible { display: flex; }
-
-#buttons button:hover {
+button:hover {
   color:            var(--btn-hover-color);
   background-color: var(--btn-hover-bg);
   box-shadow:       2px 2px 2px rgb(0 0 0 / 15%);
 }
 
-#buttons button:active {
+button:active {
   box-shadow: 0 0 0 rgb(0 0 0 / 20%);
   transform:  translateY(1px);
 }
+
+#buttons {
+  display:      none;
+  justify-self: end;
+  gap:          12px;
+}
+
+#buttons.visible { display: flex; }
 
 #tree {
   background-color: var(--bg-color);
