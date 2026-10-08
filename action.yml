@@ -74,8 +74,10 @@ runs:
       id:    coverage_report
       shell: bash
       run: |
+        gomod="${{ inputs.go-mod }}"
+        [ -f go.work ] && gomod=go.work
         go run github.com/jbunds/coverage@latest \
           -n \
-          -gomod="${{ inputs.go-mod }}" \
+          -gomod="$gomod" \
           -coverprofile="${{ steps.coverage_profile.outputs.gocov-pathname }}" \
           -outdir="${{ inputs.coverage-report-outdir }}"
