@@ -15,7 +15,7 @@ jobs:
   pages:
     uses: ./.github/workflows/pages.yml
     with:
-      go-mod:          go.mod,fractal/go.mod,progress/go.mod
+      go-mod:          go.mod
       cover-pkg:       .,fractal/...,progress/...
       test-pkgs: |-
         .
