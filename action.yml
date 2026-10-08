@@ -47,6 +47,20 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: init workspace
+      id:   init_workspace
+      run: |
+        dirs=$(printf '%s\n' "${{ inputs.test-pkgs }}" | sed -n 's|^\./\([^/]*\)/.*|\1|p')
+        if [ -n "$dirs" ]; then
+          has_submod=false
+          for d in $dirs; do
+            [ -f "$d/go.mod" ] && has_submod=true
+          done
+          if [ "$has_submod" = true ]; then
+            echo "detected sub-modules; creating go.work"
+            go work init . $(echo "$dirs" | sed 's|^|./|')
+          fi
+        fi
     - name: coverage profile
       id:   coverage_profile
       uses: gwatts/go-coverage-action@v2
