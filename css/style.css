@@ -75,8 +75,9 @@ button {
 }
 
 button:active {
-  box-shadow: 0 0 0 rgb(0 0 0 / 20%);
-  transform:  translateY(1px);
+  background-color: var(--btn-hover-bg);
+  box-shadow:       0 0 0 rgb(0 0 0 / 20%);
+  transform:        translateY(1px);
 }
 
 @media (hover: hover) {
