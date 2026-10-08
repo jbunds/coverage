@@ -10,7 +10,8 @@ repos:
   - repo: https://github.com/mpalmer/action-validator # https://github.com/mpalmer/action-validator#using-pre-commit
     rev:  v0.9.0
     hooks:
-      - id: action-validator
+      - id:    action-validator
+        files: '(?:^action\.ya?ml$|^\.github/(?:workflows|actions)/.*\.ya?ml$)'
   - repo: https://github.com/biomejs/pre-commit
     rev: v2.5.10
     hooks:

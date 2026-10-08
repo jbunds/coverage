@@ -39,7 +39,6 @@ inputs:
     required:    false
     default:     coverage_report
   workspace-repos:
-    type:        string
     description: newline-separated list of GitHub repos ("owner/repo") to check out
     required:    false
     default:     ''
