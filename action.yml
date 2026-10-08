@@ -47,8 +47,9 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: init workspace
-      id:   init_workspace
+    - name:  init workspace
+      id:    init_workspace
+      shell: bash
       run: |
         dirs=$(printf '%s\n' "${{ inputs.test-pkgs }}" | sed -n 's|^\./\([^/]*\)/.*|\1|p')
         if [ -n "$dirs" ]; then
