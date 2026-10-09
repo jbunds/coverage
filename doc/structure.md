@@ -7,13 +7,16 @@
 ├── assets_test.go
 ├── biome.json
 ├── css
+│   ├── modules.css
 │   ├── style.css
 │   └── tree.css
 ├── doc
 │   ├── code_stats.md
-│   ├── structure.md
+│   ├── deepwiki.svg
 │   ├── expand.svg
+│   ├── funcs.svg
 │   ├── lines.svg
+│   ├── structure.md
 │   └── theme.svg
 ├── flags.go
 ├── flags_test.go
@@ -33,6 +36,7 @@
 │   └── events.js
 ├── main.go
 ├── main_test.go
+├── mocks_test.go
 ├── package.json
 ├── pages.go
 ├── pages_test.go
@@ -52,6 +56,7 @@
 │   ├── scan.go.html
 │   ├── sort.go.html
 │   ├── tree.go.html
+│   ├── trie.go.html
 │   └── ui.go.html
 ├── tools
 │   ├── demo
@@ -61,13 +66,15 @@
 │   │   └── render.js
 │   ├── loctrace
 │   │   └── loctrace.go
+│   ├── newrel.sh
 │   ├── tests.sh
 │   ├── untree.sh
 │   └── validate.js
 ├── tree.go
 ├── tree_test.go
+├── trie.go
 ├── ui.go
 └── ui_test.go
 
-11 directories, 58 files
+11 directories, 65 files
 ```

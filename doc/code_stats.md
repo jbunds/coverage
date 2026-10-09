@@ -9,7 +9,7 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Thu Oct  8 10:09:17 CEST 2026
+Fri Oct  9 10:58:05 CEST 2026
 ```
 
 ```
@@ -41,21 +41,21 @@ assets_test.go                              75          3          0           7
 integration_test.go                         61         14          1           46         16            34.78
 assets.go                                   22          3          1           18          9            50.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-YAML                           12          570         49         35          486          0             0.00
-(ULOC)                                     372
+YAML                           12          585         50         35          500          0             0.00
+(ULOC)                                     383
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 .golangci.yml                              127          1          2          124          0             0.00
-.github/workflows/pages.yml                101          8         15           78          0             0.00
-action.yml                                  66          6         10           50          0             0.00
+.github/workflows/pages.yml                102          8         15           79          0             0.00
+action.yml                                  83          7         10           66          0             0.00
 .github/workflows/test-go.yml               60         10          1           49          0             0.00
-.pre-commit-config.yaml                     38          1          2           35          0             0.00
+.pre-commit-config.yaml                     39          1          2           36          0             0.00
 .github/workflows/lint-go.yml               37          7          2           28          0             0.00
-~ub/workflows/deploy-to-pages.yml           27          0          0           27          0             0.00
 ~/actions/upload-pages/action.yml           26          5          2           19          0             0.00
+~ub/workflows/deploy-to-pages.yml           26          0          0           26          0             0.00
 ~lidate-actions-and-workflows.yml           24          2          0           22          0             0.00
 .github/workflows/lint-css.yml              23          3          0           20          0             0.00
 .github/workflows/lint-js.yml               22          5          0           17          0             0.00
-.github/dependabot.yml                      19          1          1           17          0             0.00
+.github/dependabot.yml                      16          1          1           14          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Shell                           6          210         54         44          112         16            14.29
 (ULOC)                                     136
@@ -76,12 +76,12 @@ js/events.js                                73         14          0           5
 tools/validate.js                           19          3          0           16          2            12.50
 js/child.js                                 13          1          0           12         10            83.33
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-CSS                             3          399         57          5          337          0             0.00
-(ULOC)                                     265
+CSS                             3          392         56          5          331          0             0.00
+(ULOC)                                     264
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-css/style.css                              206         26          0          180          0             0.00
+css/style.css                              207         26          0          181          0             0.00
 css/tree.css                               125         22          5           98          0             0.00
-css/modules.css                             68          9          0           59          0             0.00
+css/modules.css                             60          8          0           52          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 HTML                            2           47          0          0           47          0             0.00
 (ULOC)                                      37
@@ -89,14 +89,14 @@ HTML                            2           47          0          0           4
 html/index.html                             37          0          0           37          0             0.00
 html/code.html                              10          0          0           10          0             0.00
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                          48        5,536        597        317        4,622        546            11.81
+Total                          48        5,544        597        317        4,630        546            11.79
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Unique Lines of Code (ULOC)              3,306
+Unique Lines of Code (ULOC)              3,316
 DRYness %                                 0.60
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $134,807
-Estimated Schedule Effort (organic) 6.42 months
-Estimated People Required (organic) 1.86
-Processed 176,801 bytes, 0.177 megabytes (SI)
+Estimated Cost to Develop (organic) $135,052
+Estimated Schedule Effort (organic) 6.43 months
+Estimated People Required (organic) 1.87
+Processed 177,185 bytes, 0.177 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```

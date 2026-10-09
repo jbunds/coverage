@@ -2,8 +2,8 @@
 
 # useful for validating doc/structure.md, and dirty workspace checks:
 #
-#   diff <(./untree.sh) <(git ls-tree -r --name-only HEAD)
-#   diff <(./untree.sh) <(./untree.sh | xargs git ls-files)
+#   diff <(tools/untree.sh) <(git ls-tree -r --name-only HEAD)
+#   diff <(tools/untree.sh) <(tools/untree.sh | xargs git ls-files)
 
 shopt -s lastpipe # enable lastpipe so the `lines` array persists outside the pipeline
 shopt -s extglob  # enable extended globbing for trimming whitespace
