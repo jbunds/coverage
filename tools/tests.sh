@@ -10,6 +10,8 @@ tests_list=()
 func_len=0
 tests_len=0
 
+# #fuglyButFunctional
+
 for func in $(sed -nE 's/^[[:space:]]*func[[:space:]]+(\([^)]*\)[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*(.*)/\2/p' !(*_test).go); do
   matching_tests=$(grep -hE "^\s*func\s+Test${func^}" *_test.go \
     | sed -nE 's/^[[:space:]]*func[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\1/p')
