@@ -13,12 +13,12 @@ repos:
       - id:    action-validator
         files: '(?:^action\.ya?ml$|^\.github/(?:workflows|actions)/.*\.ya?ml$)'
   - repo: https://github.com/biomejs/pre-commit
-    rev: v2.5.10
+    rev:  v2.5.15
     hooks:
       - id:                      biome-lint
         files:                   '\.(?:css|js)$'
-        exclude:                 '^css/style\.css$'  # Biome chokes on the Go template syntax
-        additional_dependencies: ['@biomejs/biome@2.5.7']
+        additional_dependencies: ['@biomejs/biome@2.5.15']
+        args:                    [--error-on-warnings]
   - repo: https://github.com/golangci/golangci-lint   # https://github.com/golangci/golangci-lint/blob/main/.pre-commit-hooks.yaml
     rev:  v2.13.1
     hooks:

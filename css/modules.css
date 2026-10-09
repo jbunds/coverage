@@ -1,23 +1,10 @@
-.dropdown-wrapper { /* establish a standalone absolute coordinate boundary */
-  position: relative;
-  display:  inline-block;
-}
-
-#modules-menu { /* hide the modules list dropdown menu by default */
-  display:    none;
-  visibility: hidden;
-}
-
-#modules-menu:checked ~ .dropdown-menu { /* display the modules list dropdown menu when clicked */
-  display: block;
-}
-
 .dropdown-wrapper {
   position: relative;
+  display:  inline-block;
   padding:  0 5em;
 }
 
-.dropdown-wrapper::after {
+.dropdown-wrapper::after { /* bridge between "modules" pseudo button and dropdown list */
   content:  "";
   position: absolute;
   inset:    auto 0 -1em 0;
@@ -34,11 +21,9 @@
   transition:    box-shadow 0.1s ease-in-out;
 }
 
-.dropdown-toggle:active {
-  transform: translateY(1px);
-}
+.dropdown-toggle:active { transform: translateY(1px) } /* simulate physical button press */
 
-.dropdown-menu { /* floating modules list dropdown menu */
+.dropdown-menu { /* modules list dropdown menu */
   display:       none;
   position:      absolute;
   top:           100%;
@@ -51,6 +36,13 @@
   border-radius: 4px;
   box-shadow:    4px 4px 10px rgb(0 0 0 / 30%);
 }
+
+#modules-menu {
+  display:    none;
+  visibility: hidden;
+}
+
+#modules-menu:checked ~ .dropdown-menu { display: block }
 
 .dropdown-link { /* individual menu items */
   display:       block;
