@@ -3,16 +3,13 @@ import puppeteer from 'puppeteer'
 export const URL      = 'http://127.0.0.1:8000'
 export const VIEWPORT = {
   deviceScaleFactor: 1,
-  width:             1280,
   height:            720,
+  width:             1280,
 }
 
 // launch Chrome with flags enabling all required permissions (possibly overscoped; see TODO comment below)
 export async function launchChrome (url = URL) {
   const options = {
-    headless:        false,
-    defaultViewport: null,
-    channel:        'chrome',
     // TODO(jeff): determine which specific flags are actually required,
     //             and remove those that are not strictly required
     args: [
@@ -20,7 +17,10 @@ export async function launchChrome (url = URL) {
       '--disable-web-security',
       '--disable-blink-features=AutomationControlled',
       url
-    ]
+    ],
+    channel:        'chrome',
+    defaultViewport: null,
+    headless:        false
   }
   return puppeteer.launch(options)
 }
@@ -39,8 +39,8 @@ export async function installMousePointer (page) {
     //             application of the light theme, and i cannot think of any reason such
     //             odd behavior would occur
     Object.assign(cursor.style, {
-      top:   '0',    left:   '0',    position: 'fixed', pointerEvents: 'none',
-      width: '32px', height: '32px', zIndex:   '1000',  transform:     'translate(0,0)',
+      height: '32px', left:      '0',              pointerEvents: 'none', position: 'fixed',
+      top:    '0',    transform: 'translate(0,0)', width:         '32px', zIndex:   '1000',
     })
     document.documentElement.appendChild(cursor)
     const path     = cursor.querySelector('path')
@@ -74,7 +74,7 @@ export async function registerListeners (page) {
     await f.waitForSelector('body').catch(() => {})
     await f.evaluate(() => {
       const forwardEvent = (type) => {
-        window.parent.postMessage({ type: 'POINTER_CLICK', action: type }, '*')
+        window.parent.postMessage({ action: type, type: 'POINTER_CLICK' }, '*')
       }
       const updateParentPos = (e) => {
         const rect = window.frameElement.getBoundingClientRect()

@@ -10,7 +10,7 @@ const codeFrame = document.getElementById('code');
 const applyTheme = (theme) => {
   document.documentElement.setAttribute('theme', theme);
   store.set('user-theme', theme);
-  codeFrame.contentWindow.postMessage({ type: 'TOGGLE_THEME', theme }, location.origin);
+  codeFrame.contentWindow.postMessage({ theme, type: 'TOGGLE_THEME' }, location.origin);
 };
 
 const savedTheme = store.get('user-theme');
@@ -57,7 +57,7 @@ document.querySelector('.dropdown-wrapper')?.addEventListener('mouseleave', () =
 const applyLineNumbers = (on) => {
   document.documentElement.setAttribute('line-numbers', on ? '1' : '0');
   store.set('line-numbers', on ? '1' : '0');
-  codeFrame.contentWindow.postMessage({ type: 'TOGGLE_LINE_NUMBERS', lineNumbers: on }, location.origin);
+  codeFrame.contentWindow.postMessage({ lineNumbers: on, type: 'TOGGLE_LINE_NUMBERS' }, location.origin);
 };
 
 applyLineNumbers(store.get('line-numbers', '1') === '1');

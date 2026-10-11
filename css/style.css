@@ -1,6 +1,4 @@
 :root {
-  color-scheme:      dark;
-
   --bg-color:        black;
   --bg-header:       black;
   --text-color:      lightyellow;
@@ -13,11 +11,10 @@
   --cov-miss:        red;
   --cov-hit-bg:      darkgreen;
   --cov-miss-bg:     firebrick;
+  color-scheme:      dark;
 }
 
 [theme="light"] {
-  color-scheme:      light;
-
   --bg-color:        beige;
   --bg-header:       papayawhip;
   --text-color:      darkslategrey;
@@ -30,28 +27,29 @@
   --cov-miss:        red;
   --cov-hit-bg:      darkolivegreen;
   --cov-miss-bg:     firebrick;
+  color-scheme:      light;
 }
 
 #index { /* index.html: <body id="index"> */
   display:               grid;
-  height:                100vh;
   grid-template-rows:    50px 1fr auto;
   grid-template-columns: auto 1fr;
+  height:                100vh;
   margin:                0;
+  font-family:           monospace;
   color:                 var(--text-color);
   background-color:      var(--bg-color);
-  font-family:           monospace;
 }
 
 header {
   z-index:               10;
   display:               grid;
-  grid-column:           1 / 3;
   grid-template-columns: 1fr auto 1fr;
+  grid-column:           1 / 3;
   align-items:           center;
   padding:               0 14px 0 10px;
+  font-family:           system-ui, sans-serif;
   background-color:      var(--bg-header);
-  font-family:           system-ui, Arial, Helvetica, sans-serif;
 }
 
 .centered {
@@ -90,42 +88,42 @@ button:active {
 
 #buttons {
   display:      none;
-  justify-self: end;
   gap:          12px;
+  justify-self: end;
 }
 
-#buttons.visible { display: flex; }
+#buttons.visible { display: flex }
 
 #tree {
-  background-color: var(--bg-color);
-  border-right:     1px solid #444;
-  border-top:       1px solid #444;
   overflow-y:       auto;
+  background-color: var(--bg-color);
+  border-top:       1px solid #444;
+  border-right:     1px solid #444;
 }
 
 #tree-body {
   position:    relative;
   box-sizing:  border-box;
   width:       100%;
-  margin:      0;
   padding:     10px;
+  margin:      0;
   white-space: nowrap;
 }
 
 #code { /* <iframe id="code"> and <body id="code"> */
   grid-row:         2 / -1; /* span from row line 2 to the last row line */
+  font-family:      monospace;
   color:            var(--text-color);
   background-color: var(--bg-color);
-  font-family:      monospace;
 }
 
 #footer {
   display:          flex;
   grid-row:         3;
   grid-column:      1;
+  gap:              6px;
   align-items:      center;
   justify-content:  center;
-  gap:              6px;
   padding:          8px 10px;
   background-color: var(--bg-color);
   border-top:       1px solid #444;
@@ -147,42 +145,40 @@ img {
 
 a {
   display:         inline-block;
-  margin:          0;
   padding:         2px 4px;
+  margin:          0;
   color:           var(--text-color);
   text-decoration: none;
   border-radius:   4px;
 }
 
-a:hover {
-  background-color: var(--hover-bg);
-}
+a:hover { background-color: var(--hover-bg) }
 
 .line {
   position:    relative;
   display:     block;
+  height:      1.5em;
   margin-left: 3.5rem; /* 2.5rem gutter + 1rem gap */
   font-size:   medium;
   line-height: 1.5;
-  height:      1.5em;
   tab-size:    4;
-  white-space: pre;    /* preserves all whitespace in the original source code */
+  white-space: pre;
 }
 
 .line::before {
-  content:      attr(data-line);
   position:     absolute;
   left:         -3.5rem;
   width:        2.5rem; /* gutter */
-  text-align:   right;
   color:        var(--text-color);
+  text-align:   right;
+  user-select:  none;
+  content:      attr(data-line);
   border-right: 1px solid rgb(from var(--text-color) r g b / 20%);
   opacity:      0.45;
-  user-select:  none;   /* prevent line numbers from being selected while copying */
 }
 
-body:not(.line-numbers) .line         { margin-left: 0.25rem; }
-body:not(.line-numbers) .line::before { display:        none; }
+body:not(.line-numbers) .line         { margin-left: 0.25rem }
+body:not(.line-numbers) .line::before { display:     none    }
 
 .hit,
 .miss {
@@ -201,7 +197,7 @@ body:not(.line-numbers) .line::before { display:        none; }
   background-color: rgb(from var(--cov-miss-bg) r g b / 30%);
 }
 
-.func .func-body                 { display: none;    }
-.func input                      { display: none;    }
-.func input:checked ~ .func-body { display: block;   }
-.func label.line                 { cursor:  pointer; }
+.func .func-body                 { display: none    }
+.func input                      { display: none    }
+.func input:checked ~ .func-body { display: block   }
+.func label.line                 { cursor:  pointer }

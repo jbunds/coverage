@@ -1,28 +1,22 @@
-/* TODO(jeff): refactor, simplify, and encapsulate with more finely-grained CSS selectors */
-
 .tree,
 .tree ul,
 .tree li {
-  list-style: none;
-  margin:     0;
   padding:    0;
+  margin:     0;
+  list-style: none;
 }
 
 .tree input[type="checkbox"] { display: none }
 
 .tree ul { /* collapsed state */
   display:      none;
-  margin-left:  1ch;
   padding-left: 1ch;
+  margin-left:  1ch;
 }
 
-.tree input:checked ~ ul { /* expanded state */
-  display: block;
-}
+.tree input:checked ~ ul { display: block } /* expanded state */
 
-.tree li { /* layout for every row (folder or file) */
-  position: relative;
-}
+.tree li   { position: relative } /* layout for every row (folder or file) */
 
 .tree-node { position: relative }
 
@@ -33,22 +27,22 @@
 
 .tree li li::before {
   position:    absolute;
-  left:        -1ch;
   top:         0;
+  left:        -1ch;
   height:      100%;
-  border-left: 1px solid;
   content:     "";
+  border-left: 1px solid;
 }
 
 .tree li li:last-child::before { height: 0.75em }
 
 .tree li li::after { /* horizontal branch line */
   position:   absolute;
-  left:       -1ch;
   top:        0.75em;
+  left:       -1ch;
   width:      1ch;
-  border-top: 1px solid;
   content:    "";
+  border-top: 1px solid;
 }
 
 /* https://issues.chromium.org/issues/1142756
@@ -58,11 +52,11 @@
 
 .tree label { /* folder emojis & labels */
   display:        inline-block;
-  user-select:    none;
-  cursor:         pointer;
-  vertical-align: middle;
-  margin-right:   10ch; /* 10ch == len(folder emoji) == 1ch + len(" ") == 1ch (?) + len("100.0%") == 6ch + ??? */
   padding:        2px 4px;
+  margin-right:   10ch; /* 10ch: len(folder emoji) = 1ch + len(" ") = 1ch + len("100.0%") = 6ch == 8ch + 2ch (?) */
+  vertical-align: middle;
+  cursor:         pointer;
+  user-select:    none;
 }
 
 .tree a,
@@ -83,15 +77,9 @@
   vertical-align: middle;
 }
 
-.tree .icon::before {
-  content: "\1F4C1"; /* closed folder */
-}
+.tree .icon::before { content: "\1F4C1" } /* closed folder */
 
-@supports (hanging-punctuation: first) and (font: -apple-system-body) and (-webkit-appearance: none) {
-  .tree .icon::before {
-    font-size: 0.8em;
-  }
-}
+@supports (hanging-punctuation: first) and (font: -apple-system-body) and (-webkit-appearance: none) { .tree .icon::before { font-size: 0.8em } }
 
 .tree input:checked ~ .tree-node .icon::before { content: "\1F4C2" } /* open folder */
 
@@ -101,14 +89,12 @@
   box-shadow:       1px 1px 1px rgb(0 0 0 / 10%);
 }
 
-.tree .src:focus-within:hover {
-  box-shadow:       2px 2px 2px rgb(0 0 0 / 15%);
-}
+.tree .src:focus-within:hover { box-shadow: 2px 2px 2px rgb(0 0 0 / 15%) }
 
 span.src {
   display:        inline-block;
-  vertical-align: middle;
   margin-right:   8ch; /* 8ch == len("100.0%") + 2ch gap */
+  vertical-align: middle;
   white-space:    nowrap;
 }
 
@@ -116,10 +102,10 @@ span.cov {
   position:    absolute;
   top:         50%;
   right:       10px;
-  width:       8ch; /* 8ch == len("100.0%") + 2ch gap */
+  width:       8ch;    /* 8ch == len("100.0%") + 2ch gap */
   font-size:   small;
-  font-weight: normal;
   font-style:  italic;
+  font-weight: normal;
   text-align:  right;
   transform:   translateY(-50%);
 }

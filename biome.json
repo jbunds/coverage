@@ -1,19 +1,20 @@
 {
   "$schema"   : "https://biomejs.dev",
-  "formatter" : { "enabled"  : false },
-  "linter"    : { "enabled"  : true  },
-  "files"     : {
-    "includes" : [
-      "**/*.css",
-      "**/*.js",
-      "!css/style.css"
-    ]
-  },
   "assist" : {
     "actions" : {
       "source" : {
-        "organizeImports": "off"
+        "organizeImports":     "off",
+        "useSortedKeys":       "on",
+        "useSortedProperties": "on"
       }
     }
-  }
+  },
+  "files"     : {
+    "includes" : [
+      "**/*.css",
+      "**/*.js"
+    ]
+  },
+  "formatter" : { "enabled"  : false },
+  "linter"    : { "enabled"  : true  }
 }

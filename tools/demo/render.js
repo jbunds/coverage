@@ -21,14 +21,14 @@ const [page]  = await browser.pages()
 await installMousePointer(page)
 
 const cursor = new GhostCursor(page, {
+  defaultOptions: {
+    moveDelay:          1000,  // one-second delay after moving the mouse
+    overshootThreshold: 10000, // distance between current location and destination which triggers overshoot to occur
+    paddingPercentage:  100,   // move the mouse pointer to the center of the element
+  },
   start: {
     x: VIEWPORT.width  / 2,
     y: VIEWPORT.height / 2,
-  },
-  defaultOptions: {
-    paddingPercentage:  100,   // move the mouse pointer to the center of the element
-    moveDelay:          1000,  // one-second delay after moving the mouse
-    overshootThreshold: 10000, // distance between current location and destination which triggers overshoot to occur
   }
 })
 

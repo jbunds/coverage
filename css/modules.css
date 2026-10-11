@@ -1,22 +1,22 @@
 .dropdown-wrapper {
   position: relative;
   display:  inline-block;
-  padding:  0 5em;
+  padding:  0 5em; /* extend the wrapper's width to provide a wide area for the mouse pointer to scroll before the dropdown menu disappears */
 }
 
-.dropdown-wrapper::after { /* bridge between "modules" pseudo button and dropdown list */
-  content:  "";
+.dropdown-wrapper::after { /* bridge between "modules" pseudo button and dropdown list so the dropdown list doesn't disappear while moving the mouse pointer to select a menu item */
   position: absolute;
   inset:    auto 0 -1em 0;
   height:   1em;
+  content:  "";
 }
 
 .dropdown-toggle { /* pseudo button to open the modules list dropdown menu */
   display:       inline-block;
+  padding:       2px 8px;
+  font-size:     medium;
   cursor:        pointer;
   user-select:   none;
-  font-size:     medium;
-  padding:       2px 8px;
   border-radius: 4px;
   transition:    box-shadow 0.1s ease-in-out;
 }
@@ -24,17 +24,17 @@
 .dropdown-toggle:active { transform: translateY(1px) } /* simulate physical button press */
 
 .dropdown-menu { /* modules list dropdown menu */
-  display:       none;
   position:      absolute;
   top:           100%;
   left:          50%;
-  transform:     translateX(-50%); /* center the dropdown menu beneath the center of the "modules" pseudo button */
+  display:       none;
+  width:         max-content;
   margin-top:    4px;
   background:    var(--bg-header);
-  width:         max-content;
   border:        1px solid rgb(from var(--text-color) r g b / 40%);
   border-radius: 4px;
   box-shadow:    4px 4px 10px rgb(0 0 0 / 30%);
+  transform:     translateX(-50%); /* center the dropdown menu beneath the center of the "modules" pseudo button */
 }
 
 #modules-menu {
@@ -46,10 +46,10 @@
 
 .dropdown-link { /* individual menu items */
   display:       block;
+  padding:       2px 4px;
+  margin:        4px 8px;
   font-family:   monospace;
   font-weight:   normal;
-  margin:        4px 8px;
-  padding:       2px 4px;
   border-radius: 4px;
 }
 
