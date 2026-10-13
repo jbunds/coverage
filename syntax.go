@@ -6,11 +6,10 @@ import (
 	"go/types"
 )
 
-// syntaxClassifier resolves the syntactic role of each identifier in a source file.
+// syntaxClassifier resolves the syntactic role of each identifier in a Go source file.
 //
-// It pre-walks the AST once, indexing each identifier's position
-// into role-specific maps, allowing the classify method to perform
-// a single O(1) lookup during the sequential token scan.
+// It holds role-specific maps populated during a single walk of the AST, allowing the
+// classify method to perform a single O(1) lookup during the sequential token scan.
 type syntaxClassifier struct {
 	typeInfo     *types.Info           // maps expressions to their types
 	builtinTypes map[string]bool       // primitives (int, string, bool, etc) + any, error
@@ -23,8 +22,8 @@ type syntaxClassifier struct {
 	activeParams map[types.Object]bool // maps parameter / receiver variable objects
 }
 
-// buildSyntaxClassifier walks fileAST and populates the position maps used
-// by the classify method to resolve each identifier's syntactic role.
+// buildSyntaxClassifier walks fileAST once, populating the role-specific position
+// maps used by the classify method to resolve each identifier's syntactic role.
 func buildSyntaxClassifier(fileAST *ast.File, typeInfo *types.Info) (c *syntaxClassifier) {
 	c = &syntaxClassifier{
 		typeInfo:     typeInfo,
