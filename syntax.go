@@ -254,10 +254,10 @@ func (c *syntaxClassifier) classify(tok token.Token, pos token.Pos, lit string) 
 		return "dir"
 
 	case token.FUNC,    token.VAR,    token.CONST,  token.TYPE,
-			 token.MAP,     token.CHAN,   token.STRUCT, token.INTERFACE,
-			 token.IF,      token.ELSE,   token.FOR,    token.RANGE,
+	     token.MAP,     token.CHAN,   token.STRUCT, token.INTERFACE,
+	     token.IF,      token.ELSE,   token.FOR,    token.RANGE,
 	     token.SWITCH,  token.CASE,   token.SELECT, token.FALLTHROUGH,
-			 token.BREAK,   token.GOTO,   token.RETURN, token.CONTINUE,
+	     token.BREAK,   token.GOTO,   token.RETURN, token.CONTINUE,
 	     token.DEFAULT, token.DEFER,  token.GO:
 		return "decl"
 
