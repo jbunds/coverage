@@ -159,7 +159,7 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 		childJSFilename:   "child.js",
 		styleCSSFilename:  "style.css",
 		syntaxCSSFilename: "syntax.css",
-		staticFiles:      []string{
+		staticFiles:       []string{
 			"html/code.html",
 			"img/favicon.ico",
 			"img/go-blue-gradient.svg",
