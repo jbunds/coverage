@@ -72,15 +72,14 @@
   vertical-align: middle;
 }
 
-.tree .icon::before { content: "\1F4C1" } /* closed folder */
+.tree                            .icon::before { content: "\1F4C1" } /* closed folder */
+.tree input:checked ~ .tree-node .icon::before { content: "\1F4C2" } /* open folder   */
 
 /* https://issues.chromium.org/issues/40045219
    https://issues.chromium.org/issues/40131567
    https://issues.chromium.org/issues/40461560 */
 
 @supports (hanging-punctuation: first) and (font: -apple-system-body) and (-webkit-appearance: none) { .tree .icon::before { font-size: 0.8em } }
-
-.tree input:checked ~ .tree-node .icon::before { content: "\1F4C2" } /* open folder */
 
 .tree .src:focus-within { /* persists background color highlight after clicking on a link */
   background-color: var(--hover-bg);
