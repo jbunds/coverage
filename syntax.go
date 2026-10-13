@@ -105,8 +105,8 @@ func (c *syntaxClassifier) visitCompositeLit(x *ast.CompositeLit) {
 
 	if isStruct {
 		for _, el := range x.Elts {
-			if kfe, ok := el.(*ast.KeyValueExpr); ok {
-				if id, ok := kfe.Key.(*ast.Ident); ok {
+			if kve, ok := el.(*ast.KeyValueExpr); ok {
+				if id, ok := kve.Key.(*ast.Ident); ok {
 					c.fieldPos[id.NamePos] = true
 				}
 			}
