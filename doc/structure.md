@@ -9,6 +9,7 @@
 ├── css
 │   ├── modules.css
 │   ├── style.css
+│   ├── syntax.css
 │   └── tree.css
 ├── doc
 │   ├── code_stats.md
@@ -46,6 +47,7 @@
 │   └── light_theme.jpg
 ├── sort.go
 ├── sort_test.go
+├── syntax.go
 ├── testdata
 │   ├── cov.out
 │   ├── assets.go.html
@@ -55,6 +57,7 @@
 │   ├── pages.go.html
 │   ├── scan.go.html
 │   ├── sort.go.html
+│   ├── syntax.go.html
 │   ├── tree.go.html
 │   ├── trie.go.html
 │   └── ui.go.html
@@ -76,5 +79,5 @@
 ├── ui.go
 └── ui_test.go
 
-11 directories, 65 files
+11 directories, 68 files
 ```
