@@ -25,15 +25,17 @@ func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error) {
 		"lowest",     "highest",
 		"shortest",   "longest",
 	}
-	// tests may call fs.SetOutput(); it is not called here
+
 	fs.Usage = func() {
 		fmt.Fprintf(fs.Output(), "%s usage:\n\n", filepath.Base(fs.Name()))
 		fs.PrintDefaults()
 		fmt.Fprintln(fs.Output())
 	}
+
 	var goModFiles, coverProfileFile, outDir string
-	var noBrowser, httpServer bool
-	var sortOrder sortOrder
+	var noBrowser,  httpServer               bool
+	var sortOrder                            sortOrder
+
 	fs.StringVar(&goModFiles,       "gomod",        "go.mod", "path to a go.work file or a comma-delimited list of go.mod paths")
 	fs.StringVar(&coverProfileFile, "coverprofile", "",       "path to the coverage profile file")
 	fs.StringVar(&outDir,           "outdir",       "",       "path where HTML files will be written")
@@ -66,17 +68,21 @@ func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error) {
 			return fmt.Errorf("invalid sort order specified\nmust be one of (%s)", strings.Join(allowedSortOrders, ", "))
 		}
 	})
-	if err := fs.Parse(args); err != nil {
+
+	if err = fs.Parse(args); err != nil {
 		return nil, err
 	}
+
 	if coverProfileFile == "" {
 		fs.Usage()
 		return nil, errors.New("no value specified for -coverprofile")
 	}
+
 	if outDir == "" {
 		fs.Usage()
 		return nil, errors.New("no value specified for -outdir")
 	}
+
 	fv = &flagVals{
 		goModFiles:       goModFiles,
 		coverProfileFile: coverProfileFile,
@@ -85,9 +91,11 @@ func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error) {
 		httpServer:       httpServer,
 		sortOrder:        sortOrder,
 	}
+
 	if len(fs.Args()) > 0 {
 		fmt.Fprintf(fs.Output(), "ignored arguments: %s\n", strings.Join(fs.Args(), ", "))
 	}
+
 	return
 }
 
