@@ -1,1 +1,1 @@
-{"go-coverage-action-fmt":1,"coverage_pct":90.4054054054054,"pkg_stats":{"github.com/jbunds/coverage":[90.4054054054054]},"skipped_count":0}
+{"go-coverage-action-fmt":1,"coverage_pct":84.04907975460122,"pkg_stats":{"github.com/jbunds/coverage":[90.4054054054054],"github.com/jbunds/fractal":[36.829268292682926],"github.com/jbunds/progress":[99.17440660474716]},"skipped_count":0}
