@@ -4,346 +4,347 @@
 <meta charset="utf-8">
 <link rel="icon"       href="../../../favicon.ico" type="image/vnd.microsoft.icon">
 <link rel="stylesheet" href="../../../style.css">
+<link rel="stylesheet" href="../../../syntax.css">
 <title>github.com/jbunds/coverage/tree.go</title>
 </head>
 <body id="code" class="line-numbers">
-<div class="line" data-line="1">package main</div>
+<div class="line" data-line="1"><span class="dir">package</span> <span class="base">main</span></div>
 <div class="line" data-line="2"></div>
-<div class="line" data-line="3">import (</div>
-<div class="line" data-line="4">	&#34;context&#34;</div>
-<div class="line" data-line="5">	&#34;io&#34;</div>
-<div class="line" data-line="6">	&#34;io/fs&#34;</div>
-<div class="line" data-line="7">	&#34;math&#34;</div>
-<div class="line" data-line="8">	&#34;path/filepath&#34;</div>
-<div class="line" data-line="9">	&#34;runtime&#34;</div>
-<div class="line" data-line="10">	&#34;slices&#34;</div>
-<div class="line" data-line="11">	&#34;strconv&#34;</div>
-<div class="line" data-line="12">	&#34;strings&#34;</div>
-<div class="line" data-line="13">	&#34;sync/atomic&#34;</div>
+<div class="line" data-line="3"><span class="dir">import</span> <span class="base">(</span></div>
+<div class="line" data-line="4">	<span class="string">&#34;context&#34;</span></div>
+<div class="line" data-line="5">	<span class="string">&#34;io&#34;</span></div>
+<div class="line" data-line="6">	<span class="string">&#34;io/fs&#34;</span></div>
+<div class="line" data-line="7">	<span class="string">&#34;math&#34;</span></div>
+<div class="line" data-line="8">	<span class="string">&#34;path/filepath&#34;</span></div>
+<div class="line" data-line="9">	<span class="string">&#34;runtime&#34;</span></div>
+<div class="line" data-line="10">	<span class="string">&#34;slices&#34;</span></div>
+<div class="line" data-line="11">	<span class="string">&#34;strconv&#34;</span></div>
+<div class="line" data-line="12">	<span class="string">&#34;strings&#34;</span></div>
+<div class="line" data-line="13">	<span class="string">&#34;sync/atomic&#34;</span></div>
 <div class="line" data-line="14"></div>
-<div class="line" data-line="15">	&#34;github.com/jbunds/progress&#34;</div>
-<div class="line" data-line="16">	&#34;golang.org/x/sync/errgroup&#34;</div>
-<div class="line" data-line="17">)</div>
+<div class="line" data-line="15">	<span class="string">&#34;github.com/jbunds/progress&#34;</span></div>
+<div class="line" data-line="16">	<span class="string">&#34;golang.org/x/sync/errgroup&#34;</span></div>
+<div class="line" data-line="17"><span class="base">)</span></div>
 <div class="line" data-line="18"></div>
-<div class="line" data-line="19">// treeBuilder renders the source tree HTML fragment.</div>
-<div class="line" data-line="20">type treeBuilder struct {</div>
-<div class="line" data-line="21">	fsys     writeFS        // directory listing (thin wrapper around os.ReadDir)</div>
-<div class="line" data-line="22">	modPaths []string       // module paths; https://go.dev/ref/mod#glos-module-path</div>
-<div class="line" data-line="23">	outRoot  rootHandle     // output root for the generated HTML files, per -outdir</div>
-<div class="line" data-line="24">	covState *coverageState // accumulated coverage data</div>
-<div class="line" data-line="25">	counter  atomic.Uint64  // ID for each subdirectory node (&lt;input type=&#34;checkbox&#34;&gt; and its &lt;label&gt;)</div>
-<div class="line" data-line="26">}</div>
+<div class="line" data-line="19"><span class="comment">// treeBuilder renders the source tree HTML fragment.</span></div>
+<div class="line" data-line="20"><span class="decl">type</span> <span class="type">treeBuilder</span> <span class="decl">struct</span> <span class="base">{</span></div>
+<div class="line" data-line="21">	<span class="field">fsys</span>     <span class="type">writeFS</span>        <span class="comment">// directory listing (thin wrapper around os.ReadDir)</span></div>
+<div class="line" data-line="22">	<span class="field">modPaths</span> <span class="base">[</span><span class="base">]</span><span class="type">string</span>       <span class="comment">// module paths; https://go.dev/ref/mod#glos-module-path</span></div>
+<div class="line" data-line="23">	<span class="field">outRoot</span>  <span class="type">rootHandle</span>     <span class="comment">// output root for the generated HTML files, per -outdir</span></div>
+<div class="line" data-line="24">	<span class="field">covState</span> <span class="oper">*</span><span class="type">coverageState</span> <span class="comment">// accumulated coverage data</span></div>
+<div class="line" data-line="25">	<span class="field">counter</span>  <span class="base">atomic</span><span class="base">.</span><span class="type">Uint64</span>  <span class="comment">// ID for each subdirectory node (&lt;input type=&#34;checkbox&#34;&gt; and its &lt;label&gt;)</span></div>
+<div class="line" data-line="26"><span class="base">}</span></div>
 <div class="line" data-line="27"></div>
-<div class="line" data-line="28">// scanState holds per-iteration state during recursive</div>
-<div class="line" data-line="29">// directory traversal and incremental progress tracking.</div>
-<div class="line" data-line="30">type scanState struct {</div>
-<div class="line" data-line="31">	parentPath string             // package prefix for the current branch</div>
-<div class="line" data-line="32">	entry      fs.DirEntry        // directory entry currently being processed</div>
-<div class="line" data-line="33">	indent     int                // &lt;ul&gt; nesting depth (2 spaces per level)</div>
-<div class="line" data-line="34">	prog       *progress.Progress // incremental progress tracker</div>
-<div class="line" data-line="35">	budget     float64            // progress budget allocated for this branch</div>
-<div class="line" data-line="36">}</div>
+<div class="line" data-line="28"><span class="comment">// scanState holds per-iteration state during recursive</span></div>
+<div class="line" data-line="29"><span class="comment">// directory traversal and incremental progress tracking.</span></div>
+<div class="line" data-line="30"><span class="decl">type</span> <span class="type">scanState</span> <span class="decl">struct</span> <span class="base">{</span></div>
+<div class="line" data-line="31">	<span class="field">parentPath</span> <span class="type">string</span>             <span class="comment">// package prefix for the current branch</span></div>
+<div class="line" data-line="32">	<span class="field">entry</span>      <span class="base">fs</span><span class="base">.</span><span class="type">DirEntry</span>        <span class="comment">// directory entry currently being processed</span></div>
+<div class="line" data-line="33">	<span class="field">indent</span>     <span class="type">int</span>                <span class="comment">// &lt;ul&gt; nesting depth (2 spaces per level)</span></div>
+<div class="line" data-line="34">	<span class="field">prog</span>       <span class="oper">*</span><span class="base">progress</span><span class="base">.</span><span class="type">Progress</span> <span class="comment">// incremental progress tracker</span></div>
+<div class="line" data-line="35">	<span class="field">budget</span>     <span class="type">float64</span>            <span class="comment">// progress budget allocated for this branch</span></div>
+<div class="line" data-line="36"><span class="base">}</span></div>
 <div class="line" data-line="37"></div>
-<div class="line" data-line="38">// entryResult stores the results of processing a directory</div>
-<div class="line" data-line="39">// entry containing the generated *.go.html files.</div>
-<div class="line" data-line="40">type entryResult struct {</div>
-<div class="line" data-line="41">	pkgPath     string // package path (https://go.dev/ref/mod#glos-package-path)</div>
-<div class="line" data-line="42">	srcBasename string // subdirectory or file basename of a directory entry in the source tree</div>
-<div class="line" data-line="43">	html        string // HTML fragment for the entry</div>
-<div class="line" data-line="44">	covered     uint64 // weighted covered statement count</div>
-<div class="line" data-line="45">	total       uint64 // total statement count</div>
-<div class="line" data-line="46">}</div>
+<div class="line" data-line="38"><span class="comment">// entryResult stores the results of processing a directory</span></div>
+<div class="line" data-line="39"><span class="comment">// entry containing the generated *.go.html files.</span></div>
+<div class="line" data-line="40"><span class="decl">type</span> <span class="type">entryResult</span> <span class="decl">struct</span> <span class="base">{</span></div>
+<div class="line" data-line="41">	<span class="field">pkgPath</span>     <span class="type">string</span> <span class="comment">// package path (https://go.dev/ref/mod#glos-package-path)</span></div>
+<div class="line" data-line="42">	<span class="field">srcBasename</span> <span class="type">string</span> <span class="comment">// subdirectory or file basename of a directory entry in the source tree</span></div>
+<div class="line" data-line="43">	<span class="field">html</span>        <span class="type">string</span> <span class="comment">// HTML fragment for the entry</span></div>
+<div class="line" data-line="44">	<span class="field">covered</span>     <span class="type">uint64</span> <span class="comment">// weighted covered statement count</span></div>
+<div class="line" data-line="45">	<span class="field">total</span>       <span class="type">uint64</span> <span class="comment">// total statement count</span></div>
+<div class="line" data-line="46"><span class="base">}</span></div>
 <div class="line" data-line="47"></div>
-<div class="line" data-line="48">// htmlBuilder renders source tree HTML fragments.</div>
-<div class="line" data-line="49">type htmlBuilder struct {</div>
-<div class="line" data-line="50">	indent int    // &lt;ul&gt; nesting depth (2 spaces per level)</div>
-<div class="line" data-line="51">	subDir string // subdirectory name</div>
-<div class="line" data-line="52">	itemID string // subdirectory node ID (&#34;tree-item-%d&#34;)</div>
-<div class="line" data-line="53">}</div>
+<div class="line" data-line="48"><span class="comment">// htmlBuilder renders source tree HTML fragments.</span></div>
+<div class="line" data-line="49"><span class="decl">type</span> <span class="type">htmlBuilder</span> <span class="decl">struct</span> <span class="base">{</span></div>
+<div class="line" data-line="50">	<span class="field">indent</span> <span class="type">int</span>    <span class="comment">// &lt;ul&gt; nesting depth (2 spaces per level)</span></div>
+<div class="line" data-line="51">	<span class="field">subDir</span> <span class="type">string</span> <span class="comment">// subdirectory name</span></div>
+<div class="line" data-line="52">	<span class="field">itemID</span> <span class="type">string</span> <span class="comment">// subdirectory node ID (&#34;tree-item-%d&#34;)</span></div>
+<div class="line" data-line="53"><span class="base">}</span></div>
 <div class="line" data-line="54"></div>
-<div class="line" data-line="55">// buildTree traverses the module-qualified output directory and returns</div>
-<div class="line" data-line="56">// the complete &lt;ul&gt; HTML fragment representing the source tree, with</div>
-<div class="line" data-line="57">// per-file and aggregate per-subdirectory coverage percentages.</div>
+<div class="line" data-line="55"><span class="comment">// buildTree traverses the module-qualified output directory and returns</span></div>
+<div class="line" data-line="56"><span class="comment">// the complete &lt;ul&gt; HTML fragment representing the source tree, with</span></div>
+<div class="line" data-line="57"><span class="comment">// per-file and aggregate per-subdirectory coverage percentages.</span></div>
 <div class="func"><input type="checkbox" id="func-0" checked/>
-  <label for="func-0" class="line" data-line="58">func (tb *treeBuilder) buildTree(ctx context.Context, progressOutput io.Writer) (string, error<span class="hit">) {</span></label>
+  <label for="func-0" class="line" data-line="58"><span class="decl">func</span> <span class="base">(</span><span class="arg">tb</span> <span class="oper">*</span><span class="type">treeBuilder</span><span class="base">)</span> <span class="call">buildTree</span><span class="base">(</span><span class="arg">ctx</span> <span class="base">context</span><span class="base">.</span><span class="type">Context</span><span class="base">,</span> <span class="arg">progressOutput</span> <span class="base">io</span><span class="base">.</span><span class="type">Writer</span><span class="base">)</span> <span class="base">(</span><span class="type">string</span><span class="base">,</span> <span class="type">error</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="59"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
+    <div class="line" data-line="59"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">ctx</span><span class="hit base">.</span><span class="hit call">Err</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss string">&#34;&#34;</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss base">}</span></div>
     <div class="line" data-line="60"></div>
-    <div class="line" data-line="61"><span class="hit">	prog := progress.New(ctx, 0, progressOutput)</span></div>
-    <div class="line" data-line="62"><span class="hit">	defer prog.Close()</span></div>
+    <div class="line" data-line="61"><span class="hit">	</span><span class="hit base">prog</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">progress</span><span class="hit base">.</span><span class="hit call">New</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">0</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">progressOutput</span><span class="hit base">)</span></div>
+    <div class="line" data-line="62"><span class="hit">	</span><span class="hit decl">defer</span><span class="hit"> </span><span class="hit base">prog</span><span class="hit base">.</span><span class="hit call">Close</span><span class="hit base">(</span><span class="hit base">)</span></div>
     <div class="line" data-line="63"></div>
-    <div class="line" data-line="64"><span class="hit">	rootNode := &amp;trieNode{children: make(map[string]*trieNode)}</span></div>
+    <div class="line" data-line="64"><span class="hit">	</span><span class="hit base">rootNode</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit oper">&amp;</span><span class="hit type">trieNode</span><span class="hit base">{</span><span class="hit field">children</span><span class="hit base">:</span><span class="hit"> </span><span class="hit call">make</span><span class="hit base">(</span><span class="hit decl">map</span><span class="hit base">[</span><span class="hit type">string</span><span class="hit base">]</span><span class="hit oper">*</span><span class="hit type">trieNode</span><span class="hit base">)</span><span class="hit base">}</span></div>
     <div class="line" data-line="65"></div>
-    <div class="line" data-line="66"><span class="hit">	for _, modPath := range tb.modPaths {</span></div>
-    <div class="line" data-line="67"><span class="hit">		scanRoot     := filepath.Join(tb.outRoot.Name(), modPath)</span></div>
-    <div class="line" data-line="68"><span class="hit">		entries, err := tb.fsys.ReadDir(scanRoot)</span></div>
-    <div class="line" data-line="69"><span class="hit">		if err != nil { return &#34;&#34;, err</span><span class="hit"> }</span></div>
+    <div class="line" data-line="66"><span class="hit">	</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">_</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">modPath</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit field">modPaths</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="67"><span class="hit">		</span><span class="hit base">scanRoot</span><span class="hit">     </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Join</span><span class="hit base">(</span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit field">outRoot</span><span class="hit base">.</span><span class="hit call">Name</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">modPath</span><span class="hit base">)</span></div>
+    <div class="line" data-line="68"><span class="hit">		</span><span class="hit base">entries</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit field">fsys</span><span class="hit base">.</span><span class="hit call">ReadDir</span><span class="hit base">(</span><span class="hit base">scanRoot</span><span class="hit base">)</span></div>
+    <div class="line" data-line="69"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="hit base">{</span><span class="hit"> </span><span class="hit decl">return</span><span class="hit"> </span><span class="hit string">&#34;&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit base">}</span></div>
     <div class="line" data-line="70"></div>
-    <div class="line" data-line="71"><span class="hit">		baseIndent := 2 * strings.Count(modPath, &#34;/&#34;) + 3 // initial nesting depth: root &lt;ul&gt;, current subdir &lt;li&gt;, and inner &lt;ul&gt; wrapping source file &lt;li&gt; elements</span></div>
+    <div class="line" data-line="71"><span class="hit">		</span><span class="hit base">baseIndent</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit number">2</span><span class="hit"> </span><span class="hit oper">*</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Count</span><span class="hit base">(</span><span class="hit base">modPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;/&#34;</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">3</span><span class="hit"> </span><span class="hit comment">// initial nesting depth: root &lt;ul&gt;, current subdir &lt;li&gt;, and inner &lt;ul&gt; wrapping source file &lt;li&gt; elements</span></div>
     <div class="line" data-line="72"></div>
-    <div class="line" data-line="73"><span class="hit">		results, err := tb.scanEntries(ctx, prog, modPath, baseIndent, entries) // TODO(jbunds): maybe parallelize the call to tb.scanEntries</span></div>
-    <div class="line" data-line="74"><span class="hit">		if err != nil</span><span class="miss"> { return &#34;&#34;, err</span><span class="miss"> }</span></div>
+    <div class="line" data-line="73"><span class="hit">		</span><span class="hit base">results</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit call">scanEntries</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">prog</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">modPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">baseIndent</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">entries</span><span class="hit base">)</span><span class="hit"> </span><span class="hit comment">// TODO(jbunds): maybe parallelize the call to tb.scanEntries</span></div>
+    <div class="line" data-line="74"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="miss"> </span><span class="miss base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss string">&#34;&#34;</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss base">}</span></div>
     <div class="line" data-line="75"></div>
-    <div class="line" data-line="76"><span class="hit">		var modCovered, modTotal uint64</span></div>
-    <div class="line" data-line="77"><span class="hit">		var sb strings.Builder</span></div>
+    <div class="line" data-line="76"><span class="hit">		</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">modCovered</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">modTotal</span><span class="hit"> </span><span class="hit type">uint64</span></div>
+    <div class="line" data-line="77"><span class="hit">		</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">sb</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit type">Builder</span></div>
     <div class="line" data-line="78"></div>
-    <div class="line" data-line="79"><span class="hit">		for _, res := range results {</span></div>
-    <div class="line" data-line="80"><span class="hit">			sb.WriteString(res.html)</span></div>
-    <div class="line" data-line="81"><span class="hit">			modCovered += res.covered</span></div>
-    <div class="line" data-line="82"><span class="hit">			modTotal   += res.total</span></div>
-    <div class="line" data-line="83">		}</div>
+    <div class="line" data-line="79"><span class="hit">		</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">_</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">res</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit base">results</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="80"><span class="hit">			</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">res</span><span class="hit base">.</span><span class="hit field">html</span><span class="hit base">)</span></div>
+    <div class="line" data-line="81"><span class="hit">			</span><span class="hit base">modCovered</span><span class="hit"> </span><span class="hit oper">+=</span><span class="hit"> </span><span class="hit base">res</span><span class="hit base">.</span><span class="hit field">covered</span></div>
+    <div class="line" data-line="82"><span class="hit">			</span><span class="hit base">modTotal</span><span class="hit">   </span><span class="hit oper">+=</span><span class="hit"> </span><span class="hit base">res</span><span class="hit base">.</span><span class="hit field">total</span></div>
+    <div class="line" data-line="83">		<span class="base">}</span></div>
     <div class="line" data-line="84"></div>
-    <div class="line" data-line="85"><span class="hit">		rootNode.insert(modPath, sb.String(), modCovered, modTotal</span><span class="hit">)</span></div>
-    <div class="line" data-line="86">	}</div>
+    <div class="line" data-line="85"><span class="hit">		</span><span class="hit base">rootNode</span><span class="hit base">.</span><span class="hit call">insert</span><span class="hit base">(</span><span class="hit base">modPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">String</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">modCovered</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">modTotal</span><span class="hit base">)</span></div>
+    <div class="line" data-line="86">	<span class="base">}</span></div>
     <div class="line" data-line="87"></div>
-    <div class="line" data-line="88"><span class="hit">	return rootNode.renderHTML(&amp;tb.counter), nil</span></div>
-    <div class="line" data-line="89">}</div>
+    <div class="line" data-line="88"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">rootNode</span><span class="hit base">.</span><span class="hit call">renderHTML</span><span class="hit base">(</span><span class="hit oper">&amp;</span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit field">counter</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="89"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="90"></div>
-<div class="line" data-line="91">// scanEntries processes each entry in a directory, collecting the resulting</div>
-<div class="line" data-line="92">// tree nodes and aggregating their statement and coverage counts.</div>
+<div class="line" data-line="91"><span class="comment">// scanEntries processes each entry in a directory, collecting the resulting</span></div>
+<div class="line" data-line="92"><span class="comment">// tree nodes and aggregating their statement and coverage counts.</span></div>
 <div class="func"><input type="checkbox" id="func-1" checked/>
-  <label for="func-1" class="line" data-line="93">func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modPath string, baseIndent int, entries []fs.DirEntry) ([]*entryResult, error<span class="hit"> ) {</span></label>
+  <label for="func-1" class="line" data-line="93"><span class="decl">func</span> <span class="base">(</span><span class="arg">tb</span> <span class="oper">*</span><span class="type">treeBuilder</span><span class="base">)</span> <span class="call">scanEntries</span><span class="base">(</span><span class="arg">ctx</span> <span class="base">context</span><span class="base">.</span><span class="type">Context</span><span class="base">,</span> <span class="arg">prog</span> <span class="oper">*</span><span class="base">progress</span><span class="base">.</span><span class="type">Progress</span><span class="base">,</span> <span class="arg">modPath</span> <span class="type">string</span><span class="base">,</span> <span class="arg">baseIndent</span> <span class="type">int</span><span class="base">,</span> <span class="arg">entries</span> <span class="base">[</span><span class="base">]</span><span class="base">fs</span><span class="base">.</span><span class="type">DirEntry</span><span class="base">)</span> <span class="base">(</span><span class="base">[</span><span class="base">]</span><span class="oper">*</span><span class="type">entryResult</span><span class="base">,</span> <span class="type">error</span> <span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="94"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return nil, err</span><span class="miss"> }</span></div>
+    <div class="line" data-line="94"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">ctx</span><span class="hit base">.</span><span class="hit call">Err</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">nil</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss base">}</span></div>
     <div class="line" data-line="95"></div>
-    <div class="line" data-line="96"><span class="hit">	if len(entries) &lt; 1</span><span class="miss"> { return nil, nil</span><span class="miss"> }</span></div>
+    <div class="line" data-line="96"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">entries</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">&lt;</span><span class="hit"> </span><span class="hit number">1</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">nil</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">nil</span><span class="miss"> </span><span class="miss base">}</span></div>
     <div class="line" data-line="97"></div>
-    <div class="line" data-line="98"><span class="hit">	results := make([]*entryResult, len(entries))</span></div>
-    <div class="line" data-line="99"><span class="hit">	budgets := splitBudget(prog.InitialBudget(), len(entries))</span></div>
+    <div class="line" data-line="98"><span class="hit">	</span><span class="hit base">results</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">make</span><span class="hit base">(</span><span class="hit base">[</span><span class="hit base">]</span><span class="hit oper">*</span><span class="hit type">entryResult</span><span class="hit base">,</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">entries</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="99"><span class="hit">	</span><span class="hit base">budgets</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">splitBudget</span><span class="hit base">(</span><span class="hit arg">prog</span><span class="hit base">.</span><span class="hit call">InitialBudget</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">entries</span><span class="hit base">)</span><span class="hit base">)</span></div>
     <div class="line" data-line="100"></div>
-    <div class="line" data-line="101"><span class="hit">	group, gCtx := errgroup.WithContext(ctx)</span></div>
-    <div class="line" data-line="102"><span class="hit">	group.SetLimit(runtime.NumCPU())</span></div>
+    <div class="line" data-line="101"><span class="hit">	</span><span class="hit base">group</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">gCtx</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">errgroup</span><span class="hit base">.</span><span class="hit call">WithContext</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">)</span></div>
+    <div class="line" data-line="102"><span class="hit">	</span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">SetLimit</span><span class="hit base">(</span><span class="hit base">runtime</span><span class="hit base">.</span><span class="hit call">NumCPU</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span></div>
     <div class="line" data-line="103"></div>
-    <div class="line" data-line="104"><span class="hit">	for i, entry := range entries {</span></div>
-    <div class="line" data-line="105"><span class="hit">		if err := gCtx.Err(); err != nil</span><span class="miss"> { break</span> }</div>
-    <div class="line" data-line="106"><span class="hit">		group.Go(func() error {</span></div>
-    <div class="line" data-line="107"><span class="hit">			st := &amp;scanState{</span></div>
-    <div class="line" data-line="108"><span class="hit">				parentPath: modPath,</span></div>
-    <div class="line" data-line="109"><span class="hit">				entry:      entry,</span></div>
-    <div class="line" data-line="110"><span class="hit">				indent:     baseIndent,</span></div>
-    <div class="line" data-line="111"><span class="hit">				prog:       prog,</span></div>
-    <div class="line" data-line="112"><span class="hit">				budget:     budgets[i</span><span class="hit">],</span></div>
-    <div class="line" data-line="113">			}</div>
-    <div class="line" data-line="114"><span class="hit">			res, err := tb.processEntry(gCtx, st)</span></div>
-    <div class="line" data-line="115"><span class="hit">			if err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+    <div class="line" data-line="104"><span class="hit">	</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">i</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">entry</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit arg">entries</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="105"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">gCtx</span><span class="hit base">.</span><span class="hit call">Err</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">break</span> <span class="base">}</span></div>
+    <div class="line" data-line="106"><span class="hit">		</span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">Go</span><span class="hit base">(</span><span class="hit decl">func</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit"> </span><span class="hit type">error</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="107"><span class="hit">			</span><span class="hit base">st</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit oper">&amp;</span><span class="hit type">scanState</span><span class="hit base">{</span></div>
+    <div class="line" data-line="108"><span class="hit">				</span><span class="hit field">parentPath</span><span class="hit base">:</span><span class="hit"> </span><span class="hit arg">modPath</span><span class="hit base">,</span></div>
+    <div class="line" data-line="109"><span class="hit">				</span><span class="hit field">entry</span><span class="hit base">:</span><span class="hit">      </span><span class="hit base">entry</span><span class="hit base">,</span></div>
+    <div class="line" data-line="110"><span class="hit">				</span><span class="hit field">indent</span><span class="hit base">:</span><span class="hit">     </span><span class="hit arg">baseIndent</span><span class="hit base">,</span></div>
+    <div class="line" data-line="111"><span class="hit">				</span><span class="hit field">prog</span><span class="hit base">:</span><span class="hit">       </span><span class="hit arg">prog</span><span class="hit base">,</span></div>
+    <div class="line" data-line="112"><span class="hit">				</span><span class="hit field">budget</span><span class="hit base">:</span><span class="hit">     </span><span class="hit base">budgets</span><span class="hit base">[</span><span class="hit base">i</span><span class="hit base">]</span><span class="hit base">,</span></div>
+    <div class="line" data-line="113">			<span class="base">}</span></div>
+    <div class="line" data-line="114"><span class="hit">			</span><span class="hit base">res</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit call">processEntry</span><span class="hit base">(</span><span class="hit base">gCtx</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">st</span><span class="hit base">)</span></div>
+    <div class="line" data-line="115"><span class="hit">			</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="miss"> </span><span class="miss base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss base">}</span></div>
     <div class="line" data-line="116"></div>
-    <div class="line" data-line="117"><span class="hit">			results[i] = res</span></div>
-    <div class="line" data-line="118"><span class="hit">			return nil</span></div>
-    <div class="line" data-line="119">		})</div>
-    <div class="line" data-line="120">	}</div>
+    <div class="line" data-line="117"><span class="hit">			</span><span class="hit base">results</span><span class="hit base">[</span><span class="hit base">i</span><span class="hit base">]</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">res</span></div>
+    <div class="line" data-line="118"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="119">		<span class="base">}</span><span class="base">)</span></div>
+    <div class="line" data-line="120">	<span class="base">}</span></div>
     <div class="line" data-line="121"></div>
-    <div class="line" data-line="122"><span class="hit">	if err := group.Wait(); err != nil</span><span class="miss"> {</span></div>
-    <div class="line" data-line="123"><span class="miss">		return nil, err</span></div>
-    <div class="line" data-line="124">	}</div>
+    <div class="line" data-line="122"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">Wait</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="123"><span class="miss">		</span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">nil</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">err</span></div>
+    <div class="line" data-line="124">	<span class="base">}</span></div>
     <div class="line" data-line="125"></div>
-    <div class="line" data-line="126"><span class="hit">	return results, nil</span></div>
-    <div class="line" data-line="127">}</div>
+    <div class="line" data-line="126"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">results</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="127"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="128"></div>
-<div class="line" data-line="129">// processEntry recursively builds ordered HTML tree nodes and aggregates</div>
-<div class="line" data-line="130">// coverage metrics for individual files and subdirectories.</div>
+<div class="line" data-line="129"><span class="comment">// processEntry recursively builds ordered HTML tree nodes and aggregates</span></div>
+<div class="line" data-line="130"><span class="comment">// coverage metrics for individual files and subdirectories.</span></div>
 <div class="func"><input type="checkbox" id="func-2" checked/>
-  <label for="func-2" class="line" data-line="131">func (tb *treeBuilder) processEntry(ctx context.Context, st *scanState) (*entryResult, error<span class="hit">) {</span></label>
+  <label for="func-2" class="line" data-line="131"><span class="decl">func</span> <span class="base">(</span><span class="arg">tb</span> <span class="oper">*</span><span class="type">treeBuilder</span><span class="base">)</span> <span class="call">processEntry</span><span class="base">(</span><span class="arg">ctx</span> <span class="base">context</span><span class="base">.</span><span class="type">Context</span><span class="base">,</span> <span class="arg">st</span> <span class="oper">*</span><span class="type">scanState</span><span class="base">)</span> <span class="base">(</span><span class="oper">*</span><span class="type">entryResult</span><span class="base">,</span> <span class="type">error</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="132"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return nil, err</span><span class="miss"> }</span></div>
+    <div class="line" data-line="132"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">ctx</span><span class="hit base">.</span><span class="hit call">Err</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">nil</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss base">}</span></div>
     <div class="line" data-line="133"></div>
-    <div class="line" data-line="134"><span class="hit">	isDir        := st.entry.IsDir()</span></div>
-    <div class="line" data-line="135"><span class="hit">	isTargetFile := !isDir &amp;&amp; strings.HasSuffix(st.entry.Name(), &#34;.go.html&#34;)</span></div>
+    <div class="line" data-line="134"><span class="hit">	</span><span class="hit base">isDir</span><span class="hit">        </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">entry</span><span class="hit base">.</span><span class="hit call">IsDir</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="135"><span class="hit">	</span><span class="hit base">isTargetFile</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit oper">!</span><span class="hit base">isDir</span><span class="hit"> </span><span class="hit oper">&amp;&amp;</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">HasSuffix</span><span class="hit base">(</span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">entry</span><span class="hit base">.</span><span class="hit call">Name</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;.go.html&#34;</span><span class="hit base">)</span></div>
     <div class="line" data-line="136"></div>
-    <div class="line" data-line="137"><span class="hit">	if !isDir &amp;&amp; !isTargetFile {</span></div>
-    <div class="line" data-line="138"><span class="hit">		st.prog.Report(st.budget, st.entry.Name())</span></div>
-    <div class="line" data-line="139"><span class="hit">		return nil, nil</span></div>
-    <div class="line" data-line="140">	}</div>
+    <div class="line" data-line="137"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit oper">!</span><span class="hit base">isDir</span><span class="hit"> </span><span class="hit oper">&amp;&amp;</span><span class="hit"> </span><span class="hit oper">!</span><span class="hit base">isTargetFile</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="138"><span class="hit">		</span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">prog</span><span class="hit base">.</span><span class="hit call">Report</span><span class="hit base">(</span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">budget</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">entry</span><span class="hit base">.</span><span class="hit call">Name</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="139"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="140">	<span class="base">}</span></div>
     <div class="line" data-line="141"></div>
-    <div class="line" data-line="142"><span class="hit">	srcBasename := strings.TrimSuffix(st.entry.Name(), &#34;.html&#34;)</span></div>
-    <div class="line" data-line="143"><span class="hit">	pkgPath     := filepath.Join(st.parentPath, srcBasename)</span></div>
+    <div class="line" data-line="142"><span class="hit">	</span><span class="hit base">srcBasename</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">TrimSuffix</span><span class="hit base">(</span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">entry</span><span class="hit base">.</span><span class="hit call">Name</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;.html&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="143"><span class="hit">	</span><span class="hit base">pkgPath</span><span class="hit">     </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Join</span><span class="hit base">(</span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">parentPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">srcBasename</span><span class="hit base">)</span></div>
     <div class="line" data-line="144"></div>
-    <div class="line" data-line="145"><span class="hit">	if isDir {</span></div>
-    <div class="line" data-line="146"><span class="hit">		return tb.processDir(ctx, st, pkgPath, srcBasename)</span></div>
-    <div class="line" data-line="147">	}</div>
-    <div class="line" data-line="148"><span class="hit">	return tb.processFile(st, pkgPath, srcBasename</span><span class="hit">)</span></div>
-    <div class="line" data-line="149">}</div>
+    <div class="line" data-line="145"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">isDir</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="146"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit call">processDir</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">st</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">pkgPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">srcBasename</span><span class="hit base">)</span></div>
+    <div class="line" data-line="147">	<span class="base">}</span></div>
+    <div class="line" data-line="148"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit call">processFile</span><span class="hit base">(</span><span class="hit arg">st</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">pkgPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">srcBasename</span><span class="hit base">)</span></div>
+    <div class="line" data-line="149"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="150"></div>
-<div class="line" data-line="151">// processDir renders a &lt;li&gt; tree-node for a directory, with nested &lt;li&gt; nodes for</div>
-<div class="line" data-line="152">// its subdirectories and source files, including aggregated coverage percentage.</div>
+<div class="line" data-line="151"><span class="comment">// processDir renders a &lt;li&gt; tree-node for a directory, with nested &lt;li&gt; nodes for</span></div>
+<div class="line" data-line="152"><span class="comment">// its subdirectories and source files, including aggregated coverage percentage.</span></div>
 <div class="func"><input type="checkbox" id="func-3" checked/>
-  <label for="func-3" class="line" data-line="153">func (tb *treeBuilder) processDir(ctx context.Context, st *scanState, pkgPath, srcBasename string) (*entryResult, error<span class="hit">) {</span></label>
+  <label for="func-3" class="line" data-line="153"><span class="decl">func</span> <span class="base">(</span><span class="arg">tb</span> <span class="oper">*</span><span class="type">treeBuilder</span><span class="base">)</span> <span class="call">processDir</span><span class="base">(</span><span class="arg">ctx</span> <span class="base">context</span><span class="base">.</span><span class="type">Context</span><span class="base">,</span> <span class="arg">st</span> <span class="oper">*</span><span class="type">scanState</span><span class="base">,</span> <span class="arg">pkgPath</span><span class="base">,</span> <span class="arg">srcBasename</span> <span class="type">string</span><span class="base">)</span> <span class="base">(</span><span class="oper">*</span><span class="type">entryResult</span><span class="base">,</span> <span class="type">error</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="154"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return nil, err</span><span class="miss"> }</span></div>
+    <div class="line" data-line="154"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">ctx</span><span class="hit base">.</span><span class="hit call">Err</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">nil</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss base">}</span></div>
     <div class="line" data-line="155"></div>
-    <div class="line" data-line="156"><span class="hit">	itemID   := &#34;tree-item-&#34; + strconv.FormatUint(tb.counter.Add(1), 10)</span></div>
-    <div class="line" data-line="157"><span class="hit">	fullPath := filepath.Join(tb.outRoot.Name(), st.parentPath, st.entry.Name())</span></div>
+    <div class="line" data-line="156"><span class="hit">	</span><span class="hit base">itemID</span><span class="hit">   </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit string">&#34;tree-item-&#34;</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit base">strconv</span><span class="hit base">.</span><span class="hit call">FormatUint</span><span class="hit base">(</span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit field">counter</span><span class="hit base">.</span><span class="hit call">Add</span><span class="hit base">(</span><span class="hit number">1</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">10</span><span class="hit base">)</span></div>
+    <div class="line" data-line="157"><span class="hit">	</span><span class="hit base">fullPath</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Join</span><span class="hit base">(</span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit field">outRoot</span><span class="hit base">.</span><span class="hit call">Name</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">parentPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">entry</span><span class="hit base">.</span><span class="hit call">Name</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span></div>
     <div class="line" data-line="158"></div>
-    <div class="line" data-line="159"><span class="hit">	subDirEntries, err := tb.fsys.ReadDir(fullPath)</span></div>
-    <div class="line" data-line="160"><span class="hit">	if err != nil {</span></div>
-    <div class="line" data-line="161"><span class="hit">		return nil, err</span></div>
-    <div class="line" data-line="162">	}</div>
+    <div class="line" data-line="159"><span class="hit">	</span><span class="hit base">subDirEntries</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit field">fsys</span><span class="hit base">.</span><span class="hit call">ReadDir</span><span class="hit base">(</span><span class="hit base">fullPath</span><span class="hit base">)</span></div>
+    <div class="line" data-line="160"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="161"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span></div>
+    <div class="line" data-line="162">	<span class="base">}</span></div>
     <div class="line" data-line="163"></div>
-    <div class="line" data-line="164"><span class="hit">	var subDirSB strings.Builder</span></div>
-    <div class="line" data-line="165"><span class="hit">	var dirCovered, dirStatements atomic.Uint64</span></div>
+    <div class="line" data-line="164"><span class="hit">	</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">subDirSB</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit type">Builder</span></div>
+    <div class="line" data-line="165"><span class="hit">	</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">dirCovered</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">dirStatements</span><span class="hit"> </span><span class="hit base">atomic</span><span class="hit base">.</span><span class="hit type">Uint64</span></div>
     <div class="line" data-line="166"></div>
-    <div class="line" data-line="167"><span class="hit">	if len(subDirEntries) &gt; 0 {</span></div>
-    <div class="line" data-line="168"><span class="hit">		budgets      := splitBudget(st.budget, len(subDirEntries))</span></div>
-    <div class="line" data-line="169"><span class="hit">		childResults := make([]*entryResult, len(subDirEntries))</span></div>
+    <div class="line" data-line="167"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit base">subDirEntries</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">&gt;</span><span class="hit"> </span><span class="hit number">0</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="168"><span class="hit">		</span><span class="hit base">budgets</span><span class="hit">      </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">splitBudget</span><span class="hit base">(</span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">budget</span><span class="hit base">,</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit base">subDirEntries</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="169"><span class="hit">		</span><span class="hit base">childResults</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">make</span><span class="hit base">(</span><span class="hit base">[</span><span class="hit base">]</span><span class="hit oper">*</span><span class="hit type">entryResult</span><span class="hit base">,</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit base">subDirEntries</span><span class="hit base">)</span><span class="hit base">)</span></div>
     <div class="line" data-line="170"></div>
-    <div class="line" data-line="171"><span class="hit">		group, gCtx := errgroup.WithContext(ctx)</span></div>
-    <div class="line" data-line="172"><span class="hit">		group.SetLimit(runtime.NumCPU())</span></div>
+    <div class="line" data-line="171"><span class="hit">		</span><span class="hit base">group</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">gCtx</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">errgroup</span><span class="hit base">.</span><span class="hit call">WithContext</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">)</span></div>
+    <div class="line" data-line="172"><span class="hit">		</span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">SetLimit</span><span class="hit base">(</span><span class="hit base">runtime</span><span class="hit base">.</span><span class="hit call">NumCPU</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span></div>
     <div class="line" data-line="173"></div>
-    <div class="line" data-line="174"><span class="hit">		for i, subDirEntry := range subDirEntries {</span></div>
-    <div class="line" data-line="175"><span class="hit">			group.Go(func() error {</span></div>
-    <div class="line" data-line="176"><span class="hit">				childState := &amp;scanState{</span></div>
-    <div class="line" data-line="177"><span class="hit">					parentPath: pkgPath,</span></div>
-    <div class="line" data-line="178"><span class="hit">					entry:      subDirEntry,</span></div>
-    <div class="line" data-line="179"><span class="hit">					indent:     st.indent + 2,</span></div>
-    <div class="line" data-line="180"><span class="hit">					prog:       st.prog,</span></div>
-    <div class="line" data-line="181"><span class="hit">					budget:     budgets[i</span><span class="hit">],</span></div>
-    <div class="line" data-line="182">				}</div>
-    <div class="line" data-line="183"><span class="hit">				res, err := tb.processEntry(gCtx, childState)</span></div>
-    <div class="line" data-line="184"><span class="hit">				if err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
+    <div class="line" data-line="174"><span class="hit">		</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">i</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">subDirEntry</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit base">subDirEntries</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="175"><span class="hit">			</span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">Go</span><span class="hit base">(</span><span class="hit decl">func</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit"> </span><span class="hit type">error</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="176"><span class="hit">				</span><span class="hit base">childState</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit oper">&amp;</span><span class="hit type">scanState</span><span class="hit base">{</span></div>
+    <div class="line" data-line="177"><span class="hit">					</span><span class="hit field">parentPath</span><span class="hit base">:</span><span class="hit"> </span><span class="hit arg">pkgPath</span><span class="hit base">,</span></div>
+    <div class="line" data-line="178"><span class="hit">					</span><span class="hit field">entry</span><span class="hit base">:</span><span class="hit">      </span><span class="hit base">subDirEntry</span><span class="hit base">,</span></div>
+    <div class="line" data-line="179"><span class="hit">					</span><span class="hit field">indent</span><span class="hit base">:</span><span class="hit">     </span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">indent</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">2</span><span class="hit base">,</span></div>
+    <div class="line" data-line="180"><span class="hit">					</span><span class="hit field">prog</span><span class="hit base">:</span><span class="hit">       </span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">prog</span><span class="hit base">,</span></div>
+    <div class="line" data-line="181"><span class="hit">					</span><span class="hit field">budget</span><span class="hit base">:</span><span class="hit">     </span><span class="hit base">budgets</span><span class="hit base">[</span><span class="hit base">i</span><span class="hit base">]</span><span class="hit base">,</span></div>
+    <div class="line" data-line="182">				<span class="base">}</span></div>
+    <div class="line" data-line="183"><span class="hit">				</span><span class="hit base">res</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit call">processEntry</span><span class="hit base">(</span><span class="hit base">gCtx</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">childState</span><span class="hit base">)</span></div>
+    <div class="line" data-line="184"><span class="hit">				</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="miss"> </span><span class="miss base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss base">}</span></div>
     <div class="line" data-line="185"></div>
-    <div class="line" data-line="186"><span class="hit">				childResults[i] = res</span></div>
-    <div class="line" data-line="187"><span class="hit">				return nil</span></div>
-    <div class="line" data-line="188">			})</div>
-    <div class="line" data-line="189">		}</div>
+    <div class="line" data-line="186"><span class="hit">				</span><span class="hit base">childResults</span><span class="hit base">[</span><span class="hit base">i</span><span class="hit base">]</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">res</span></div>
+    <div class="line" data-line="187"><span class="hit">				</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="188">			<span class="base">}</span><span class="base">)</span></div>
+    <div class="line" data-line="189">		<span class="base">}</span></div>
     <div class="line" data-line="190"></div>
-    <div class="line" data-line="191"><span class="hit">    if err := group.Wait(); err != nil</span><span class="miss"> {</span></div>
-    <div class="line" data-line="192"><span class="miss">      return nil, err</span></div>
-    <div class="line" data-line="193">    }</div>
+    <div class="line" data-line="191"><span class="hit">    </span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">Wait</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="192"><span class="miss">      </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">nil</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">err</span></div>
+    <div class="line" data-line="193">    <span class="base">}</span></div>
     <div class="line" data-line="194"></div>
-    <div class="line" data-line="195"><span class="hit">		slices.SortFunc(childResults, func(a, b *entryResult) int {</span></div>
-    <div class="line" data-line="196"><span class="hit">			return strings.Compare(a.srcBasename, b.srcBasename)</span></div>
-    <div class="line" data-line="197">		})</div>
+    <div class="line" data-line="195"><span class="hit">		</span><span class="hit base">slices</span><span class="hit base">.</span><span class="hit call">SortFunc</span><span class="hit base">(</span><span class="hit base">childResults</span><span class="hit base">,</span><span class="hit"> </span><span class="hit decl">func</span><span class="hit base">(</span><span class="hit arg">a</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">b</span><span class="hit"> </span><span class="hit oper">*</span><span class="hit type">entryResult</span><span class="hit base">)</span><span class="hit"> </span><span class="hit type">int</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="196"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Compare</span><span class="hit base">(</span><span class="hit arg">a</span><span class="hit base">.</span><span class="hit field">srcBasename</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">b</span><span class="hit base">.</span><span class="hit field">srcBasename</span><span class="hit base">)</span></div>
+    <div class="line" data-line="197">		<span class="base">}</span><span class="base">)</span></div>
     <div class="line" data-line="198"><span class="hit">    </span></div>
-    <div class="line" data-line="199"><span class="hit">		for _, res := range childResults {</span></div>
-    <div class="line" data-line="200"><span class="hit">			dirCovered.Add(res.covered)</span></div>
-    <div class="line" data-line="201"><span class="hit">			dirStatements.Add(res.total)</span></div>
-    <div class="line" data-line="202"><span class="hit">			subDirSB.WriteString(res.html)</span></div>
-    <div class="line" data-line="203">		}</div>
-    <div class="line" data-line="204">	}</div>
+    <div class="line" data-line="199"><span class="hit">		</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">_</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">res</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit base">childResults</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="200"><span class="hit">			</span><span class="hit base">dirCovered</span><span class="hit base">.</span><span class="hit call">Add</span><span class="hit base">(</span><span class="hit base">res</span><span class="hit base">.</span><span class="hit field">covered</span><span class="hit base">)</span></div>
+    <div class="line" data-line="201"><span class="hit">			</span><span class="hit base">dirStatements</span><span class="hit base">.</span><span class="hit call">Add</span><span class="hit base">(</span><span class="hit base">res</span><span class="hit base">.</span><span class="hit field">total</span><span class="hit base">)</span></div>
+    <div class="line" data-line="202"><span class="hit">			</span><span class="hit base">subDirSB</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">res</span><span class="hit base">.</span><span class="hit field">html</span><span class="hit base">)</span></div>
+    <div class="line" data-line="203">		<span class="base">}</span></div>
+    <div class="line" data-line="204">	<span class="base">}</span></div>
     <div class="line" data-line="205"></div>
-    <div class="line" data-line="206"><span class="hit">  res := &amp;entryResult{</span></div>
-    <div class="line" data-line="207"><span class="hit">    pkgPath:     pkgPath,</span></div>
-    <div class="line" data-line="208"><span class="hit">    srcBasename: srcBasename,</span></div>
-    <div class="line" data-line="209"><span class="hit">    html:        subDirSB.String(),</span></div>
-    <div class="line" data-line="210"><span class="hit">    covered:     dirCovered.Load(),</span></div>
-    <div class="line" data-line="211"><span class="hit">    total:       dirStatements.Load</span><span class="hit">(),</span></div>
-    <div class="line" data-line="212">  }</div>
+    <div class="line" data-line="206"><span class="hit">  </span><span class="hit base">res</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit oper">&amp;</span><span class="hit type">entryResult</span><span class="hit base">{</span></div>
+    <div class="line" data-line="207"><span class="hit">    </span><span class="hit field">pkgPath</span><span class="hit base">:</span><span class="hit">     </span><span class="hit arg">pkgPath</span><span class="hit base">,</span></div>
+    <div class="line" data-line="208"><span class="hit">    </span><span class="hit field">srcBasename</span><span class="hit base">:</span><span class="hit"> </span><span class="hit arg">srcBasename</span><span class="hit base">,</span></div>
+    <div class="line" data-line="209"><span class="hit">    </span><span class="hit field">html</span><span class="hit base">:</span><span class="hit">        </span><span class="hit base">subDirSB</span><span class="hit base">.</span><span class="hit call">String</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span></div>
+    <div class="line" data-line="210"><span class="hit">    </span><span class="hit field">covered</span><span class="hit base">:</span><span class="hit">     </span><span class="hit base">dirCovered</span><span class="hit base">.</span><span class="hit call">Load</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span></div>
+    <div class="line" data-line="211"><span class="hit">    </span><span class="hit field">total</span><span class="hit base">:</span><span class="hit">       </span><span class="hit base">dirStatements</span><span class="hit base">.</span><span class="hit call">Load</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span></div>
+    <div class="line" data-line="212">  <span class="base">}</span></div>
     <div class="line" data-line="213"><span class="hit">  </span></div>
-    <div class="line" data-line="214"><span class="hit">  hb := &amp;htmlBuilder{indent: st.indent, itemID: itemID, subDir: srcBasename}</span></div>
-    <div class="line" data-line="215"><span class="hit">  hb.renderSubDirHTML(res)</span></div>
+    <div class="line" data-line="214"><span class="hit">  </span><span class="hit base">hb</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit oper">&amp;</span><span class="hit type">htmlBuilder</span><span class="hit base">{</span><span class="hit field">indent</span><span class="hit base">:</span><span class="hit"> </span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">indent</span><span class="hit base">,</span><span class="hit"> </span><span class="hit field">itemID</span><span class="hit base">:</span><span class="hit"> </span><span class="hit base">itemID</span><span class="hit base">,</span><span class="hit"> </span><span class="hit field">subDir</span><span class="hit base">:</span><span class="hit"> </span><span class="hit arg">srcBasename</span><span class="hit base">}</span></div>
+    <div class="line" data-line="215"><span class="hit">  </span><span class="hit base">hb</span><span class="hit base">.</span><span class="hit call">renderSubDirHTML</span><span class="hit base">(</span><span class="hit base">res</span><span class="hit base">)</span></div>
     <div class="line" data-line="216"></div>
-    <div class="line" data-line="217"><span class="hit">  return res, nil</span></div>
-    <div class="line" data-line="218">}</div>
+    <div class="line" data-line="217"><span class="hit">  </span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">res</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="218"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="219"></div>
-<div class="line" data-line="220">// processFile renders a single &lt;li&gt; tree-node for a Go source file, including its coverge percentage.</div>
+<div class="line" data-line="220"><span class="comment">// processFile renders a single &lt;li&gt; tree-node for a Go source file, including its coverge percentage.</span></div>
 <div class="func"><input type="checkbox" id="func-4" checked/>
-  <label for="func-4" class="line" data-line="221">func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (*entryResult, error<span class="hit">) {</span></label>
+  <label for="func-4" class="line" data-line="221"><span class="decl">func</span> <span class="base">(</span><span class="arg">tb</span> <span class="oper">*</span><span class="type">treeBuilder</span><span class="base">)</span> <span class="call">processFile</span><span class="base">(</span><span class="arg">st</span> <span class="oper">*</span><span class="type">scanState</span><span class="base">,</span> <span class="arg">pkgPath</span><span class="base">,</span> <span class="arg">srcBasename</span> <span class="type">string</span><span class="base">)</span> <span class="base">(</span><span class="oper">*</span><span class="type">entryResult</span><span class="base">,</span> <span class="type">error</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="222"><span class="hit">	cov     := tb.covState.cov[pkgPath]</span></div>
-    <div class="line" data-line="223"><span class="hit">	percent := formatCov(cov.covered, cov.total)</span></div>
+    <div class="line" data-line="222"><span class="hit">	</span><span class="hit base">cov</span><span class="hit">     </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">tb</span><span class="hit base">.</span><span class="hit field">covState</span><span class="hit base">.</span><span class="hit field">cov</span><span class="hit base">[</span><span class="hit arg">pkgPath</span><span class="hit base">]</span></div>
+    <div class="line" data-line="223"><span class="hit">	</span><span class="hit base">percent</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">formatCov</span><span class="hit base">(</span><span class="hit base">cov</span><span class="hit base">.</span><span class="hit field">covered</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">cov</span><span class="hit base">.</span><span class="hit field">total</span><span class="hit base">)</span></div>
     <div class="line" data-line="224"></div>
-    <div class="line" data-line="225"><span class="hit">	var sb strings.Builder</span></div>
+    <div class="line" data-line="225"><span class="hit">	</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">sb</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit type">Builder</span></div>
     <div class="line" data-line="226"></div>
-    <div class="line" data-line="227"><span class="hit">	sb.Grow(st.indent * 2 + 128) // rough pre-allocation to avoid reallocations; should cover most cases</span></div>
-    <div class="line" data-line="228"><span class="hit">	sb.WriteString(strings.Repeat(&#34;  &#34;, st.indent))</span></div>
-    <div class="line" data-line="229"><span class="hit">	sb.WriteString(`&lt;li&gt;&lt;div class=&#34;tree-node&#34;&gt;&lt;span class=&#34;src&#34;&gt;&lt;a href=&#34;`)</span></div>
-    <div class="line" data-line="230"><span class="hit">	sb.WriteString(filepath.Join(st.parentPath, st.entry.Name()))</span></div>
-    <div class="line" data-line="231"><span class="hit">	sb.WriteString(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="232"><span class="hit">	sb.WriteString(srcBasename)</span></div>
-    <div class="line" data-line="233"><span class="hit">	sb.WriteString(`&lt;/a&gt;&lt;/span&gt; &lt;span class=&#34;cov&#34;&gt;`)</span></div>
-    <div class="line" data-line="234"><span class="hit">	sb.WriteString(percent)</span></div>
-    <div class="line" data-line="235"><span class="hit">	sb.WriteString(&#34;&lt;/span&gt;&lt;/div&gt;&lt;/li&gt;\n&#34;)</span></div>
+    <div class="line" data-line="227"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">Grow</span><span class="hit base">(</span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">indent</span><span class="hit"> </span><span class="hit oper">*</span><span class="hit"> </span><span class="hit number">2</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">128</span><span class="hit base">)</span><span class="hit"> </span><span class="hit comment">// rough pre-allocation to avoid reallocations; should cover most cases</span></div>
+    <div class="line" data-line="228"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Repeat</span><span class="hit base">(</span><span class="hit string">&#34;  &#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">indent</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="229"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`&lt;li&gt;&lt;div class=&#34;tree-node&#34;&gt;&lt;span class=&#34;src&#34;&gt;&lt;a href=&#34;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="230"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Join</span><span class="hit base">(</span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">parentPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">entry</span><span class="hit base">.</span><span class="hit call">Name</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="231"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`&#34;&gt;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="232"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit arg">srcBasename</span><span class="hit base">)</span></div>
+    <div class="line" data-line="233"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`&lt;/a&gt;&lt;/span&gt; &lt;span class=&#34;cov&#34;&gt;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="234"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">percent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="235"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/span&gt;&lt;/div&gt;&lt;/li&gt;\n&#34;</span><span class="hit base">)</span></div>
     <div class="line" data-line="236"></div>
-    <div class="line" data-line="237"><span class="hit">	st.prog.Report(st.budget, pkgPath)</span></div>
+    <div class="line" data-line="237"><span class="hit">	</span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">prog</span><span class="hit base">.</span><span class="hit call">Report</span><span class="hit base">(</span><span class="hit arg">st</span><span class="hit base">.</span><span class="hit field">budget</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">pkgPath</span><span class="hit base">)</span></div>
     <div class="line" data-line="238"></div>
-    <div class="line" data-line="239"><span class="hit">	return &amp;entryResult{</span></div>
-    <div class="line" data-line="240"><span class="hit">		pkgPath:     pkgPath,</span></div>
-    <div class="line" data-line="241"><span class="hit">		srcBasename: srcBasename,</span></div>
-    <div class="line" data-line="242"><span class="hit">		html:        sb.String(),</span></div>
-    <div class="line" data-line="243"><span class="hit">		covered:     cov.covered,</span></div>
-    <div class="line" data-line="244"><span class="hit">		total:       cov.total,</span></div>
-    <div class="line" data-line="245"><span class="hit">	}, nil</span></div>
-    <div class="line" data-line="246">}</div>
+    <div class="line" data-line="239"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit oper">&amp;</span><span class="hit type">entryResult</span><span class="hit base">{</span></div>
+    <div class="line" data-line="240"><span class="hit">		</span><span class="hit field">pkgPath</span><span class="hit base">:</span><span class="hit">     </span><span class="hit arg">pkgPath</span><span class="hit base">,</span></div>
+    <div class="line" data-line="241"><span class="hit">		</span><span class="hit field">srcBasename</span><span class="hit base">:</span><span class="hit"> </span><span class="hit arg">srcBasename</span><span class="hit base">,</span></div>
+    <div class="line" data-line="242"><span class="hit">		</span><span class="hit field">html</span><span class="hit base">:</span><span class="hit">        </span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">String</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span></div>
+    <div class="line" data-line="243"><span class="hit">		</span><span class="hit field">covered</span><span class="hit base">:</span><span class="hit">     </span><span class="hit base">cov</span><span class="hit base">.</span><span class="hit field">covered</span><span class="hit base">,</span></div>
+    <div class="line" data-line="244"><span class="hit">		</span><span class="hit field">total</span><span class="hit base">:</span><span class="hit">       </span><span class="hit base">cov</span><span class="hit base">.</span><span class="hit field">total</span><span class="hit base">,</span></div>
+    <div class="line" data-line="245"><span class="hit">	</span><span class="hit base">}</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="246"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="247"></div>
-<div class="line" data-line="248">// renderSubDirHTML wraps pre-rendered child nodes in a &lt;li&gt; subdirectory</div>
-<div class="line" data-line="249">// tree-node, with its name and aggregated coverge percentage.</div>
+<div class="line" data-line="248"><span class="comment">// renderSubDirHTML wraps pre-rendered child nodes in a &lt;li&gt; subdirectory</span></div>
+<div class="line" data-line="249"><span class="comment">// tree-node, with its name and aggregated coverge percentage.</span></div>
 <div class="func"><input type="checkbox" id="func-5" checked/>
-  <label for="func-5" class="line" data-line="250">func (hb *htmlBuilder) renderSubDirHTML(res *entryResult<span class="hit">) {</span></label>
+  <label for="func-5" class="line" data-line="250"><span class="decl">func</span> <span class="base">(</span><span class="arg">hb</span> <span class="oper">*</span><span class="type">htmlBuilder</span><span class="base">)</span> <span class="call">renderSubDirHTML</span><span class="base">(</span><span class="arg">res</span> <span class="oper">*</span><span class="type">entryResult</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="251"><span class="hit">	indent  := strings.Repeat(&#34;  &#34;, hb.indent)</span></div>
-    <div class="line" data-line="252"><span class="hit">	percent := formatCov(res.covered, res.total)</span></div>
+    <div class="line" data-line="251"><span class="hit">	</span><span class="hit base">indent</span><span class="hit">  </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Repeat</span><span class="hit base">(</span><span class="hit string">&#34;  &#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">hb</span><span class="hit base">.</span><span class="hit field">indent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="252"><span class="hit">	</span><span class="hit base">percent</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">formatCov</span><span class="hit base">(</span><span class="hit arg">res</span><span class="hit base">.</span><span class="hit field">covered</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">res</span><span class="hit base">.</span><span class="hit field">total</span><span class="hit base">)</span></div>
     <div class="line" data-line="253"></div>
-    <div class="line" data-line="254"><span class="hit">	var sb strings.Builder</span></div>
+    <div class="line" data-line="254"><span class="hit">	</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">sb</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit type">Builder</span></div>
     <div class="line" data-line="255"></div>
-    <div class="line" data-line="256"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="257"><span class="hit">	sb.WriteString(&#34;&lt;li&gt;\n&#34;)</span></div>
-    <div class="line" data-line="258"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="259"><span class="hit">	sb.WriteString(`  &lt;input type=&#34;checkbox&#34; id=&#34;`)</span></div>
-    <div class="line" data-line="260"><span class="hit">	sb.WriteString(hb.itemID)</span></div>
-    <div class="line" data-line="261"><span class="hit">	sb.WriteString(&#34;\&#34;/&gt;\n&#34;)</span></div>
-    <div class="line" data-line="262"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="263"><span class="hit">	sb.WriteString(&#34;  &lt;div class=\&#34;tree-node\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="264"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="265"><span class="hit">	sb.WriteString(`    &lt;label for=&#34;`)</span></div>
-    <div class="line" data-line="266"><span class="hit">	sb.WriteString(hb.itemID)</span></div>
-    <div class="line" data-line="267"><span class="hit">	sb.WriteString(`&#34;&gt;&lt;span class=&#34;icon&#34;&gt;&lt;/span&gt;`)</span></div>
-    <div class="line" data-line="268"><span class="hit">	sb.WriteString(hb.subDir)</span></div>
-    <div class="line" data-line="269"><span class="hit">	sb.WriteString(&#34;&lt;/label&gt;\n&#34;)</span></div>
-    <div class="line" data-line="270"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="271"><span class="hit">	sb.WriteString(`    &lt;span class=&#34;cov&#34;&gt;`)</span></div>
-    <div class="line" data-line="272"><span class="hit">	sb.WriteString(percent)</span></div>
-    <div class="line" data-line="273"><span class="hit">	sb.WriteString(&#34;&lt;/span&gt;\n&#34;)</span></div>
-    <div class="line" data-line="274"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="275"><span class="hit">	sb.WriteString(&#34;  &lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="276"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="277"><span class="hit">	sb.WriteString(&#34;  &lt;ul&gt;\n&#34;)</span></div>
-    <div class="line" data-line="278"><span class="hit">	sb.WriteString(res.html)</span></div>
-    <div class="line" data-line="279"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="280"><span class="hit">	sb.WriteString(&#34;  &lt;/ul&gt;\n&#34;)</span></div>
-    <div class="line" data-line="281"><span class="hit">	sb.WriteString(indent)</span></div>
-    <div class="line" data-line="282"><span class="hit">	sb.WriteString(&#34;&lt;/li&gt;\n&#34;)</span></div>
+    <div class="line" data-line="256"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">indent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="257"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;&lt;li&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="258"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">indent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="259"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`  &lt;input type=&#34;checkbox&#34; id=&#34;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="260"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit arg">hb</span><span class="hit base">.</span><span class="hit field">itemID</span><span class="hit base">)</span></div>
+    <div class="line" data-line="261"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;\&#34;/&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="262"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">indent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="263"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;  &lt;div class=\&#34;tree-node\&#34;&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="264"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">indent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="265"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`    &lt;label for=&#34;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="266"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit arg">hb</span><span class="hit base">.</span><span class="hit field">itemID</span><span class="hit base">)</span></div>
+    <div class="line" data-line="267"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`&#34;&gt;&lt;span class=&#34;icon&#34;&gt;&lt;/span&gt;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="268"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit arg">hb</span><span class="hit base">.</span><span class="hit field">subDir</span><span class="hit base">)</span></div>
+    <div class="line" data-line="269"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/label&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="270"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">indent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="271"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`    &lt;span class=&#34;cov&#34;&gt;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="272"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">percent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="273"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/span&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="274"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">indent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="275"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;  &lt;/div&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="276"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">indent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="277"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;  &lt;ul&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="278"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit arg">res</span><span class="hit base">.</span><span class="hit field">html</span><span class="hit base">)</span></div>
+    <div class="line" data-line="279"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">indent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="280"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;  &lt;/ul&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="281"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">indent</span><span class="hit base">)</span></div>
+    <div class="line" data-line="282"><span class="hit">	</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/li&gt;\n&#34;</span><span class="hit base">)</span></div>
     <div class="line" data-line="283"></div>
-    <div class="line" data-line="284"><span class="hit">	res.html = sb.String()</span></div>
-    <div class="line" data-line="285">}</div>
+    <div class="line" data-line="284"><span class="hit">	</span><span class="hit arg">res</span><span class="hit base">.</span><span class="hit field">html</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">String</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="285"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="286"></div>
-<div class="line" data-line="287">// formatCov returns covered/total as a one-decimal percentage</div>
-<div class="line" data-line="288">// string (e.g. &#34;12.3%&#34;, or &#34;0.0%&#34; if total is zero).</div>
+<div class="line" data-line="287"><span class="comment">// formatCov returns covered/total as a one-decimal percentage</span></div>
+<div class="line" data-line="288"><span class="comment">// string (e.g. &#34;12.3%&#34;, or &#34;0.0%&#34; if total is zero).</span></div>
 <div class="func"><input type="checkbox" id="func-6" checked/>
-  <label for="func-6" class="line" data-line="289">func formatCov(covered, total uint64) string<span class="hit"> {</span></label>
+  <label for="func-6" class="line" data-line="289"><span class="decl">func</span> <span class="call">formatCov</span><span class="base">(</span><span class="arg">covered</span><span class="base">,</span> <span class="arg">total</span> <span class="type">uint64</span><span class="base">)</span> <span class="type">string</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="290"><span class="hit">	if total == 0 {</span></div>
-    <div class="line" data-line="291"><span class="hit">		return &#34;0.0%&#34;</span></div>
-    <div class="line" data-line="292">	}</div>
-    <div class="line" data-line="293"><span class="hit">	return strconv.FormatFloat(float64(covered) / float64(total) * 100, &#39;f&#39;, 1, 64) + &#34;%&#34;</span></div>
-    <div class="line" data-line="294">}</div>
+    <div class="line" data-line="290"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit arg">total</span><span class="hit"> </span><span class="hit oper">==</span><span class="hit"> </span><span class="hit number">0</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="291"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit string">&#34;0.0%&#34;</span></div>
+    <div class="line" data-line="292">	<span class="base">}</span></div>
+    <div class="line" data-line="293"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">strconv</span><span class="hit base">.</span><span class="hit call">FormatFloat</span><span class="hit base">(</span><span class="hit type">float64</span><span class="hit base">(</span><span class="hit arg">covered</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">/</span><span class="hit"> </span><span class="hit type">float64</span><span class="hit base">(</span><span class="hit arg">total</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">*</span><span class="hit"> </span><span class="hit number">100</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">&#39;f&#39;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">1</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">64</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit string">&#34;%&#34;</span></div>
+    <div class="line" data-line="294"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="295"></div>
-<div class="line" data-line="296">// splitBudget divides a progress budget into n child allocations,</div>
-<div class="line" data-line="297">// with the last child absorbing any remainder.</div>
+<div class="line" data-line="296"><span class="comment">// splitBudget divides a progress budget into n child allocations,</span></div>
+<div class="line" data-line="297"><span class="comment">// with the last child absorbing any remainder.</span></div>
 <div class="func"><input type="checkbox" id="func-7" checked/>
-  <label for="func-7" class="line" data-line="298">func splitBudget(total float64, n int) []float64<span class="hit"> {</span></label>
+  <label for="func-7" class="line" data-line="298"><span class="decl">func</span> <span class="call">splitBudget</span><span class="base">(</span><span class="arg">total</span> <span class="type">float64</span><span class="base">,</span> <span class="arg">n</span> <span class="type">int</span><span class="base">)</span> <span class="base">[</span><span class="base">]</span><span class="type">float64</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="299"><span class="hit">	if n &lt;= 0 { return []float64</span>{} } // defensive; callers are expected to pass n ≥ 1</div>
-    <div class="line" data-line="300"><span class="hit">	budgets := make([]float64, n)</span></div>
-    <div class="line" data-line="301"><span class="hit">	per     := total / float64(n)</span></div>
-    <div class="line" data-line="302"><span class="hit">	for i := range budgets {</span></div>
-    <div class="line" data-line="303"><span class="hit">		budgets[i] = per</span></div>
-    <div class="line" data-line="304">	}</div>
-    <div class="line" data-line="305"><span class="hit">	budgets[n - 1] = math.FMA(per, -float64(n - 1), total) // last child absorbs any remainder</span></div>
-    <div class="line" data-line="306"><span class="hit">	return budgets</span></div>
-    <div class="line" data-line="307">}</div>
+    <div class="line" data-line="299"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit arg">n</span><span class="hit"> </span><span class="hit oper">&lt;=</span><span class="hit"> </span><span class="hit number">0</span><span class="hit"> </span><span class="base">{</span><span class="hit"> </span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">[</span><span class="hit base">]</span><span class="hit type">float64</span><span class="hit base">{</span><span class="hit base">}</span><span class="hit"> </span><span class="hit base">}</span> <span class="comment">// defensive; callers are expected to pass n ≥ 1</span></div>
+    <div class="line" data-line="300"><span class="hit">	</span><span class="hit base">budgets</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">make</span><span class="hit base">(</span><span class="hit base">[</span><span class="hit base">]</span><span class="hit type">float64</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">n</span><span class="hit base">)</span></div>
+    <div class="line" data-line="301"><span class="hit">	</span><span class="hit base">per</span><span class="hit">     </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">total</span><span class="hit"> </span><span class="hit oper">/</span><span class="hit"> </span><span class="hit type">float64</span><span class="hit base">(</span><span class="hit arg">n</span><span class="hit base">)</span></div>
+    <div class="line" data-line="302"><span class="hit">	</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">i</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit base">budgets</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="303"><span class="hit">		</span><span class="hit base">budgets</span><span class="hit base">[</span><span class="hit base">i</span><span class="hit base">]</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">per</span></div>
+    <div class="line" data-line="304">	<span class="base">}</span></div>
+    <div class="line" data-line="305"><span class="hit">	</span><span class="hit base">budgets</span><span class="hit base">[</span><span class="hit arg">n</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit"> </span><span class="hit number">1</span><span class="hit base">]</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">math</span><span class="hit base">.</span><span class="hit call">FMA</span><span class="hit base">(</span><span class="hit base">per</span><span class="hit base">,</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit type">float64</span><span class="hit base">(</span><span class="hit arg">n</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit"> </span><span class="hit number">1</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">total</span><span class="hit base">)</span><span class="hit"> </span><span class="hit comment">// last child absorbs any remainder</span></div>
+    <div class="line" data-line="306"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">budgets</span></div>
+    <div class="line" data-line="307"><span class="base">}</span></div>
   </div>
 </div>
 <script src="../../../child.js"></script>

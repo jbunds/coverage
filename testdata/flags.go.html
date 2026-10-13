@@ -4,126 +4,127 @@
 <meta charset="utf-8">
 <link rel="icon"       href="../../../favicon.ico" type="image/vnd.microsoft.icon">
 <link rel="stylesheet" href="../../../style.css">
+<link rel="stylesheet" href="../../../syntax.css">
 <title>github.com/jbunds/coverage/flags.go</title>
 </head>
 <body id="code" class="line-numbers">
-<div class="line" data-line="1">package main</div>
+<div class="line" data-line="1"><span class="dir">package</span> <span class="base">main</span></div>
 <div class="line" data-line="2"></div>
-<div class="line" data-line="3">import (</div>
-<div class="line" data-line="4">	&#34;errors&#34;</div>
-<div class="line" data-line="5">	&#34;flag&#34;</div>
-<div class="line" data-line="6">	&#34;fmt&#34;</div>
-<div class="line" data-line="7">	&#34;path/filepath&#34;</div>
-<div class="line" data-line="8">	&#34;strings&#34;</div>
-<div class="line" data-line="9">)</div>
+<div class="line" data-line="3"><span class="dir">import</span> <span class="base">(</span></div>
+<div class="line" data-line="4">	<span class="string">&#34;errors&#34;</span></div>
+<div class="line" data-line="5">	<span class="string">&#34;flag&#34;</span></div>
+<div class="line" data-line="6">	<span class="string">&#34;fmt&#34;</span></div>
+<div class="line" data-line="7">	<span class="string">&#34;path/filepath&#34;</span></div>
+<div class="line" data-line="8">	<span class="string">&#34;strings&#34;</span></div>
+<div class="line" data-line="9"><span class="base">)</span></div>
 <div class="line" data-line="10"></div>
-<div class="line" data-line="11">type flagVals struct {</div>
-<div class="line" data-line="12">	goModFiles       string</div>
-<div class="line" data-line="13">	coverProfileFile string</div>
-<div class="line" data-line="14">	outDir           string</div>
-<div class="line" data-line="15">	noBrowser        bool</div>
-<div class="line" data-line="16">	httpServer       bool</div>
-<div class="line" data-line="17">	sortOrder        sortOrder</div>
-<div class="line" data-line="18">}</div>
+<div class="line" data-line="11"><span class="decl">type</span> <span class="type">flagVals</span> <span class="decl">struct</span> <span class="base">{</span></div>
+<div class="line" data-line="12">	<span class="field">goModFiles</span>       <span class="type">string</span></div>
+<div class="line" data-line="13">	<span class="field">coverProfileFile</span> <span class="type">string</span></div>
+<div class="line" data-line="14">	<span class="field">outDir</span>           <span class="type">string</span></div>
+<div class="line" data-line="15">	<span class="field">noBrowser</span>        <span class="type">bool</span></div>
+<div class="line" data-line="16">	<span class="field">httpServer</span>       <span class="type">bool</span></div>
+<div class="line" data-line="17">	<span class="field">sortOrder</span>        <span class="type">sortOrder</span></div>
+<div class="line" data-line="18"><span class="base">}</span></div>
 <div class="line" data-line="19"></div>
-<div class="line" data-line="20">// flags parses command line flags.</div>
+<div class="line" data-line="20"><span class="comment">// flags parses command line flags.</span></div>
 <div class="func"><input type="checkbox" id="func-0" checked/>
-  <label for="func-0" class="line" data-line="21">func flags(fs *flag.FlagSet, args []string) (fv *flagVals, err error<span class="hit">) {</span></label>
+  <label for="func-0" class="line" data-line="21"><span class="decl">func</span> <span class="call">flags</span><span class="base">(</span><span class="arg">fs</span> <span class="oper">*</span><span class="base">flag</span><span class="base">.</span><span class="type">FlagSet</span><span class="base">,</span> <span class="arg">args</span> <span class="base">[</span><span class="base">]</span><span class="type">string</span><span class="base">)</span> <span class="base">(</span><span class="arg">fv</span> <span class="oper">*</span><span class="type">flagVals</span><span class="base">,</span> <span class="arg">err</span> <span class="type">error</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="22"><span class="hit">	allowedSortOrders := []string{ // must cohere with the `sortOrder` enum in sort.go</span></div>
-    <div class="line" data-line="23"><span class="hit">		&#34;lex&#34;,</span></div>
-    <div class="line" data-line="24"><span class="hit">		&#34;shallowest&#34;, &#34;deepest&#34;,</span></div>
-    <div class="line" data-line="25"><span class="hit">		&#34;lowest&#34;,     &#34;highest&#34;,</span></div>
-    <div class="line" data-line="26"><span class="hit">		&#34;shortest&#34;,   &#34;longest&#34;</span><span class="hit">,</span></div>
-    <div class="line" data-line="27">	}</div>
+    <div class="line" data-line="22"><span class="hit">	</span><span class="hit base">allowedSortOrders</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">[</span><span class="hit base">]</span><span class="hit type">string</span><span class="hit base">{</span><span class="hit"> </span><span class="hit comment">// must cohere with the `sortOrder` enum in sort.go</span></div>
+    <div class="line" data-line="23"><span class="hit">		</span><span class="hit string">&#34;lex&#34;</span><span class="hit base">,</span></div>
+    <div class="line" data-line="24"><span class="hit">		</span><span class="hit string">&#34;shallowest&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;deepest&#34;</span><span class="hit base">,</span></div>
+    <div class="line" data-line="25"><span class="hit">		</span><span class="hit string">&#34;lowest&#34;</span><span class="hit base">,</span><span class="hit">     </span><span class="hit string">&#34;highest&#34;</span><span class="hit base">,</span></div>
+    <div class="line" data-line="26"><span class="hit">		</span><span class="hit string">&#34;shortest&#34;</span><span class="hit base">,</span><span class="hit">   </span><span class="hit string">&#34;longest&#34;</span><span class="hit base">,</span></div>
+    <div class="line" data-line="27">	<span class="base">}</span></div>
     <div class="line" data-line="28"></div>
-    <div class="line" data-line="29"><span class="hit">	fs.Usage = func() {</span></div>
-    <div class="line" data-line="30"><span class="hit">		fmt.Fprintf(fs.Output(), &#34;%s usage:\n\n&#34;, filepath.Base(fs.Name()))</span></div>
-    <div class="line" data-line="31"><span class="hit">		fs.PrintDefaults()</span></div>
-    <div class="line" data-line="32"><span class="hit">		fmt.Fprintln(fs.Output())</span></div>
-    <div class="line" data-line="33">	}</div>
+    <div class="line" data-line="29"><span class="hit">	</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit field">Usage</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit decl">func</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="30"><span class="hit">		</span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit call">Fprintf</span><span class="hit base">(</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">Output</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;%s usage:\n\n&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Base</span><span class="hit base">(</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">Name</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="31"><span class="hit">		</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">PrintDefaults</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="32"><span class="hit">		</span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit call">Fprintln</span><span class="hit base">(</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">Output</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="33">	<span class="base">}</span></div>
     <div class="line" data-line="34"></div>
-    <div class="line" data-line="35"><span class="hit">	var goModFiles, coverProfileFile, outDir string</span></div>
-    <div class="line" data-line="36"><span class="hit">	var noBrowser,  httpServer               bool</span></div>
-    <div class="line" data-line="37"><span class="hit">	var sortOrder                            sortOrder</span></div>
+    <div class="line" data-line="35"><span class="hit">	</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">goModFiles</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">coverProfileFile</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">outDir</span><span class="hit"> </span><span class="hit type">string</span></div>
+    <div class="line" data-line="36"><span class="hit">	</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">noBrowser</span><span class="hit base">,</span><span class="hit">  </span><span class="hit base">httpServer</span><span class="hit">               </span><span class="hit type">bool</span></div>
+    <div class="line" data-line="37"><span class="hit">	</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">sortOrder</span><span class="hit">                            </span><span class="hit type">sortOrder</span></div>
     <div class="line" data-line="38"></div>
-    <div class="line" data-line="39"><span class="hit">	fs.StringVar(&amp;goModFiles,       &#34;gomod&#34;,        &#34;go.mod&#34;, &#34;path to a go.work file or a comma-delimited list of go.mod paths&#34;)</span></div>
-    <div class="line" data-line="40"><span class="hit">	fs.StringVar(&amp;coverProfileFile, &#34;coverprofile&#34;, &#34;&#34;,       &#34;path to the coverage profile file&#34;)</span></div>
-    <div class="line" data-line="41"><span class="hit">	fs.StringVar(&amp;outDir,           &#34;outdir&#34;,       &#34;&#34;,       &#34;path where HTML files will be written&#34;)</span></div>
-    <div class="line" data-line="42"><span class="hit">	fs.BoolVar(  &amp;noBrowser,        &#34;n&#34;,            false,    &#34;suppress opening the browser (overrides -s)&#34;)</span></div>
-    <div class="line" data-line="43"><span class="hit">	fs.BoolVar(  &amp;httpServer,       &#34;s&#34;,            false,    &#34;serve the generated HTML via a Python HTTP server&#34;)</span></div>
-    <div class="line" data-line="44"><span class="hit">	fs.Func(                        &#34;order&#34;,                  &#34;per-file coverage stdout rows sort order&#34;, func(val string) error {</span></div>
-    <div class="line" data-line="45"><span class="hit">		switch val</span> {</div>
-    <div class="line" data-line="46">		case &#34;lex&#34;<span class="hit">:</span></div>
-    <div class="line" data-line="47"><span class="hit">			sortOrder = lex</span></div>
-    <div class="line" data-line="48"><span class="hit">			return nil</span></div>
-    <div class="line" data-line="49">		case &#34;shallowest&#34;<span class="hit">:</span></div>
-    <div class="line" data-line="50"><span class="hit">			sortOrder = shallowest</span></div>
-    <div class="line" data-line="51"><span class="hit">			return nil</span></div>
-    <div class="line" data-line="52">		case &#34;deepest&#34;<span class="hit">:</span></div>
-    <div class="line" data-line="53"><span class="hit">			sortOrder = deepest</span></div>
-    <div class="line" data-line="54"><span class="hit">			return nil</span></div>
-    <div class="line" data-line="55">		case &#34;lowest&#34;<span class="hit">:</span></div>
-    <div class="line" data-line="56"><span class="hit">			sortOrder = lowest</span></div>
-    <div class="line" data-line="57"><span class="hit">			return nil</span></div>
-    <div class="line" data-line="58">		case &#34;highest&#34;<span class="hit">:</span></div>
-    <div class="line" data-line="59"><span class="hit">			sortOrder = highest</span></div>
-    <div class="line" data-line="60"><span class="hit">			return nil</span></div>
-    <div class="line" data-line="61">		case &#34;shortest&#34;<span class="hit">:</span></div>
-    <div class="line" data-line="62"><span class="hit">			sortOrder = shortest</span></div>
-    <div class="line" data-line="63"><span class="hit">			return nil</span></div>
-    <div class="line" data-line="64">		case &#34;longest&#34;<span class="hit">:</span></div>
-    <div class="line" data-line="65"><span class="hit">			sortOrder = longest</span></div>
-    <div class="line" data-line="66"><span class="hit">			return nil</span></div>
-    <div class="line" data-line="67">		default<span class="hit">:</span></div>
-    <div class="line" data-line="68"><span class="hit">			return fmt.Errorf(&#34;invalid sort order specified\nmust be one of (%s)&#34;, strings.Join(allowedSortOrders, &#34;, &#34;</span><span class="hit">))</span></div>
-    <div class="line" data-line="69">		}</div>
-    <div class="line" data-line="70">	})</div>
+    <div class="line" data-line="39"><span class="hit">	</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">StringVar</span><span class="hit base">(</span><span class="hit oper">&amp;</span><span class="hit base">goModFiles</span><span class="hit base">,</span><span class="hit">       </span><span class="hit string">&#34;gomod&#34;</span><span class="hit base">,</span><span class="hit">        </span><span class="hit string">&#34;go.mod&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;path to a go.work file or a comma-delimited list of go.mod paths&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="40"><span class="hit">	</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">StringVar</span><span class="hit base">(</span><span class="hit oper">&amp;</span><span class="hit base">coverProfileFile</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;coverprofile&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;&#34;</span><span class="hit base">,</span><span class="hit">       </span><span class="hit string">&#34;path to the coverage profile file&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="41"><span class="hit">	</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">StringVar</span><span class="hit base">(</span><span class="hit oper">&amp;</span><span class="hit base">outDir</span><span class="hit base">,</span><span class="hit">           </span><span class="hit string">&#34;outdir&#34;</span><span class="hit base">,</span><span class="hit">       </span><span class="hit string">&#34;&#34;</span><span class="hit base">,</span><span class="hit">       </span><span class="hit string">&#34;path where HTML files will be written&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="42"><span class="hit">	</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">BoolVar</span><span class="hit base">(</span><span class="hit">  </span><span class="hit oper">&amp;</span><span class="hit base">noBrowser</span><span class="hit base">,</span><span class="hit">        </span><span class="hit string">&#34;n&#34;</span><span class="hit base">,</span><span class="hit">            </span><span class="hit base">false</span><span class="hit base">,</span><span class="hit">    </span><span class="hit string">&#34;suppress opening the browser (overrides -s)&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="43"><span class="hit">	</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">BoolVar</span><span class="hit base">(</span><span class="hit">  </span><span class="hit oper">&amp;</span><span class="hit base">httpServer</span><span class="hit base">,</span><span class="hit">       </span><span class="hit string">&#34;s&#34;</span><span class="hit base">,</span><span class="hit">            </span><span class="hit base">false</span><span class="hit base">,</span><span class="hit">    </span><span class="hit string">&#34;serve the generated HTML via a Python HTTP server&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="44"><span class="hit">	</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">Func</span><span class="hit base">(</span><span class="hit">                        </span><span class="hit string">&#34;order&#34;</span><span class="hit base">,</span><span class="hit">                  </span><span class="hit string">&#34;per-file coverage stdout rows sort order&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit decl">func</span><span class="hit base">(</span><span class="hit arg">val</span><span class="hit"> </span><span class="hit type">string</span><span class="hit base">)</span><span class="hit"> </span><span class="hit type">error</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="45"><span class="hit">		</span><span class="hit decl">switch</span><span class="hit"> </span><span class="hit arg">val</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="46">		<span class="decl">case</span> <span class="string">&#34;lex&#34;</span><span class="base">:</span></div>
+    <div class="line" data-line="47"><span class="hit">			</span><span class="hit base">sortOrder</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">lex</span></div>
+    <div class="line" data-line="48"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="49">		<span class="decl">case</span> <span class="string">&#34;shallowest&#34;</span><span class="base">:</span></div>
+    <div class="line" data-line="50"><span class="hit">			</span><span class="hit base">sortOrder</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">shallowest</span></div>
+    <div class="line" data-line="51"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="52">		<span class="decl">case</span> <span class="string">&#34;deepest&#34;</span><span class="base">:</span></div>
+    <div class="line" data-line="53"><span class="hit">			</span><span class="hit base">sortOrder</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">deepest</span></div>
+    <div class="line" data-line="54"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="55">		<span class="decl">case</span> <span class="string">&#34;lowest&#34;</span><span class="base">:</span></div>
+    <div class="line" data-line="56"><span class="hit">			</span><span class="hit base">sortOrder</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">lowest</span></div>
+    <div class="line" data-line="57"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="58">		<span class="decl">case</span> <span class="string">&#34;highest&#34;</span><span class="base">:</span></div>
+    <div class="line" data-line="59"><span class="hit">			</span><span class="hit base">sortOrder</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">highest</span></div>
+    <div class="line" data-line="60"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="61">		<span class="decl">case</span> <span class="string">&#34;shortest&#34;</span><span class="base">:</span></div>
+    <div class="line" data-line="62"><span class="hit">			</span><span class="hit base">sortOrder</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">shortest</span></div>
+    <div class="line" data-line="63"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="64">		<span class="decl">case</span> <span class="string">&#34;longest&#34;</span><span class="base">:</span></div>
+    <div class="line" data-line="65"><span class="hit">			</span><span class="hit base">sortOrder</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">longest</span></div>
+    <div class="line" data-line="66"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="67">		<span class="decl">default</span><span class="base">:</span></div>
+    <div class="line" data-line="68"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit call">Errorf</span><span class="hit base">(</span><span class="hit string">&#34;invalid sort order specified\nmust be one of (%s)&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Join</span><span class="hit base">(</span><span class="hit base">allowedSortOrders</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;, &#34;</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="69">		<span class="base">}</span></div>
+    <div class="line" data-line="70">	<span class="base">}</span><span class="base">)</span></div>
     <div class="line" data-line="71"></div>
-    <div class="line" data-line="72"><span class="hit">	if err = fs.Parse(args); err != nil {</span></div>
-    <div class="line" data-line="73"><span class="hit">		return nil, err</span></div>
-    <div class="line" data-line="74">	}</div>
+    <div class="line" data-line="72"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">Parse</span><span class="hit base">(</span><span class="hit arg">args</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="73"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span></div>
+    <div class="line" data-line="74">	<span class="base">}</span></div>
     <div class="line" data-line="75"></div>
-    <div class="line" data-line="76"><span class="hit">	if coverProfileFile == &#34;&#34; {</span></div>
-    <div class="line" data-line="77"><span class="hit">		fs.Usage()</span></div>
-    <div class="line" data-line="78"><span class="hit">		return nil, errors.New(&#34;no value specified for -coverprofile&#34;)</span></div>
-    <div class="line" data-line="79">	}</div>
+    <div class="line" data-line="76"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">coverProfileFile</span><span class="hit"> </span><span class="hit oper">==</span><span class="hit"> </span><span class="hit string">&#34;&#34;</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="77"><span class="hit">		</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit field">Usage</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="78"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">errors</span><span class="hit base">.</span><span class="hit call">New</span><span class="hit base">(</span><span class="hit string">&#34;no value specified for -coverprofile&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="79">	<span class="base">}</span></div>
     <div class="line" data-line="80"></div>
-    <div class="line" data-line="81"><span class="hit">	if outDir == &#34;&#34; {</span></div>
-    <div class="line" data-line="82"><span class="hit">		fs.Usage()</span></div>
-    <div class="line" data-line="83"><span class="hit">		return nil, errors.New(&#34;no value specified for -outdir&#34;)</span></div>
-    <div class="line" data-line="84">	}</div>
+    <div class="line" data-line="81"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">outDir</span><span class="hit"> </span><span class="hit oper">==</span><span class="hit"> </span><span class="hit string">&#34;&#34;</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="82"><span class="hit">		</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit field">Usage</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="83"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">errors</span><span class="hit base">.</span><span class="hit call">New</span><span class="hit base">(</span><span class="hit string">&#34;no value specified for -outdir&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="84">	<span class="base">}</span></div>
     <div class="line" data-line="85"></div>
-    <div class="line" data-line="86"><span class="hit">	fv = &amp;flagVals{</span></div>
-    <div class="line" data-line="87"><span class="hit">		goModFiles:       goModFiles,</span></div>
-    <div class="line" data-line="88"><span class="hit">		coverProfileFile: coverProfileFile,</span></div>
-    <div class="line" data-line="89"><span class="hit">		outDir:           outDir,</span></div>
-    <div class="line" data-line="90"><span class="hit">		noBrowser:        noBrowser,</span></div>
-    <div class="line" data-line="91"><span class="hit">		httpServer:       httpServer,</span></div>
-    <div class="line" data-line="92"><span class="hit">		sortOrder:        sortOrder</span><span class="hit">,</span></div>
-    <div class="line" data-line="93">	}</div>
+    <div class="line" data-line="86"><span class="hit">	</span><span class="hit base">fv</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit oper">&amp;</span><span class="hit type">flagVals</span><span class="hit base">{</span></div>
+    <div class="line" data-line="87"><span class="hit">		</span><span class="hit field">goModFiles</span><span class="hit base">:</span><span class="hit">       </span><span class="hit base">goModFiles</span><span class="hit base">,</span></div>
+    <div class="line" data-line="88"><span class="hit">		</span><span class="hit field">coverProfileFile</span><span class="hit base">:</span><span class="hit"> </span><span class="hit base">coverProfileFile</span><span class="hit base">,</span></div>
+    <div class="line" data-line="89"><span class="hit">		</span><span class="hit field">outDir</span><span class="hit base">:</span><span class="hit">           </span><span class="hit base">outDir</span><span class="hit base">,</span></div>
+    <div class="line" data-line="90"><span class="hit">		</span><span class="hit field">noBrowser</span><span class="hit base">:</span><span class="hit">        </span><span class="hit base">noBrowser</span><span class="hit base">,</span></div>
+    <div class="line" data-line="91"><span class="hit">		</span><span class="hit field">httpServer</span><span class="hit base">:</span><span class="hit">       </span><span class="hit base">httpServer</span><span class="hit base">,</span></div>
+    <div class="line" data-line="92"><span class="hit">		</span><span class="hit field">sortOrder</span><span class="hit base">:</span><span class="hit">        </span><span class="hit base">sortOrder</span><span class="hit base">,</span></div>
+    <div class="line" data-line="93">	<span class="base">}</span></div>
     <div class="line" data-line="94"></div>
-    <div class="line" data-line="95"><span class="hit">	if len(fs.Args()) &gt; 0 {</span></div>
-    <div class="line" data-line="96"><span class="hit">		fmt.Fprintf(fs.Output(), &#34;ignored arguments: %s\n&#34;, strings.Join(fs.Args(), &#34;, &#34;))</span></div>
-    <div class="line" data-line="97">	}</div>
+    <div class="line" data-line="95"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">Args</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">&gt;</span><span class="hit"> </span><span class="hit number">0</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="96"><span class="hit">		</span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit call">Fprintf</span><span class="hit base">(</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">Output</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;ignored arguments: %s\n&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Join</span><span class="hit base">(</span><span class="hit arg">fs</span><span class="hit base">.</span><span class="hit call">Args</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;, &#34;</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="97">	<span class="base">}</span></div>
     <div class="line" data-line="98"></div>
-    <div class="line" data-line="99"><span class="hit">	return</span></div>
-    <div class="line" data-line="100">}</div>
+    <div class="line" data-line="99"><span class="hit">	</span><span class="hit decl">return</span></div>
+    <div class="line" data-line="100"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="101"></div>
-<div class="line" data-line="102">// filterArgs discards any arguments up to and including &#34;--&#34;.</div>
+<div class="line" data-line="102"><span class="comment">// filterArgs discards any arguments up to and including &#34;--&#34;.</span></div>
 <div class="func"><input type="checkbox" id="func-1" checked/>
-  <label for="func-1" class="line" data-line="103">func filterArgs(args []string) []string<span class="hit"> {</span></label>
+  <label for="func-1" class="line" data-line="103"><span class="decl">func</span> <span class="call">filterArgs</span><span class="base">(</span><span class="arg">args</span> <span class="base">[</span><span class="base">]</span><span class="type">string</span><span class="base">)</span> <span class="base">[</span><span class="base">]</span><span class="type">string</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="104"><span class="hit">	for i, arg := range args {</span></div>
-    <div class="line" data-line="105"><span class="hit">		if arg == &#34;--&#34; {</span></div>
-    <div class="line" data-line="106"><span class="hit">			args = args[i + 1:]</span></div>
-    <div class="line" data-line="107"><span class="hit">			break</span></div>
-    <div class="line" data-line="108">		}</div>
-    <div class="line" data-line="109">	}</div>
-    <div class="line" data-line="110"><span class="hit">	return args</span></div>
-    <div class="line" data-line="111">}</div>
+    <div class="line" data-line="104"><span class="hit">	</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">i</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">arg</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit arg">args</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="105"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">arg</span><span class="hit"> </span><span class="hit oper">==</span><span class="hit"> </span><span class="hit string">&#34;--&#34;</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="106"><span class="hit">			</span><span class="hit arg">args</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit arg">args</span><span class="hit base">[</span><span class="hit base">i</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">1</span><span class="hit base">:</span><span class="hit base">]</span></div>
+    <div class="line" data-line="107"><span class="hit">			</span><span class="hit decl">break</span></div>
+    <div class="line" data-line="108">		<span class="base">}</span></div>
+    <div class="line" data-line="109">	<span class="base">}</span></div>
+    <div class="line" data-line="110"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit arg">args</span></div>
+    <div class="line" data-line="111"><span class="base">}</span></div>
   </div>
 </div>
 <script src="../../../child.js"></script>

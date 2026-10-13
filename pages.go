@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"go/parser"
-	"go/token"
 	"io"
 	"path/filepath"
 	"runtime"
@@ -178,13 +177,19 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 	ew  := newErrorWriter(buf)
 
 	relPath := strings.Repeat("../", strings.Count(unit.profile.FileName, "/"))
-	writePreamble(ew, relPath + rg.iconFilename, unit.profile.FileName, relPath + rg.styleCSSFilename)
+	rg.writePreamble(ew, relPath, unit.profile.FileName)
 
-	fset         := token.NewFileSet()
-	fileAST, err := parser.ParseFile(fset, fileName, src, parser.ParseComments); if err != nil { return err }
-	file         := fset.File(fileAST.Pos())
+	fileAST := rg.globalASTs[srcFile]
+	if fileAST == nil {
+		fileAST, err = parser.ParseFile(rg.globalFset, srcFile, src, parser.ParseComments)
+		if err != nil {
+			return err
+		}
+	}
+	file := rg.globalFset.File(fileAST.Pos())
 
-	if err := renderCovHTML(ctx, ew, annotateSource(file, src,
+	if err := renderCovHTML(ctx, ew, annotateSource(fileAST, file, src,
+	  rg.globalTypes[srcFile],
 		computeBlockOffsets(file, unit.profile.Blocks),
 		computeFuncSpans(fileAST, file))); err != nil {
 		return err
@@ -265,16 +270,19 @@ func renderCovHTML(ctx context.Context, ew stickyWriter, lines []annotatedLine) 
 
 // writePreamble writes the preamble portion of the
 // HTML content common to every Go source HTML file.
-func writePreamble(ew stickyWriter, iconPath, srcPath, cssPath string) {
+func (rg *reportGenerator) writePreamble(ew stickyWriter, relPath, srcPath string) {
 	ew.write("<!DOCTYPE html>\n")
 	ew.write("<html lang=\"en\">\n")
 	ew.write("<head>\n")
 	ew.write("<meta charset=\"utf-8\">\n")
 	ew.write(`<link rel="icon"       href="`)
-	ew.write(iconPath)
+	ew.write(relPath + rg.iconFilename)
 	ew.write("\" type=\"image/vnd.microsoft.icon\">\n")
 	ew.write(`<link rel="stylesheet" href="`)
-	ew.write(cssPath)
+	ew.write(relPath + rg.styleCSSFilename)
+	ew.write("\">\n")
+	ew.write(`<link rel="stylesheet" href="`)
+	ew.write(relPath + rg.syntaxCSSFilename)
 	ew.write("\">\n")
 	ew.write("<title>")
 	ew.write(srcPath)

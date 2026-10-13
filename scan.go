@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/scanner"
 	"go/token"
+	"go/types"
 	"sort"
 	"strings"
 	"text/template"
@@ -30,13 +31,19 @@ type annotatedLine struct {
 	isFuncEnd bool   // true on the last line of a function
 }
 
+// pendingToken is a source fragment buffered between coverage class boundaries.
+type pendingToken struct {
+	fragment []byte
+	absStart int
+	synClass string // per-token
+}
+
 // annotateSource scans src and returns one annotatedLine per source line.
-func annotateSource(file *token.File, src []byte, blocks []*profileBlock, funcs []funcSpan) []annotatedLine {
+func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *types.Info, blocks []*profileBlock, funcs []funcSpan) []annotatedLine {
 	var (
-		pendingBuf        bytes.Buffer
-		pendingClass      string
-		pendingBaseOffset int
-		lastOffset        int
+		pendingTokens []pendingToken
+		pendingClass  string
+		lastOffset    int
 	)
 
 	lineOffsets := make([]int, 0, 256)
@@ -49,13 +56,14 @@ func annotateSource(file *token.File, src []byte, blocks []*profileBlock, funcs 
 
 	buf   := new(bytes.Buffer)
 	flush := func() {
-		if pendingBuf.Len() > 0 {
-			writeTokenFragment(buf, pendingBuf.Bytes(), pendingBaseOffset, pendingClass, blocks)
-			pendingBuf.Reset()
+		for _, pt := range pendingTokens {
+			writeTokenFragment(buf, pt.fragment, pt.absStart, pendingClass, pt.synClass, blocks)
 		}
+		pendingTokens = pendingTokens[:0]
 	}
 
-	scnr := new(scanner.Scanner)
+	classifier := buildSyntaxClassifier(fileAST, typeInfo)
+	scnr       := new(scanner.Scanner)
 	scnr.Init(file, src, nil, scanner.ScanComments)
 
 	for {
@@ -63,39 +71,43 @@ func annotateSource(file *token.File, src []byte, blocks []*profileBlock, funcs 
 		if tok == token.EOF {
 			flush()
 			if lastOffset < len(src) {
-				writeTokenFragment(buf, src[lastOffset:], lastOffset, "", blocks)
+				writeTokenFragment(buf, src[lastOffset:], lastOffset, "", "", blocks)
 			}
 			break
 		}
 
 		startOffset := file.Offset(pos)
-		endOffset   := startOffset + len(lit) // stable behavior since Go 1.0
+		endOffset   := startOffset + len(lit)
+		if lit == "" { // handle explicit and virtual punctuation tokens
+			if tok == token.SEMICOLON && (startOffset >= len(src) || src[startOffset] != ';') {
+				continue // virtual semicolon: zero source bytes
+			}
+			endOffset = startOffset + len(tok.String())
+		}
 
 		if lit       == ""          &&
 		   endOffset == startOffset {
 			continue
 		}
 
-		coverClass := coverClass(blocks, startOffset, endOffset)
+		covClass := coverClass(blocks, startOffset, endOffset)
+		synClass := classifier.classify(tok, pos, lit)
 
-		if coverClass != pendingClass {
+		if covClass != pendingClass {
 			flush()
-			pendingClass = coverClass
-			if pendingClass != "" {
-				pendingBaseOffset = min(startOffset, lastOffset)
-			}
+			pendingClass = covClass
 		}
 
 		if pendingClass != "" {
 			if startOffset > lastOffset {
-				pendingBuf.Write(src[lastOffset:startOffset])
+				pendingTokens = append(pendingTokens, pendingToken{src[lastOffset:startOffset], startOffset, ""})
 			}
-			pendingBuf.Write(src[startOffset:endOffset])
+			pendingTokens = append(pendingTokens, pendingToken{src[startOffset:endOffset], startOffset, synClass})
 		} else {
 			if startOffset > lastOffset {
-				writeTokenFragment(buf, src[lastOffset:startOffset], lastOffset, "", blocks)
+				writeTokenFragment(buf, src[lastOffset:startOffset], lastOffset, "", "", blocks)
 			}
-			writeTokenFragment(buf, src[startOffset:endOffset], startOffset, "", blocks)
+			writeTokenFragment(buf, src[startOffset:endOffset], startOffset, "", synClass, blocks)
 		}
 
 		lastOffset = endOffset
@@ -115,7 +127,7 @@ func annotateSource(file *token.File, src []byte, blocks []*profileBlock, funcs 
 }
 
 // writeTokenFragment splits fragments across newlines and resolves absolute sub-line boundaries.
-func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, baseClass string, blocks []*profileBlock) {
+func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, baseCovClass, synClass string, blocks []*profileBlock) {
 	lines          := bytes.SplitAfter(fragment, []byte("\n"))
 	relativeOffset := 0
 
@@ -129,21 +141,36 @@ func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, 
 		}
 
 		if len(content) > 0 {
-			class := baseClass
-			if class == "" { // calculate the absolute position in the file for this whitespace line chunk
+			covClass := baseCovClass
+			if covClass == "" { // calculate the absolute position in the file for this whitespace line chunk
 				absStart := baseFileOffset + relativeOffset
 				absEnd   := absStart       + len(content)
-				class     = coverClass(blocks, absStart, absEnd)
+				covClass  = coverClass(blocks, absStart, absEnd)
 			}
 
-			if class != "" {
+			var classes []string
+			if covClass != "" {
+				classes = append(classes, covClass)
+			}
+			if synClass != "" {
+				classes = append(classes, synClass)
+			}
+
+			if len(classes) > 0 {
 				buf.WriteString(`<span class="`)
-				buf.WriteString(class)
+				for i, cls := range classes {
+					if i > 0 {
+						buf.WriteByte(' ')
+					}
+					buf.WriteString(cls)
+				}
 				buf.WriteString(`">`)
-				template.HTMLEscape(buf, content)
+			}
+
+			template.HTMLEscape(buf, content)
+
+			if len(classes) > 0 {
 				buf.WriteString("</span>")
-			} else {
-				template.HTMLEscape(buf, content)
 			}
 		}
 
@@ -192,7 +219,7 @@ func computeBlockOffsets(file *token.File, blocks []cover.ProfileBlock) (out []*
 		}
 
 		endOffset := file.Offset(file.LineStart(b.EndLine)) + (b.EndCol - 1)
-		out = append(out, &profileBlock{
+		out        = append(out, &profileBlock{
 			startOffset: startOffset,
 			endOffset:   endOffset,
 			count:       b.Count,

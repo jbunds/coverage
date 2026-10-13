@@ -28,7 +28,7 @@
 .tree li li::before {
   position:    absolute;
   top:         0;
-  left:        -1ch;
+  left:       -1ch;
   height:      100%;
   content:     "";
   border-left: 1px solid;
@@ -39,21 +39,16 @@
 .tree li li::after { /* horizontal branch line */
   position:   absolute;
   top:        0.75em;
-  left:       -1ch;
+  left:      -1ch;
   width:      1ch;
   content:    "";
   border-top: 1px solid;
 }
 
-/* https://issues.chromium.org/issues/1142756
-   https://issues.chromium.org/issues/40045219
-   https://issues.chromium.org/issues/40131567
-   https://issues.chromium.org/issues/40461560 */
-
 .tree label { /* folder emojis & labels */
   display:        inline-block;
   padding:        2px 4px;
-  margin-right:   10ch; /* 10ch: len(folder emoji) = 1ch + len(" ") = 1ch + len("100.0%") = 6ch == 8ch + 2ch (?) */
+  margin-right:   10ch; /* clear span.cov: 8ch + 1ch @ small ≈ 7.2ch base + 3ch buffer */
   vertical-align: middle;
   cursor:         pointer;
   user-select:    none;
@@ -79,6 +74,10 @@
 
 .tree .icon::before { content: "\1F4C1" } /* closed folder */
 
+/* https://issues.chromium.org/issues/40045219
+   https://issues.chromium.org/issues/40131567
+   https://issues.chromium.org/issues/40461560 */
+
 @supports (hanging-punctuation: first) and (font: -apple-system-body) and (-webkit-appearance: none) { .tree .icon::before { font-size: 0.8em } }
 
 .tree input:checked ~ .tree-node .icon::before { content: "\1F4C2" } /* open folder */
@@ -101,7 +100,7 @@ span.src {
 span.cov {
   position:    absolute;
   top:         50%;
-  right:       10px;
+  right:       1ch;
   width:       8ch;    /* 8ch == len("100.0%") + 2ch gap */
   font-size:   small;
   font-style:  italic;

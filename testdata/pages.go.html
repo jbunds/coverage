@@ -4,440 +4,449 @@
 <meta charset="utf-8">
 <link rel="icon"       href="../../../favicon.ico" type="image/vnd.microsoft.icon">
 <link rel="stylesheet" href="../../../style.css">
+<link rel="stylesheet" href="../../../syntax.css">
 <title>github.com/jbunds/coverage/pages.go</title>
 </head>
 <body id="code" class="line-numbers">
-<div class="line" data-line="1">package main</div>
+<div class="line" data-line="1"><span class="dir">package</span> <span class="base">main</span></div>
 <div class="line" data-line="2"></div>
-<div class="line" data-line="3">import (</div>
-<div class="line" data-line="4">	&#34;bytes&#34;</div>
-<div class="line" data-line="5">	&#34;context&#34;</div>
-<div class="line" data-line="6">	&#34;fmt&#34;</div>
-<div class="line" data-line="7">	&#34;go/parser&#34;</div>
-<div class="line" data-line="8">	&#34;go/token&#34;</div>
-<div class="line" data-line="9">	&#34;io&#34;</div>
-<div class="line" data-line="10">	&#34;path/filepath&#34;</div>
-<div class="line" data-line="11">	&#34;runtime&#34;</div>
-<div class="line" data-line="12">	&#34;strconv&#34;</div>
-<div class="line" data-line="13">	&#34;strings&#34;</div>
-<div class="line" data-line="14">	&#34;text/template&#34;</div>
-<div class="line" data-line="15"></div>
-<div class="line" data-line="16">	&#34;github.com/jbunds/progress&#34;</div>
-<div class="line" data-line="17">	&#34;golang.org/x/sync/errgroup&#34;</div>
-<div class="line" data-line="18">	&#34;golang.org/x/tools/cover&#34;</div>
-<div class="line" data-line="19">)</div>
-<div class="line" data-line="20"></div>
-<div class="line" data-line="21">// stickyWriter is a wrapper interface used to enable sequential</div>
-<div class="line" data-line="22">// string writing with deferred error handling.</div>
-<div class="line" data-line="23">type stickyWriter interface {</div>
-<div class="line" data-line="24">	io.Writer</div>
-<div class="line" data-line="25">	write(string)</div>
-<div class="line" data-line="26">	err() error</div>
-<div class="line" data-line="27">}</div>
-<div class="line" data-line="28"></div>
-<div class="line" data-line="29">// errorWriter tracks the first encountered I/O failure to allow multiple</div>
-<div class="line" data-line="30">// sequential writes without repetitive inline error checking.</div>
-<div class="line" data-line="31">type errorWriter struct {</div>
-<div class="line" data-line="32">	w        io.Writer</div>
-<div class="line" data-line="33">	e        error</div>
-<div class="line" data-line="34">	useColor bool</div>
-<div class="line" data-line="35">}</div>
-<div class="line" data-line="36"></div>
-<div class="line" data-line="37">// write performs a sticky-error write.</div>
+<div class="line" data-line="3"><span class="dir">import</span> <span class="base">(</span></div>
+<div class="line" data-line="4">	<span class="string">&#34;bytes&#34;</span></div>
+<div class="line" data-line="5">	<span class="string">&#34;context&#34;</span></div>
+<div class="line" data-line="6">	<span class="string">&#34;fmt&#34;</span></div>
+<div class="line" data-line="7">	<span class="string">&#34;go/parser&#34;</span></div>
+<div class="line" data-line="8">	<span class="string">&#34;io&#34;</span></div>
+<div class="line" data-line="9">	<span class="string">&#34;path/filepath&#34;</span></div>
+<div class="line" data-line="10">	<span class="string">&#34;runtime&#34;</span></div>
+<div class="line" data-line="11">	<span class="string">&#34;strconv&#34;</span></div>
+<div class="line" data-line="12">	<span class="string">&#34;strings&#34;</span></div>
+<div class="line" data-line="13">	<span class="string">&#34;text/template&#34;</span></div>
+<div class="line" data-line="14"></div>
+<div class="line" data-line="15">	<span class="string">&#34;github.com/jbunds/progress&#34;</span></div>
+<div class="line" data-line="16">	<span class="string">&#34;golang.org/x/sync/errgroup&#34;</span></div>
+<div class="line" data-line="17">	<span class="string">&#34;golang.org/x/tools/cover&#34;</span></div>
+<div class="line" data-line="18"><span class="base">)</span></div>
+<div class="line" data-line="19"></div>
+<div class="line" data-line="20"><span class="comment">// stickyWriter is a wrapper interface used to enable sequential</span></div>
+<div class="line" data-line="21"><span class="comment">// string writing with deferred error handling.</span></div>
+<div class="line" data-line="22"><span class="decl">type</span> <span class="type">stickyWriter</span> <span class="decl">interface</span> <span class="base">{</span></div>
+<div class="line" data-line="23">	<span class="base">io</span><span class="base">.</span><span class="type">Writer</span></div>
+<div class="line" data-line="24">	<span class="call">write</span><span class="base">(</span><span class="type">string</span><span class="base">)</span></div>
+<div class="line" data-line="25">	<span class="call">err</span><span class="base">(</span><span class="base">)</span> <span class="type">error</span></div>
+<div class="line" data-line="26"><span class="base">}</span></div>
+<div class="line" data-line="27"></div>
+<div class="line" data-line="28"><span class="comment">// errorWriter tracks the first encountered I/O failure to allow multiple</span></div>
+<div class="line" data-line="29"><span class="comment">// sequential writes without repetitive inline error checking.</span></div>
+<div class="line" data-line="30"><span class="decl">type</span> <span class="type">errorWriter</span> <span class="decl">struct</span> <span class="base">{</span></div>
+<div class="line" data-line="31">	<span class="field">w</span>        <span class="base">io</span><span class="base">.</span><span class="type">Writer</span></div>
+<div class="line" data-line="32">	<span class="field">e</span>        <span class="type">error</span></div>
+<div class="line" data-line="33">	<span class="field">useColor</span> <span class="type">bool</span></div>
+<div class="line" data-line="34"><span class="base">}</span></div>
+<div class="line" data-line="35"></div>
+<div class="line" data-line="36"><span class="comment">// write performs a sticky-error write.</span></div>
 <div class="func"><input type="checkbox" id="func-0" checked/>
-  <label for="func-0" class="line" data-line="38">func (w *errorWriter) write(s string<span class="hit">) {</span></label>
+  <label for="func-0" class="line" data-line="37"><span class="decl">func</span> <span class="base">(</span><span class="arg">w</span> <span class="oper">*</span><span class="type">errorWriter</span><span class="base">)</span> <span class="call">write</span><span class="base">(</span><span class="arg">s</span> <span class="type">string</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="39"><span class="hit">	if w.e != nil</span><span class="miss"> { return</span><span class="miss"> }</span></div>
-    <div class="line" data-line="40"><span class="hit">	_, w.e = io.WriteString(w.w, s</span><span class="hit">)</span></div>
-    <div class="line" data-line="41">}</div>
+    <div class="line" data-line="38"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit arg">w</span><span class="hit base">.</span><span class="hit field">e</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">}</span></div>
+    <div class="line" data-line="39"><span class="hit">	</span><span class="hit base">_</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">w</span><span class="hit base">.</span><span class="hit field">e</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">io</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit arg">w</span><span class="hit base">.</span><span class="hit field">w</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">s</span><span class="hit base">)</span></div>
+    <div class="line" data-line="40"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="42"></div>
-<div class="line" data-line="43">// write performs a sticky-error write that optionally</div>
-<div class="line" data-line="44">// wraps the provided string in ANSI color codes.</div>
+<div class="line" data-line="41"></div>
+<div class="line" data-line="42"><span class="comment">// write performs a sticky-error write that optionally</span></div>
+<div class="line" data-line="43"><span class="comment">// wraps the provided string in ANSI color codes.</span></div>
 <div class="func"><input type="checkbox" id="func-1" checked/>
-  <label for="func-1" class="line" data-line="45">func (w *errorWriter) writeColor(s, color string<span class="hit">) {</span></label>
+  <label for="func-1" class="line" data-line="44"><span class="decl">func</span> <span class="base">(</span><span class="arg">w</span> <span class="oper">*</span><span class="type">errorWriter</span><span class="base">)</span> <span class="call">writeColor</span><span class="base">(</span><span class="arg">s</span><span class="base">,</span> <span class="arg">color</span> <span class="type">string</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="46"><span class="hit">	if w.e != nil</span><span class="miss"> { return</span><span class="miss"> }</span></div>
-    <div class="line" data-line="47"><span class="hit">	if !w.useColor {</span></div>
-    <div class="line" data-line="48"><span class="hit">		w.write(s)</span></div>
-    <div class="line" data-line="49"><span class="hit">		return</span></div>
-    <div class="line" data-line="50">	}</div>
-    <div class="line" data-line="51"><span class="miss">	w.write(color)</span></div>
-    <div class="line" data-line="52"><span class="miss">	w.write(s)</span></div>
-    <div class="line" data-line="53"><span class="miss">	w.write(&#34;\033[0m&#34;</span>) // reset attributes, styles, and colors to defaults</div>
-    <div class="line" data-line="54">}</div>
+    <div class="line" data-line="45"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit arg">w</span><span class="hit base">.</span><span class="hit field">e</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">}</span></div>
+    <div class="line" data-line="46"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit oper">!</span><span class="hit arg">w</span><span class="hit base">.</span><span class="hit field">useColor</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="47"><span class="hit">		</span><span class="hit arg">w</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit arg">s</span><span class="hit base">)</span></div>
+    <div class="line" data-line="48"><span class="hit">		</span><span class="hit decl">return</span></div>
+    <div class="line" data-line="49">	<span class="base">}</span></div>
+    <div class="line" data-line="50"><span class="miss">	</span><span class="miss arg">w</span><span class="miss base">.</span><span class="miss call">write</span><span class="miss base">(</span><span class="miss arg">color</span><span class="miss base">)</span></div>
+    <div class="line" data-line="51"><span class="miss">	</span><span class="miss arg">w</span><span class="miss base">.</span><span class="miss call">write</span><span class="miss base">(</span><span class="miss arg">s</span><span class="miss base">)</span></div>
+    <div class="line" data-line="52"><span class="miss">	</span><span class="miss arg">w</span><span class="miss base">.</span><span class="miss call">write</span><span class="miss base">(</span><span class="miss string">&#34;\033[0m&#34;</span><span class="miss base">)</span> <span class="comment">// reset attributes, styles, and colors to defaults</span></div>
+    <div class="line" data-line="53"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="55"></div>
-<div class="line" data-line="56">// err returns the first I/O failure encountered</div>
-<div class="line" data-line="57">// during multiple sequential write operations.</div>
+<div class="line" data-line="54"></div>
+<div class="line" data-line="55"><span class="comment">// err returns the first I/O failure encountered</span></div>
+<div class="line" data-line="56"><span class="comment">// during multiple sequential write operations.</span></div>
 <div class="func"><input type="checkbox" id="func-2" checked/>
-  <label for="func-2" class="line" data-line="58"><span class="hit">func (w *errorWriter) err() error { return w.e</span><span class="hit"> }</span></label>
+  <label for="func-2" class="line" data-line="57"><span class="hit decl">func</span><span class="hit"> </span><span class="hit base">(</span><span class="hit arg">w</span><span class="hit"> </span><span class="hit oper">*</span><span class="hit type">errorWriter</span><span class="hit base">)</span><span class="hit"> </span><span class="hit call">err</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit"> </span><span class="hit type">error</span><span class="hit"> </span><span class="hit base">{</span><span class="hit"> </span><span class="hit decl">return</span><span class="hit"> </span><span class="hit arg">w</span><span class="hit base">.</span><span class="hit field">e</span><span class="hit"> </span><span class="hit base">}</span></label>
 </div>
-<div class="line" data-line="59"></div>
-<div class="line" data-line="60">// Write satisfies the io.Writer interface, but is otherwise unused.</div>
+<div class="line" data-line="58"></div>
+<div class="line" data-line="59"><span class="comment">// Write satisfies the io.Writer interface, but is otherwise unused.</span></div>
 <div class="func"><input type="checkbox" id="func-3" checked/>
-  <label for="func-3" class="line" data-line="61">func (w *errorWriter) Write(p []byte) (int, error<span class="miss">) {</span></label>
+  <label for="func-3" class="line" data-line="60"><span class="decl">func</span> <span class="base">(</span><span class="arg">w</span> <span class="oper">*</span><span class="type">errorWriter</span><span class="base">)</span> <span class="call">Write</span><span class="base">(</span><span class="arg">p</span> <span class="base">[</span><span class="base">]</span><span class="type">byte</span><span class="base">)</span> <span class="base">(</span><span class="type">int</span><span class="base">,</span> <span class="type">error</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="62"><span class="miss">	if w.e != nil { return 0, w.e</span><span class="miss"> }</span></div>
-    <div class="line" data-line="63"><span class="miss">	return w.w.Write(p</span><span class="miss">)</span></div>
-    <div class="line" data-line="64">}</div>
+    <div class="line" data-line="61"><span class="miss">	</span><span class="miss decl">if</span><span class="miss"> </span><span class="miss arg">w</span><span class="miss base">.</span><span class="miss field">e</span><span class="miss"> </span><span class="miss oper">!=</span><span class="miss"> </span><span class="miss base">nil</span><span class="miss"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss number">0</span><span class="miss base">,</span><span class="miss"> </span><span class="miss arg">w</span><span class="miss base">.</span><span class="miss field">e</span><span class="miss"> </span><span class="miss base">}</span></div>
+    <div class="line" data-line="62"><span class="miss">	</span><span class="miss decl">return</span><span class="miss"> </span><span class="miss arg">w</span><span class="miss base">.</span><span class="miss field">w</span><span class="miss base">.</span><span class="miss call">Write</span><span class="miss base">(</span><span class="miss arg">p</span><span class="miss base">)</span></div>
+    <div class="line" data-line="63"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="65"></div>
+<div class="line" data-line="64"></div>
 <div class="func"><input type="checkbox" id="func-4" checked/>
-  <label for="func-4" class="line" data-line="66">func newErrorWriter(w io.Writer) *errorWriter<span class="hit"> {</span></label>
+  <label for="func-4" class="line" data-line="65"><span class="decl">func</span> <span class="call">newErrorWriter</span><span class="base">(</span><span class="arg">w</span> <span class="base">io</span><span class="base">.</span><span class="type">Writer</span><span class="base">)</span> <span class="oper">*</span><span class="type">errorWriter</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="67"><span class="hit">	return &amp;errorWriter{</span></div>
-    <div class="line" data-line="68"><span class="hit">		w:        w,</span></div>
-    <div class="line" data-line="69"><span class="hit">		useColor: isTerm(w</span><span class="hit">),</span></div>
-    <div class="line" data-line="70">	}</div>
-    <div class="line" data-line="71">}</div>
+    <div class="line" data-line="66"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit oper">&amp;</span><span class="hit type">errorWriter</span><span class="hit base">{</span></div>
+    <div class="line" data-line="67"><span class="hit">		</span><span class="hit field">w</span><span class="hit base">:</span><span class="hit">        </span><span class="hit arg">w</span><span class="hit base">,</span></div>
+    <div class="line" data-line="68"><span class="hit">		</span><span class="hit field">useColor</span><span class="hit base">:</span><span class="hit"> </span><span class="hit call">isTerm</span><span class="hit base">(</span><span class="hit arg">w</span><span class="hit base">)</span><span class="hit base">,</span></div>
+    <div class="line" data-line="69">	<span class="base">}</span></div>
+    <div class="line" data-line="70"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="72"></div>
-<div class="line" data-line="73">// workUnit represents a unit of work to be performed: the generation</div>
-<div class="line" data-line="74">// of an HTML file for a Go source file&#39;s coverage profile.</div>
-<div class="line" data-line="75">type workUnit struct {</div>
-<div class="line" data-line="76">	profile *cover.Profile</div>
-<div class="line" data-line="77">	outPath string</div>
-<div class="line" data-line="78">}</div>
-<div class="line" data-line="79"></div>
-<div class="line" data-line="80">// writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html</div>
-<div class="line" data-line="81">// file for each Go source file listed in the coverage profile file.</div>
+<div class="line" data-line="71"></div>
+<div class="line" data-line="72"><span class="comment">// workUnit represents a unit of work to be performed: the generation</span></div>
+<div class="line" data-line="73"><span class="comment">// of an HTML file for a Go source file&#39;s coverage profile.</span></div>
+<div class="line" data-line="74"><span class="decl">type</span> <span class="type">workUnit</span> <span class="decl">struct</span> <span class="base">{</span></div>
+<div class="line" data-line="75">	<span class="field">profile</span> <span class="oper">*</span><span class="base">cover</span><span class="base">.</span><span class="type">Profile</span></div>
+<div class="line" data-line="76">	<span class="field">outPath</span> <span class="type">string</span></div>
+<div class="line" data-line="77"><span class="base">}</span></div>
+<div class="line" data-line="78"></div>
+<div class="line" data-line="79"><span class="comment">// writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html</span></div>
+<div class="line" data-line="80"><span class="comment">// file for each Go source file listed in the coverage profile file.</span></div>
 <div class="func"><input type="checkbox" id="func-5" checked/>
-  <label for="func-5" class="line" data-line="82">func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput io.Writer) error<span class="hit"> {</span></label>
+  <label for="func-5" class="line" data-line="81"><span class="decl">func</span> <span class="base">(</span><span class="arg">rg</span> <span class="oper">*</span><span class="type">reportGenerator</span><span class="base">)</span> <span class="call">writeCovHTMLFiles</span><span class="base">(</span><span class="arg">ctx</span> <span class="base">context</span><span class="base">.</span><span class="type">Context</span><span class="base">,</span> <span class="arg">progressOutput</span> <span class="base">io</span><span class="base">.</span><span class="type">Writer</span><span class="base">)</span> <span class="type">error</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="83"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
-    <div class="line" data-line="84"></div>
-    <div class="line" data-line="85"><span class="hit">	rg.covState.cov = make(map[string]coverage, len(rg.profiles))</span></div>
-    <div class="line" data-line="86"><span class="hit">	units, dirs := rg.buildWorkUnits()</span></div>
-    <div class="line" data-line="87"></div>
-    <div class="line" data-line="88"><span class="hit">	if err := rg.createDirs(ctx, dirs, progressOutput); err != nil {</span></div>
-    <div class="line" data-line="89"><span class="hit">		return err</span></div>
-    <div class="line" data-line="90">	}</div>
-    <div class="line" data-line="91"></div>
-    <div class="line" data-line="92"><span class="hit">	perFileCov, err := rg.genHTMLFiles(ctx, units, progressOutput)</span></div>
-    <div class="line" data-line="93"><span class="hit">	if err != nil {</span></div>
-    <div class="line" data-line="94"><span class="hit">		return err</span></div>
-    <div class="line" data-line="95">	}</div>
-    <div class="line" data-line="96"></div>
-    <div class="line" data-line="97"><span class="hit">	for i, cov := range perFileCov {</span></div>
-    <div class="line" data-line="98"><span class="hit">		rg.covState.cov[units[i].profile.FileName] = cov</span></div>
-    <div class="line" data-line="99">	}</div>
-    <div class="line" data-line="100"><span class="hit">	return nil</span></div>
-    <div class="line" data-line="101">}</div>
+    <div class="line" data-line="82"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">ctx</span><span class="hit base">.</span><span class="hit call">Err</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss base">}</span></div>
+    <div class="line" data-line="83"></div>
+    <div class="line" data-line="84"><span class="hit">	</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">covState</span><span class="hit base">.</span><span class="hit field">cov</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit call">make</span><span class="hit base">(</span><span class="hit decl">map</span><span class="hit base">[</span><span class="hit type">string</span><span class="hit base">]</span><span class="hit type">coverage</span><span class="hit base">,</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">profiles</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="85"><span class="hit">	</span><span class="hit base">units</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">dirs</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit call">buildWorkUnits</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="86"></div>
+    <div class="line" data-line="87"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit call">createDirs</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">dirs</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">progressOutput</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="88"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">err</span></div>
+    <div class="line" data-line="89">	<span class="base">}</span></div>
+    <div class="line" data-line="90"></div>
+    <div class="line" data-line="91"><span class="hit">	</span><span class="hit base">perFileCov</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit call">genHTMLFiles</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">units</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">progressOutput</span><span class="hit base">)</span></div>
+    <div class="line" data-line="92"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="93"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">err</span></div>
+    <div class="line" data-line="94">	<span class="base">}</span></div>
+    <div class="line" data-line="95"></div>
+    <div class="line" data-line="96"><span class="hit">	</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">i</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">cov</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit base">perFileCov</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="97"><span class="hit">		</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">covState</span><span class="hit base">.</span><span class="hit field">cov</span><span class="hit base">[</span><span class="hit base">units</span><span class="hit base">[</span><span class="hit base">i</span><span class="hit base">]</span><span class="hit base">.</span><span class="hit field">profile</span><span class="hit base">.</span><span class="hit field">FileName</span><span class="hit base">]</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">cov</span></div>
+    <div class="line" data-line="98">	<span class="base">}</span></div>
+    <div class="line" data-line="99"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="100"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="102"></div>
-<div class="line" data-line="103">// buildWorkUnits creates one work unit per coverage profile and collects</div>
-<div class="line" data-line="104">// the set of output directories that must exist before writing.</div>
+<div class="line" data-line="101"></div>
+<div class="line" data-line="102"><span class="comment">// buildWorkUnits creates one work unit per coverage profile and collects</span></div>
+<div class="line" data-line="103"><span class="comment">// the set of output directories that must exist before writing.</span></div>
 <div class="func"><input type="checkbox" id="func-6" checked/>
-  <label for="func-6" class="line" data-line="105">func (rg *reportGenerator) buildWorkUnits() (units []workUnit, dirs map[string]struct<span class="hit">{}) {</span></label>
+  <label for="func-6" class="line" data-line="104"><span class="decl">func</span> <span class="base">(</span><span class="arg">rg</span> <span class="oper">*</span><span class="type">reportGenerator</span><span class="base">)</span> <span class="call">buildWorkUnits</span><span class="base">(</span><span class="base">)</span> <span class="base">(</span><span class="arg">units</span> <span class="base">[</span><span class="base">]</span><span class="type">workUnit</span><span class="base">,</span> <span class="arg">dirs</span> <span class="decl">map</span><span class="base">[</span><span class="type">string</span><span class="base">]</span><span class="decl">struct</span><span class="base">{</span><span class="base">}</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="106"><span class="hit">	units = make([]workUnit, 0, len(rg.profiles))</span></div>
-    <div class="line" data-line="107"><span class="hit">	dirs  = make(map[string]struct{})</span></div>
-    <div class="line" data-line="108"><span class="hit">	for _, profile := range rg.profiles {</span></div>
-    <div class="line" data-line="109"><span class="hit">		outPath := filepath.Join(rg.outRoot.Name(), profile.FileName + &#34;.html&#34;)</span></div>
-    <div class="line" data-line="110"><span class="hit">		units    = append(units, workUnit{profile: profile, outPath: outPath})</span></div>
-    <div class="line" data-line="111"><span class="hit">		dirs[filepath.Dir(outPath)] = struct{}{}</span></div>
-    <div class="line" data-line="112">	}</div>
-    <div class="line" data-line="113"><span class="hit">	return</span></div>
-    <div class="line" data-line="114">}</div>
+    <div class="line" data-line="105"><span class="hit">	</span><span class="hit base">units</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit call">make</span><span class="hit base">(</span><span class="hit base">[</span><span class="hit base">]</span><span class="hit type">workUnit</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">0</span><span class="hit base">,</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">profiles</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="106"><span class="hit">	</span><span class="hit base">dirs</span><span class="hit">  </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit call">make</span><span class="hit base">(</span><span class="hit decl">map</span><span class="hit base">[</span><span class="hit type">string</span><span class="hit base">]</span><span class="hit decl">struct</span><span class="hit base">{</span><span class="hit base">}</span><span class="hit base">)</span></div>
+    <div class="line" data-line="107"><span class="hit">	</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">_</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">profile</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">profiles</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="108"><span class="hit">		</span><span class="hit base">outPath</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Join</span><span class="hit base">(</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">outRoot</span><span class="hit base">.</span><span class="hit call">Name</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">profile</span><span class="hit base">.</span><span class="hit field">FileName</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit string">&#34;.html&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="109"><span class="hit">		</span><span class="hit base">units</span><span class="hit">    </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit call">append</span><span class="hit base">(</span><span class="hit base">units</span><span class="hit base">,</span><span class="hit"> </span><span class="hit type">workUnit</span><span class="hit base">{</span><span class="hit field">profile</span><span class="hit base">:</span><span class="hit"> </span><span class="hit base">profile</span><span class="hit base">,</span><span class="hit"> </span><span class="hit field">outPath</span><span class="hit base">:</span><span class="hit"> </span><span class="hit base">outPath</span><span class="hit base">}</span><span class="hit base">)</span></div>
+    <div class="line" data-line="110"><span class="hit">		</span><span class="hit base">dirs</span><span class="hit base">[</span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Dir</span><span class="hit base">(</span><span class="hit base">outPath</span><span class="hit base">)</span><span class="hit base">]</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit decl">struct</span><span class="hit base">{</span><span class="hit base">}</span><span class="hit base">{</span><span class="hit base">}</span></div>
+    <div class="line" data-line="111">	<span class="base">}</span></div>
+    <div class="line" data-line="112"><span class="hit">	</span><span class="hit decl">return</span></div>
+    <div class="line" data-line="113"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="115"></div>
-<div class="line" data-line="116">// createDirs creates all required output directories concurrently, bounded by NumCPU.</div>
+<div class="line" data-line="114"></div>
+<div class="line" data-line="115"><span class="comment">// createDirs creates all required output directories concurrently, bounded by NumCPU.</span></div>
 <div class="func"><input type="checkbox" id="func-7" checked/>
-  <label for="func-7" class="line" data-line="117">func (rg *reportGenerator) createDirs(ctx context.Context, dirs map[string]struct{}, progressOutput io.Writer) error<span class="hit"> {</span></label>
+  <label for="func-7" class="line" data-line="116"><span class="decl">func</span> <span class="base">(</span><span class="arg">rg</span> <span class="oper">*</span><span class="type">reportGenerator</span><span class="base">)</span> <span class="call">createDirs</span><span class="base">(</span><span class="arg">ctx</span> <span class="base">context</span><span class="base">.</span><span class="type">Context</span><span class="base">,</span> <span class="arg">dirs</span> <span class="decl">map</span><span class="base">[</span><span class="type">string</span><span class="base">]</span><span class="decl">struct</span><span class="base">{</span><span class="base">}</span><span class="base">,</span> <span class="arg">progressOutput</span> <span class="base">io</span><span class="base">.</span><span class="type">Writer</span><span class="base">)</span> <span class="type">error</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="118"><span class="hit">	if !rg.write</span><span class="miss"> { return nil</span><span class="miss"> }</span></div>
-    <div class="line" data-line="119"></div>
-    <div class="line" data-line="120"><span class="hit">	prog := progress.New(ctx, uint64(len(dirs)), progressOutput)</span></div>
-    <div class="line" data-line="121"><span class="hit">	defer prog.Close()</span></div>
-    <div class="line" data-line="122"></div>
-    <div class="line" data-line="123"><span class="hit">	group, gCtx := errgroup.WithContext(ctx)</span></div>
-    <div class="line" data-line="124"><span class="hit">	group.SetLimit(runtime.NumCPU())</span></div>
-    <div class="line" data-line="125"></div>
-    <div class="line" data-line="126"><span class="hit">	for dir := range dirs {</span></div>
-    <div class="line" data-line="127"><span class="hit">		if err := gCtx.Err(); err != nil</span><span class="miss"> {</span></div>
-    <div class="line" data-line="128"><span class="miss">			break</span></div>
-    <div class="line" data-line="129">		}</div>
-    <div class="line" data-line="130"><span class="hit">		group.Go(func() error {</span></div>
-    <div class="line" data-line="131"><span class="hit">			if err := rg.fsys.MkdirAll(dir, 0700); err != nil {</span></div>
-    <div class="line" data-line="132"><span class="hit">				return fmt.Errorf(&#34;cannot create directory %q: %w&#34;, dir, err)</span></div>
-    <div class="line" data-line="133">			}</div>
-    <div class="line" data-line="134"><span class="hit">			prog.Report(1, &#34;created &#34; + dir)</span></div>
-    <div class="line" data-line="135"><span class="hit">			return nil</span></div>
-    <div class="line" data-line="136">		})</div>
-    <div class="line" data-line="137">	}</div>
-    <div class="line" data-line="138"><span class="hit">	return group.Wait</span><span class="hit">()</span></div>
-    <div class="line" data-line="139">}</div>
+    <div class="line" data-line="117"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit oper">!</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">write</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">nil</span><span class="miss"> </span><span class="miss base">}</span></div>
+    <div class="line" data-line="118"></div>
+    <div class="line" data-line="119"><span class="hit">	</span><span class="hit base">prog</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">progress</span><span class="hit base">.</span><span class="hit call">New</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">,</span><span class="hit"> </span><span class="hit type">uint64</span><span class="hit base">(</span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">dirs</span><span class="hit base">)</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">progressOutput</span><span class="hit base">)</span></div>
+    <div class="line" data-line="120"><span class="hit">	</span><span class="hit decl">defer</span><span class="hit"> </span><span class="hit base">prog</span><span class="hit base">.</span><span class="hit call">Close</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="121"></div>
+    <div class="line" data-line="122"><span class="hit">	</span><span class="hit base">group</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">gCtx</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">errgroup</span><span class="hit base">.</span><span class="hit call">WithContext</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">)</span></div>
+    <div class="line" data-line="123"><span class="hit">	</span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">SetLimit</span><span class="hit base">(</span><span class="hit base">runtime</span><span class="hit base">.</span><span class="hit call">NumCPU</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="124"></div>
+    <div class="line" data-line="125"><span class="hit">	</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">dir</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit arg">dirs</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="126"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">gCtx</span><span class="hit base">.</span><span class="hit call">Err</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="127"><span class="miss">			</span><span class="miss decl">break</span></div>
+    <div class="line" data-line="128">		<span class="base">}</span></div>
+    <div class="line" data-line="129"><span class="hit">		</span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">Go</span><span class="hit base">(</span><span class="hit decl">func</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit"> </span><span class="hit type">error</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="130"><span class="hit">			</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">fsys</span><span class="hit base">.</span><span class="hit call">MkdirAll</span><span class="hit base">(</span><span class="hit base">dir</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">0700</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="131"><span class="hit">				</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit call">Errorf</span><span class="hit base">(</span><span class="hit string">&#34;cannot create directory %q: %w&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">dir</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit base">)</span></div>
+    <div class="line" data-line="132">			<span class="base">}</span></div>
+    <div class="line" data-line="133"><span class="hit">			</span><span class="hit base">prog</span><span class="hit base">.</span><span class="hit call">Report</span><span class="hit base">(</span><span class="hit number">1</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;created &#34;</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit base">dir</span><span class="hit base">)</span></div>
+    <div class="line" data-line="134"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="135">		<span class="base">}</span><span class="base">)</span></div>
+    <div class="line" data-line="136">	<span class="base">}</span></div>
+    <div class="line" data-line="137"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">Wait</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="138"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="140"></div>
-<div class="line" data-line="141">// genHTMLFiles processes all work units concurrently (bounded by NumCPU),</div>
-<div class="line" data-line="142">// writing one HTML file per unit and returning per-file coverage counts.</div>
+<div class="line" data-line="139"></div>
+<div class="line" data-line="140"><span class="comment">// genHTMLFiles processes all work units concurrently (bounded by NumCPU),</span></div>
+<div class="line" data-line="141"><span class="comment">// writing one HTML file per unit and returning per-file coverage counts.</span></div>
 <div class="func"><input type="checkbox" id="func-8" checked/>
-  <label for="func-8" class="line" data-line="143">func (rg *reportGenerator) genHTMLFiles(ctx context.Context, units []workUnit, progressOutput io.Writer) ([]coverage, error<span class="hit">) {</span></label>
+  <label for="func-8" class="line" data-line="142"><span class="decl">func</span> <span class="base">(</span><span class="arg">rg</span> <span class="oper">*</span><span class="type">reportGenerator</span><span class="base">)</span> <span class="call">genHTMLFiles</span><span class="base">(</span><span class="arg">ctx</span> <span class="base">context</span><span class="base">.</span><span class="type">Context</span><span class="base">,</span> <span class="arg">units</span> <span class="base">[</span><span class="base">]</span><span class="type">workUnit</span><span class="base">,</span> <span class="arg">progressOutput</span> <span class="base">io</span><span class="base">.</span><span class="type">Writer</span><span class="base">)</span> <span class="base">(</span><span class="base">[</span><span class="base">]</span><span class="type">coverage</span><span class="base">,</span> <span class="type">error</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="144"><span class="hit">	perFileCov := make([]coverage, len(units))</span></div>
-    <div class="line" data-line="145"><span class="hit">	prog       := progress.New(ctx, 0, progressOutput)</span></div>
-    <div class="line" data-line="146"><span class="hit">	defer prog.Close()</span></div>
-    <div class="line" data-line="147"></div>
-    <div class="line" data-line="148"><span class="hit">	group, gCtx := errgroup.WithContext(ctx)</span></div>
-    <div class="line" data-line="149"><span class="hit">	group.SetLimit(runtime.NumCPU())</span></div>
-    <div class="line" data-line="150"></div>
-    <div class="line" data-line="151"><span class="hit">	for i, unit := range units {</span></div>
-    <div class="line" data-line="152"><span class="hit">		if err := gCtx.Err(); err != nil</span><span class="miss"> {</span></div>
-    <div class="line" data-line="153"><span class="miss">			break</span></div>
-    <div class="line" data-line="154">		}</div>
-    <div class="line" data-line="155"><span class="hit">		group.Go(func() error {</span></div>
-    <div class="line" data-line="156"><span class="hit">			return rg.processUnit(gCtx, prog, unit, &amp;perFileCov[i])</span></div>
-    <div class="line" data-line="157">		})</div>
-    <div class="line" data-line="158">	}</div>
-    <div class="line" data-line="159"><span class="hit">	return perFileCov, group.Wait</span><span class="hit">()</span></div>
-    <div class="line" data-line="160">}</div>
+    <div class="line" data-line="143"><span class="hit">	</span><span class="hit base">perFileCov</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">make</span><span class="hit base">(</span><span class="hit base">[</span><span class="hit base">]</span><span class="hit type">coverage</span><span class="hit base">,</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">units</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="144"><span class="hit">	</span><span class="hit base">prog</span><span class="hit">       </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">progress</span><span class="hit base">.</span><span class="hit call">New</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">0</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">progressOutput</span><span class="hit base">)</span></div>
+    <div class="line" data-line="145"><span class="hit">	</span><span class="hit decl">defer</span><span class="hit"> </span><span class="hit base">prog</span><span class="hit base">.</span><span class="hit call">Close</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="146"></div>
+    <div class="line" data-line="147"><span class="hit">	</span><span class="hit base">group</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">gCtx</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">errgroup</span><span class="hit base">.</span><span class="hit call">WithContext</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">)</span></div>
+    <div class="line" data-line="148"><span class="hit">	</span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">SetLimit</span><span class="hit base">(</span><span class="hit base">runtime</span><span class="hit base">.</span><span class="hit call">NumCPU</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="149"></div>
+    <div class="line" data-line="150"><span class="hit">	</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">i</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">unit</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit arg">units</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="151"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">gCtx</span><span class="hit base">.</span><span class="hit call">Err</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="152"><span class="miss">			</span><span class="miss decl">break</span></div>
+    <div class="line" data-line="153">		<span class="base">}</span></div>
+    <div class="line" data-line="154"><span class="hit">		</span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">Go</span><span class="hit base">(</span><span class="hit decl">func</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit"> </span><span class="hit type">error</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="155"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit call">processUnit</span><span class="hit base">(</span><span class="hit base">gCtx</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">prog</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">unit</span><span class="hit base">,</span><span class="hit"> </span><span class="hit oper">&amp;</span><span class="hit base">perFileCov</span><span class="hit base">[</span><span class="hit base">i</span><span class="hit base">]</span><span class="hit base">)</span></div>
+    <div class="line" data-line="156">		<span class="base">}</span><span class="base">)</span></div>
+    <div class="line" data-line="157">	<span class="base">}</span></div>
+    <div class="line" data-line="158"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">perFileCov</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">group</span><span class="hit base">.</span><span class="hit call">Wait</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="159"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="161"></div>
-<div class="line" data-line="162">// processUnit renders and writes the coverage HTML for a single work unit,</div>
-<div class="line" data-line="163">// reports progress, and updates the aggregate coverage atomics.</div>
+<div class="line" data-line="160"></div>
+<div class="line" data-line="161"><span class="comment">// processUnit renders and writes the coverage HTML for a single work unit,</span></div>
+<div class="line" data-line="162"><span class="comment">// reports progress, and updates the aggregate coverage atomics.</span></div>
 <div class="func"><input type="checkbox" id="func-9" checked/>
-  <label for="func-9" class="line" data-line="164">func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progress, unit workUnit, cov *coverage) error<span class="hit"> {</span></label>
+  <label for="func-9" class="line" data-line="163"><span class="decl">func</span> <span class="base">(</span><span class="arg">rg</span> <span class="oper">*</span><span class="type">reportGenerator</span><span class="base">)</span> <span class="call">processUnit</span><span class="base">(</span><span class="arg">ctx</span> <span class="base">context</span><span class="base">.</span><span class="type">Context</span><span class="base">,</span> <span class="arg">prog</span> <span class="oper">*</span><span class="base">progress</span><span class="base">.</span><span class="type">Progress</span><span class="base">,</span> <span class="arg">unit</span> <span class="type">workUnit</span><span class="base">,</span> <span class="arg">cov</span> <span class="oper">*</span><span class="type">coverage</span><span class="base">)</span> <span class="type">error</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="165"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
-    <div class="line" data-line="166"></div>
-    <div class="line" data-line="167"><span class="hit">	fileStatements, fileCovered := countStatements(unit.profile.Blocks)</span></div>
-    <div class="line" data-line="168"><span class="hit">	prog.AddTotal(uint64(fileStatements))</span></div>
-    <div class="line" data-line="169"></div>
-    <div class="line" data-line="170"><span class="hit">	pkgPath  := filepath.Dir( unit.profile.FileName)</span></div>
-    <div class="line" data-line="171"><span class="hit">	fileName := filepath.Base(unit.profile.FileName)</span></div>
-    <div class="line" data-line="172"><span class="hit">	srcFile  := filepath.Join(rg.pkgDirCache[pkgPath], fileName)</span></div>
-    <div class="line" data-line="173"></div>
-    <div class="line" data-line="174"><span class="hit">	src, err := rg.fsys.ReadFile(srcFile)</span></div>
-    <div class="line" data-line="175"><span class="hit">	if err != nil { return fmt.Errorf(&#34;cannot read %q: %w&#34;, srcFile, err</span><span class="hit">) }</span></div>
-    <div class="line" data-line="176"></div>
-    <div class="line" data-line="177"><span class="hit">	buf := new(bytes.Buffer)</span></div>
-    <div class="line" data-line="178"><span class="hit">	ew  := newErrorWriter(buf)</span></div>
-    <div class="line" data-line="179"></div>
-    <div class="line" data-line="180"><span class="hit">	relPath := strings.Repeat(&#34;../&#34;, strings.Count(unit.profile.FileName, &#34;/&#34;))</span></div>
-    <div class="line" data-line="181"><span class="hit">	writePreamble(ew, relPath + rg.iconFilename, unit.profile.FileName, relPath + rg.styleCSSFilename)</span></div>
-    <div class="line" data-line="182"></div>
-    <div class="line" data-line="183"><span class="hit">	fset         := token.NewFileSet()</span></div>
-    <div class="line" data-line="184"><span class="hit">	fileAST, err := parser.ParseFile(fset, fileName, src, parser.ParseComments); if err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
-    <div class="line" data-line="185"><span class="hit">	file         := fset.File(fileAST.Pos())</span></div>
-    <div class="line" data-line="186"></div>
-    <div class="line" data-line="187"><span class="hit">	if err := renderCovHTML(ctx, ew, annotateSource(file, src,</span></div>
-    <div class="line" data-line="188"><span class="hit">		computeBlockOffsets(file, unit.profile.Blocks),</span></div>
-    <div class="line" data-line="189"><span class="hit">		computeFuncSpans(fileAST, file))); err != nil</span><span class="miss"> {</span></div>
-    <div class="line" data-line="190"><span class="miss">		return err</span></div>
-    <div class="line" data-line="191">	}</div>
-    <div class="line" data-line="192"></div>
-    <div class="line" data-line="193"><span class="hit">	writePostamble(ew, relPath + rg.childJSFilename)</span></div>
-    <div class="line" data-line="194"></div>
-    <div class="line" data-line="195"><span class="hit">	if rg.write {</span></div>
-    <div class="line" data-line="196"><span class="hit">		if err := rg.fsys.WriteFile(unit.outPath, buf.Bytes(), 0600); err != nil {</span></div>
-    <div class="line" data-line="197"><span class="hit">			return fmt.Errorf(&#34;cannot write HTML file for %q: %w&#34;, unit.outPath, err)</span></div>
-    <div class="line" data-line="198">		}</div>
-    <div class="line" data-line="199">	}</div>
-    <div class="line" data-line="200"></div>
-    <div class="line" data-line="201"><span class="hit">	prog.Report(float64(fileStatements), unit.profile.FileName)</span></div>
-    <div class="line" data-line="202"><span class="hit">	rg.covState.totalCovered.Add(fileCovered)</span></div>
-    <div class="line" data-line="203"><span class="hit">	rg.covState.totalStatements.Add(fileStatements)</span></div>
-    <div class="line" data-line="204"><span class="hit">	*cov = coverage{covered: fileCovered, total: fileStatements}</span></div>
-    <div class="line" data-line="205"><span class="hit">	return nil</span></div>
-    <div class="line" data-line="206">}</div>
+    <div class="line" data-line="164"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">ctx</span><span class="hit base">.</span><span class="hit call">Err</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss base">}</span></div>
+    <div class="line" data-line="165"></div>
+    <div class="line" data-line="166"><span class="hit">	</span><span class="hit base">fileStatements</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">fileCovered</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">countStatements</span><span class="hit base">(</span><span class="hit arg">unit</span><span class="hit base">.</span><span class="hit field">profile</span><span class="hit base">.</span><span class="hit field">Blocks</span><span class="hit base">)</span></div>
+    <div class="line" data-line="167"><span class="hit">	</span><span class="hit arg">prog</span><span class="hit base">.</span><span class="hit call">AddTotal</span><span class="hit base">(</span><span class="hit type">uint64</span><span class="hit base">(</span><span class="hit base">fileStatements</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="168"></div>
+    <div class="line" data-line="169"><span class="hit">	</span><span class="hit base">pkgPath</span><span class="hit">  </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Dir</span><span class="hit base">(</span><span class="hit"> </span><span class="hit arg">unit</span><span class="hit base">.</span><span class="hit field">profile</span><span class="hit base">.</span><span class="hit field">FileName</span><span class="hit base">)</span></div>
+    <div class="line" data-line="170"><span class="hit">	</span><span class="hit base">fileName</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Base</span><span class="hit base">(</span><span class="hit arg">unit</span><span class="hit base">.</span><span class="hit field">profile</span><span class="hit base">.</span><span class="hit field">FileName</span><span class="hit base">)</span></div>
+    <div class="line" data-line="171"><span class="hit">	</span><span class="hit base">srcFile</span><span class="hit">  </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Join</span><span class="hit base">(</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">pkgDirCache</span><span class="hit base">[</span><span class="hit base">pkgPath</span><span class="hit base">]</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">fileName</span><span class="hit base">)</span></div>
+    <div class="line" data-line="172"></div>
+    <div class="line" data-line="173"><span class="hit">	</span><span class="hit base">src</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">fsys</span><span class="hit base">.</span><span class="hit call">ReadFile</span><span class="hit base">(</span><span class="hit base">srcFile</span><span class="hit base">)</span></div>
+    <div class="line" data-line="174"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="hit base">{</span><span class="hit"> </span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit call">Errorf</span><span class="hit base">(</span><span class="hit string">&#34;cannot read %q: %w&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">srcFile</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit base">)</span><span class="hit"> </span><span class="hit base">}</span></div>
+    <div class="line" data-line="175"></div>
+    <div class="line" data-line="176"><span class="hit">	</span><span class="hit base">buf</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">new</span><span class="hit base">(</span><span class="hit base">bytes</span><span class="hit base">.</span><span class="hit type">Buffer</span><span class="hit base">)</span></div>
+    <div class="line" data-line="177"><span class="hit">	</span><span class="hit base">ew</span><span class="hit">  </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">newErrorWriter</span><span class="hit base">(</span><span class="hit base">buf</span><span class="hit base">)</span></div>
+    <div class="line" data-line="178"></div>
+    <div class="line" data-line="179"><span class="hit">	</span><span class="hit base">relPath</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Repeat</span><span class="hit base">(</span><span class="hit string">&#34;../&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Count</span><span class="hit base">(</span><span class="hit arg">unit</span><span class="hit base">.</span><span class="hit field">profile</span><span class="hit base">.</span><span class="hit field">FileName</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;/&#34;</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="180"><span class="hit">	</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit call">writePreamble</span><span class="hit base">(</span><span class="hit base">ew</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">relPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">unit</span><span class="hit base">.</span><span class="hit field">profile</span><span class="hit base">.</span><span class="hit field">FileName</span><span class="hit base">)</span></div>
+    <div class="line" data-line="181"></div>
+    <div class="line" data-line="182"><span class="hit">	</span><span class="hit base">fileAST</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">globalASTs</span><span class="hit base">[</span><span class="hit base">srcFile</span><span class="hit base">]</span></div>
+    <div class="line" data-line="183"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">fileAST</span><span class="hit"> </span><span class="hit oper">==</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="184"><span class="hit">		</span><span class="hit base">fileAST</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">parser</span><span class="hit base">.</span><span class="hit call">ParseFile</span><span class="hit base">(</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">globalFset</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">srcFile</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">src</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">parser</span><span class="hit base">.</span><span class="hit base">ParseComments</span><span class="hit base">)</span></div>
+    <div class="line" data-line="185"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="186"><span class="miss">			</span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">err</span></div>
+    <div class="line" data-line="187">		<span class="base">}</span></div>
+    <div class="line" data-line="188">	<span class="base">}</span></div>
+    <div class="line" data-line="189"><span class="hit">	</span><span class="hit base">file</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">globalFset</span><span class="hit base">.</span><span class="hit call">File</span><span class="hit base">(</span><span class="hit base">fileAST</span><span class="hit base">.</span><span class="hit call">Pos</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="190"></div>
+    <div class="line" data-line="191"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">renderCovHTML</span><span class="hit base">(</span><span class="hit arg">ctx</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">ew</span><span class="hit base">,</span><span class="hit"> </span><span class="hit call">annotateSource</span><span class="hit base">(</span><span class="hit base">fileAST</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">file</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">src</span><span class="hit base">,</span></div>
+    <div class="line" data-line="192"><span class="hit">	  </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">globalTypes</span><span class="hit base">[</span><span class="hit base">srcFile</span><span class="hit base">]</span><span class="hit base">,</span></div>
+    <div class="line" data-line="193"><span class="hit">		</span><span class="hit call">computeBlockOffsets</span><span class="hit base">(</span><span class="hit base">file</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">unit</span><span class="hit base">.</span><span class="hit field">profile</span><span class="hit base">.</span><span class="hit field">Blocks</span><span class="hit base">)</span><span class="hit base">,</span></div>
+    <div class="line" data-line="194"><span class="hit">		</span><span class="hit call">computeFuncSpans</span><span class="hit base">(</span><span class="hit base">fileAST</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">file</span><span class="hit base">)</span><span class="hit base">)</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="195"><span class="miss">		</span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">err</span></div>
+    <div class="line" data-line="196">	<span class="base">}</span></div>
+    <div class="line" data-line="197"></div>
+    <div class="line" data-line="198"><span class="hit">	</span><span class="hit call">writePostamble</span><span class="hit base">(</span><span class="hit base">ew</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">relPath</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">childJSFilename</span><span class="hit base">)</span></div>
+    <div class="line" data-line="199"></div>
+    <div class="line" data-line="200"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">write</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="201"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">fsys</span><span class="hit base">.</span><span class="hit call">WriteFile</span><span class="hit base">(</span><span class="hit arg">unit</span><span class="hit base">.</span><span class="hit field">outPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">buf</span><span class="hit base">.</span><span class="hit call">Bytes</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">0600</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="202"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit call">Errorf</span><span class="hit base">(</span><span class="hit string">&#34;cannot write HTML file for %q: %w&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">unit</span><span class="hit base">.</span><span class="hit field">outPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit base">)</span></div>
+    <div class="line" data-line="203">		<span class="base">}</span></div>
+    <div class="line" data-line="204">	<span class="base">}</span></div>
+    <div class="line" data-line="205"></div>
+    <div class="line" data-line="206"><span class="hit">	</span><span class="hit arg">prog</span><span class="hit base">.</span><span class="hit call">Report</span><span class="hit base">(</span><span class="hit type">float64</span><span class="hit base">(</span><span class="hit base">fileStatements</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">unit</span><span class="hit base">.</span><span class="hit field">profile</span><span class="hit base">.</span><span class="hit field">FileName</span><span class="hit base">)</span></div>
+    <div class="line" data-line="207"><span class="hit">	</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">covState</span><span class="hit base">.</span><span class="hit field">totalCovered</span><span class="hit base">.</span><span class="hit call">Add</span><span class="hit base">(</span><span class="hit base">fileCovered</span><span class="hit base">)</span></div>
+    <div class="line" data-line="208"><span class="hit">	</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">covState</span><span class="hit base">.</span><span class="hit field">totalStatements</span><span class="hit base">.</span><span class="hit call">Add</span><span class="hit base">(</span><span class="hit base">fileStatements</span><span class="hit base">)</span></div>
+    <div class="line" data-line="209"><span class="hit">	</span><span class="hit oper">*</span><span class="hit arg">cov</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit type">coverage</span><span class="hit base">{</span><span class="hit field">covered</span><span class="hit base">:</span><span class="hit"> </span><span class="hit base">fileCovered</span><span class="hit base">,</span><span class="hit"> </span><span class="hit field">total</span><span class="hit base">:</span><span class="hit"> </span><span class="hit base">fileStatements</span><span class="hit base">}</span></div>
+    <div class="line" data-line="210"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="211"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="207"></div>
-<div class="line" data-line="208">// renderCovHTML renders the HTML content for a single *.go.html file, with</div>
-<div class="line" data-line="209">// green (covered) and red (uncovered) lines to indicate test coverage.</div>
+<div class="line" data-line="212"></div>
+<div class="line" data-line="213"><span class="comment">// renderCovHTML renders the HTML content for a single *.go.html file, with</span></div>
+<div class="line" data-line="214"><span class="comment">// green (covered) and red (uncovered) lines to indicate test coverage.</span></div>
 <div class="func"><input type="checkbox" id="func-10" checked/>
-  <label for="func-10" class="line" data-line="210">func renderCovHTML(ctx context.Context, ew stickyWriter, lines []annotatedLine) error<span class="hit"> {</span></label>
+  <label for="func-10" class="line" data-line="215"><span class="decl">func</span> <span class="call">renderCovHTML</span><span class="base">(</span><span class="arg">ctx</span> <span class="base">context</span><span class="base">.</span><span class="type">Context</span><span class="base">,</span> <span class="arg">ew</span> <span class="type">stickyWriter</span><span class="base">,</span> <span class="arg">lines</span> <span class="base">[</span><span class="base">]</span><span class="type">annotatedLine</span><span class="base">)</span> <span class="type">error</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="211"><span class="hit">	if err := ctx.Err(); err != nil</span><span class="miss"> { return err</span><span class="miss"> }</span></div>
-    <div class="line" data-line="212"></div>
-    <div class="line" data-line="213"><span class="hit">	prevFunc     := -1</span></div>
-    <div class="line" data-line="214"><span class="hit">	firstLineIdx := -1 // index of current function&#39;s signature</span></div>
-    <div class="line" data-line="215"></div>
-    <div class="line" data-line="216"><span class="hit">	for i, line := range lines {</span></div>
-    <div class="line" data-line="217"><span class="hit">		if line.funcIdx &gt;= 0        &amp;&amp;</span></div>
-    <div class="line" data-line="218"><span class="hit">		   line.funcIdx != prevFunc</span> { // new function starts</div>
-    <div class="line" data-line="219"><span class="hit">			prevFunc     = line.funcIdx</span></div>
-    <div class="line" data-line="220"><span class="hit">			firstLineIdx = i</span></div>
-    <div class="line" data-line="221"><span class="hit">			ew.write(`&lt;div class=&#34;func&#34;&gt;&lt;input type=&#34;checkbox&#34; id=&#34;func-`)</span></div>
-    <div class="line" data-line="222"><span class="hit">			ew.write(strconv.Itoa(line.funcIdx))</span></div>
-    <div class="line" data-line="223"><span class="hit">			ew.write(&#34;\&#34; checked/&gt;\n&#34;)</span></div>
-    <div class="line" data-line="224">		}</div>
-    <div class="line" data-line="225"></div>
-    <div class="line" data-line="226"><span class="hit">		if line.funcIdx &lt; 0</span> { // outside any function: plain line</div>
-    <div class="line" data-line="227"><span class="hit">			ew.write(`&lt;div class=&#34;line&#34; data-line=&#34;`)</span></div>
-    <div class="line" data-line="228"><span class="hit">			ew.write(strconv.Itoa(i + 1))</span></div>
-    <div class="line" data-line="229"><span class="hit">			ew.write(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="230"><span class="hit">			ew.write(line.text)</span></div>
-    <div class="line" data-line="231"><span class="hit">			ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="232"><span class="hit">			continue</span></div>
-    <div class="line" data-line="233">		}</div>
-    <div class="line" data-line="234"></div>
-    <div class="line" data-line="235"><span class="hit">		if i == firstLineIdx {</span></div>
-    <div class="line" data-line="236"><span class="hit">			ew.write(`  &lt;label for=&#34;func-`)</span></div>
-    <div class="line" data-line="237"><span class="hit">			ew.write(strconv.Itoa(line.funcIdx))</span></div>
-    <div class="line" data-line="238"><span class="hit">			ew.write(`&#34; class=&#34;line&#34; data-line=&#34;`)</span></div>
-    <div class="line" data-line="239"><span class="hit">			ew.write(strconv.Itoa(i + 1))</span></div>
-    <div class="line" data-line="240"><span class="hit">			ew.write(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="241"><span class="hit">			ew.write(line.text)</span></div>
-    <div class="line" data-line="242"><span class="hit">			ew.write(&#34;&lt;/label&gt;\n&#34;)</span></div>
-    <div class="line" data-line="243"><span class="hit">			if i + 1 &lt; len(lines) &amp;&amp; lines[i + 1].funcIdx == line.funcIdx {</span></div>
-    <div class="line" data-line="244"><span class="hit">				ew.write(&#34;  &lt;div class=\&#34;func-body\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="245">			}</div>
-    <div class="line" data-line="246">		} else<span class="hit"> {</span></div>
-    <div class="line" data-line="247"><span class="hit">			ew.write(`    &lt;div class=&#34;line&#34; data-line=&#34;`)</span></div>
-    <div class="line" data-line="248"><span class="hit">			ew.write(strconv.Itoa(i + 1))</span></div>
-    <div class="line" data-line="249"><span class="hit">			ew.write(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="250"><span class="hit">			ew.write(line.text)</span></div>
-    <div class="line" data-line="251"><span class="hit">			ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="252">		}</div>
-    <div class="line" data-line="253"></div>
-    <div class="line" data-line="254"><span class="hit">		if line.isFuncEnd {</span></div>
-    <div class="line" data-line="255"><span class="hit">			if i &gt; firstLineIdx</span> { // function signature and body span more than one line: close func-body</div>
-    <div class="line" data-line="256"><span class="hit">				ew.write(&#34;  &lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="257">			}</div>
-    <div class="line" data-line="258"><span class="hit">			ew.write(&#34;&lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="259"><span class="hit">			prevFunc = -1</span></div>
-    <div class="line" data-line="260">		}</div>
-    <div class="line" data-line="261">	}</div>
-    <div class="line" data-line="262"></div>
-    <div class="line" data-line="263"><span class="hit">	return ew.err</span><span class="hit">()</span></div>
-    <div class="line" data-line="264">}</div>
+    <div class="line" data-line="216"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">ctx</span><span class="hit base">.</span><span class="hit call">Err</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss base">}</span></div>
+    <div class="line" data-line="217"></div>
+    <div class="line" data-line="218"><span class="hit">	</span><span class="hit base">prevFunc</span><span class="hit">     </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit number">1</span></div>
+    <div class="line" data-line="219"><span class="hit">	</span><span class="hit base">firstLineIdx</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit number">1</span><span class="hit"> </span><span class="hit comment">// index of current function&#39;s signature</span></div>
+    <div class="line" data-line="220"></div>
+    <div class="line" data-line="221"><span class="hit">	</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">i</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">line</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit arg">lines</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="222"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">line</span><span class="hit base">.</span><span class="hit field">funcIdx</span><span class="hit"> </span><span class="hit oper">&gt;=</span><span class="hit"> </span><span class="hit number">0</span><span class="hit">        </span><span class="hit oper">&amp;&amp;</span></div>
+    <div class="line" data-line="223"><span class="hit">		   </span><span class="hit base">line</span><span class="hit base">.</span><span class="hit field">funcIdx</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">prevFunc</span><span class="hit"> </span><span class="base">{</span> <span class="comment">// new function starts</span></div>
+    <div class="line" data-line="224"><span class="hit">			</span><span class="hit base">prevFunc</span><span class="hit">     </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">line</span><span class="hit base">.</span><span class="hit field">funcIdx</span></div>
+    <div class="line" data-line="225"><span class="hit">			</span><span class="hit base">firstLineIdx</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">i</span></div>
+    <div class="line" data-line="226"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`&lt;div class=&#34;func&#34;&gt;&lt;input type=&#34;checkbox&#34; id=&#34;func-`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="227"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">strconv</span><span class="hit base">.</span><span class="hit call">Itoa</span><span class="hit base">(</span><span class="hit base">line</span><span class="hit base">.</span><span class="hit field">funcIdx</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="228"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;\&#34; checked/&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="229">		<span class="base">}</span></div>
+    <div class="line" data-line="230"></div>
+    <div class="line" data-line="231"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">line</span><span class="hit base">.</span><span class="hit field">funcIdx</span><span class="hit"> </span><span class="hit oper">&lt;</span><span class="hit"> </span><span class="hit number">0</span><span class="hit"> </span><span class="base">{</span> <span class="comment">// outside any function: plain line</span></div>
+    <div class="line" data-line="232"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`&lt;div class=&#34;line&#34; data-line=&#34;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="233"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">strconv</span><span class="hit base">.</span><span class="hit call">Itoa</span><span class="hit base">(</span><span class="hit base">i</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">1</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="234"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`&#34;&gt;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="235"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">line</span><span class="hit base">.</span><span class="hit field">text</span><span class="hit base">)</span></div>
+    <div class="line" data-line="236"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/div&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="237"><span class="hit">			</span><span class="hit decl">continue</span></div>
+    <div class="line" data-line="238">		<span class="base">}</span></div>
+    <div class="line" data-line="239"></div>
+    <div class="line" data-line="240"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">i</span><span class="hit"> </span><span class="hit oper">==</span><span class="hit"> </span><span class="hit base">firstLineIdx</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="241"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`  &lt;label for=&#34;func-`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="242"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">strconv</span><span class="hit base">.</span><span class="hit call">Itoa</span><span class="hit base">(</span><span class="hit base">line</span><span class="hit base">.</span><span class="hit field">funcIdx</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="243"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`&#34; class=&#34;line&#34; data-line=&#34;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="244"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">strconv</span><span class="hit base">.</span><span class="hit call">Itoa</span><span class="hit base">(</span><span class="hit base">i</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">1</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="245"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`&#34;&gt;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="246"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">line</span><span class="hit base">.</span><span class="hit field">text</span><span class="hit base">)</span></div>
+    <div class="line" data-line="247"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/label&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="248"><span class="hit">			</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">i</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">1</span><span class="hit"> </span><span class="hit oper">&lt;</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">lines</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">&amp;&amp;</span><span class="hit"> </span><span class="hit arg">lines</span><span class="hit base">[</span><span class="hit base">i</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">1</span><span class="hit base">]</span><span class="hit base">.</span><span class="hit field">funcIdx</span><span class="hit"> </span><span class="hit oper">==</span><span class="hit"> </span><span class="hit base">line</span><span class="hit base">.</span><span class="hit field">funcIdx</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="249"><span class="hit">				</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;  &lt;div class=\&#34;func-body\&#34;&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="250">			<span class="base">}</span></div>
+    <div class="line" data-line="251">		<span class="base">}</span> <span class="decl">else</span> <span class="base">{</span></div>
+    <div class="line" data-line="252"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`    &lt;div class=&#34;line&#34; data-line=&#34;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="253"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">strconv</span><span class="hit base">.</span><span class="hit call">Itoa</span><span class="hit base">(</span><span class="hit base">i</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">1</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="254"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`&#34;&gt;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="255"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">line</span><span class="hit base">.</span><span class="hit field">text</span><span class="hit base">)</span></div>
+    <div class="line" data-line="256"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/div&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="257">		<span class="base">}</span></div>
+    <div class="line" data-line="258"></div>
+    <div class="line" data-line="259"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">line</span><span class="hit base">.</span><span class="hit field">isFuncEnd</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="260"><span class="hit">			</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">i</span><span class="hit"> </span><span class="hit oper">&gt;</span><span class="hit"> </span><span class="hit base">firstLineIdx</span><span class="hit"> </span><span class="base">{</span> <span class="comment">// function signature and body span more than one line: close func-body</span></div>
+    <div class="line" data-line="261"><span class="hit">				</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;  &lt;/div&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="262">			<span class="base">}</span></div>
+    <div class="line" data-line="263"><span class="hit">			</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/div&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="264"><span class="hit">			</span><span class="hit base">prevFunc</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit number">1</span></div>
+    <div class="line" data-line="265">		<span class="base">}</span></div>
+    <div class="line" data-line="266">	<span class="base">}</span></div>
+    <div class="line" data-line="267"></div>
+    <div class="line" data-line="268"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">err</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="269"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="265"></div>
-<div class="line" data-line="266">// writePreamble writes the preamble portion of the</div>
-<div class="line" data-line="267">// HTML content common to every Go source HTML file.</div>
+<div class="line" data-line="270"></div>
+<div class="line" data-line="271"><span class="comment">// writePreamble writes the preamble portion of the</span></div>
+<div class="line" data-line="272"><span class="comment">// HTML content common to every Go source HTML file.</span></div>
 <div class="func"><input type="checkbox" id="func-11" checked/>
-  <label for="func-11" class="line" data-line="268">func writePreamble(ew stickyWriter, iconPath, srcPath, cssPath string<span class="hit">) {</span></label>
+  <label for="func-11" class="line" data-line="273"><span class="decl">func</span> <span class="base">(</span><span class="arg">rg</span> <span class="oper">*</span><span class="type">reportGenerator</span><span class="base">)</span> <span class="call">writePreamble</span><span class="base">(</span><span class="arg">ew</span> <span class="type">stickyWriter</span><span class="base">,</span> <span class="arg">relPath</span><span class="base">,</span> <span class="arg">srcPath</span> <span class="type">string</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="269"><span class="hit">	ew.write(&#34;&lt;!DOCTYPE html&gt;\n&#34;)</span></div>
-    <div class="line" data-line="270"><span class="hit">	ew.write(&#34;&lt;html lang=\&#34;en\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="271"><span class="hit">	ew.write(&#34;&lt;head&gt;\n&#34;)</span></div>
-    <div class="line" data-line="272"><span class="hit">	ew.write(&#34;&lt;meta charset=\&#34;utf-8\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="273"><span class="hit">	ew.write(`&lt;link rel=&#34;icon&#34;       href=&#34;`)</span></div>
-    <div class="line" data-line="274"><span class="hit">	ew.write(iconPath)</span></div>
-    <div class="line" data-line="275"><span class="hit">	ew.write(&#34;\&#34; type=\&#34;image/vnd.microsoft.icon\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="276"><span class="hit">	ew.write(`&lt;link rel=&#34;stylesheet&#34; href=&#34;`)</span></div>
-    <div class="line" data-line="277"><span class="hit">	ew.write(cssPath)</span></div>
-    <div class="line" data-line="278"><span class="hit">	ew.write(&#34;\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="279"><span class="hit">	ew.write(&#34;&lt;title&gt;&#34;)</span></div>
-    <div class="line" data-line="280"><span class="hit">	ew.write(srcPath)</span></div>
-    <div class="line" data-line="281"><span class="hit">	ew.write(&#34;&lt;/title&gt;\n&#34;)</span></div>
-    <div class="line" data-line="282"><span class="hit">	ew.write(&#34;&lt;/head&gt;\n&#34;)</span></div>
-    <div class="line" data-line="283"><span class="hit">	ew.write(&#34;&lt;body id=\&#34;code\&#34; class=\&#34;line-numbers\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="284">}</div>
+    <div class="line" data-line="274"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;!DOCTYPE html&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="275"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;html lang=\&#34;en\&#34;&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="276"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;head&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="277"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;meta charset=\&#34;utf-8\&#34;&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="278"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`&lt;link rel=&#34;icon&#34;       href=&#34;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="279"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit arg">relPath</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">iconFilename</span><span class="hit base">)</span></div>
+    <div class="line" data-line="280"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;\&#34; type=\&#34;image/vnd.microsoft.icon\&#34;&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="281"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`&lt;link rel=&#34;stylesheet&#34; href=&#34;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="282"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit arg">relPath</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">styleCSSFilename</span><span class="hit base">)</span></div>
+    <div class="line" data-line="283"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;\&#34;&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="284"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`&lt;link rel=&#34;stylesheet&#34; href=&#34;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="285"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit arg">relPath</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">syntaxCSSFilename</span><span class="hit base">)</span></div>
+    <div class="line" data-line="286"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;\&#34;&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="287"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;title&gt;&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="288"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit arg">srcPath</span><span class="hit base">)</span></div>
+    <div class="line" data-line="289"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/title&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="290"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/head&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="291"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;body id=\&#34;code\&#34; class=\&#34;line-numbers\&#34;&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="292"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="285"></div>
-<div class="line" data-line="286">// writePostamble writes the postamble portion of the</div>
-<div class="line" data-line="287">// HTML content common to every Go source HTML file.</div>
+<div class="line" data-line="293"></div>
+<div class="line" data-line="294"><span class="comment">// writePostamble writes the postamble portion of the</span></div>
+<div class="line" data-line="295"><span class="comment">// HTML content common to every Go source HTML file.</span></div>
 <div class="func"><input type="checkbox" id="func-12" checked/>
-  <label for="func-12" class="line" data-line="288">func writePostamble(ew stickyWriter, childJSPath string<span class="hit">) {</span></label>
+  <label for="func-12" class="line" data-line="296"><span class="decl">func</span> <span class="call">writePostamble</span><span class="base">(</span><span class="arg">ew</span> <span class="type">stickyWriter</span><span class="base">,</span> <span class="arg">childJSPath</span> <span class="type">string</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="289"><span class="hit">	ew.write(`&lt;script src=&#34;`)</span></div>
-    <div class="line" data-line="290"><span class="hit">	ew.write(childJSPath) // DOM-dependent</span></div>
-    <div class="line" data-line="291"><span class="hit">	ew.write(&#34;\&#34;&gt;&lt;/script&gt;\n&#34;)</span></div>
-    <div class="line" data-line="292"><span class="hit">	ew.write(&#34;&lt;/body&gt;\n&#34;)</span></div>
-    <div class="line" data-line="293"><span class="hit">	ew.write(&#34;&lt;/html&gt;&#34;)</span></div>
-    <div class="line" data-line="294">}</div>
+    <div class="line" data-line="297"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">`&lt;script src=&#34;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="298"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit arg">childJSPath</span><span class="hit base">)</span><span class="hit"> </span><span class="hit comment">// DOM-dependent</span></div>
+    <div class="line" data-line="299"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;\&#34;&gt;&lt;/script&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="300"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/body&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="301"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/html&gt;&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="302"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="295"></div>
-<div class="line" data-line="296">// writeIndexHTMLFile writes the index HTML file, which contains three</div>
-<div class="line" data-line="297">// template parameters (Title, HeaderHTML, and TreeHTML), and hosts one</div>
-<div class="line" data-line="298">// iframe within which the generated source code HTML files are rendered.</div>
+<div class="line" data-line="303"></div>
+<div class="line" data-line="304"><span class="comment">// writeIndexHTMLFile writes the index HTML file, which contains three</span></div>
+<div class="line" data-line="305"><span class="comment">// template parameters (Title, HeaderHTML, and TreeHTML), and hosts one</span></div>
+<div class="line" data-line="306"><span class="comment">// iframe within which the generated source code HTML files are rendered.</span></div>
 <div class="func"><input type="checkbox" id="func-13" checked/>
-  <label for="func-13" class="line" data-line="299">func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error<span class="hit"> {</span></label>
+  <label for="func-13" class="line" data-line="307"><span class="decl">func</span> <span class="base">(</span><span class="arg">rg</span> <span class="oper">*</span><span class="type">reportGenerator</span><span class="base">)</span> <span class="call">writeIndexHTMLFile</span><span class="base">(</span><span class="arg">treeHTML</span> <span class="type">string</span><span class="base">)</span> <span class="type">error</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="300"><span class="hit">	title := &#34;Go test coverage&#34;</span></div>
-    <div class="line" data-line="301"><span class="hit">	var sb strings.Builder</span></div>
-    <div class="line" data-line="302"><span class="hit">	if len(rg.modPaths) &gt; 1 {</span></div>
-    <div class="line" data-line="303"><span class="hit">		sb.WriteString(&#34;  &lt;div class=\&#34;dropdown-wrapper\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="304"><span class="hit">		sb.WriteString(&#34;    &lt;input type=\&#34;checkbox\&#34; id=\&#34;modules-menu\&#34;/&gt;\n&#34;)</span></div>
-    <div class="line" data-line="305"><span class="hit">		sb.WriteString(&#34;    &lt;label for=\&#34;modules-menu\&#34; class=\&#34;dropdown-toggle\&#34;&gt;modules&lt;/label&gt;\n&#34;)</span></div>
-    <div class="line" data-line="306"><span class="hit">		sb.WriteString(&#34;    &lt;div class=\&#34;dropdown-menu\&#34;&gt;\n&#34;)</span></div>
-    <div class="line" data-line="307"><span class="hit">		for _, mod := range rg.modPaths {</span></div>
-    <div class="line" data-line="308"><span class="hit">			sb.WriteString(`      &lt;span data-for=&#34;module-`)</span></div>
-    <div class="line" data-line="309"><span class="hit">			sb.WriteString(normalizeModID(mod))</span></div>
-    <div class="line" data-line="310"><span class="hit">			sb.WriteString(`&#34; class=&#34;dropdown-link&#34;&gt;`)</span></div>
-    <div class="line" data-line="311"><span class="hit">			sb.WriteString(mod)</span></div>
-    <div class="line" data-line="312"><span class="hit">			sb.WriteString(&#34;&lt;/span&gt;\n&#34;)</span></div>
-    <div class="line" data-line="313">		}</div>
-    <div class="line" data-line="314"><span class="hit">		sb.WriteString(&#34;    &lt;/div&gt;\n&#34;)</span></div>
-    <div class="line" data-line="315"><span class="hit">		sb.WriteString(&#34;  &lt;/div&gt;&#34;</span><span class="hit">)</span></div>
-    <div class="line" data-line="316">	} else<span class="hit"> {</span></div>
-    <div class="line" data-line="317"><span class="hit">		title += &#34; // &#34; + rg.modPaths[0]</span></div>
-    <div class="line" data-line="318"><span class="hit">		sb.WriteString(`&lt;code&gt;&lt;a target=&#34;_blank&#34; href=&#34;`)</span></div>
-    <div class="line" data-line="319"><span class="hit">		sb.WriteString(rg.repoURLs[0])</span></div>
-    <div class="line" data-line="320"><span class="hit">		sb.WriteString(`&#34;&gt;`)</span></div>
-    <div class="line" data-line="321"><span class="hit">		sb.WriteString(rg.modPaths[0])</span></div>
-    <div class="line" data-line="322"><span class="hit">		sb.WriteString(`&lt;/a&gt;&lt;/code&gt;`)</span></div>
-    <div class="line" data-line="323">	}</div>
-    <div class="line" data-line="324"></div>
-    <div class="line" data-line="325"><span class="hit">	data := struct{</span></div>
-    <div class="line" data-line="326"><span class="hit">		Title      string</span></div>
-    <div class="line" data-line="327"><span class="hit">		HeaderHTML string</span></div>
-    <div class="line" data-line="328"><span class="hit">		TreeHTML   string</span></div>
-    <div class="line" data-line="329"><span class="hit">	}{</span></div>
-    <div class="line" data-line="330"><span class="hit">		Title:      title,</span></div>
-    <div class="line" data-line="331"><span class="hit">		HeaderHTML: sb.String(),</span></div>
-    <div class="line" data-line="332"><span class="hit">		TreeHTML:   treeHTML</span><span class="hit">,</span></div>
-    <div class="line" data-line="333">	}</div>
-    <div class="line" data-line="334"></div>
-    <div class="line" data-line="335"><span class="hit">	return rg.writeTemplateFile(&#34;html/index.html&#34;, data</span><span class="hit">)</span></div>
-    <div class="line" data-line="336">}</div>
+    <div class="line" data-line="308"><span class="hit">	</span><span class="hit base">title</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit string">&#34;Go test coverage&#34;</span></div>
+    <div class="line" data-line="309"><span class="hit">	</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">sb</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit type">Builder</span></div>
+    <div class="line" data-line="310"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">modPaths</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">&gt;</span><span class="hit"> </span><span class="hit number">1</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="311"><span class="hit">		</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;  &lt;div class=\&#34;dropdown-wrapper\&#34;&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="312"><span class="hit">		</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;    &lt;input type=\&#34;checkbox\&#34; id=\&#34;modules-menu\&#34;/&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="313"><span class="hit">		</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;    &lt;label for=\&#34;modules-menu\&#34; class=\&#34;dropdown-toggle\&#34;&gt;modules&lt;/label&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="314"><span class="hit">		</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;    &lt;div class=\&#34;dropdown-menu\&#34;&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="315"><span class="hit">		</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">_</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">mod</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">modPaths</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="316"><span class="hit">			</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`      &lt;span data-for=&#34;module-`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="317"><span class="hit">			</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit call">normalizeModID</span><span class="hit base">(</span><span class="hit base">mod</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="318"><span class="hit">			</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`&#34; class=&#34;dropdown-link&#34;&gt;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="319"><span class="hit">			</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit base">mod</span><span class="hit base">)</span></div>
+    <div class="line" data-line="320"><span class="hit">			</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;&lt;/span&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="321">		<span class="base">}</span></div>
+    <div class="line" data-line="322"><span class="hit">		</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;    &lt;/div&gt;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="323"><span class="hit">		</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">&#34;  &lt;/div&gt;&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="324">	<span class="base">}</span> <span class="decl">else</span> <span class="base">{</span></div>
+    <div class="line" data-line="325"><span class="hit">		</span><span class="hit base">title</span><span class="hit"> </span><span class="hit oper">+=</span><span class="hit"> </span><span class="hit string">&#34; // &#34;</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">modPaths</span><span class="hit base">[</span><span class="hit number">0</span><span class="hit base">]</span></div>
+    <div class="line" data-line="326"><span class="hit">		</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`&lt;code&gt;&lt;a target=&#34;_blank&#34; href=&#34;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="327"><span class="hit">		</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">repoURLs</span><span class="hit base">[</span><span class="hit number">0</span><span class="hit base">]</span><span class="hit base">)</span></div>
+    <div class="line" data-line="328"><span class="hit">		</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`&#34;&gt;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="329"><span class="hit">		</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">modPaths</span><span class="hit base">[</span><span class="hit number">0</span><span class="hit base">]</span><span class="hit base">)</span></div>
+    <div class="line" data-line="330"><span class="hit">		</span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">WriteString</span><span class="hit base">(</span><span class="hit string">`&lt;/a&gt;&lt;/code&gt;`</span><span class="hit base">)</span></div>
+    <div class="line" data-line="331">	<span class="base">}</span></div>
+    <div class="line" data-line="332"></div>
+    <div class="line" data-line="333"><span class="hit">	</span><span class="hit base">data</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">struct</span><span class="hit base">{</span></div>
+    <div class="line" data-line="334"><span class="hit">		</span><span class="hit field">Title</span><span class="hit">      </span><span class="hit type">string</span></div>
+    <div class="line" data-line="335"><span class="hit">		</span><span class="hit field">HeaderHTML</span><span class="hit"> </span><span class="hit type">string</span></div>
+    <div class="line" data-line="336"><span class="hit">		</span><span class="hit field">TreeHTML</span><span class="hit">   </span><span class="hit type">string</span></div>
+    <div class="line" data-line="337"><span class="hit">	</span><span class="hit base">}</span><span class="hit base">{</span></div>
+    <div class="line" data-line="338"><span class="hit">		</span><span class="hit field">Title</span><span class="hit base">:</span><span class="hit">      </span><span class="hit base">title</span><span class="hit base">,</span></div>
+    <div class="line" data-line="339"><span class="hit">		</span><span class="hit field">HeaderHTML</span><span class="hit base">:</span><span class="hit"> </span><span class="hit base">sb</span><span class="hit base">.</span><span class="hit call">String</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span></div>
+    <div class="line" data-line="340"><span class="hit">		</span><span class="hit field">TreeHTML</span><span class="hit base">:</span><span class="hit">   </span><span class="hit arg">treeHTML</span><span class="hit base">,</span></div>
+    <div class="line" data-line="341">	<span class="base">}</span></div>
+    <div class="line" data-line="342"></div>
+    <div class="line" data-line="343"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit call">writeTemplateFile</span><span class="hit base">(</span><span class="hit string">&#34;html/index.html&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">data</span><span class="hit base">)</span></div>
+    <div class="line" data-line="344"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="337"></div>
-<div class="line" data-line="338">// writeTemplateFile writes the specified template file.</div>
+<div class="line" data-line="345"></div>
+<div class="line" data-line="346"><span class="comment">// writeTemplateFile writes the specified template file.</span></div>
 <div class="func"><input type="checkbox" id="func-14" checked/>
-  <label for="func-14" class="line" data-line="339">func (rg *reportGenerator) writeTemplateFile(file string, data any) error<span class="hit"> {</span></label>
+  <label for="func-14" class="line" data-line="347"><span class="decl">func</span> <span class="base">(</span><span class="arg">rg</span> <span class="oper">*</span><span class="type">reportGenerator</span><span class="base">)</span> <span class="call">writeTemplateFile</span><span class="base">(</span><span class="arg">file</span> <span class="type">string</span><span class="base">,</span> <span class="arg">data</span> <span class="type">any</span><span class="base">)</span> <span class="type">error</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="340"><span class="hit">	outFile := filepath.Join(rg.outRoot.Name(), filepath.Base(file))</span></div>
-    <div class="line" data-line="341"><span class="hit">	t, err  := template.ParseFS(rg.embeddedFiles, file)</span></div>
-    <div class="line" data-line="342"><span class="hit">	if                            err != nil { return fmt.Errorf(&#34;cannot parse %q: %w&#34;,     file, err</span><span class="hit">) }</span></div>
-    <div class="line" data-line="343"><span class="hit">	f, err := rg.fsys.Create(outFile)</span></div>
-    <div class="line" data-line="344"><span class="hit">	if                            err != nil { return fmt.Errorf(&#34;cannot create %q: %w&#34;, outFile, err</span><span class="hit">) }</span></div>
-    <div class="line" data-line="345"><span class="hit">	if err := t.Execute(f, data); err != nil { return fmt.Errorf(&#34;cannot render template: %w&#34;,    err</span><span class="hit">) }</span></div>
-    <div class="line" data-line="346"></div>
-    <div class="line" data-line="347"><span class="hit">	return f.Close</span><span class="hit">()</span></div>
-    <div class="line" data-line="348">}</div>
+    <div class="line" data-line="348"><span class="hit">	</span><span class="hit base">outFile</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Join</span><span class="hit base">(</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">outRoot</span><span class="hit base">.</span><span class="hit call">Name</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">filepath</span><span class="hit base">.</span><span class="hit call">Base</span><span class="hit base">(</span><span class="hit arg">file</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="349"><span class="hit">	</span><span class="hit base">t</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit">  </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">template</span><span class="hit base">.</span><span class="hit call">ParseFS</span><span class="hit base">(</span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">embeddedFiles</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">file</span><span class="hit base">)</span></div>
+    <div class="line" data-line="350"><span class="hit">	</span><span class="hit decl">if</span><span class="hit">                            </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="hit base">{</span><span class="hit"> </span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit call">Errorf</span><span class="hit base">(</span><span class="hit string">&#34;cannot parse %q: %w&#34;</span><span class="hit base">,</span><span class="hit">     </span><span class="hit arg">file</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit base">)</span><span class="hit"> </span><span class="hit base">}</span></div>
+    <div class="line" data-line="351"><span class="hit">	</span><span class="hit base">f</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">rg</span><span class="hit base">.</span><span class="hit field">fsys</span><span class="hit base">.</span><span class="hit call">Create</span><span class="hit base">(</span><span class="hit base">outFile</span><span class="hit base">)</span></div>
+    <div class="line" data-line="352"><span class="hit">	</span><span class="hit decl">if</span><span class="hit">                            </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="hit base">{</span><span class="hit"> </span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit call">Errorf</span><span class="hit base">(</span><span class="hit string">&#34;cannot create %q: %w&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">outFile</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit base">)</span><span class="hit"> </span><span class="hit base">}</span></div>
+    <div class="line" data-line="353"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">t</span><span class="hit base">.</span><span class="hit call">Execute</span><span class="hit base">(</span><span class="hit base">f</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">data</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span><span class="hit"> </span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit call">Errorf</span><span class="hit base">(</span><span class="hit string">&#34;cannot render template: %w&#34;</span><span class="hit base">,</span><span class="hit">    </span><span class="hit base">err</span><span class="hit base">)</span><span class="hit"> </span><span class="hit base">}</span></div>
+    <div class="line" data-line="354"></div>
+    <div class="line" data-line="355"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">f</span><span class="hit base">.</span><span class="hit call">Close</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="356"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="349"></div>
-<div class="line" data-line="350">// countStatements returns the total and covered statement counts.</div>
-<div class="line" data-line="351">// A block is covered if its Count is greater than zero.</div>
+<div class="line" data-line="357"></div>
+<div class="line" data-line="358"><span class="comment">// countStatements returns the total and covered statement counts.</span></div>
+<div class="line" data-line="359"><span class="comment">// A block is covered if its Count is greater than zero.</span></div>
 <div class="func"><input type="checkbox" id="func-15" checked/>
-  <label for="func-15" class="line" data-line="352">func countStatements(blocks []cover.ProfileBlock) (total, covered uint64<span class="hit">) {</span></label>
+  <label for="func-15" class="line" data-line="360"><span class="decl">func</span> <span class="call">countStatements</span><span class="base">(</span><span class="arg">blocks</span> <span class="base">[</span><span class="base">]</span><span class="base">cover</span><span class="base">.</span><span class="type">ProfileBlock</span><span class="base">)</span> <span class="base">(</span><span class="arg">total</span><span class="base">,</span> <span class="arg">covered</span> <span class="type">uint64</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="353"><span class="hit">	for _, b := range blocks {</span></div>
-    <div class="line" data-line="354"><span class="hit">		total += toUint64(b.NumStmt)</span></div>
-    <div class="line" data-line="355"><span class="hit">		if b.Count &gt; 0 {</span></div>
-    <div class="line" data-line="356"><span class="hit">			covered += toUint64(b.NumStmt)</span></div>
-    <div class="line" data-line="357">		}</div>
-    <div class="line" data-line="358">	}</div>
-    <div class="line" data-line="359"><span class="hit">	return</span></div>
-    <div class="line" data-line="360">}</div>
+    <div class="line" data-line="361"><span class="hit">	</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">_</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">b</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit arg">blocks</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="362"><span class="hit">		</span><span class="hit base">total</span><span class="hit"> </span><span class="hit oper">+=</span><span class="hit"> </span><span class="hit call">toUint64</span><span class="hit base">(</span><span class="hit base">b</span><span class="hit base">.</span><span class="hit field">NumStmt</span><span class="hit base">)</span></div>
+    <div class="line" data-line="363"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">b</span><span class="hit base">.</span><span class="hit field">Count</span><span class="hit"> </span><span class="hit oper">&gt;</span><span class="hit"> </span><span class="hit number">0</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="364"><span class="hit">			</span><span class="hit base">covered</span><span class="hit"> </span><span class="hit oper">+=</span><span class="hit"> </span><span class="hit call">toUint64</span><span class="hit base">(</span><span class="hit base">b</span><span class="hit base">.</span><span class="hit field">NumStmt</span><span class="hit base">)</span></div>
+    <div class="line" data-line="365">		<span class="base">}</span></div>
+    <div class="line" data-line="366">	<span class="base">}</span></div>
+    <div class="line" data-line="367"><span class="hit">	</span><span class="hit decl">return</span></div>
+    <div class="line" data-line="368"><span class="base">}</span></div>
   </div>
 </div>
-<div class="line" data-line="361"></div>
-<div class="line" data-line="362">// toUint64 safely casts an int to a uint64 by guarding</div>
-<div class="line" data-line="363">// against overflow when n is negative.</div>
+<div class="line" data-line="369"></div>
+<div class="line" data-line="370"><span class="comment">// toUint64 safely casts an int to a uint64 by guarding</span></div>
+<div class="line" data-line="371"><span class="comment">// against overflow when n is negative.</span></div>
 <div class="func"><input type="checkbox" id="func-16" checked/>
-  <label for="func-16" class="line" data-line="364">func toUint64(n int) uint64<span class="hit"> {</span></label>
+  <label for="func-16" class="line" data-line="372"><span class="decl">func</span> <span class="call">toUint64</span><span class="base">(</span><span class="arg">n</span> <span class="type">int</span><span class="base">)</span> <span class="type">uint64</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="365"><span class="hit">	if n &lt; 0</span><span class="miss"> { return 0</span> } // satisfy the gosec linter&#39;s overflow conversion check (G115)</div>
-    <div class="line" data-line="366"><span class="hit">	return uint64(n</span><span class="hit">)</span></div>
-    <div class="line" data-line="367">}</div>
+    <div class="line" data-line="373"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit arg">n</span><span class="hit"> </span><span class="hit oper">&lt;</span><span class="hit"> </span><span class="hit number">0</span><span class="hit"> </span><span class="base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss number">0</span><span class="miss"> </span><span class="miss base">}</span> <span class="comment">// satisfy the gosec linter&#39;s overflow conversion check (G115)</span></div>
+    <div class="line" data-line="374"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit type">uint64</span><span class="hit base">(</span><span class="hit arg">n</span><span class="hit base">)</span></div>
+    <div class="line" data-line="375"><span class="base">}</span></div>
   </div>
 </div>
 <script src="../../../child.js"></script>

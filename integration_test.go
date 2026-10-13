@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/tools/go/packages"
 )
 
 // integration_test.sh provides a convenience wrapper for this test
@@ -31,6 +32,7 @@ func TestIntegrationTest(t *testing.T) {
 	}
 
 	rg, err := newReportGenerator(fv);                     if err != nil { t.Fatal(err) }
+	if  err := rg.primePkgDirCache(packages.Load);            err != nil { t.Fatal(err) }
 	if  err := rg.registerModPaths(fv);                       err != nil { t.Fatal(err) }
 	if  err := rg.writeCovHTMLFiles(t.Context(), io.Discard); err != nil { t.Fatal(err) }
 

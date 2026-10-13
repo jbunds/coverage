@@ -167,7 +167,7 @@ a:hover { background-color: var(--hover-bg) }
 
 .line::before {
   position:     absolute;
-  left:         -3.5rem;
+  left:        -3.5rem;
   width:        2.5rem; /* gutter */
   color:        var(--text-color);
   text-align:   right;
@@ -183,19 +183,12 @@ body:not(.line-numbers) .line::before { display:     none    }
 .hit,
 .miss {
   display:        inline-block;
-  height:         1.5em; /* matches the parent .line height to create a continuous block */
-  vertical-align: top;   /* anchors boxes to the ceiling to prevent baseline shifts on pure-whitespace spans */
+  height:         1.5em; /* match parent .line height */
+  vertical-align: top;   /* preclude baseline shift on empty spans */
 }
 
-.hit  {
-  color:            var(--cov-hit );
-  background-color: rgb(from var(--cov-hit-bg ) r g b / 30%);
-}
-
-.miss {
-  color:            var(--cov-miss);
-  background-color: rgb(from var(--cov-miss-bg) r g b / 30%);
-}
+.hit  { background-color: rgb(from var(--cov-hit-bg ) r g b / 30%) }
+.miss { background-color: rgb(from var(--cov-miss-bg) r g b / 30%) }
 
 .func .func-body                 { display: none    }
 .func input                      { display: none    }

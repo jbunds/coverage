@@ -4,215 +4,216 @@
 <meta charset="utf-8">
 <link rel="icon"       href="../../../favicon.ico" type="image/vnd.microsoft.icon">
 <link rel="stylesheet" href="../../../style.css">
+<link rel="stylesheet" href="../../../syntax.css">
 <title>github.com/jbunds/coverage/ui.go</title>
 </head>
 <body id="code" class="line-numbers">
-<div class="line" data-line="1">package main</div>
+<div class="line" data-line="1"><span class="dir">package</span> <span class="base">main</span></div>
 <div class="line" data-line="2"></div>
-<div class="line" data-line="3">import (</div>
-<div class="line" data-line="4">	&#34;cmp&#34;</div>
-<div class="line" data-line="5">	&#34;fmt&#34;</div>
-<div class="line" data-line="6">	&#34;io&#34;</div>
-<div class="line" data-line="7">	&#34;maps&#34;</div>
-<div class="line" data-line="8">	&#34;os&#34;</div>
-<div class="line" data-line="9">	&#34;os/exec&#34;</div>
-<div class="line" data-line="10">	&#34;path/filepath&#34;</div>
-<div class="line" data-line="11">	&#34;runtime&#34;</div>
-<div class="line" data-line="12">	&#34;slices&#34;</div>
-<div class="line" data-line="13">	&#34;strconv&#34;</div>
-<div class="line" data-line="14">	&#34;strings&#34;</div>
-<div class="line" data-line="15">	&#34;testing&#34;</div>
+<div class="line" data-line="3"><span class="dir">import</span> <span class="base">(</span></div>
+<div class="line" data-line="4">	<span class="string">&#34;cmp&#34;</span></div>
+<div class="line" data-line="5">	<span class="string">&#34;fmt&#34;</span></div>
+<div class="line" data-line="6">	<span class="string">&#34;io&#34;</span></div>
+<div class="line" data-line="7">	<span class="string">&#34;maps&#34;</span></div>
+<div class="line" data-line="8">	<span class="string">&#34;os&#34;</span></div>
+<div class="line" data-line="9">	<span class="string">&#34;os/exec&#34;</span></div>
+<div class="line" data-line="10">	<span class="string">&#34;path/filepath&#34;</span></div>
+<div class="line" data-line="11">	<span class="string">&#34;runtime&#34;</span></div>
+<div class="line" data-line="12">	<span class="string">&#34;slices&#34;</span></div>
+<div class="line" data-line="13">	<span class="string">&#34;strconv&#34;</span></div>
+<div class="line" data-line="14">	<span class="string">&#34;strings&#34;</span></div>
+<div class="line" data-line="15">	<span class="string">&#34;testing&#34;</span></div>
 <div class="line" data-line="16"></div>
-<div class="line" data-line="17">	&#34;golang.org/x/term&#34;</div>
-<div class="line" data-line="18">)</div>
+<div class="line" data-line="17">	<span class="string">&#34;golang.org/x/term&#34;</span></div>
+<div class="line" data-line="18"><span class="base">)</span></div>
 <div class="line" data-line="19"></div>
-<div class="line" data-line="20">// printCoverage prints per-file coverage percentages to stdout.</div>
+<div class="line" data-line="20"><span class="comment">// printCoverage prints per-file coverage percentages to stdout.</span></div>
 <div class="func"><input type="checkbox" id="func-0" checked/>
-  <label for="func-0" class="line" data-line="21">func (cs *coverageState) printCoverage(w io.Writer) error<span class="hit"> {</span></label>
+  <label for="func-0" class="line" data-line="21"><span class="decl">func</span> <span class="base">(</span><span class="arg">cs</span> <span class="oper">*</span><span class="type">coverageState</span><span class="base">)</span> <span class="call">printCoverage</span><span class="base">(</span><span class="arg">w</span> <span class="base">io</span><span class="base">.</span><span class="type">Writer</span><span class="base">)</span> <span class="type">error</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="22"><span class="hit">	keys       := slices.Collect(maps.Keys(cs.cov))</span></div>
-    <div class="line" data-line="23"><span class="hit">	maxPathLen := len(slices.MaxFunc(keys, func(a, b string) int {</span></div>
-    <div class="line" data-line="24"><span class="hit">		return cmp.Compare(len(a), len(b))</span></div>
-    <div class="line" data-line="25">	}))</div>
+    <div class="line" data-line="22"><span class="hit">	</span><span class="hit base">keys</span><span class="hit">       </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">slices</span><span class="hit base">.</span><span class="hit call">Collect</span><span class="hit base">(</span><span class="hit base">maps</span><span class="hit base">.</span><span class="hit call">Keys</span><span class="hit base">(</span><span class="hit arg">cs</span><span class="hit base">.</span><span class="hit field">cov</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="23"><span class="hit">	</span><span class="hit base">maxPathLen</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit base">slices</span><span class="hit base">.</span><span class="hit call">MaxFunc</span><span class="hit base">(</span><span class="hit base">keys</span><span class="hit base">,</span><span class="hit"> </span><span class="hit decl">func</span><span class="hit base">(</span><span class="hit arg">a</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">b</span><span class="hit"> </span><span class="hit type">string</span><span class="hit base">)</span><span class="hit"> </span><span class="hit type">int</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="24"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">cmp</span><span class="hit base">.</span><span class="hit call">Compare</span><span class="hit base">(</span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">a</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">b</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="25">	<span class="base">}</span><span class="base">)</span><span class="base">)</span></div>
     <div class="line" data-line="26"></div>
-    <div class="line" data-line="27"><span class="hit">	maxPathLen = max(maxPathLen, 5) // 5 == len(&#34;Total&#34;)</span></div>
+    <div class="line" data-line="27"><span class="hit">	</span><span class="hit base">maxPathLen</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit call">max</span><span class="hit base">(</span><span class="hit base">maxPathLen</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">5</span><span class="hit base">)</span><span class="hit"> </span><span class="hit comment">// 5 == len(&#34;Total&#34;)</span></div>
     <div class="line" data-line="28"></div>
-    <div class="line" data-line="29"><span class="hit">	divider := strings.Repeat(&#34;—&#34;, maxPathLen + 9) + &#34;\n&#34; // 9 == 2 spaces + len(&#34;100.00%&#34;)</span></div>
+    <div class="line" data-line="29"><span class="hit">	</span><span class="hit base">divider</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Repeat</span><span class="hit base">(</span><span class="hit string">&#34;—&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">maxPathLen</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">9</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit string">&#34;\n&#34;</span><span class="hit"> </span><span class="hit comment">// 9 == 2 spaces + len(&#34;100.00%&#34;)</span></div>
     <div class="line" data-line="30"></div>
-    <div class="line" data-line="31"><span class="hit">	ew := newErrorWriter(w)</span></div>
-    <div class="line" data-line="32"><span class="hit">	ew.write(&#34;File&#34;)</span></div>
-    <div class="line" data-line="33"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen - 4 + 1))</span></div>
-    <div class="line" data-line="34"><span class="hit">	ew.write(&#34;Coverage\n&#34;)</span></div>
-    <div class="line" data-line="35"><span class="hit">	ew.write(divider)</span></div>
+    <div class="line" data-line="31"><span class="hit">	</span><span class="hit base">ew</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">newErrorWriter</span><span class="hit base">(</span><span class="hit arg">w</span><span class="hit base">)</span></div>
+    <div class="line" data-line="32"><span class="hit">	</span><span class="hit base">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;File&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="33"><span class="hit">	</span><span class="hit base">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Repeat</span><span class="hit base">(</span><span class="hit string">&#34; &#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">maxPathLen</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit"> </span><span class="hit number">4</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">1</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="34"><span class="hit">	</span><span class="hit base">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;Coverage\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="35"><span class="hit">	</span><span class="hit base">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">divider</span><span class="hit base">)</span></div>
     <div class="line" data-line="36"></div>
-    <div class="line" data-line="37"><span class="hit">	for _, path := range cs.sort() {</span></div>
-    <div class="line" data-line="38"><span class="hit">		cov     := cs.cov[path]</span></div>
-    <div class="line" data-line="39"><span class="hit">		percent := 0.0</span></div>
-    <div class="line" data-line="40"><span class="hit">		if cov.total &gt; 0 {</span></div>
-    <div class="line" data-line="41"><span class="hit">			percent = float64(cov.covered) / float64(cov.total) * 100</span></div>
-    <div class="line" data-line="42">		}</div>
-    <div class="line" data-line="43"><span class="hit">		writeRow(ew, path, percent, maxPathLen</span><span class="hit">)</span></div>
-    <div class="line" data-line="44">	}</div>
+    <div class="line" data-line="37"><span class="hit">	</span><span class="hit decl">for</span><span class="hit"> </span><span class="hit base">_</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">path</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit decl">range</span><span class="hit"> </span><span class="hit arg">cs</span><span class="hit base">.</span><span class="hit field">sort</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="38"><span class="hit">		</span><span class="hit base">cov</span><span class="hit">     </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">cs</span><span class="hit base">.</span><span class="hit field">cov</span><span class="hit base">[</span><span class="hit base">path</span><span class="hit base">]</span></div>
+    <div class="line" data-line="39"><span class="hit">		</span><span class="hit base">percent</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit number">0.0</span></div>
+    <div class="line" data-line="40"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">cov</span><span class="hit base">.</span><span class="hit field">total</span><span class="hit"> </span><span class="hit oper">&gt;</span><span class="hit"> </span><span class="hit number">0</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="41"><span class="hit">			</span><span class="hit base">percent</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit type">float64</span><span class="hit base">(</span><span class="hit base">cov</span><span class="hit base">.</span><span class="hit field">covered</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">/</span><span class="hit"> </span><span class="hit type">float64</span><span class="hit base">(</span><span class="hit base">cov</span><span class="hit base">.</span><span class="hit field">total</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">*</span><span class="hit"> </span><span class="hit number">100</span></div>
+    <div class="line" data-line="42">		<span class="base">}</span></div>
+    <div class="line" data-line="43"><span class="hit">		</span><span class="hit call">writeRow</span><span class="hit base">(</span><span class="hit base">ew</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">path</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">percent</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">maxPathLen</span><span class="hit base">)</span></div>
+    <div class="line" data-line="44">	<span class="base">}</span></div>
     <div class="line" data-line="45"></div>
-    <div class="line" data-line="46"><span class="hit">	totalPercent    := 0.0</span></div>
-    <div class="line" data-line="47"><span class="hit">	totalCovered    := cs.totalCovered.Load()</span></div>
-    <div class="line" data-line="48"><span class="hit">	totalStatements := cs.totalStatements.Load()</span></div>
-    <div class="line" data-line="49"><span class="hit">	if totalStatements &gt; 0 {</span></div>
-    <div class="line" data-line="50"><span class="hit">		totalPercent = float64(totalCovered) / float64(totalStatements) * 100</span></div>
-    <div class="line" data-line="51">	}</div>
+    <div class="line" data-line="46"><span class="hit">	</span><span class="hit base">totalPercent</span><span class="hit">    </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit number">0.0</span></div>
+    <div class="line" data-line="47"><span class="hit">	</span><span class="hit base">totalCovered</span><span class="hit">    </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">cs</span><span class="hit base">.</span><span class="hit field">totalCovered</span><span class="hit base">.</span><span class="hit call">Load</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="48"><span class="hit">	</span><span class="hit base">totalStatements</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">cs</span><span class="hit base">.</span><span class="hit field">totalStatements</span><span class="hit base">.</span><span class="hit call">Load</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="49"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">totalStatements</span><span class="hit"> </span><span class="hit oper">&gt;</span><span class="hit"> </span><span class="hit number">0</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="50"><span class="hit">		</span><span class="hit base">totalPercent</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit type">float64</span><span class="hit base">(</span><span class="hit base">totalCovered</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">/</span><span class="hit"> </span><span class="hit type">float64</span><span class="hit base">(</span><span class="hit base">totalStatements</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">*</span><span class="hit"> </span><span class="hit number">100</span></div>
+    <div class="line" data-line="51">	<span class="base">}</span></div>
     <div class="line" data-line="52"></div>
-    <div class="line" data-line="53"><span class="hit">	ew.write(divider)</span></div>
-    <div class="line" data-line="54"><span class="hit">	writeRow(ew, &#34;Total&#34;, totalPercent, maxPathLen)</span></div>
+    <div class="line" data-line="53"><span class="hit">	</span><span class="hit base">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">divider</span><span class="hit base">)</span></div>
+    <div class="line" data-line="54"><span class="hit">	</span><span class="hit call">writeRow</span><span class="hit base">(</span><span class="hit base">ew</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;Total&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">totalPercent</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">maxPathLen</span><span class="hit base">)</span></div>
     <div class="line" data-line="55"></div>
-    <div class="line" data-line="56"><span class="hit">	return ew.err</span><span class="hit">()</span></div>
-    <div class="line" data-line="57">}</div>
+    <div class="line" data-line="56"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">ew</span><span class="hit base">.</span><span class="hit call">err</span><span class="hit base">(</span><span class="hit base">)</span></div>
+    <div class="line" data-line="57"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="58"></div>
-<div class="line" data-line="59">// writeRow writes a single padded, color-coded (green ≥ 50%, red &lt; 50%) coverage row.</div>
+<div class="line" data-line="59"><span class="comment">// writeRow writes a single padded, color-coded (green ≥ 50%, red &lt; 50%) coverage row.</span></div>
 <div class="func"><input type="checkbox" id="func-1" checked/>
-  <label for="func-1" class="line" data-line="60">func writeRow(ew *errorWriter, path string, percent float64, maxPathLen int<span class="hit">) {</span></label>
+  <label for="func-1" class="line" data-line="60"><span class="decl">func</span> <span class="call">writeRow</span><span class="base">(</span><span class="arg">ew</span> <span class="oper">*</span><span class="type">errorWriter</span><span class="base">,</span> <span class="arg">path</span> <span class="type">string</span><span class="base">,</span> <span class="arg">percent</span> <span class="type">float64</span><span class="base">,</span> <span class="arg">maxPathLen</span> <span class="type">int</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="61"><span class="hit">	const (</span></div>
-    <div class="line" data-line="62"><span class="hit">		green = &#34;\033[32m&#34;</span></div>
-    <div class="line" data-line="63"><span class="hit">		red   = &#34;\033[31m&#34;</span></div>
-    <div class="line" data-line="64"><span class="hit">	)</span></div>
-    <div class="line" data-line="65"><span class="hit">	ew.write(path)</span></div>
-    <div class="line" data-line="66"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, maxPathLen - len(path) + 2))</span></div>
-    <div class="line" data-line="67"><span class="hit">	pct       := strconv.FormatFloat(percent, &#39;f&#39;, 2, 64) + &#34;%&#34;</span></div>
-    <div class="line" data-line="68"><span class="hit">	colorCode := green</span></div>
-    <div class="line" data-line="69"><span class="hit">	if percent &lt; 50 { colorCode = red</span><span class="hit"> }</span></div>
-    <div class="line" data-line="70"><span class="hit">	ew.write(strings.Repeat(&#34; &#34;, 7 - len(pct))) // 7 == len(&#34;100.00%&#34;)</span></div>
-    <div class="line" data-line="71"><span class="hit">	ew.writeColor(pct, colorCode)</span></div>
-    <div class="line" data-line="72"><span class="hit">	ew.write(&#34;\n&#34;</span><span class="hit">)</span></div>
-    <div class="line" data-line="73">}</div>
+    <div class="line" data-line="61"><span class="hit">	</span><span class="hit decl">const</span><span class="hit"> </span><span class="hit base">(</span></div>
+    <div class="line" data-line="62"><span class="hit">		</span><span class="hit base">green</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit string">&#34;\033[32m&#34;</span></div>
+    <div class="line" data-line="63"><span class="hit">		</span><span class="hit base">red</span><span class="hit">   </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit string">&#34;\033[31m&#34;</span></div>
+    <div class="line" data-line="64"><span class="hit">	</span><span class="hit base">)</span></div>
+    <div class="line" data-line="65"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit arg">path</span><span class="hit base">)</span></div>
+    <div class="line" data-line="66"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Repeat</span><span class="hit base">(</span><span class="hit string">&#34; &#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">maxPathLen</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit arg">path</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit number">2</span><span class="hit base">)</span><span class="hit base">)</span></div>
+    <div class="line" data-line="67"><span class="hit">	</span><span class="hit base">pct</span><span class="hit">       </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">strconv</span><span class="hit base">.</span><span class="hit call">FormatFloat</span><span class="hit base">(</span><span class="hit arg">percent</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">&#39;f&#39;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">2</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">64</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit string">&#34;%&#34;</span></div>
+    <div class="line" data-line="68"><span class="hit">	</span><span class="hit base">colorCode</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">green</span></div>
+    <div class="line" data-line="69"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit arg">percent</span><span class="hit"> </span><span class="hit oper">&lt;</span><span class="hit"> </span><span class="hit number">50</span><span class="hit"> </span><span class="hit base">{</span><span class="hit"> </span><span class="hit base">colorCode</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">red</span><span class="hit"> </span><span class="hit base">}</span></div>
+    <div class="line" data-line="70"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">Repeat</span><span class="hit base">(</span><span class="hit string">&#34; &#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit number">7</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit"> </span><span class="hit call">len</span><span class="hit base">(</span><span class="hit base">pct</span><span class="hit base">)</span><span class="hit base">)</span><span class="hit base">)</span><span class="hit"> </span><span class="hit comment">// 7 == len(&#34;100.00%&#34;)</span></div>
+    <div class="line" data-line="71"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">writeColor</span><span class="hit base">(</span><span class="hit base">pct</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">colorCode</span><span class="hit base">)</span></div>
+    <div class="line" data-line="72"><span class="hit">	</span><span class="hit arg">ew</span><span class="hit base">.</span><span class="hit call">write</span><span class="hit base">(</span><span class="hit string">&#34;\n&#34;</span><span class="hit base">)</span></div>
+    <div class="line" data-line="73"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="74"></div>
-<div class="line" data-line="75">// maybeOpenBrowser opens the generated index.html file in the</div>
-<div class="line" data-line="76">// default browser when stdout is a TTY and -n is not set.</div>
+<div class="line" data-line="75"><span class="comment">// maybeOpenBrowser opens the generated index.html file in the</span></div>
+<div class="line" data-line="76"><span class="comment">// default browser when stdout is a TTY and -n is not set.</span></div>
 <div class="func"><input type="checkbox" id="func-2" checked/>
-  <label for="func-2" class="line" data-line="77">func (rg *reportGenerator) maybeOpenBrowser(runner runner, fv *flagVals) error<span class="miss"> {</span></label>
+  <label for="func-2" class="line" data-line="77"><span class="decl">func</span> <span class="base">(</span><span class="arg">rg</span> <span class="oper">*</span><span class="type">reportGenerator</span><span class="base">)</span> <span class="call">maybeOpenBrowser</span><span class="base">(</span><span class="arg">runner</span> <span class="type">runner</span><span class="base">,</span> <span class="arg">fv</span> <span class="oper">*</span><span class="type">flagVals</span><span class="base">)</span> <span class="type">error</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="78"><span class="miss">	if fv.noBrowser      ||</span></div>
-    <div class="line" data-line="79"><span class="miss">	   !rg.write         ||</span></div>
-    <div class="line" data-line="80"><span class="miss">	   !isTerm(os.Stdin) {</span></div>
-    <div class="line" data-line="81"><span class="miss">		return nil</span></div>
-    <div class="line" data-line="82">	}</div>
+    <div class="line" data-line="78"><span class="miss">	</span><span class="miss decl">if</span><span class="miss"> </span><span class="miss arg">fv</span><span class="miss base">.</span><span class="miss field">noBrowser</span><span class="miss">      </span><span class="miss oper">||</span></div>
+    <div class="line" data-line="79"><span class="miss">	   </span><span class="miss oper">!</span><span class="miss arg">rg</span><span class="miss base">.</span><span class="miss field">write</span><span class="miss">         </span><span class="miss oper">||</span></div>
+    <div class="line" data-line="80"><span class="miss">	   </span><span class="miss oper">!</span><span class="miss call">isTerm</span><span class="miss base">(</span><span class="miss base">os</span><span class="miss base">.</span><span class="miss base">Stdin</span><span class="miss base">)</span><span class="miss"> </span><span class="base">{</span></div>
+    <div class="line" data-line="81"><span class="miss">		</span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">nil</span></div>
+    <div class="line" data-line="82">	<span class="base">}</span></div>
     <div class="line" data-line="83"></div>
-    <div class="line" data-line="84"><span class="miss">	if fv.httpServer {</span></div>
-    <div class="line" data-line="85"><span class="miss">		return launchHTTPServer(runner, rg.outRoot.Name())</span></div>
-    <div class="line" data-line="86">	}</div>
+    <div class="line" data-line="84"><span class="miss">	</span><span class="miss decl">if</span><span class="miss"> </span><span class="miss arg">fv</span><span class="miss base">.</span><span class="miss field">httpServer</span><span class="miss"> </span><span class="base">{</span></div>
+    <div class="line" data-line="85"><span class="miss">		</span><span class="miss decl">return</span><span class="miss"> </span><span class="miss call">launchHTTPServer</span><span class="miss base">(</span><span class="miss arg">runner</span><span class="miss base">,</span><span class="miss"> </span><span class="miss arg">rg</span><span class="miss base">.</span><span class="miss field">outRoot</span><span class="miss base">.</span><span class="miss call">Name</span><span class="miss base">(</span><span class="miss base">)</span><span class="miss base">)</span></div>
+    <div class="line" data-line="86">	<span class="base">}</span></div>
     <div class="line" data-line="87"></div>
-    <div class="line" data-line="88"><span class="miss">	absPath, err := filepath.Abs(filepath.Join(rg.outRoot.Name(), &#34;index.html&#34;))</span></div>
-    <div class="line" data-line="89"><span class="miss">	if err != nil {</span></div>
-    <div class="line" data-line="90"><span class="miss">		return err</span></div>
-    <div class="line" data-line="91">	}</div>
-    <div class="line" data-line="92"><span class="miss">	if runtime.GOOS == &#34;linux&#34; {</span></div>
-    <div class="line" data-line="93"><span class="miss">		absPath = &#34;file://&#34; + absPath // Linux requires explicit file:// scheme prefix</span></div>
-    <div class="line" data-line="94">	}</div>
-    <div class="line" data-line="95"><span class="miss">	return openBrowser(runner, absPath</span><span class="miss">)</span></div>
-    <div class="line" data-line="96">}</div>
+    <div class="line" data-line="88"><span class="miss">	</span><span class="miss base">absPath</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss oper">:=</span><span class="miss"> </span><span class="miss base">filepath</span><span class="miss base">.</span><span class="miss call">Abs</span><span class="miss base">(</span><span class="miss base">filepath</span><span class="miss base">.</span><span class="miss call">Join</span><span class="miss base">(</span><span class="miss arg">rg</span><span class="miss base">.</span><span class="miss field">outRoot</span><span class="miss base">.</span><span class="miss call">Name</span><span class="miss base">(</span><span class="miss base">)</span><span class="miss base">,</span><span class="miss"> </span><span class="miss string">&#34;index.html&#34;</span><span class="miss base">)</span><span class="miss base">)</span></div>
+    <div class="line" data-line="89"><span class="miss">	</span><span class="miss decl">if</span><span class="miss"> </span><span class="miss base">err</span><span class="miss"> </span><span class="miss oper">!=</span><span class="miss"> </span><span class="miss base">nil</span><span class="miss"> </span><span class="base">{</span></div>
+    <div class="line" data-line="90"><span class="miss">		</span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">err</span></div>
+    <div class="line" data-line="91">	<span class="base">}</span></div>
+    <div class="line" data-line="92"><span class="miss">	</span><span class="miss decl">if</span><span class="miss"> </span><span class="miss base">runtime</span><span class="miss base">.</span><span class="miss base">GOOS</span><span class="miss"> </span><span class="miss oper">==</span><span class="miss"> </span><span class="miss string">&#34;linux&#34;</span><span class="miss"> </span><span class="base">{</span></div>
+    <div class="line" data-line="93"><span class="miss">		</span><span class="miss base">absPath</span><span class="miss"> </span><span class="miss oper">=</span><span class="miss"> </span><span class="miss string">&#34;file://&#34;</span><span class="miss"> </span><span class="miss oper">+</span><span class="miss"> </span><span class="miss base">absPath</span><span class="miss"> </span><span class="miss comment">// Linux requires explicit file:// scheme prefix</span></div>
+    <div class="line" data-line="94">	<span class="base">}</span></div>
+    <div class="line" data-line="95"><span class="miss">	</span><span class="miss decl">return</span><span class="miss"> </span><span class="miss call">openBrowser</span><span class="miss base">(</span><span class="miss arg">runner</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">absPath</span><span class="miss base">)</span></div>
+    <div class="line" data-line="96"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="97"></div>
-<div class="line" data-line="98">// launchHTTPServer launches a Python HTTP server when -s is set and -n is not set.</div>
+<div class="line" data-line="98"><span class="comment">// launchHTTPServer launches a Python HTTP server when -s is set and -n is not set.</span></div>
 <div class="func"><input type="checkbox" id="func-3" checked/>
-  <label for="func-3" class="line" data-line="99">func launchHTTPServer(runner runner, outDir string) error<span class="hit"> {</span></label>
+  <label for="func-3" class="line" data-line="99"><span class="decl">func</span> <span class="call">launchHTTPServer</span><span class="base">(</span><span class="arg">runner</span> <span class="type">runner</span><span class="base">,</span> <span class="arg">outDir</span> <span class="type">string</span><span class="base">)</span> <span class="type">error</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="100"><span class="hit">	python := &#34;python3&#34;</span></div>
-    <div class="line" data-line="101"><span class="hit">	if runtime.GOOS == &#34;windows&#34;</span><span class="miss"> {</span></div>
-    <div class="line" data-line="102"><span class="miss">		python = &#34;python&#34;</span></div>
-    <div class="line" data-line="103">	}</div>
-    <div class="line" data-line="104"><span class="hit">	pyPath, err := exec.LookPath(python)</span></div>
-    <div class="line" data-line="105"><span class="hit">	if err != nil</span><span class="miss"> {</span></div>
-    <div class="line" data-line="106"><span class="miss">		return err</span></div>
-    <div class="line" data-line="107">	}</div>
+    <div class="line" data-line="100"><span class="hit">	</span><span class="hit base">python</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit string">&#34;python3&#34;</span></div>
+    <div class="line" data-line="101"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">runtime</span><span class="hit base">.</span><span class="hit base">GOOS</span><span class="hit"> </span><span class="hit oper">==</span><span class="hit"> </span><span class="hit string">&#34;windows&#34;</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="102"><span class="miss">		</span><span class="miss base">python</span><span class="miss"> </span><span class="miss oper">=</span><span class="miss"> </span><span class="miss string">&#34;python&#34;</span></div>
+    <div class="line" data-line="103">	<span class="base">}</span></div>
+    <div class="line" data-line="104"><span class="hit">	</span><span class="hit base">pyPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">exec</span><span class="hit base">.</span><span class="hit call">LookPath</span><span class="hit base">(</span><span class="hit base">python</span><span class="hit base">)</span></div>
+    <div class="line" data-line="105"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="106"><span class="miss">		</span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">err</span></div>
+    <div class="line" data-line="107">	<span class="base">}</span></div>
     <div class="line" data-line="108"></div>
-    <div class="line" data-line="109"><span class="hit">	const port = &#34;8000&#34; // https://docs.python.org/3/library/http.server.html#cmdoption-http.server-arg-port</span></div>
+    <div class="line" data-line="109"><span class="hit">	</span><span class="hit decl">const</span><span class="hit"> </span><span class="hit base">port</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit string">&#34;8000&#34;</span><span class="hit"> </span><span class="hit comment">// https://docs.python.org/3/library/http.server.html#cmdoption-http.server-arg-port</span></div>
     <div class="line" data-line="110"></div>
-    <div class="line" data-line="111"><span class="hit">	url := &#34;http://localhost:&#34; + port</span></div>
+    <div class="line" data-line="111"><span class="hit">	</span><span class="hit base">url</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit string">&#34;http://localhost:&#34;</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit base">port</span></div>
     <div class="line" data-line="112"></div>
-    <div class="line" data-line="113"><span class="hit">	if runtime.GOOS != &#34;windows&#34; {</span></div>
-    <div class="line" data-line="114"><span class="hit">		if pid, err := findPortPID(runner, port); err == nil</span> { // macOS / Linux: check for existing process listening on port 8000</div>
-    <div class="line" data-line="115"><span class="hit">			if isTerm(os.Stderr</span><span class="miss">) {</span></div>
-    <div class="line" data-line="116"><span class="miss">				fmt.Fprintf(os.Stderr, &#34;process already listening on port %s (PID: %d)\n&#34;, port, pid)</span></div>
-    <div class="line" data-line="117">			}</div>
-    <div class="line" data-line="118"><span class="hit">			return openBrowser(runner, url</span>) // assume the process listening on port 8000 is an HTTP server rather than launch a new one</div>
-    <div class="line" data-line="119">		}</div>
-    <div class="line" data-line="120">	}</div>
+    <div class="line" data-line="113"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">runtime</span><span class="hit base">.</span><span class="hit base">GOOS</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit string">&#34;windows&#34;</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="114"><span class="hit">		</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">pid</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit call">findPortPID</span><span class="hit base">(</span><span class="hit arg">runner</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">port</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">==</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span> <span class="comment">// macOS / Linux: check for existing process listening on port 8000</span></div>
+    <div class="line" data-line="115"><span class="hit">			</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit call">isTerm</span><span class="hit base">(</span><span class="hit base">os</span><span class="hit base">.</span><span class="hit base">Stderr</span><span class="hit base">)</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="116"><span class="miss">				</span><span class="miss base">fmt</span><span class="miss base">.</span><span class="miss call">Fprintf</span><span class="miss base">(</span><span class="miss base">os</span><span class="miss base">.</span><span class="miss base">Stderr</span><span class="miss base">,</span><span class="miss"> </span><span class="miss string">&#34;process already listening on port %s (PID: %d)\n&#34;</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">port</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">pid</span><span class="miss base">)</span></div>
+    <div class="line" data-line="117">			<span class="base">}</span></div>
+    <div class="line" data-line="118"><span class="hit">			</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit call">openBrowser</span><span class="hit base">(</span><span class="hit arg">runner</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">url</span><span class="hit base">)</span> <span class="comment">// assume the process listening on port 8000 is an HTTP server rather than launch a new one</span></div>
+    <div class="line" data-line="119">		<span class="base">}</span></div>
+    <div class="line" data-line="120">	<span class="base">}</span></div>
     <div class="line" data-line="121"></div>
-    <div class="line" data-line="122"><span class="hit">	cmd := exec.Command(pyPath, &#34;-m&#34;, &#34;http.server&#34;, &#34;-d&#34;, outDir) // #nosec G204 G702 - no shell (no injection); outDir confined to outRoot (no path escape)</span></div>
+    <div class="line" data-line="122"><span class="hit">	</span><span class="hit base">cmd</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">exec</span><span class="hit base">.</span><span class="hit call">Command</span><span class="hit base">(</span><span class="hit base">pyPath</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;-m&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;http.server&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;-d&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit arg">outDir</span><span class="hit base">)</span><span class="hit"> </span><span class="hit comment">// #nosec G204 G702 - no shell (no injection); outDir confined to outRoot (no path escape)</span></div>
     <div class="line" data-line="123"></div>
-    <div class="line" data-line="124"><span class="hit">	if err := runner.Start(cmd); err != nil {</span></div>
-    <div class="line" data-line="125"><span class="hit">		return err</span></div>
-    <div class="line" data-line="126">	}</div>
+    <div class="line" data-line="124"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">runner</span><span class="hit base">.</span><span class="hit call">Start</span><span class="hit base">(</span><span class="hit base">cmd</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="125"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">err</span></div>
+    <div class="line" data-line="126">	<span class="base">}</span></div>
     <div class="line" data-line="127"></div>
-    <div class="line" data-line="128"><span class="hit">	if runtime.GOOS != &#34;windows&#34; &amp;&amp; isTerm(os.Stderr</span><span class="miss">) {</span></div>
-    <div class="line" data-line="129"><span class="miss">		fmt.Fprintf(os.Stderr, &#34;HTTP server listening on port %s (PID: %d)\n&#34;, port, cmd.Process.Pid)</span></div>
-    <div class="line" data-line="130">	}</div>
+    <div class="line" data-line="128"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">runtime</span><span class="hit base">.</span><span class="hit base">GOOS</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit string">&#34;windows&#34;</span><span class="hit"> </span><span class="hit oper">&amp;&amp;</span><span class="hit"> </span><span class="hit call">isTerm</span><span class="hit base">(</span><span class="hit base">os</span><span class="hit base">.</span><span class="hit base">Stderr</span><span class="hit base">)</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="129"><span class="miss">		</span><span class="miss base">fmt</span><span class="miss base">.</span><span class="miss call">Fprintf</span><span class="miss base">(</span><span class="miss base">os</span><span class="miss base">.</span><span class="miss base">Stderr</span><span class="miss base">,</span><span class="miss"> </span><span class="miss string">&#34;HTTP server listening on port %s (PID: %d)\n&#34;</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">port</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">cmd</span><span class="miss base">.</span><span class="miss field">Process</span><span class="miss base">.</span><span class="miss field">Pid</span><span class="miss base">)</span></div>
+    <div class="line" data-line="130">	<span class="base">}</span></div>
     <div class="line" data-line="131"></div>
-    <div class="line" data-line="132"><span class="hit">	return openBrowser(runner, url</span><span class="hit">)</span></div>
-    <div class="line" data-line="133">}</div>
+    <div class="line" data-line="132"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit call">openBrowser</span><span class="hit base">(</span><span class="hit arg">runner</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">url</span><span class="hit base">)</span></div>
+    <div class="line" data-line="133"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="134"></div>
-<div class="line" data-line="135">// openBrowser opens the default browser with the specified URL.</div>
+<div class="line" data-line="135"><span class="comment">// openBrowser opens the default browser with the specified URL.</span></div>
 <div class="func"><input type="checkbox" id="func-4" checked/>
-  <label for="func-4" class="line" data-line="136">func openBrowser(runner runner, url string) error<span class="hit"> {</span></label>
+  <label for="func-4" class="line" data-line="136"><span class="decl">func</span> <span class="call">openBrowser</span><span class="base">(</span><span class="arg">runner</span> <span class="type">runner</span><span class="base">,</span> <span class="arg">url</span> <span class="type">string</span><span class="base">)</span> <span class="type">error</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="137"><span class="hit">	var cmd *exec.Cmd</span></div>
-    <div class="line" data-line="138"><span class="hit">	switch os := runtime.GOOS; os</span> {</div>
-    <div class="line" data-line="139">	case &#34;darwin&#34;<span class="hit">:</span></div>
-    <div class="line" data-line="140"><span class="hit">		cmd = exec.Command(&#34;open&#34;,         url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
-    <div class="line" data-line="141">	case &#34;windows&#34;<span class="miss">:</span></div>
-    <div class="line" data-line="142"><span class="miss">		cmd = exec.Command(&#34;explorer.exe&#34;, url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
-    <div class="line" data-line="143">	case &#34;linux&#34;<span class="miss">:</span></div>
-    <div class="line" data-line="144"><span class="miss">		cmd = exec.Command(&#34;xdg-open&#34;,     url</span>) // #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</div>
-    <div class="line" data-line="145">	default<span class="miss">:</span></div>
-    <div class="line" data-line="146"><span class="miss">		return fmt.Errorf(&#34;unrecognized OS: %s&#34;, os</span><span class="miss">)</span></div>
-    <div class="line" data-line="147">	}</div>
-    <div class="line" data-line="148"><span class="hit">	return runner.Run(cmd</span><span class="hit">)</span></div>
-    <div class="line" data-line="149">}</div>
+    <div class="line" data-line="137"><span class="hit">	</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">cmd</span><span class="hit"> </span><span class="hit oper">*</span><span class="hit base">exec</span><span class="hit base">.</span><span class="hit type">Cmd</span></div>
+    <div class="line" data-line="138"><span class="hit">	</span><span class="hit decl">switch</span><span class="hit"> </span><span class="hit base">os</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">runtime</span><span class="hit base">.</span><span class="hit base">GOOS</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">os</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="139">	<span class="decl">case</span> <span class="string">&#34;darwin&#34;</span><span class="base">:</span></div>
+    <div class="line" data-line="140"><span class="hit">		</span><span class="hit base">cmd</span><span class="hit"> </span><span class="hit oper">=</span><span class="hit"> </span><span class="hit base">exec</span><span class="hit base">.</span><span class="hit call">Command</span><span class="hit base">(</span><span class="hit string">&#34;open&#34;</span><span class="hit base">,</span><span class="hit">         </span><span class="hit arg">url</span><span class="hit base">)</span> <span class="comment">// #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</span></div>
+    <div class="line" data-line="141">	<span class="decl">case</span> <span class="string">&#34;windows&#34;</span><span class="base">:</span></div>
+    <div class="line" data-line="142"><span class="miss">		</span><span class="miss base">cmd</span><span class="miss"> </span><span class="miss oper">=</span><span class="miss"> </span><span class="miss base">exec</span><span class="miss base">.</span><span class="miss call">Command</span><span class="miss base">(</span><span class="miss string">&#34;explorer.exe&#34;</span><span class="miss base">,</span><span class="miss"> </span><span class="miss arg">url</span><span class="miss base">)</span> <span class="comment">// #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</span></div>
+    <div class="line" data-line="143">	<span class="decl">case</span> <span class="string">&#34;linux&#34;</span><span class="base">:</span></div>
+    <div class="line" data-line="144"><span class="miss">		</span><span class="miss base">cmd</span><span class="miss"> </span><span class="miss oper">=</span><span class="miss"> </span><span class="miss base">exec</span><span class="miss base">.</span><span class="miss call">Command</span><span class="miss base">(</span><span class="miss string">&#34;xdg-open&#34;</span><span class="miss base">,</span><span class="miss">     </span><span class="miss arg">url</span><span class="miss base">)</span> <span class="comment">// #nosec G204 G702 - no shell (no injection); url confined to outRoot (no path escape)</span></div>
+    <div class="line" data-line="145">	<span class="decl">default</span><span class="base">:</span></div>
+    <div class="line" data-line="146"><span class="miss">		</span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">fmt</span><span class="miss base">.</span><span class="miss call">Errorf</span><span class="miss base">(</span><span class="miss string">&#34;unrecognized OS: %s&#34;</span><span class="miss base">,</span><span class="miss"> </span><span class="miss base">os</span><span class="miss base">)</span></div>
+    <div class="line" data-line="147">	<span class="base">}</span></div>
+    <div class="line" data-line="148"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit arg">runner</span><span class="hit base">.</span><span class="hit call">Run</span><span class="hit base">(</span><span class="hit base">cmd</span><span class="hit base">)</span></div>
+    <div class="line" data-line="149"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="150"></div>
-<div class="line" data-line="151">// findPortPID searches for a process listening on the specified port and returns its PID if found.</div>
+<div class="line" data-line="151"><span class="comment">// findPortPID searches for a process listening on the specified port and returns its PID if found.</span></div>
 <div class="func"><input type="checkbox" id="func-5" checked/>
-  <label for="func-5" class="line" data-line="152">func findPortPID(runner runner, port string) (int, error<span class="hit">) {</span></label>
+  <label for="func-5" class="line" data-line="152"><span class="decl">func</span> <span class="call">findPortPID</span><span class="base">(</span><span class="arg">runner</span> <span class="type">runner</span><span class="base">,</span> <span class="arg">port</span> <span class="type">string</span><span class="base">)</span> <span class="base">(</span><span class="type">int</span><span class="base">,</span> <span class="type">error</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="153"><span class="hit">	out, err := runner.Output(exec.Command(&#34;lsof&#34;, &#34;-ti&#34;, &#34;:&#34; + port)) // #nosec G204 - port is a const defined in launchHTTPServer()</span></div>
-    <div class="line" data-line="154"><span class="hit">	if err != nil { return -1, err</span><span class="hit"> }</span></div>
-    <div class="line" data-line="155"><span class="hit">	var pid int</span></div>
-    <div class="line" data-line="156"><span class="hit">	if _, err := fmt.Sscanf(strings.TrimSpace(string(out)), &#34;%d&#34;, &amp;pid); err != nil {</span></div>
-    <div class="line" data-line="157"><span class="hit">		return -1, err</span></div>
-    <div class="line" data-line="158">	}</div>
-    <div class="line" data-line="159"><span class="hit">	return pid, nil</span></div>
-    <div class="line" data-line="160">}</div>
+    <div class="line" data-line="153"><span class="hit">	</span><span class="hit base">out</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">runner</span><span class="hit base">.</span><span class="hit call">Output</span><span class="hit base">(</span><span class="hit base">exec</span><span class="hit base">.</span><span class="hit call">Command</span><span class="hit base">(</span><span class="hit string">&#34;lsof&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;-ti&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;:&#34;</span><span class="hit"> </span><span class="hit oper">+</span><span class="hit"> </span><span class="hit arg">port</span><span class="hit base">)</span><span class="hit base">)</span><span class="hit"> </span><span class="hit comment">// #nosec G204 - port is a const defined in launchHTTPServer()</span></div>
+    <div class="line" data-line="154"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="hit base">{</span><span class="hit"> </span><span class="hit decl">return</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit number">1</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit base">}</span></div>
+    <div class="line" data-line="155"><span class="hit">	</span><span class="hit decl">var</span><span class="hit"> </span><span class="hit base">pid</span><span class="hit"> </span><span class="hit type">int</span></div>
+    <div class="line" data-line="156"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">_</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit call">Sscanf</span><span class="hit base">(</span><span class="hit base">strings</span><span class="hit base">.</span><span class="hit call">TrimSpace</span><span class="hit base">(</span><span class="hit type">string</span><span class="hit base">(</span><span class="hit base">out</span><span class="hit base">)</span><span class="hit base">)</span><span class="hit base">,</span><span class="hit"> </span><span class="hit string">&#34;%d&#34;</span><span class="hit base">,</span><span class="hit"> </span><span class="hit oper">&amp;</span><span class="hit base">pid</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">err</span><span class="hit"> </span><span class="hit oper">!=</span><span class="hit"> </span><span class="hit base">nil</span><span class="hit"> </span><span class="base">{</span></div>
+    <div class="line" data-line="157"><span class="hit">		</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit number">1</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">err</span></div>
+    <div class="line" data-line="158">	<span class="base">}</span></div>
+    <div class="line" data-line="159"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">pid</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">nil</span></div>
+    <div class="line" data-line="160"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="161"></div>
-<div class="line" data-line="162">// isTerm determines if the specified writer is connected to a terminal.</div>
+<div class="line" data-line="162"><span class="comment">// isTerm determines if the specified writer is connected to a terminal.</span></div>
 <div class="func"><input type="checkbox" id="func-6" checked/>
-  <label for="func-6" class="line" data-line="163">func isTerm(v any) bool<span class="hit"> {</span></label>
+  <label for="func-6" class="line" data-line="163"><span class="decl">func</span> <span class="call">isTerm</span><span class="base">(</span><span class="arg">v</span> <span class="type">any</span><span class="base">)</span> <span class="type">bool</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="164"><span class="hit">	if testing.Testing()                     ||</span></div>
-    <div class="line" data-line="165"><span class="hit">	   os.Getenv(&#34;GITHUB_ACTIONS&#34;) == &#34;true&#34; || // https://docs.github.com/actions/reference/workflows-and-actions/variables</span></div>
-    <div class="line" data-line="166"><span class="hit">	   os.Getenv(&#34;CI&#34;            ) == &#34;true&#34; { return false</span><span class="hit"> }</span></div>
-    <div class="line" data-line="167"><span class="miss">	fd := getFD(v)</span></div>
-    <div class="line" data-line="168"><span class="miss">	if fd &lt; 0 { return false</span><span class="miss"> }</span></div>
-    <div class="line" data-line="169"><span class="miss">	return term.IsTerminal(fd</span><span class="miss">)</span></div>
-    <div class="line" data-line="170">}</div>
+    <div class="line" data-line="164"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">testing</span><span class="hit base">.</span><span class="hit call">Testing</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit">                     </span><span class="hit oper">||</span></div>
+    <div class="line" data-line="165"><span class="hit">	   </span><span class="hit base">os</span><span class="hit base">.</span><span class="hit call">Getenv</span><span class="hit base">(</span><span class="hit string">&#34;GITHUB_ACTIONS&#34;</span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">==</span><span class="hit"> </span><span class="hit string">&#34;true&#34;</span><span class="hit"> </span><span class="hit oper">||</span><span class="hit"> </span><span class="hit comment">// https://docs.github.com/actions/reference/workflows-and-actions/variables</span></div>
+    <div class="line" data-line="166"><span class="hit">	   </span><span class="hit base">os</span><span class="hit base">.</span><span class="hit call">Getenv</span><span class="hit base">(</span><span class="hit string">&#34;CI&#34;</span><span class="hit">            </span><span class="hit base">)</span><span class="hit"> </span><span class="hit oper">==</span><span class="hit"> </span><span class="hit string">&#34;true&#34;</span><span class="hit"> </span><span class="hit base">{</span><span class="hit"> </span><span class="hit decl">return</span><span class="hit"> </span><span class="hit base">false</span><span class="hit"> </span><span class="hit base">}</span></div>
+    <div class="line" data-line="167"><span class="miss">	</span><span class="miss base">fd</span><span class="miss"> </span><span class="miss oper">:=</span><span class="miss"> </span><span class="miss call">getFD</span><span class="miss base">(</span><span class="miss arg">v</span><span class="miss base">)</span></div>
+    <div class="line" data-line="168"><span class="miss">	</span><span class="miss decl">if</span><span class="miss"> </span><span class="miss base">fd</span><span class="miss"> </span><span class="miss oper">&lt;</span><span class="miss"> </span><span class="miss number">0</span><span class="miss"> </span><span class="miss base">{</span><span class="miss"> </span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">false</span><span class="miss"> </span><span class="miss base">}</span></div>
+    <div class="line" data-line="169"><span class="miss">	</span><span class="miss decl">return</span><span class="miss"> </span><span class="miss base">term</span><span class="miss base">.</span><span class="miss call">IsTerminal</span><span class="miss base">(</span><span class="miss base">fd</span><span class="miss base">)</span></div>
+    <div class="line" data-line="170"><span class="base">}</span></div>
   </div>
 </div>
 <div class="line" data-line="171"></div>
-<div class="line" data-line="172">// getFD returns the file descriptor of the provided argument.</div>
+<div class="line" data-line="172"><span class="comment">// getFD returns the file descriptor of the provided argument.</span></div>
 <div class="func"><input type="checkbox" id="func-7" checked/>
-  <label for="func-7" class="line" data-line="173">func getFD(v any) int<span class="hit"> {</span></label>
+  <label for="func-7" class="line" data-line="173"><span class="decl">func</span> <span class="call">getFD</span><span class="base">(</span><span class="arg">v</span> <span class="type">any</span><span class="base">)</span> <span class="type">int</span> <span class="base">{</span></label>
   <div class="func-body">
-    <div class="line" data-line="174"><span class="hit">	if f, ok := v.(interface{ Fd() uintptr }); ok { return int(f.Fd</span><span class="hit">()) }</span></div>
-    <div class="line" data-line="175"><span class="hit">	return -1</span></div>
-    <div class="line" data-line="176">}</div>
+    <div class="line" data-line="174"><span class="hit">	</span><span class="hit decl">if</span><span class="hit"> </span><span class="hit base">f</span><span class="hit base">,</span><span class="hit"> </span><span class="hit base">ok</span><span class="hit"> </span><span class="hit oper">:=</span><span class="hit"> </span><span class="hit arg">v</span><span class="hit base">.</span><span class="hit base">(</span><span class="hit decl">interface</span><span class="hit base">{</span><span class="hit"> </span><span class="hit call">Fd</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit"> </span><span class="hit type">uintptr</span><span class="hit"> </span><span class="hit base">}</span><span class="hit base">)</span><span class="hit base">;</span><span class="hit"> </span><span class="hit base">ok</span><span class="hit"> </span><span class="base">{</span><span class="hit"> </span><span class="hit decl">return</span><span class="hit"> </span><span class="hit type">int</span><span class="hit base">(</span><span class="hit base">f</span><span class="hit base">.</span><span class="hit call">Fd</span><span class="hit base">(</span><span class="hit base">)</span><span class="hit base">)</span><span class="hit"> </span><span class="hit base">}</span></div>
+    <div class="line" data-line="175"><span class="hit">	</span><span class="hit decl">return</span><span class="hit"> </span><span class="hit oper">-</span><span class="hit number">1</span></div>
+    <div class="line" data-line="176"><span class="base">}</span></div>
   </div>
 </div>
 <script src="../../../child.js"></script>

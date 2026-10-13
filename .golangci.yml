@@ -60,6 +60,7 @@ linters:
             - go/parser
             - go/scanner
             - go/token
+            - go/types
             - io
             - maps
             - math
@@ -94,6 +95,7 @@ linters:
             - errors
             - flag
             - fmt
+            - go/token
             - io
             - io/fs
             - math
@@ -122,6 +124,7 @@ linters:
             - testing
             - github.com/google/go-cmp/cmp
             - golang.org/x/tools/cover
+            - golang.org/x/tools/go/packages
   exclusions:
     paths:
       - tools/loctrace/

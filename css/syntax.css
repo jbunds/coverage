@@ -1,0 +1,37 @@
+:root { /* gruvbox colors for syntax highlighting */
+  --syn-dir:     #fb4934; /* bright_red:    package, import                 */
+  --syn-kw:      #fb4934; /* bright_red:    func, var, if, for, break       */
+  --syn-type:    #fabd2f; /* bright_yellow: types & type constants          */
+  --syn-oper:    #fe8019; /* bright_orange: :=, +, -, ==, &, *              */
+  --syn-call:    #b8bb26; /* bright_green:  function & method names & calls */
+  --syn-field:   #83a598; /* bright_blue:   struct field names              */
+  --syn-arg:     #83a598; /* bright_blue:   function args                   */
+  --syn-string:  #b8bb26; /* bright_green:  "strings", 'chars'              */
+  --syn-number:  #d3869b; /* bright_purple: numbers                         */
+  --syn-comment: #928374; /* gray:          comments                        */
+}
+
+[theme="light"] { /* gruvbox colors for syntax highlighting */
+  --syn-dir:     #9d0006; /* faded_red    */
+  --syn-kw:      #9d0006; /* faded_red    */
+  --syn-type:    #b57614; /* faded_yellow */
+  --syn-oper:    #af3a03; /* faded_orange */
+  --syn-call:    #79740e; /* faded_green  */
+  --syn-field:   #076678; /* faded_blue   */
+  --syn-arg:     #076678; /* faded_blue   */
+  --syn-string:  #79740e; /* faded_green  */
+  --syn-number:  #8f3f71; /* faded_purple */
+  --syn-comment: #928374; /* gray         */
+}
+
+.base     { color: var(--text-color ) }
+.dir      { color: var(--syn-dir    ) }
+.decl     { color: var(--syn-kw     ) }
+.oper     { color: var(--syn-oper   ) }
+.call     { color: var(--syn-call   ) }
+.type     { color: var(--syn-type   ) }
+.field    { color: var(--syn-field  ) }
+.arg      { color: var(--syn-arg    ) }
+.string   { color: var(--syn-string ) }
+.number   { color: var(--syn-number ) }
+.comment  { font-style: italic; color: var(--syn-comment) }
