@@ -69,7 +69,6 @@ func buildSyntaxClassifier(fileAST *ast.File, typeInfo *types.Info) (c *syntaxCl
 		case *ast.StructType:     c.visitStructType(x)
 		case *ast.InterfaceType:  c.visitInterfaceType(x)
 		}
-
 		return true
 	})
 
