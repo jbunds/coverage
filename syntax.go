@@ -117,7 +117,6 @@ func (c *syntaxClassifier) visitCompositeLit(x *ast.CompositeLit) {
 }
 
 func (c *syntaxClassifier) visitIndexExpr(x *ast.IndexExpr) {
-//	if c.typeInfo == nil { return }
 	if c.isTypeExpr(x.X) {
 		c.registerTypeExpr(x.X)
 		c.registerTypeExpr(x.Index)
