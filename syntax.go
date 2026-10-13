@@ -324,8 +324,8 @@ func (c *syntaxClassifier) registerTypeExpr(expr ast.Expr) {
 // registerFieldList indexes parameter/receiver names
 // and type expressions from a FieldList.
 //
-// If trackActive is true, declared variables are also
-// recorded in activeParams for use-site classification.
+// If trackActive is true, declared variables are also recorded
+// in activeParams for classifying variable references.
 func (c *syntaxClassifier) registerFieldList(fieldList *ast.FieldList, trackActive bool) {
   if fieldList == nil { return }
   for _, field := range fieldList.List {
@@ -342,7 +342,7 @@ func (c *syntaxClassifier) registerFieldList(fieldList *ast.FieldList, trackActi
   }
 }
 
-// isTypeExpr determines if an expression resolves to a TypeName using typeInfo.
+// isTypeExpr determines if an expression resolves to a TypeName.
 func (c *syntaxClassifier) isTypeExpr(expr ast.Expr) bool {
 	for { // unwrap any parentheses
 		p, ok := expr.(*ast.ParenExpr)
@@ -366,7 +366,7 @@ func (c *syntaxClassifier) isTypeExpr(expr ast.Expr) bool {
 	return false
 }
 
-// isTypeArg evaluates if a given expression represents a type context.
+// isTypeArg determines if an expression represents a type context.
 func (c *syntaxClassifier) isTypeArg(expr ast.Expr) bool {
 	if c.typeInfo == nil { return false }
 	if tv, ok := c.typeInfo.Types[expr]; ok {

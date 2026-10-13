@@ -390,8 +390,8 @@
 <div class="line" data-line="324"><span class="comment">// registerFieldList indexes parameter/receiver names</span></div>
 <div class="line" data-line="325"><span class="comment">// and type expressions from a FieldList.</span></div>
 <div class="line" data-line="326"><span class="comment">//</span></div>
-<div class="line" data-line="327"><span class="comment">// If trackActive is true, declared variables are also</span></div>
-<div class="line" data-line="328"><span class="comment">// recorded in activeParams for use-site classification.</span></div>
+<div class="line" data-line="327"><span class="comment">// If trackActive is true, declared variables are also recorded</span></div>
+<div class="line" data-line="328"><span class="comment">// in activeParams for classifying variable references.</span></div>
 <div class="func"><input type="checkbox" id="func-14" checked/>
   <label for="func-14" class="line" data-line="329"><span class="decl">func</span> <span class="base">(</span><span class="arg">c</span> <span class="oper">*</span><span class="type">syntaxClassifier</span><span class="base">)</span> <span class="call">registerFieldList</span><span class="base">(</span><span class="arg">fieldList</span> <span class="oper">*</span><span class="base">ast</span><span class="base">.</span><span class="type">FieldList</span><span class="base">,</span> <span class="arg">trackActive</span> <span class="type">bool</span><span class="base">)</span> <span class="base">{</span></label>
   <div class="func-body">
@@ -412,7 +412,7 @@
   </div>
 </div>
 <div class="line" data-line="344"></div>
-<div class="line" data-line="345"><span class="comment">// isTypeExpr determines if an expression resolves to a TypeName using typeInfo.</span></div>
+<div class="line" data-line="345"><span class="comment">// isTypeExpr determines if an expression resolves to a TypeName.</span></div>
 <div class="func"><input type="checkbox" id="func-15" checked/>
   <label for="func-15" class="line" data-line="346"><span class="decl">func</span> <span class="base">(</span><span class="arg">c</span> <span class="oper">*</span><span class="type">syntaxClassifier</span><span class="base">)</span> <span class="call">isTypeExpr</span><span class="base">(</span><span class="arg">expr</span> <span class="base">ast</span><span class="base">.</span><span class="type">Expr</span><span class="base">)</span> <span class="type">bool</span> <span class="base">{</span></label>
   <div class="func-body">
@@ -440,7 +440,7 @@
   </div>
 </div>
 <div class="line" data-line="368"></div>
-<div class="line" data-line="369"><span class="comment">// isTypeArg evaluates if a given expression represents a type context.</span></div>
+<div class="line" data-line="369"><span class="comment">// isTypeArg determines if an expression represents a type context.</span></div>
 <div class="func"><input type="checkbox" id="func-16" checked/>
   <label for="func-16" class="line" data-line="370"><span class="decl">func</span> <span class="base">(</span><span class="arg">c</span> <span class="oper">*</span><span class="type">syntaxClassifier</span><span class="base">)</span> <span class="call">isTypeArg</span><span class="base">(</span><span class="arg">expr</span> <span class="base">ast</span><span class="base">.</span><span class="type">Expr</span><span class="base">)</span> <span class="type">bool</span> <span class="base">{</span></label>
   <div class="func-body">
