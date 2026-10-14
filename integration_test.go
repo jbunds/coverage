@@ -31,10 +31,10 @@ func TestIntegrationTest(t *testing.T) {
 		outDir:           t.TempDir(),
 	}
 
-	rg, err := newReportGenerator(fv);                     if err != nil { t.Fatal(err) }
-	if  err := rg.primeCaches(t.Context(), packages.Load);    err != nil { t.Fatal(err) }
-	if  err := rg.registerModPaths(fv);                       err != nil { t.Fatal(err) }
-	if  err := rg.writeCovHTMLFiles(t.Context(), io.Discard); err != nil { t.Fatal(err) }
+	rg, err := newReportGenerator(fv);                              if err != nil { t.Fatal(err) }
+	if  err := rg.primeCaches(t.Context(), packages.Load, io.Discard); err != nil { t.Fatal(err) }
+	if  err := rg.registerModPaths(fv);                                err != nil { t.Fatal(err) }
+	if  err := rg.writeCovHTMLFiles(t.Context(), io.Discard);          err != nil { t.Fatal(err) }
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

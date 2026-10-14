@@ -4,6 +4,7 @@ import (
 	"errors"
 	"go/ast"
 	"go/types"
+	"io"
 	"io/fs"
 	"path/filepath"
 	"strings"
@@ -262,7 +263,7 @@ func TestPrimeCaches(t *testing.T) {
 				globalTypes: make(map[string]*types.Info),
 				globalASTs:  make(map[string]*ast.File),
 			}
-			err := rg.primeCaches(t.Context(), mockPkgLoader)
+			err := rg.primeCaches(t.Context(), mockPkgLoader, io.Discard)
 			if gotErr, wantErr := errStr(err), errStr(tt.wantErr); gotErr != wantErr {
 				t.Errorf("primeCaches(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, gotErr, wantErr)
 			}

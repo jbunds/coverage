@@ -28,13 +28,14 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"syscall"
+	"time"
 
+	"github.com/jbunds/progress"
 	"golang.org/x/mod/modfile"
-	"golang.org/x/sync/errgroup"
 	"golang.org/x/tools/cover"
 	"golang.org/x/tools/go/packages"
 )
@@ -100,17 +101,16 @@ func run() int {
 	if err != nil { return fatal(2, "cannot instantiate report generator: %v", err) }
 	defer rg.outRoot.Close()
 
-	if err := rg.registerModPaths(fv);               err != nil { return fatal(3, "cannot determine module path: %v",         err) }
-	if err := rg.resolveRepoURLs(&realRunner{}, fv); err != nil { return fatal(4, "cannot resolve repository URL: %v",        err) }
-	if err := rg.primeCaches(ctx, packages.Load);    err != nil { return fatal(5, "cannot index assets: %v", err) }
-
-	var progressWriter io.Writer = os.Stderr
-	if !isTerm(os.Stderr) { progressWriter = io.Discard }
+	var progressOutput io.Writer = os.Stderr
+	if !isTerm(os.Stderr) { progressOutput = io.Discard }
 
 	fmt.Fprintf(os.Stderr, "processing %d source files...", len(rg.profiles))
 	if !isTerm(os.Stdin) { fmt.Fprintln(os.Stderr) }
 
-	if err := rg.writeCovHTMLFiles(ctx, progressWriter); err != nil { return fatal(6, "cannot write HTML coverage files: %v", err) }
+	if err := rg.registerModPaths(fv);                            err != nil { return fatal(3, "cannot determine module path: %v",     err) }
+	if err := rg.resolveRepoURLs(&realRunner{}, fv);              err != nil { return fatal(4, "cannot resolve repository URL: %v",    err) }
+	if err := rg.primeCaches(ctx, packages.Load, progressOutput); err != nil { return fatal(5, "cannot index assets: %v",              err) }
+	if err := rg.writeCovHTMLFiles(ctx, progressOutput);          err != nil { return fatal(6, "cannot write HTML coverage files: %v", err) }
 
 	tb := &treeBuilder{
 		fsys:     &localFS{},
@@ -121,9 +121,9 @@ func run() int {
 
 	if rg.write {
 		var treeHTML string
-		if treeHTML, err = tb.buildTree(ctx, progressWriter); err != nil { return fatal(7, "cannot build tree HTML: %v",    err) }
-		if err := rg.writeIndexHTMLFile(treeHTML);            err != nil { return fatal(8, "cannot write index.html: %v",   err) }
-		if err := rg.writeStaticFiles();                      err != nil { return fatal(9, "cannot write static files: %v", err) }
+		if  treeHTML, err  = tb.buildTree(ctx, progressOutput); err != nil { return fatal(7, "cannot build tree HTML: %v",    err) }
+		if            err := rg.writeIndexHTMLFile(treeHTML);   err != nil { return fatal(8, "cannot write index.html: %v",   err) }
+		if            err := rg.writeStaticFiles();             err != nil { return fatal(9, "cannot write static files: %v", err) }
 	}
 
 	if err := rg.covState.printCoverage(os.Stdout); err != nil {
@@ -334,15 +334,36 @@ func (rg *reportGenerator) getAllPkgPaths() ([]string, error) {
 	return allPaths, scanner.Err()
 }
 
-// primeCaches populates package directory, AST, and type info maps for all source
-// packages using a stub importer to isolate type-checking to local files.
-func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader) error {
+// primeCaches populates package directory, AST, and type info maps for all source packages.
+func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader, progressOutput io.Writer) error {
 	allPkgPaths, err := rg.getAllPkgPaths()
 	if err != nil { return err }
 
+	type loadResult struct {
+		pkgs []*packages.Package
+		err  error
+	}
+
+	totalPkgs := len(allPkgPaths)
+
+	pkgsProg := progress.New(ctx, uint64(totalPkgs), progressOutput)
+	defer pkgsProg.Close()
+
+	pkgsProg.Report(0, "loading " + strconv.Itoa(totalPkgs) + " packages...")
+
 	rg.globalFset = token.NewFileSet()
 
-	var allPkgs []*packages.Package
+	var (
+		totalASTFiles int
+		allPkgs       []*packages.Package
+		spinner =     []rune("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+	)
+
+	const tickInterval = 60 * time.Millisecond
+
+	ticker := time.NewTicker(tickInterval)
+	defer ticker.Stop()
+
 	for _, goModFile := range rg.goModFiles {
 		cfg := &packages.Config{
 			Fset:  rg.globalFset,
@@ -350,63 +371,57 @@ func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader)
 			Mode:  packages.NeedFiles     |
 			       packages.NeedModule    |
 			       packages.NeedName      |
-			       packages.NeedTypes     |
 			       packages.NeedTypesInfo |
 			       packages.NeedSyntax,
 			Tests: false,
 		}
-		pkgs, err := pkgLoader(cfg, allPkgPaths...)
-		if err != nil { return err }
-		allPkgs = append(allPkgs, pkgs...)
+
+		loadCh := make(chan loadResult, 1)
+
+		go func() {
+			pkgs, err := pkgLoader(cfg, allPkgPaths...)
+			loadCh <- loadResult{pkgs, err}
+		}()
+
+		elapsed := time.Now()
+
+loadLoop:
+		for {
+			select {
+			case res := <-loadCh:
+				if res.err != nil { return res.err }
+				allPkgs = append(allPkgs, res.pkgs...)
+				pkgsProg.Report(float64(len(res.pkgs)), "loaded " + strconv.Itoa(len(allPkgs)) + " packages")
+				for _, pkg := range res.pkgs {
+					totalASTFiles += len(pkg.Syntax)
+				}
+				break loadLoop
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-ticker.C:
+				n := int(time.Since(elapsed) / tickInterval) % len(spinner)
+				pkgsProg.Report(0, string(spinner[n]) + " type-checking " + strconv.Itoa(totalPkgs) + " package(s)")
+			}
+		}
 	}
 
-	var typCache sync.Map
-	var astCache sync.Map
+	astsProg := progress.New(ctx, uint64(totalASTFiles), progressOutput)
+	defer astsProg.Close()
 
-	g, ctx := errgroup.WithContext(ctx)
-	g.SetLimit(runtime.NumCPU())
+	astsProg.Report(0, "indexing " + strconv.Itoa(totalASTFiles) + " source files...")
 
 	for _, pkg := range allPkgs {
 		if len(pkg.GoFiles) > 0 {
 			rg.pkgDirCache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])
 		}
 
-		g.Go(func() error {
-			if ctx.Err() != nil { return ctx.Err() }
-
-			for _, syntaxFile := range pkg.Syntax {
-				if f := pkg.Fset.File(syntaxFile.Pos()); f != nil {
-					typCache.Store(f.Name(), pkg.TypesInfo)
-					astCache.Store(f.Name(), syntaxFile)
-				}
-			}
-
-			return nil
-
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		return err
-	}
-
-	typCache.Range(func(k, v any) bool {
-		if key, ok := k.(string); ok {
-			if val, ok := v.(*types.Info); ok {
-				rg.globalTypes[key] = val
-			}
+		for _, syntaxFile := range pkg.Syntax {
+			f := pkg.Fset.File(syntaxFile.Pos()) // non-nil: coverage profile indicates compilation, which implies FileSet registration
+			rg.globalTypes[f.Name()] = pkg.TypesInfo
+			rg.globalASTs[ f.Name()] = syntaxFile
+			astsProg.Report(1, f.Name())
 		}
-		return true
-	})
-
-	astCache.Range(func(k, v any) bool {
-		if key, ok := k.(string); ok {
-			if val, ok := v.(*ast.File); ok {
-				rg.globalASTs[key] = val
-			}
-		}
-		return true
-	})
+	}
 
 	return nil
 }

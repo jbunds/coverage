@@ -79,6 +79,7 @@ linters:
             - syscall
             - testing
             - text/template
+            - time
             - github.com/jbunds/progress
             - golang.org/x/mod/modfile
             - golang.org/x/sync/errgroup
