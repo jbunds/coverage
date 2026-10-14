@@ -159,6 +159,7 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 		pkgDirCache:       make(map[string]string),
 		globalTypes:       make(map[string]*types.Info),
 		globalASTs:        make(map[string]*ast.File),
+		globalFset:        token.NewFileSet(),
 		embeddedFiles:     embeddedFiles,
 		iconFilename:      "favicon.ico",
 		childJSFilename:   "child.js",
@@ -350,8 +351,6 @@ func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader,
 	defer pkgsProg.Close()
 
 	pkgsProg.Report(0, "loading " + strconv.Itoa(totalPkgs) + " packages...")
-
-	rg.globalFset = token.NewFileSet()
 
 	var (
 		totalASTFiles int
