@@ -2,7 +2,10 @@ package main
 
 import (
 	"errors"
+	"go/ast"
+	"go/types"
 	"io/fs"
+	"path/filepath"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -187,7 +190,7 @@ func TestGetAllPkgPaths(t *testing.T) {
 	}
 }
 
-func TestPrimePkgDirCache(t *testing.T) {
+func TestPrimeCaches(t *testing.T) {
 	t.Parallel()
 	mockPkgLoader := func(_ *packages.Config, patterns ...string) ([]*packages.Package, error) {
 		pkgs := make([]*packages.Package, len(patterns))
@@ -195,9 +198,12 @@ func TestPrimePkgDirCache(t *testing.T) {
 			if strings.Contains(p, "this/will/fail") {
 				return nil, errors.New("packages.Load failed")
 			}
+			filename := filepath.Join(p, filepath.Base(p) + ".go")
+			if p == "github.com/foo/bar"     { filename = "github.com/foo/bar/baz.go"     }
+			if p == "github.com/foo/bar/boo" { filename = "github.com/foo/bar/boo/bug.go" }
 			pkgs[i] = &packages.Package{
 				PkgPath: p,
-				GoFiles: []string{p + ".go"},
+				GoFiles: []string{filename},
 			}
 		}
 		return pkgs, nil
@@ -220,10 +226,12 @@ func TestPrimePkgDirCache(t *testing.T) {
 					"github.com/foo/bar/boo/bug.go:0",
 				}, "\n")),
 			},
+			"github.com/foo/bar/baz.go":     &fstest.MapFile{Data: []byte("package bar")},
+			"github.com/foo/bar/boo/bug.go": &fstest.MapFile{Data: []byte("package boo")},
 		},
 		want: map[string]string{
-			"github.com/foo/bar":     "github.com/foo",
-			"github.com/foo/bar/boo": "github.com/foo/bar",
+			"github.com/foo/bar":     "github.com/foo/bar",
+			"github.com/foo/bar/boo": "github.com/foo/bar/boo",
 		},
 	}, {
 		name:        "cannot read coverage profile file",
@@ -250,14 +258,17 @@ func TestPrimePkgDirCache(t *testing.T) {
 				fsys:        &mockFS{FS: tt.fsys},
 				profilePath: tt.profilePath,
 				goModFiles:  []string{"go.mod"},
+				pkgDirCache: make(map[string]string),
+				globalTypes: make(map[string]*types.Info),
+				globalASTs:  make(map[string]*ast.File),
 			}
-			err := rg.primePkgDirCache(mockPkgLoader)
+			err := rg.primeCaches(t.Context(), mockPkgLoader)
 			if gotErr, wantErr := errStr(err), errStr(tt.wantErr); gotErr != wantErr {
-				t.Errorf("primePkgDirCache(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, gotErr, wantErr)
+				t.Errorf("primeCaches(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, gotErr, wantErr)
 			}
 			if tt.wantErr != nil { return }
 			if diff := cmp.Diff(tt.want, rg.pkgDirCache); diff != "" {
-				t.Errorf("primePkgDirCache(%q) mismatch (-want +got):\n%s", tt.name, diff)
+				t.Errorf("primeCaches(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}

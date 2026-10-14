@@ -74,6 +74,7 @@ linters:
             - sort
             - strconv
             - strings
+            - sync
             - sync/atomic
             - syscall
             - testing
@@ -95,12 +96,15 @@ linters:
             - errors
             - flag
             - fmt
+            - go/ast
             - go/token
+            - go/types
             - io
             - io/fs
             - math
             - os
             - os/exec
+            - path/filepath
             - reflect
             - runtime
             - strings

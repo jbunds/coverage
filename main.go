@@ -29,10 +29,12 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 
 	"golang.org/x/mod/modfile"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/tools/cover"
 	"golang.org/x/tools/go/packages"
 )
@@ -100,7 +102,7 @@ func run() int {
 
 	if err := rg.registerModPaths(fv);               err != nil { return fatal(3, "cannot determine module path: %v",         err) }
 	if err := rg.resolveRepoURLs(&realRunner{}, fv); err != nil { return fatal(4, "cannot resolve repository URL: %v",        err) }
-	if err := rg.primePkgDirCache(packages.Load);    err != nil { return fatal(5, "cannot prime package directory cache: %v", err) }
+	if err := rg.primeCaches(ctx, packages.Load);    err != nil { return fatal(5, "cannot index assets: %v", err) }
 
 	var progressWriter io.Writer = os.Stderr
 	if !isTerm(os.Stderr) { progressWriter = io.Discard }
@@ -154,6 +156,9 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 		goModFiles:        splitGoModFiles(fv.goModFiles),
 		profilePath:       filepath.Clean(fv.coverProfileFile),
 		profiles:          profiles,
+		pkgDirCache:       make(map[string]string),
+		globalTypes:       make(map[string]*types.Info),
+		globalASTs:        make(map[string]*ast.File),
 		embeddedFiles:     embeddedFiles,
 		iconFilename:      "favicon.ico",
 		childJSFilename:   "child.js",
@@ -301,7 +306,7 @@ func (rg *reportGenerator) resolveRepoURLs(runner runner, fv *flagVals) error {
 }
 
 // getAllPkgPaths extracts all unique package paths from the
-// coverage profile file for subsequent use in primePkgDirCache.
+// coverage profile file for subsequent use in primeCaches.
 func (rg *reportGenerator) getAllPkgPaths() ([]string, error) {
 	f, err := rg.fsys.Open(filepath.Clean(rg.profilePath))
 	if err != nil { return nil, err }
@@ -329,8 +334,9 @@ func (rg *reportGenerator) getAllPkgPaths() ([]string, error) {
 	return allPaths, scanner.Err()
 }
 
-// primePkgDirCache primes rg.pkgDirCache for subsequent use in buildCovHTML.
-func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader) error {
+// primeCaches populates package directory, AST, and type info maps for all source
+// packages using a stub importer to isolate type-checking to local files.
+func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader) error {
 	allPkgPaths, err := rg.getAllPkgPaths()
 	if err != nil { return err }
 
@@ -354,27 +360,53 @@ func (rg *reportGenerator) primePkgDirCache(pkgLoader pkgLoader) error {
 		allPkgs = append(allPkgs, pkgs...)
 	}
 
-	pkgCache := make(map[string]string)
-	typCache := make(map[string]*types.Info)
-	astCache := make(map[string]*ast.File)
+	var typCache sync.Map
+	var astCache sync.Map
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(runtime.NumCPU())
 
 	for _, pkg := range allPkgs {
 		if len(pkg.GoFiles) > 0 {
-			pkgCache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])
+			rg.pkgDirCache[pkg.PkgPath] = filepath.Dir(pkg.GoFiles[0])
 		}
-		if pkg.TypesInfo != nil {
+
+		g.Go(func() error {
+			if ctx.Err() != nil { return ctx.Err() }
+
 			for _, syntaxFile := range pkg.Syntax {
 				if f := pkg.Fset.File(syntaxFile.Pos()); f != nil {
-					typCache[f.Name()] = pkg.TypesInfo
-					astCache[f.Name()] = syntaxFile
+					typCache.Store(f.Name(), pkg.TypesInfo)
+					astCache.Store(f.Name(), syntaxFile)
 				}
 			}
-		}
+
+			return nil
+
+		})
 	}
 
-	rg.pkgDirCache = pkgCache
-	rg.globalTypes = typCache
-	rg.globalASTs  = astCache
+	if err := g.Wait(); err != nil {
+		return err
+	}
+
+	typCache.Range(func(k, v any) bool {
+		if key, ok := k.(string); ok {
+			if val, ok := v.(*types.Info); ok {
+				rg.globalTypes[key] = val
+			}
+		}
+		return true
+	})
+
+	astCache.Range(func(k, v any) bool {
+		if key, ok := k.(string); ok {
+			if val, ok := v.(*ast.File); ok {
+				rg.globalASTs[key] = val
+			}
+		}
+		return true
+	})
 
 	return nil
 }
