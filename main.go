@@ -12,6 +12,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"embed"
 	"errors"
@@ -101,16 +102,16 @@ func run() int {
 	if err != nil { return fatal(2, "cannot instantiate report generator: %v", err) }
 	defer rg.outRoot.Close()
 
-	var progressOutput io.Writer = os.Stderr
-	if !isTerm(os.Stderr) { progressOutput = io.Discard }
+	var progressWriter io.Writer = os.Stderr
+	if !isTerm(os.Stderr) { progressWriter = io.Discard }
 
 	fmt.Fprintf(os.Stderr, "processing %d source files...", len(rg.profiles))
 	if !isTerm(os.Stdin) { fmt.Fprintln(os.Stderr) }
 
 	if err := rg.registerModPaths(fv);                            err != nil { return fatal(3, "cannot determine module path: %v",     err) }
 	if err := rg.resolveRepoURLs(&realRunner{}, fv);              err != nil { return fatal(4, "cannot resolve repository URL: %v",    err) }
-	if err := rg.primeCaches(ctx, packages.Load, progressOutput); err != nil { return fatal(5, "cannot index assets: %v",              err) }
-	if err := rg.writeCovHTMLFiles(ctx, progressOutput);          err != nil { return fatal(6, "cannot write HTML coverage files: %v", err) }
+	if err := rg.primeCaches(ctx, packages.Load, progressWriter); err != nil { return fatal(5, "cannot index assets: %v",              err) }
+	if err := rg.writeCovHTMLFiles(ctx, progressWriter);          err != nil { return fatal(6, "cannot write HTML coverage files: %v", err) }
 
 	tb := &treeBuilder{
 		fsys:     &localFS{},
@@ -121,7 +122,7 @@ func run() int {
 
 	if rg.write {
 		var treeHTML string
-		if  treeHTML, err  = tb.buildTree(ctx, progressOutput); err != nil { return fatal(7, "cannot build tree HTML: %v",    err) }
+		if  treeHTML, err  = tb.buildTree(ctx, progressWriter); err != nil { return fatal(7, "cannot build tree HTML: %v",    err) }
 		if            err := rg.writeIndexHTMLFile(treeHTML);   err != nil { return fatal(8, "cannot write index.html: %v",   err) }
 		if            err := rg.writeStaticFiles();             err != nil { return fatal(9, "cannot write static files: %v", err) }
 	}
@@ -320,13 +321,13 @@ func (rg *reportGenerator) getAllPkgPaths() ([]string, error) {
 	pkgSet  := make(map[string]struct{})
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "mode:") { continue }
+		line := scanner.Bytes()
+		if bytes.HasPrefix(line, []byte("mode:")) { continue }
 
-		parts := strings.Split(line, ":")
-		if len(parts) < 2 { continue }
+		idx := bytes.IndexByte(line, ':')
+		if idx < 1 { continue }
 
-		pkgSet[filepath.Dir(parts[0])] = struct{}{}
+		pkgSet[filepath.Dir(string(line[:idx]))] = struct{}{}
 	}
 
 	allPaths := make([]string, 0, len(pkgSet))
@@ -335,19 +336,31 @@ func (rg *reportGenerator) getAllPkgPaths() ([]string, error) {
 	return allPaths, scanner.Err()
 }
 
+// loadResult holds the result of loading all packages comprising a module.
+type loadResult struct {
+	pkgs []*packages.Package
+	err  error
+}
+
+// loadParams holds the channel and progress-reporting configuration for loadPackages.
+type loadParams struct {
+	loadCh       <-chan loadResult
+	elapsed      time.Time
+	tickInterval time.Duration
+	spinner      []rune
+	prog         *progress.Progress
+}
+
 // primeCaches populates package directory, AST, and type info maps for all source packages.
-func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader, progressOutput io.Writer) error {
+func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader, progressWriter io.Writer) error {
+	if err := ctx.Err(); err != nil { return err }
+
 	allPkgPaths, err := rg.getAllPkgPaths()
 	if err != nil { return err }
 
-	type loadResult struct {
-		pkgs []*packages.Package
-		err  error
-	}
-
 	totalPkgs := len(allPkgPaths)
 
-	pkgsProg := progress.New(ctx, uint64(totalPkgs), progressOutput)
+	pkgsProg := progress.New(ctx, uint64(totalPkgs), progressWriter)
 	defer pkgsProg.Close()
 
 	pkgsProg.Report(0, "loading " + strconv.Itoa(totalPkgs) + " packages...")
@@ -355,13 +368,10 @@ func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader,
 	var (
 		totalASTFiles int
 		allPkgs       []*packages.Package
-		spinner =     []rune("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
 	)
 
 	const tickInterval = 60 * time.Millisecond
-
-	ticker := time.NewTicker(tickInterval)
-	defer ticker.Stop()
+	elapsed := time.Now()
 
 	for _, goModFile := range rg.goModFiles {
 		cfg := &packages.Config{
@@ -382,29 +392,19 @@ func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader,
 			loadCh <- loadResult{pkgs, err}
 		}()
 
-		elapsed := time.Now()
-
-loadLoop:
-		for {
-			select {
-			case res := <-loadCh:
-				if res.err != nil { return res.err }
-				allPkgs = append(allPkgs, res.pkgs...)
-				pkgsProg.Report(float64(len(res.pkgs)), "loaded " + strconv.Itoa(len(allPkgs)) + " packages")
-				for _, pkg := range res.pkgs {
-					totalASTFiles += len(pkg.Syntax)
-				}
-				break loadLoop
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-ticker.C:
-				n := int(time.Since(elapsed) / tickInterval) % len(spinner)
-				pkgsProg.Report(0, string(spinner[n]) + " type-checking " + strconv.Itoa(totalPkgs) + " package(s)")
-			}
+		lp := loadParams{
+			loadCh:       loadCh,
+			elapsed:      elapsed,
+			tickInterval: tickInterval,
+			spinner:      []rune("⠇⠏⠋⠙⠹⠸⠼⠴⠦⠧"),
+			prog:         pkgsProg,
 		}
+
+		if allPkgs, totalASTFiles, err = loadPackages(ctx, lp, totalPkgs); err != nil { return err }
+
 	}
 
-	astsProg := progress.New(ctx, uint64(totalASTFiles), progressOutput)
+	astsProg := progress.New(ctx, uint64(totalASTFiles), progressWriter)
 	defer astsProg.Close()
 
 	astsProg.Report(0, "indexing " + strconv.Itoa(totalASTFiles) + " source files...")
@@ -423,6 +423,33 @@ loadLoop:
 	}
 
 	return nil
+}
+
+// loadPackages awaits the loading of all packages comprising a module, reporting progress on each tick.
+func loadPackages(ctx context.Context, p loadParams, totalPkgs int) (allPkgs []*packages.Package, totalASTFiles int, err error) {
+	if err = ctx.Err(); err != nil { return }
+
+	ticker := time.NewTicker(p.tickInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case res := <-p.loadCh:
+			if res.err != nil { err = res.err; return }
+			allPkgs = append(allPkgs, res.pkgs...)
+			p.prog.Report(float64(len(res.pkgs)), "loaded " + strconv.Itoa(len(allPkgs)) + " packages")
+			for _, pkg := range res.pkgs {
+				totalASTFiles += len(pkg.Syntax)
+			}
+			return
+		case <-ctx.Done():
+			err = ctx.Err()
+			return
+		case <-ticker.C:
+			n := int(time.Since(p.elapsed) / p.tickInterval) % len(p.spinner)
+			p.prog.Report(0, string(p.spinner[n]) + " type-checking " + strconv.Itoa(totalPkgs) + " package(s)")
+		}
+	}
 }
 
 // shouldWrite reports whether the user-specified

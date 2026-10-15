@@ -55,10 +55,10 @@ type htmlBuilder struct {
 // buildTree traverses the module-qualified output directory and returns
 // the complete <ul> HTML fragment representing the source tree, with
 // per-file and aggregate per-subdirectory coverage percentages.
-func (tb *treeBuilder) buildTree(ctx context.Context, progressOutput io.Writer) (string, error) {
+func (tb *treeBuilder) buildTree(ctx context.Context, progressWriter io.Writer) (string, error) {
 	if err := ctx.Err(); err != nil { return "", err }
 
-	prog := progress.New(ctx, 0, progressOutput)
+	prog := progress.New(ctx, 0, progressWriter)
 	defer prog.Close()
 
 	rootNode := &trieNode{children: make(map[string]*trieNode)}
@@ -68,9 +68,7 @@ func (tb *treeBuilder) buildTree(ctx context.Context, progressOutput io.Writer) 
 		entries, err := tb.fsys.ReadDir(scanRoot)
 		if err != nil { return "", err }
 
-		baseIndent := 2 * strings.Count(modPath, "/") + 3 // initial nesting depth: root <ul>, current subdir <li>, and inner <ul> wrapping source file <li> elements
-
-		results, err := tb.scanEntries(ctx, prog, modPath, baseIndent, entries) // TODO(jbunds): maybe parallelize the call to tb.scanEntries
+		results, err := tb.scanEntries(ctx, prog, modPath, entries) // TODO(jbunds): maybe parallelize the call to tb.scanEntries
 		if err != nil { return "", err }
 
 		var modCovered, modTotal uint64
@@ -90,13 +88,12 @@ func (tb *treeBuilder) buildTree(ctx context.Context, progressOutput io.Writer) 
 
 // scanEntries processes each entry in a directory, collecting the resulting
 // tree nodes and aggregating their statement and coverage counts.
-func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modPath string, baseIndent int, entries []fs.DirEntry) ([]*entryResult, error ) {
+func (tb *treeBuilder) scanEntries(ctx context.Context, prog *progress.Progress, modPath string, entries []fs.DirEntry) ([]*entryResult, error ) {
 	if err := ctx.Err(); err != nil { return nil, err }
 
-	if len(entries) < 1 { return nil, nil }
-
-	results := make([]*entryResult, len(entries))
-	budgets := splitBudget(prog.InitialBudget(), len(entries))
+	results    := make([]*entryResult, len(entries))
+	budgets    := splitBudget(prog.InitialBudget(), len(entries))
+	baseIndent := 2 * strings.Count(modPath, "/") + 3 // initial nesting depth: root <ul>, current subdir <li>, and inner <ul> wrapping source file <li> elements
 
 	group, gCtx := errgroup.WithContext(ctx)
 	group.SetLimit(runtime.NumCPU())

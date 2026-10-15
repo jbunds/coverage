@@ -13,7 +13,7 @@ type trieNode struct {
 	segment   string               // package path segment
 	modPath   string               // module path (https://go.dev/ref/mod#module-path) used to generate IDs for the "modules" menu
 	html      string               // pre-rendered HTML fragment
-	isModRoot bool                 // identifies this node as the module root
+	isModRoot bool                 // identifies the node as the module root
 	children  map[string]*trieNode // child nodes
 	covered   uint64               // covered statements
 	total     uint64               // total statements
@@ -38,7 +38,7 @@ func (tn *trieNode) renderHTML(counter *atomic.Uint64) string {
 	return sb.String()
 }
 
-// assemble recursively renders this node's <li> element (checkbox, label,
+// assemble recursively renders the node's <li> element (checkbox, label,
 // and child <ul>) at the given indentation depth. Module-root node IDs
 // are normalized to a valid URI anchor string; all other nodes receive
 // a sequential ID from counter.

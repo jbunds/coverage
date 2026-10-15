@@ -78,17 +78,17 @@ type workUnit struct {
 
 // writeCovHTMLFiles calculates per-file coverage percentages and writes a *.go.html
 // file for each Go source file listed in the coverage profile file.
-func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressOutput io.Writer) error {
+func (rg *reportGenerator) writeCovHTMLFiles(ctx context.Context, progressWriter io.Writer) error {
 	if err := ctx.Err(); err != nil { return err }
 
 	rg.covState.cov = make(map[string]coverage, len(rg.profiles))
 	units, dirs := rg.buildWorkUnits()
 
-	if err := rg.createDirs(ctx, dirs, progressOutput); err != nil {
+	if err := rg.createDirs(ctx, dirs, progressWriter); err != nil {
 		return err
 	}
 
-	perFileCov, err := rg.genHTMLFiles(ctx, units, progressOutput)
+	perFileCov, err := rg.genHTMLFiles(ctx, units, progressWriter)
 	if err != nil {
 		return err
 	}
@@ -113,10 +113,10 @@ func (rg *reportGenerator) buildWorkUnits() (units []workUnit, dirs map[string]s
 }
 
 // createDirs creates all required output directories concurrently, bounded by NumCPU.
-func (rg *reportGenerator) createDirs(ctx context.Context, dirs map[string]struct{}, progressOutput io.Writer) error {
+func (rg *reportGenerator) createDirs(ctx context.Context, dirs map[string]struct{}, progressWriter io.Writer) error {
 	if !rg.write { return nil }
 
-	prog := progress.New(ctx, uint64(len(dirs)), progressOutput)
+	prog := progress.New(ctx, uint64(len(dirs)), progressWriter)
 	defer prog.Close()
 
 	group, gCtx := errgroup.WithContext(ctx)
@@ -139,9 +139,9 @@ func (rg *reportGenerator) createDirs(ctx context.Context, dirs map[string]struc
 
 // genHTMLFiles processes all work units concurrently (bounded by NumCPU),
 // writing one HTML file per unit and returning per-file coverage counts.
-func (rg *reportGenerator) genHTMLFiles(ctx context.Context, units []workUnit, progressOutput io.Writer) ([]coverage, error) {
+func (rg *reportGenerator) genHTMLFiles(ctx context.Context, units []workUnit, progressWriter io.Writer) ([]coverage, error) {
 	perFileCov := make([]coverage, len(units))
-	prog       := progress.New(ctx, 0, progressOutput)
+	prog       := progress.New(ctx, 0, progressWriter)
 	defer prog.Close()
 
 	group, gCtx := errgroup.WithContext(ctx)
@@ -189,7 +189,7 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 	file := rg.globalFset.File(fileAST.Pos())
 
 	if err := renderCovHTML(ctx, ew, annotateSource(fileAST, file, src,
-	  rg.globalTypes[srcFile],
+		rg.globalTypes[srcFile],
 		computeBlockOffsets(file, unit.profile.Blocks),
 		computeFuncSpans(fileAST, file))); err != nil {
 		return err

@@ -23,7 +23,7 @@
 <div class="line" data-line="13">	<span class="field">segment</span>   <span class="type">string</span>               <span class="comment">// package path segment</span></div>
 <div class="line" data-line="14">	<span class="field">modPath</span>   <span class="type">string</span>               <span class="comment">// module path (https://go.dev/ref/mod#module-path) used to generate IDs for the &#34;modules&#34; menu</span></div>
 <div class="line" data-line="15">	<span class="field">html</span>      <span class="type">string</span>               <span class="comment">// pre-rendered HTML fragment</span></div>
-<div class="line" data-line="16">	<span class="field">isModRoot</span> <span class="type">bool</span>                 <span class="comment">// identifies this node as the module root</span></div>
+<div class="line" data-line="16">	<span class="field">isModRoot</span> <span class="type">bool</span>                 <span class="comment">// identifies the node as the module root</span></div>
 <div class="line" data-line="17">	<span class="field">children</span>  <span class="decl">map</span><span class="base">[</span><span class="type">string</span><span class="base">]</span><span class="oper">*</span><span class="type">trieNode</span> <span class="comment">// child nodes</span></div>
 <div class="line" data-line="18">	<span class="field">covered</span>   <span class="type">uint64</span>               <span class="comment">// covered statements</span></div>
 <div class="line" data-line="19">	<span class="field">total</span>     <span class="type">uint64</span>               <span class="comment">// total statements</span></div>
@@ -52,7 +52,7 @@
   </div>
 </div>
 <div class="line" data-line="40"></div>
-<div class="line" data-line="41"><span class="comment">// assemble recursively renders this node&#39;s &lt;li&gt; element (checkbox, label,</span></div>
+<div class="line" data-line="41"><span class="comment">// assemble recursively renders the node&#39;s &lt;li&gt; element (checkbox, label,</span></div>
 <div class="line" data-line="42"><span class="comment">// and child &lt;ul&gt;) at the given indentation depth. Module-root node IDs</span></div>
 <div class="line" data-line="43"><span class="comment">// are normalized to a valid URI anchor string; all other nodes receive</span></div>
 <div class="line" data-line="44"><span class="comment">// a sequential ID from counter.</span></div>
