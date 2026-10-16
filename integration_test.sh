@@ -4,9 +4,12 @@
 #
 # the changes to the testdata files should be reviewed before committing
 
+tmpdir=$(mktemp -d) || exit 1
+trap 'rm -rf $tmpdir' EXIT
+
 for skip in '-skip TestIntegrationTest' ''; do  #fuglyButFunctional
   go test -race -coverprofile cov.out $skip
-  go run . -n -gomod go.mod -coverprofile cov.out -outdir cover
+  go run . -n -gomod go.mod -coverprofile cov.out -outdir $tmpdir
   cp cov.out testdata
-  cp cover/github.com/jbunds/coverage/*.go.html testdata
+  cp $tmpdir/github.com/jbunds/coverage/*.go.html testdata
 done

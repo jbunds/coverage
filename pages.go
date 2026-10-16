@@ -148,9 +148,7 @@ func (rg *reportGenerator) genHTMLFiles(ctx context.Context, units []workUnit, p
 	group.SetLimit(runtime.NumCPU())
 
 	for i, unit := range units {
-		if err := gCtx.Err(); err != nil {
-			break
-		}
+		if err := gCtx.Err(); err != nil { break }
 		group.Go(func() error {
 			return rg.processUnit(gCtx, prog, unit, &perFileCov[i])
 		})
@@ -182,9 +180,7 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 	fileAST := rg.globalASTs[srcFile]
 	if fileAST == nil {
 		fileAST, err = parser.ParseFile(rg.globalFset, srcFile, src, parser.ParseComments)
-		if err != nil {
-			return err
-		}
+		if err != nil { return fmt.Errorf("cannot parse %q: %v", srcFile, err) }
 	}
 	file := rg.globalFset.File(fileAST.Pos())
 
@@ -192,7 +188,7 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 		rg.globalTypes[srcFile],
 		computeBlockOffsets(file, unit.profile.Blocks),
 		computeFuncSpans(fileAST, file))); err != nil {
-		return err
+		return fmt.Errorf("cannot annotate source file %q: %v", srcFile, err)
 	}
 
 	writePostamble(ew, relPath + rg.childJSFilename)

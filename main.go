@@ -377,9 +377,8 @@ func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader,
 		cfg := &packages.Config{
 			Fset:  rg.globalFset,
 			Dir:   filepath.Dir(goModFile),
-			Mode:  packages.NeedFiles     |
-			       packages.NeedModule    |
-			       packages.NeedName      |
+			Mode:  packages.NeedName      |
+			       packages.NeedFiles     |
 			       packages.NeedTypesInfo |
 			       packages.NeedSyntax,
 			Tests: false,
@@ -401,7 +400,6 @@ func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader,
 		}
 
 		if allPkgs, totalASTFiles, err = loadPackages(ctx, lp, totalPkgs); err != nil { return err }
-
 	}
 
 	astsProg := progress.New(ctx, uint64(totalASTFiles), progressWriter)
