@@ -64,7 +64,7 @@ See also [![DeepWiki](doc/deepwiki.svg)](https://deepwiki.com/jbunds/coverage) a
 
 ![dark theme][dark theme]
 
-The well-known and relatively large (5.35M+ LoC) [Kubernetes][k8s] project was chosen for the demo to illustrate the features and performance.
+The well-known and relatively large (\~4.0M LoC, \~13,600 Go files, \~3,250 packages) [Kubernetes][k8s] project was chosen for the demo to illustrate the features and performance.
 
 ---
 
