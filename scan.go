@@ -132,7 +132,7 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 // single-line fragments (the common case) are emitted directly;
 // multi-line fragments are delegated to writeMultiLineFragment.
 func writeTokenFragment(buf *strings.Builder, fragment []byte, baseFileOffset int, baseCovClass, synClass string, blocks []*profileBlock) {
-	if !bytes.Contains(fragment, []byte("\n")) { // fast path for the overwhelming najority of cases
+	if bytes.IndexByte(fragment, '\n') < 0 { // fast path for the overwhelming majority of cases
 		covClass := baseCovClass
 		if covClass == "" {
 			covClass = coverClass(blocks, baseFileOffset, baseFileOffset + len(fragment))
