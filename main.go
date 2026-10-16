@@ -29,6 +29,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -94,6 +95,12 @@ func run() int {
 	defer stop()
 
 	signal.Notify(make(chan os.Signal, 1), syscall.SIGPIPE) // prevent SIGPIPE from killing the process; writes return EPIPE (handled below)
+
+	// disable GC since this is a one-shot batch program with a heap bounded by
+	// the input modules, so GC can consume the majority of CPU time (dominated
+	// by madvise/memclr backing the AST + type-info heap) and serves no purpose
+	// since no memory is ever reclaimed for reuse before the program exits
+	debug.SetGCPercent(-1)
 
 	fv, err := flags(flag.CommandLine, filterArgs(os.Args[1:]))
 	if err != nil { return fatal(1, "cannot parse flags: %v", err) }
@@ -387,6 +394,10 @@ func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader,
 		loadCh := make(chan loadResult, 1)
 
 		go func() {
+			// the loader builds a single dependency DAG spanning all packages
+			// and type-checks each shared dependency once, reusing the
+			// resulting *types.Package instance across all importers;
+			// this step cannot be trivially optimized
 			pkgs, err := pkgLoader(cfg, allPkgPaths...)
 			loadCh <- loadResult{pkgs, err}
 		}()

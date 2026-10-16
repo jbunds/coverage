@@ -54,7 +54,7 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 		}
 	}
 
-	buf   := new(bytes.Buffer)
+	buf   := new(strings.Builder)
 	flush := func() {
 		for _, pt := range pendingTokens {
 			writeTokenFragment(buf, pt.fragment, pt.absStart, pendingClass, pt.synClass, blocks)
@@ -126,58 +126,79 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 	return lines
 }
 
-// writeTokenFragment splits fragments across newlines and resolves absolute sub-line boundaries.
-func writeTokenFragment(buf *bytes.Buffer, fragment []byte, baseFileOffset int, baseCovClass, synClass string, blocks []*profileBlock) {
-	lines          := bytes.SplitAfter(fragment, []byte("\n"))
-	relativeOffset := 0
-
-	for _, line := range lines {
-		if len(line) == 0 { continue }
-
-		hasNewline := bytes.HasSuffix(line, []byte("\n"))
-		content    := line
-		if hasNewline {
-			content = line[:len(line) - 1]
+// writeTokenFragment writes a token fragment to buf, wrapping
+// it in a span with coverage and syntax classes if non-empty.
+//
+// single-line fragments (the common case) are emitted directly;
+// multi-line fragments are delegated to writeMultiLineFragment.
+func writeTokenFragment(buf *strings.Builder, fragment []byte, baseFileOffset int, baseCovClass, synClass string, blocks []*profileBlock) {
+	if !bytes.Contains(fragment, []byte("\n")) { // fast path for the overwhelming najority of cases
+		covClass := baseCovClass
+		if covClass == "" {
+			covClass = coverClass(blocks, baseFileOffset, baseFileOffset + len(fragment))
 		}
 
+		classStr := ""
+		switch {
+		case covClass != "" && synClass != "":
+			classStr = covClass + " " + synClass
+		case covClass != "":
+			classStr = covClass
+		case synClass != "":
+			classStr = synClass
+		}
+
+		if classStr != "" {
+			buf.WriteString(`<span class="`)
+			buf.WriteString(classStr)
+			buf.WriteString(`">`)
+		}
+		writeEscaped(buf, fragment)
+		if classStr != "" {
+			buf.WriteString("</span>")
+		}
+		return
+	}
+
+	writeMultiLineFragment(buf, fragment, baseFileOffset, baseCovClass, synClass, blocks) // rare since statements are usually separated by whitespace
+}
+
+// writeMultiLineFragment splits a multi-line fragment across newlines and
+// resolves absolute sub-line boundaries for coverage classification.
+func writeMultiLineFragment(buf *strings.Builder, fragment []byte, baseFileOffset int, baseCovClass, synClass string, blocks []*profileBlock) {
+	lines          := bytes.SplitAfter(fragment, []byte("\n"))
+	relativeOffset := 0
+	for _, line := range lines {
+		if len(line) == 0 { continue }
+		hasNewline := bytes.HasSuffix(line, []byte("\n"))
+		content    := line
+		if hasNewline { content = line[:len(line) - 1] }
 		if len(content) > 0 {
 			covClass := baseCovClass
-			if covClass == "" { // calculate the absolute position in the file for this whitespace line chunk
+			if covClass == "" {
 				absStart := baseFileOffset + relativeOffset
-				absEnd   := absStart       + len(content)
-				covClass  = coverClass(blocks, absStart, absEnd)
+				covClass  = coverClass(blocks, absStart, absStart + len(content))
 			}
-
-			var classes []string
-			if covClass != "" {
-				classes = append(classes, covClass)
+			classStr := ""
+			switch {
+			case covClass != "" && synClass != "":
+				classStr = covClass + " " + synClass
+			case covClass != "":
+				classStr = covClass
+			case synClass != "":
+				classStr = synClass
 			}
-			if synClass != "" {
-				classes = append(classes, synClass)
-			}
-
-			if len(classes) > 0 {
+			if classStr != "" {
 				buf.WriteString(`<span class="`)
-				for i, cls := range classes {
-					if i > 0 {
-						buf.WriteByte(' ')
-					}
-					buf.WriteString(cls)
-				}
+				buf.WriteString(classStr)
 				buf.WriteString(`">`)
 			}
-
-			template.HTMLEscape(buf, content)
-
-			if len(classes) > 0 {
+			writeEscaped(buf, content)
+			if classStr != "" {
 				buf.WriteString("</span>")
 			}
 		}
-
-		if hasNewline {
-			buf.WriteByte('\n')
-		}
-
+		if hasNewline { buf.WriteByte('\n') }
 		relativeOffset += len(line)
 	}
 }
@@ -199,6 +220,18 @@ func coverClass(blocks []*profileBlock, start, end int) string {
 		return "miss"
 	}
 	return ""
+}
+
+// writeEscaped writes s to buf, HTML-escaping if s contains escapable chars.
+func writeEscaped(buf *strings.Builder, s []byte) {
+	for i := range len(s) {
+		switch s[i] {
+		case '<', '>', '&', '"', '\'':
+			template.HTMLEscape(buf, s)
+			return
+		}
+	}
+	buf.Write(s)
 }
 
 // computeBlockOffsets converts cover.ProfileBlock line/column positions to byte offsets.
