@@ -68,7 +68,7 @@ func (tb *treeBuilder) buildTree(ctx context.Context, progressWriter io.Writer) 
 		entries, err := tb.fsys.ReadDir(scanRoot)
 		if err != nil { return "", err }
 
-		results, err := tb.scanEntries(ctx, prog, modPath, entries) // TODO(jbunds): maybe parallelize the call to tb.scanEntries
+		results, err := tb.scanEntries(ctx, prog, modPath, entries)
 		if err != nil { return "", err }
 
 		var modCovered, modTotal uint64
