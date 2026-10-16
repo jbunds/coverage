@@ -166,11 +166,12 @@ func writeTokenFragment(buf *strings.Builder, fragment []byte, baseFileOffset in
 // writeMultiLineFragment splits a multi-line fragment across newlines and
 // resolves absolute sub-line boundaries for coverage classification.
 func writeMultiLineFragment(buf *strings.Builder, fragment []byte, baseFileOffset int, baseCovClass, synClass string, blocks []*profileBlock) {
-	lines          := bytes.SplitAfter(fragment, []byte("\n"))
+	newline        := []byte("\n")
+	lines          := bytes.SplitAfter(fragment, newline)
 	relativeOffset := 0
 	for _, line := range lines {
 		if len(line) == 0 { continue }
-		hasNewline := bytes.HasSuffix(line, []byte("\n"))
+		hasNewline := bytes.HasSuffix(line, newline)
 		content    := line
 		if hasNewline { content = line[:len(line) - 1] }
 		if len(content) > 0 {

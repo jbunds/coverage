@@ -27,6 +27,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
@@ -80,6 +81,21 @@ type reportGenerator struct {
 	syntaxCSSFilename string                 // name of the CSS file included by generated source HTML files
 	childJSFilename   string                 // name of the JS file included by generated source HTML files (implements theme toggling, etc)
 	write             bool                   // true when static and generated files should be written to disk
+}
+
+// loadResult holds the result of loading all packages comprising a module.
+type loadResult struct {
+	pkgs []*packages.Package
+	err  error
+}
+
+// loadParams holds the channel and progress-reporting configuration for loadPackages.
+type loadParams struct {
+	loadCh       <-chan loadResult
+	elapsed      time.Time
+	tickInterval time.Duration
+	spinner      []rune
+	prog         *progress.Progress
 }
 
 func main() {
@@ -211,10 +227,10 @@ func newReportGenerator(fv *flagVals) (*reportGenerator, error) {
 // and appends their module paths to modPaths.
 func (rg *reportGenerator) registerModPaths(fv *flagVals) error {
 	for _, file := range splitGoModFiles(fv.goModFiles) {
-		paths, err := rg.resolveGoModFiles(file)
+		paths, err := rg.goModPaths(file)
 		if err != nil { return err }
 		for _, p := range paths {
-			if err := rg.appendModPath(p); err != nil {
+			if err := rg.registerModPath(p); err != nil {
 				return err
 			}
 		}
@@ -223,9 +239,9 @@ func (rg *reportGenerator) registerModPaths(fv *flagVals) error {
 	return nil
 }
 
-// resolveGoModFiles returns the go.mod paths for file: either the file
+// goModPaths returns the go.mod paths for file: either the file
 // itself if it's a go.mod file, or the modules listed in a go.work file.
-func (rg *reportGenerator) resolveGoModFiles(file string) ([]string, error) {
+func (rg *reportGenerator) goModPaths(file string) ([]string, error) {
 	if !strings.HasSuffix(file, ".work") {
 		return []string{file}, nil
 	}
@@ -248,8 +264,8 @@ func (rg *reportGenerator) resolveGoModFiles(file string) ([]string, error) {
 	return paths, nil
 }
 
-// appendModPath parses a go.mod file and appends its module path to modPaths.
-func (rg *reportGenerator) appendModPath(goModFile string) error {
+// registerModPath parses a go.mod file and appends its module path to modPaths.
+func (rg *reportGenerator) registerModPath(goModFile string) error {
 	data, err := rg.fsys.ReadFile(goModFile)
 	if err != nil {
 		return fmt.Errorf("cannot read %q: %w", goModFile, err)
@@ -314,58 +330,14 @@ func (rg *reportGenerator) resolveRepoURLs(runner runner, fv *flagVals) error {
 	return nil
 }
 
-// getAllPkgPaths extracts all unique package paths from the
-// coverage profile file for subsequent use in primeCaches.
-func (rg *reportGenerator) getAllPkgPaths() ([]string, error) {
-	f, err := rg.fsys.Open(filepath.Clean(rg.profilePath))
-	if err != nil { return nil, err }
-
-	defer func() {
-		closeErr := f.Close()
-		if err == nil { err = closeErr }
-	}()
-
-	pkgSet  := make(map[string]struct{})
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := scanner.Bytes()
-		if bytes.HasPrefix(line, []byte("mode:")) { continue }
-
-		idx := bytes.IndexByte(line, ':')
-		if idx < 1 { continue }
-
-		pkgSet[filepath.Dir(string(line[:idx]))] = struct{}{}
-	}
-
-	allPaths := make([]string, 0, len(pkgSet))
-	for p := range pkgSet { allPaths = append(allPaths, p) }
-
-	return allPaths, scanner.Err()
-}
-
-// loadResult holds the result of loading all packages comprising a module.
-type loadResult struct {
-	pkgs []*packages.Package
-	err  error
-}
-
-// loadParams holds the channel and progress-reporting configuration for loadPackages.
-type loadParams struct {
-	loadCh       <-chan loadResult
-	elapsed      time.Time
-	tickInterval time.Duration
-	spinner      []rune
-	prog         *progress.Progress
-}
-
 // primeCaches populates package directory, AST, and type info maps for all source packages.
 func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader, progressWriter io.Writer) error {
 	if err := ctx.Err(); err != nil { return err }
 
-	allPkgPaths, err := rg.getAllPkgPaths()
+	pkgPaths, err := rg.pkgPaths()
 	if err != nil { return err }
 
-	totalPkgs := len(allPkgPaths)
+	totalPkgs := len(pkgPaths)
 
 	pkgsProg := progress.New(ctx, uint64(totalPkgs), progressWriter)
 	defer pkgsProg.Close()
@@ -398,7 +370,7 @@ func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader,
 			// and type-checks each shared dependency once, reusing the
 			// resulting *types.Package instance across all importers;
 			// this step cannot be trivially optimized
-			pkgs, err := pkgLoader(cfg, allPkgPaths...)
+			pkgs, err := pkgLoader(cfg, pkgPaths...)
 			loadCh <- loadResult{pkgs, err}
 		}()
 
@@ -432,6 +404,36 @@ func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader,
 	}
 
 	return nil
+}
+
+// pkgPaths extracts all unique package paths from the
+// coverage profile file for subsequent use in primeCaches.
+func (rg *reportGenerator) pkgPaths() ([]string, error) {
+	f, err := rg.fsys.Open(filepath.Clean(rg.profilePath))
+	if err != nil { return nil, err }
+
+	defer func() {
+		closeErr := f.Close()
+		if err == nil { err = closeErr }
+	}()
+
+	modePrefix := []byte("mode:")
+	pkgSet     := make(map[string]struct{})
+	scanner    := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		if bytes.HasPrefix(line, modePrefix) { continue }
+
+		idx := bytes.IndexByte(line, ':')
+		if idx < 1 { continue }
+
+		pkgSet[path.Dir(string(line[:idx]))] = struct{}{}
+	}
+
+	allPaths := make([]string, 0, len(pkgSet))
+	for p := range pkgSet { allPaths = append(allPaths, p) }
+
+	return allPaths, scanner.Err()
 }
 
 // loadPackages awaits the loading of all packages comprising a module, reporting progress on each tick.

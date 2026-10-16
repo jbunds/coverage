@@ -68,6 +68,7 @@ linters:
             - os
             - os/exec
             - os/signal
+            - path
             - path/filepath
             - runtime
             - slices

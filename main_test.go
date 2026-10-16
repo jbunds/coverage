@@ -142,7 +142,7 @@ func TestResolveRepoURLs(t *testing.T) {
 	}
 }
 
-func TestGetAllPkgPaths(t *testing.T) {
+func TestPkgPaths(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name        string
@@ -180,7 +180,7 @@ func TestGetAllPkgPaths(t *testing.T) {
 				profilePath: tt.profilePath,
 				fsys:        &mockFS{FS: tt.fsys},
 			}
-			got, err := rg.getAllPkgPaths()
+			got, err := rg.pkgPaths()
 			if gotErr, wantErr := errStr(err), errStr(tt.wantErr); gotErr != wantErr {
 				t.Errorf("getAllPkgPaths(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, gotErr, wantErr)
 			}
