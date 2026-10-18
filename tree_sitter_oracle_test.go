@@ -24,7 +24,7 @@ import (
 //
 // TODO(jbunds): add targeted table-driven cases for identifier
 //               classification of constructs where the oracle is
-//               structurally blind (e.g. generics, method values)
+//               structurally blind (e.g., generics, method values)
 
 type span struct {
 	start, end int
@@ -42,7 +42,7 @@ func sortSpans(s []span) {
 // permittedClasses maps a tree-sitter-go capture to the set of CSS classes
 // the classifier may emit for that span.
 //
-// The grammar is syntactic and coarse (e.g. all identifiers are @variable),
+// the grammar is syntactic and coarse (e.g., all identifiers are @variable),
 // while the classifier uses type info to distinguish sub-roles, so it may
 // emit a more specific class than the capture implies.
 func permittedClasses(capture string) []string {
