@@ -16,14 +16,19 @@ import (
 
 // differential smoke test
 //
-// the identifier-classification guarantee is limited by the oracle's @variable catch-all
+// the oracle (tree-sitter-go) is purely syntactic: all identifiers
+// are captured as @variable, so it cannot validate which sub-role
+// the classifier assigns (call vs. field vs. arg vs. type).
 //
-// TODO(jbunds): consider adding targeted table-driven cases for, e.g., generics and method values where the oracle can't help
+// position and non-identifier classification are fully asserted.
+//
+// TODO(jbunds): add targeted table-driven cases for identifier
+//               classification of constructs where the oracle is
+//               structurally blind (e.g. generics, method values)
 
 type span struct {
-	start int
-	end   int
-	label string // oracle: raw capture name; subject: CSS class name
+	start, end int
+	label      string // oracle: raw capture name; subject: CSS class name
 }
 
 func sortSpans(s []span) {
