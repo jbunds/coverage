@@ -97,9 +97,9 @@ func (c *syntaxClassifier) classify(tok token.Token, pos token.Pos, lit string) 
 	case token.PACKAGE, token.IMPORT, token.STRUCT,   token.INTERFACE,
 	     token.TYPE,    token.FUNC,   token.CONST,    token.VAR,         token.MAP,
 	     token.IF,      token.ELSE,   token.FOR,      token.RANGE,
-			 token.RETURN,  token.BREAK,  token.CONTINUE, token.GOTO,
+	     token.RETURN,  token.BREAK,  token.CONTINUE, token.GOTO,
 	     token.SWITCH,  token.CASE,   token.DEFAULT,  token.FALLTHROUGH,
-			 token.GO,      token.SELECT, token.CHAN,     token.DEFER:
+	     token.GO,      token.SELECT, token.CHAN,     token.DEFER:
 		return "kw"
 
 	case token.STRING:
