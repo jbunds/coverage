@@ -7,7 +7,7 @@
 tmpdir=$(mktemp -d) || exit 1
 trap 'rm -rf $tmpdir' EXIT
 
-for skip in '-skip TestIntegrationTest' ''; do  #fuglyButFunctional
+for skip in '-skip TestIntegrationTest|TestClassifierMatchesTreeSitter' ''; do  #fuglyButFunctional
   go test -race -coverprofile cov.out $skip
   go run . -n -gomod go.mod -coverprofile cov.out -outdir $tmpdir
   cp cov.out testdata
