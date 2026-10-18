@@ -77,21 +77,26 @@ func TestClassifierMatchesTreeSitter(t *testing.T) {
 	pkgs, err := packages.Load(&packages.Config{
 		Mode: packages.NeedSyntax   |
 		      packages.NeedTypesInfo,
-	}, "."); if err != nil { t.Fatal(err) }
+	}, ".")
+	if err != nil { t.Fatal(err) }
 	if len(pkgs) != 1 { t.Fatalf("expected 1 package, got %d", len(pkgs)) }
+
 	pkg := pkgs[0]
 	if len(pkg.Errors) > 0 { t.Fatalf("load errors: %v", pkg.Errors) }
 
 	entry  := grammars.DetectLanguageByName("go")
-	h, err := gotreesitter.NewHighlighter(entry.Language(), entry.HighlightQuery)
-	if err != nil { t.Fatal(err) }
 
 	for _, file := range pkg.Syntax {
 		name := pkg.Fset.File(file.Pos()).Name()
 		t.Run(filepath.Base(name), func(t *testing.T) {
-			src, err := os.ReadFile(name); if err != nil { t.Fatal(err) } // #nosec G304
-			toFile   := pkg.Fset.File(file.Pos())
+			t.Parallel()
 
+			src, err := os.ReadFile(name); if err != nil { t.Fatal(err) } // #nosec G304
+
+			h, err := gotreesitter.NewHighlighter(entry.Language(), entry.HighlightQuery)
+			if err != nil { t.Fatal(err) }
+
+			toFile     := pkg.Fset.File(file.Pos())
 			classifier := buildSyntaxClassifier(file, pkg.TypesInfo)
 
 			var (
