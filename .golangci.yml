@@ -92,6 +92,7 @@ linters:
           files:
             - "$test"
             - "!**/integration_test.go"
+            - "!**/tree_sitter_oracle_test.go"
           allow:
             - bytes
             - context
@@ -120,15 +121,22 @@ linters:
           list-mode: strict
           files:
             - "**/integration_test.go"
+            - "**/tree_sitter_oracle_test.go"
           allow:
             - go/build
+            - go/scanner
+            - go/token
             - io
             - os
             - os/exec
             - path/filepath
+            - slices
+            - sort
             - strings
             - testing
             - github.com/google/go-cmp/cmp
+            - github.com/odvcencio/gotreesitter
+            - github.com/odvcencio/gotreesitter/grammars
             - golang.org/x/tools/cover
             - golang.org/x/tools/go/packages
   exclusions:

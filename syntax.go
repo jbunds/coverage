@@ -75,6 +75,60 @@ func buildSyntaxClassifier(fileAST *ast.File, typeInfo *types.Info) (c *syntaxCl
 	return
 }
 
+// classify returns the syntax CSS class for the token at the given position.
+//
+// It performs a pure lookup: no AST navigation or state mutation occurs.
+func (c *syntaxClassifier) classify(tok token.Token, pos token.Pos, lit string) string {
+	if tok.IsOperator() {
+		switch tok {
+		case token.LPAREN, token.RPAREN,
+		     token.LBRACK, token.RBRACK,
+		     token.LBRACE, token.RBRACE,
+		     token.PERIOD, token.COMMA,
+		     token.COLON,  token.SEMICOLON:
+			return "base"
+		default:
+			return "oper"
+		}
+	}
+
+	switch tok {
+
+	case token.PACKAGE, token.IMPORT, token.STRUCT,   token.INTERFACE,
+	     token.TYPE,    token.FUNC,   token.CONST,    token.VAR,         token.MAP,
+	     token.IF,      token.ELSE,   token.FOR,      token.RANGE,
+			 token.RETURN,  token.BREAK,  token.CONTINUE, token.GOTO,
+	     token.SWITCH,  token.CASE,   token.DEFAULT,  token.FALLTHROUGH,
+			 token.GO,      token.SELECT, token.CHAN,     token.DEFER:
+		return "kw"
+
+	case token.STRING:
+		return "string"
+
+	// tree-sitter-go captures token.CHAR (rune_literal) as @character
+	// gruvbox.nvim maps @character to the same purple as @number
+	case token.CHAR, token.INT, token.FLOAT, token.IMAG:
+		return "number"
+
+	case token.COMMENT:
+		return "comment"
+
+	case token.IDENT:
+		switch {
+		case c.typePos[pos]:      return "type"  // type declaration names
+		case c.typeExprPos[pos]:  return "type"  // type references
+		case c.fieldPos[pos]:     return "field" // struct field names
+		case c.funcPos[pos]:      return "call"  // function & method names & calls
+		case c.argPos[pos]:       return "arg"   // function & method arguments
+		case c.builtinTypes[lit]: return "type"  // primitives + error, any
+		case c.builtinFuncs[lit]: return "call"  // builtin function calls
+		}
+
+	}
+
+	return "base"
+}
+
 func (c *syntaxClassifier) visitFuncDecl(x *ast.FuncDecl) {
 	if x.Name != nil {
 		c.funcPos[x.Name.NamePos] = true
@@ -227,61 +281,6 @@ func (c *syntaxClassifier) visitInterfaceType(x *ast.InterfaceType) {
 			}
 		}
 	}
-}
-
-// classify returns the syntax CSS class for the token at the given position.
-//
-// It performs a pure lookup: no AST navigation or state mutation occurs.
-func (c *syntaxClassifier) classify(tok token.Token, pos token.Pos, lit string) string {
-	if tok.IsOperator() {
-		switch tok {
-		case token.LPAREN, token.RPAREN,
-		     token.LBRACK, token.RBRACK,
-		     token.LBRACE, token.RBRACE,
-		     token.COMMA,  token.PERIOD,
-		     token.COLON,  token.SEMICOLON:
-			return "base"
-		default:
-			return "oper"
-		}
-	}
-
-	switch tok {
-
-	case token.PACKAGE, token.IMPORT:
-		return "dir"
-
-	case token.FUNC,    token.VAR,   token.CONST,  token.TYPE,
-	     token.MAP,     token.CHAN,  token.STRUCT, token.INTERFACE,
-	     token.IF,      token.ELSE,  token.FOR,    token.RANGE,
-	     token.SWITCH,  token.CASE,  token.SELECT, token.FALLTHROUGH,
-	     token.BREAK,   token.GOTO,  token.RETURN, token.CONTINUE,
-	     token.DEFAULT, token.DEFER, token.GO:
-		return "decl"
-
-	case token.STRING:
-		return "string"
-
-	case token.CHAR, token.INT, token.FLOAT, token.IMAG:
-		return "number"
-
-	case token.COMMENT:
-		return "comment"
-
-	case token.IDENT:
-		switch {
-		case c.typePos[pos]:      return "type"  // type declaration names
-		case c.typeExprPos[pos]:  return "type"  // type references
-		case c.fieldPos[pos]:     return "field" // struct field names
-		case c.funcPos[pos]:      return "call"  // function & method names & calls
-		case c.argPos[pos]:       return "arg"   // function & method arguments
-		case c.builtinTypes[lit]: return "type"  // primitives + error, any
-		case c.builtinFuncs[lit]: return "call"  // builtin function calls
-		}
-
-	}
-
-	return "base"
 }
 
 // registerTypeExpr recursively indexes all type-reference

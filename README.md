@@ -152,6 +152,6 @@ The motivation behind the `coverage` module was to provide a richer UI than that
 
 ##### Prior Art
 
-The CSS code ([347 lines](https://github.com/jbunds/coverage/tree/main/css) in total as of this writing) was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it could probably benefit from further refinement. But I am not a CSS expert, and it fulfills the required behavior as-is.
+The CSS code ([344 lines](https://github.com/jbunds/coverage/tree/main/css) in total as of this writing) was inspired by and adapted from [github.com/psnet/simple-tree][simple-tree], and it could probably benefit from further refinement. But I am not a CSS expert, and it fulfills the required behavior as-is.
 
 [go-better-html-coverage](https://github.com/chmouel/go-better-html-coverage) is similar but provides a much richer UI afforded by its extensive use of JavaScript. I couldn't get it to work with the [Kubernetes][k8s] codebase.

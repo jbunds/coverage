@@ -239,8 +239,10 @@ func (rg *reportGenerator) registerModPaths(fv *flagVals) error {
 	return nil
 }
 
-// goModPaths returns the go.mod paths for file: either the file
-// itself if it's a go.mod file, or the modules listed in a go.work file.
+// goModPaths returns the paths of the go.mod files associated with file.
+//
+// If file is a go.work file, it returns the path to the go.mod file of
+// each module in its use directives; otherwise it returns file itself.
 func (rg *reportGenerator) goModPaths(file string) ([]string, error) {
 	if !strings.HasSuffix(file, ".work") {
 		return []string{file}, nil
@@ -272,9 +274,11 @@ func (rg *reportGenerator) registerModPath(goModFile string) error {
 	}
 
 	goMod, err := modfile.Parse(goModFile, data, nil)
-	if err          != nil ||
-	   goMod.Module == nil {
+	if err != nil {
 		return fmt.Errorf("cannot parse %q: %w", goModFile, err)
+	}
+	if goMod.Module == nil {
+		return fmt.Errorf("%q contains no module directive", goModFile)
 	}
 
 	rg.modPaths = append(rg.modPaths, goMod.Module.Mod.Path)
@@ -356,10 +360,10 @@ func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader,
 		cfg := &packages.Config{
 			Fset:  rg.globalFset,
 			Dir:   filepath.Dir(goModFile),
-			Mode:  packages.NeedName      |
-			       packages.NeedFiles     |
-			       packages.NeedTypesInfo |
-			       packages.NeedSyntax,
+			Mode:  packages.NeedName     | // Name, PkgPath
+			       packages.NeedFiles    | // GoFiles, OtherFiles
+			       packages.NeedSyntax   | // Fset, Syntax
+			       packages.NeedTypesInfo, // Fset, TypesInfo (requires NeedSyntax also be set)
 			Tests: false,
 		}
 
