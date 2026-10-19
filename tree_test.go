@@ -196,7 +196,7 @@ func TestProcessEntry(t *testing.T) {
 			}
 			got, err := tb.processEntry(t.Context(), st)
 			if gotErr, wantErr := errStr(err), errStr(tt.wantErr); gotErr != wantErr {
-        t.Errorf("processEntry(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, gotErr, wantErr)
+				t.Errorf("processEntry(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, gotErr, wantErr)
 			}
 			if diff := cmp.Diff(tt.want, got, cmp.AllowUnexported(entryResult{})); diff != "" {
 				t.Errorf("processEntry(%q) mismatch (-want +got):\n%s", tt.name, diff)

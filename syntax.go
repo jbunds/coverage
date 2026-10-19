@@ -12,13 +12,13 @@ import (
 // classify method to perform a single O(1) lookup during the sequential token scan.
 type syntaxClassifier struct {
 	typeInfo     *types.Info           // maps expressions to their types
-	builtinTypes map[string]bool       // primitives (int, string, bool, etc) + any, error
-	builtinFuncs map[string]bool       // builtin funcs: len, make, append
-	argPos       map[token.Pos]bool    // param and recv decl positions
-	funcPos      map[token.Pos]bool    // func decl, method signature, and call positions
-	typePos      map[token.Pos]bool    // type definition name positions
-	fieldPos     map[token.Pos]bool    // struct field decl and key positions
-	typeExprPos  map[token.Pos]bool    // type expr positions: params, field types, type assertions
+	builtinTypes map[string      ]bool // primitives (int, string, bool, etc) + any, error
+	builtinFuncs map[string      ]bool // builtin funcs: len, make, append
+	argPos       map[token.Pos   ]bool // param and recv decl positions
+	funcPos      map[token.Pos   ]bool // func decl, method signature, and call positions
+	typePos      map[token.Pos   ]bool // type definition name positions
+	fieldPos     map[token.Pos   ]bool // struct field decl and key positions
+	typeExprPos  map[token.Pos   ]bool // type expr positions: params, field types, type assertions
 	activeParams map[types.Object]bool // maps parameter / receiver variable objects
 }
 
@@ -27,11 +27,11 @@ type syntaxClassifier struct {
 func buildSyntaxClassifier(fileAST *ast.File, typeInfo *types.Info) (c *syntaxClassifier) {
 	c = &syntaxClassifier{
 		typeInfo:     typeInfo,
-		funcPos:      make(map[token.Pos]bool),
-		typePos:      make(map[token.Pos]bool),
-		argPos:       make(map[token.Pos]bool),
-		fieldPos:     make(map[token.Pos]bool),
-		typeExprPos:  make(map[token.Pos]bool),
+		funcPos:      make(map[token.Pos   ]bool),
+		typePos:      make(map[token.Pos   ]bool),
+		argPos:       make(map[token.Pos   ]bool),
+		fieldPos:     make(map[token.Pos   ]bool),
+		typeExprPos:  make(map[token.Pos   ]bool),
 		activeParams: make(map[types.Object]bool),
 		builtinTypes: map[string]bool{ // primitives + any, error
 			"int":     true, "int8":      true, "int16":      true,
@@ -325,19 +325,19 @@ func (c *syntaxClassifier) registerTypeExpr(expr ast.Expr) {
 // If trackActive is true, declared variables are also recorded
 // in activeParams for classifying variable references.
 func (c *syntaxClassifier) registerFieldList(fieldList *ast.FieldList, trackActive bool) {
-  if fieldList == nil { return }
-  for _, field := range fieldList.List {
-    for _, name := range field.Names {
-      if name == nil { continue }
-      c.argPos[name.NamePos] = true
-      if trackActive {
-        if obj := c.typeInfo.Defs[name]; obj != nil {
-          c.activeParams[obj] = true
-        }
-      }
-    }
-    c.registerTypeExpr(field.Type)
-  }
+	if fieldList == nil { return }
+	for _, field := range fieldList.List {
+		for _, name := range field.Names {
+			if name == nil { continue }
+			c.argPos[name.NamePos] = true
+			if trackActive {
+				if obj := c.typeInfo.Defs[name]; obj != nil {
+					c.activeParams[obj] = true
+				}
+			}
+		}
+		c.registerTypeExpr(field.Type)
+	}
 }
 
 // isTypeExpr determines if an expression resolves to a TypeName.

@@ -146,7 +146,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 			}
 			err := rg.writeCovHTMLFiles(t.Context(), io.Discard)
 			if got, want := errStr(err), errStr(tt.wantErr); got != want {
-        t.Errorf("writeCovHTMLFiles(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
+				t.Errorf("writeCovHTMLFiles(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
 			}
 			wantLines := strings.Split(strings.TrimSuffix(string(tt.want ), "\n"), "\n")
 			gotLines  := strings.Split(strings.TrimSuffix(string(mfs.data), "\n"), "\n")

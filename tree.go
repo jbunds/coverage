@@ -185,14 +185,14 @@ func (tb *treeBuilder) processDir(ctx context.Context, st *scanState, pkgPath, s
 			})
 		}
 
-    if err := group.Wait(); err != nil {
-      return nil, err
-    }
+		if err := group.Wait(); err != nil {
+			return nil, err
+		}
 
 		slices.SortFunc(childResults, func(a, b *entryResult) int {
 			return strings.Compare(a.srcBasename, b.srcBasename)
 		})
-    
+
 		for _, res := range childResults {
 			dirCovered.Add(res.covered)
 			dirStatements.Add(res.total)
@@ -200,18 +200,18 @@ func (tb *treeBuilder) processDir(ctx context.Context, st *scanState, pkgPath, s
 		}
 	}
 
-  res := &entryResult{
-    pkgPath:     pkgPath,
-    srcBasename: srcBasename,
-    html:        subDirSB.String(),
-    covered:     dirCovered.Load(),
-    total:       dirStatements.Load(),
-  }
-  
-  hb := &htmlBuilder{indent: st.indent, itemID: itemID, subDir: srcBasename}
-  hb.renderSubDirHTML(res)
+	res := &entryResult{
+		pkgPath:     pkgPath,
+		srcBasename: srcBasename,
+		html:        subDirSB.String(),
+		covered:     dirCovered.Load(),
+		total:       dirStatements.Load(),
+	}
 
-  return res, nil
+	hb := &htmlBuilder{indent: st.indent, itemID: itemID, subDir: srcBasename}
+	hb.renderSubDirHTML(res)
+
+	return res, nil
 }
 
 // processFile renders a single <li> tree-node for a Go source file, including its coverge percentage.

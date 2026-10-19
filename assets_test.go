@@ -64,8 +64,8 @@ func TestWriteStaticFiles(t *testing.T) {
 				staticFiles:   tt.staticFiles,
 			}
 			err := rg.writeStaticFiles()
-      if got, want := errStr(err), errStr(tt.wantErr); got != want {
-        t.Errorf("writeStaticFiles(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
+			if got, want := errStr(err), errStr(tt.wantErr); got != want {
+				t.Errorf("writeStaticFiles(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
 			}
 			if diff := cmp.Diff(tt.want, string(mfs.data)); diff != "" {
 				t.Errorf("writeStaticFiles(%q) mismatch (-want +got):\n%s", tt.name, diff)
