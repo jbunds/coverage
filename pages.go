@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"go/parser"
 	"io"
 	"path/filepath"
 	"runtime"
@@ -178,11 +177,7 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 	rg.writePreamble(ew, relPath, unit.profile.FileName)
 
 	fileAST := rg.globalASTs[srcFile]
-	if fileAST == nil {
-		fileAST, err = parser.ParseFile(rg.globalFset, srcFile, src, parser.ParseComments)
-		if err != nil { return fmt.Errorf("cannot parse %q: %v", srcFile, err) }
-	}
-	file := rg.globalFset.File(fileAST.Pos())
+	file    := rg.globalFset.File(fileAST.Pos())
 
 	if err := renderCovHTML(ctx, ew, annotateSource(fileAST, file, src,
 		rg.globalTypes[srcFile],

@@ -3,7 +3,11 @@ package main
 import (
 	"errors"
 	"fmt"
+	"go/ast"
+	"go/importer"
+	"go/parser"
 	"go/token"
+	"go/types"
 	"io"
 	"io/fs"
 	"strings"
@@ -33,22 +37,34 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 				Data: []byte(strings.Join([]string{
 					`package hello`,
 					``,
-					`import "fmt"`,
+					`import (`,
+					`	"context"`,
+					`	"fmt"`,
+					`	"os"`,
+					``,
+					`	"github.com/jbunds/progress"`,
+					`)`,
 					``,
 					`// line comment`,
 					``,
 					`/* block`,
-					`	comment */`,
+					`   comment */`,
 					``,
 					`func hello() {`,
 					``,
 					`	// another line comment`,
 					``,
 					`	/* another`,
-					`		block`,
-					`		comment */`,
+					`	   block`,
+					`	   comment */`,
 					``,
-					`	fmt.Println("hello world")`,
+					`	prog := progress.New(context.Background(), 3, os.Stderr)`,
+					`	defer prog.Close()`,
+					``,
+					`	for range 3 {`,
+					`		fmt.Println("hello world")`,
+					`		prog.Report(float64(1), "said hello")`,
+					`	}`,
 					``,
 					`	// yet another line comment`,
 					`}`,
@@ -79,27 +95,39 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 			`<body id="code" class="line-numbers">`,
 			`<div class="line" data-line="1"><span class="kw">package</span> <span class="base">hello</span></div>`,
 			`<div class="line" data-line="2"></div>`,
-			`<div class="line" data-line="3"><span class="kw">import</span> <span class="string">&#34;fmt&#34;</span></div>`,
-			`<div class="line" data-line="4"></div>`,
-			`<div class="line" data-line="5"><span class="comment">// line comment</span></div>`,
-			`<div class="line" data-line="6"></div>`,
-			`<div class="line" data-line="7"><span class="comment">/* block</span></div>`,
-			`<div class="line" data-line="8"><span class="comment">	comment */</span></div>`,
-			`<div class="line" data-line="9"></div>`,
+			`<div class="line" data-line="3"><span class="kw">import</span> <span class="base">(</span></div>`,
+			`<div class="line" data-line="4">	<span class="string">&#34;context&#34;</span></div>`,
+			`<div class="line" data-line="5">	<span class="string">&#34;fmt&#34;</span></div>`,
+			`<div class="line" data-line="6">	<span class="string">&#34;os&#34;</span></div>`,
+			`<div class="line" data-line="7"></div>`,
+			`<div class="line" data-line="8">	<span class="string">&#34;github.com/jbunds/</span><span class="base">progress</span><span class="string">&#34;</span></div>`,
+			`<div class="line" data-line="9"><span class="base">)</span></div>`,
+			`<div class="line" data-line="10"></div>`,
+			`<div class="line" data-line="11"><span class="comment">// line comment</span></div>`,
+			`<div class="line" data-line="12"></div>`,
+			`<div class="line" data-line="13"><span class="comment">/* block</span></div>`,
+			`<div class="line" data-line="14"><span class="comment">   comment */</span></div>`,
+			`<div class="line" data-line="15"></div>`,
 			`<div class="func"><input type="checkbox" id="func-0" checked/>`,
-			`  <label for="func-0" class="line" data-line="10"><span class="kw">func</span> <span class="call">hello</span><span class="base">(</span><span class="base">)</span> <span class="base">{</span></label>`,
+			`  <label for="func-0" class="line" data-line="16"><span class="kw">func</span> <span class="call">hello</span><span class="base">(</span><span class="base">)</span> <span class="base">{</span></label>`,
 			`  <div class="func-body">`,
-			`    <div class="line" data-line="11"></div>`,
-			`    <div class="line" data-line="12">	<span class="comment">// another line comment</span></div>`,
-			`    <div class="line" data-line="13"></div>`,
-			`    <div class="line" data-line="14">	<span class="comment">/* another</span></div>`,
-			`    <div class="line" data-line="15"><span class="comment">		block</span></div>`,
-			`    <div class="line" data-line="16"><span class="comment">		comment */</span></div>`,
 			`    <div class="line" data-line="17"></div>`,
-			`    <div class="line" data-line="18"><span class="hit">	</span><span class="hit base">fmt</span><span class="hit base">.</span><span class="hit base">Println</span><span class="hit base">(</span><span class="hit string">&#34;hello world&#34;</span><span class="hit base">)</span></div>`,
+			`    <div class="line" data-line="18"><span class="hit">	</span><span class="hit comment">// another line comment</span></div>`,
 			`    <div class="line" data-line="19"></div>`,
-			`    <div class="line" data-line="20">	<span class="comment">// yet another line comment</span></div>`,
-			`    <div class="line" data-line="21"><span class="base">}</span></div>`,
+			`    <div class="line" data-line="20">	<span class="comment">/* another</span></div>`,
+			`    <div class="line" data-line="21"><span class="comment">	   block</span></div>`,
+			`    <div class="line" data-line="22"><span class="comment">	   comment */</span></div>`,
+			`    <div class="line" data-line="23"></div>`,
+			`    <div class="line" data-line="24">	<span class="base">prog</span> <span class="oper">:=</span> <span class="base">progress</span><span class="base">.</span><span class="call">New</span><span class="base">(</span><span class="base">context</span><span class="base">.</span><span class="call">Background</span><span class="base">(</span><span class="base">)</span><span class="base">,</span> <span class="number">3</span><span class="base">,</span> <span class="base">os</span><span class="base">.</span><span class="base">Stderr</span><span class="base">)</span></div>`,
+			`    <div class="line" data-line="25">	<span class="kw">defer</span> <span class="base">prog</span><span class="base">.</span><span class="call">Close</span><span class="base">(</span><span class="base">)</span></div>`,
+			`    <div class="line" data-line="26"></div>`,
+			`    <div class="line" data-line="27">	<span class="kw">for</span> <span class="kw">range</span> <span class="number">3</span> <span class="base">{</span></div>`,
+			`    <div class="line" data-line="28">		<span class="base">fmt</span><span class="base">.</span><span class="call">Println</span><span class="base">(</span><span class="string">&#34;hello world&#34;</span><span class="base">)</span></div>`,
+			`    <div class="line" data-line="29">		<span class="base">prog</span><span class="base">.</span><span class="call">Report</span><span class="base">(</span><span class="type">float64</span><span class="base">(</span><span class="number">1</span><span class="base">)</span><span class="base">,</span> <span class="string">&#34;said hello&#34;</span><span class="base">)</span></div>`,
+			`    <div class="line" data-line="30">	<span class="base">}</span></div>`,
+			`    <div class="line" data-line="31"></div>`,
+			`    <div class="line" data-line="32">	<span class="comment">// yet another line comment</span></div>`,
+			`    <div class="line" data-line="33"><span class="base">}</span></div>`,
 			`  </div>`,
 			`</div>`,
 			`<script src="../../child.js"></script>`,
@@ -112,7 +140,7 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 		wantErr:  errors.New(`cannot read "foo.go": open foo.go: file does not exist`),
 	}, {
 		name:          "MkdirAll fails",
-		fsys:          fstest.MapFS{"foo.go": &fstest.MapFile{}},
+		fsys:          fstest.MapFS{"foo.go": &fstest.MapFile{Data: []byte("package foo")}},
 		profiles:      []*cover.Profile{{FileName: "foo.go"}},
 		mkdirAllFails: true,
 		wantErr:       errors.New(`cannot create directory "some/path": MkdirAll failed`),
@@ -126,28 +154,47 @@ func TestWriteCovHTMLFiles(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			mfs := &mockFS{
 				FS:             tt.fsys,
 				mkdirAllFails:  tt.mkdirAllFails,
 				writeFileFails: tt.writeFileFails,
 			}
+
+			fset := token.NewFileSet()
+			asts := make(map[string]*ast.File)
+			typs := make(map[string]*types.Info)
+
+			for _, prof := range tt.profiles {
+				src, err           := fs.ReadFile(tt.fsys, prof.FileName);                              if err != nil { continue } // SUT will yield an error on its own read
+				fileAST, err       := parser.ParseFile(fset, prof.FileName, src, parser.ParseComments); if err != nil { t.Fatal(err) }
+				pkg                := types.NewPackage(fileAST.Name.Name, fileAST.Name.Name)
+				typs[prof.FileName] = newTypeInfo(t, fset, pkg, []*ast.File{fileAST})
+				asts[prof.FileName] = fileAST
+			}
+
 			rg := &reportGenerator{
 				write:             true,
 				fsys:              mfs,
 				outRoot:           &mockRoot{name: "some/path"},
 				covState:          &coverageState{},
 				profiles:          tt.profiles,
-				globalFset:        token.NewFileSet(),
+				globalFset:        fset,
+				globalASTs:        asts,
+				globalTypes:       typs,
 				pkgDirCache:       tt.pkgDirCache,
 				iconFilename:      "favicon.ico",
 				styleCSSFilename:  "style.css",
 				syntaxCSSFilename: "syntax.css",
 				childJSFilename:   "child.js",
 			}
+
 			err := rg.writeCovHTMLFiles(t.Context(), io.Discard)
+
 			if got, want := errStr(err), errStr(tt.wantErr); got != want {
 				t.Errorf("writeCovHTMLFiles(%q) returned unexpected error:\ngot:  %v\nwant: %v", tt.name, got, want)
 			}
+
 			wantLines := strings.Split(strings.TrimSuffix(string(tt.want ), "\n"), "\n")
 			gotLines  := strings.Split(strings.TrimSuffix(string(mfs.data), "\n"), "\n")
 			var rep reporter
@@ -296,4 +343,22 @@ func TestWriteTemplateFile(t *testing.T) {
 			}
 		})
 	}
+}
+
+func newTypeInfo(t *testing.T, fset *token.FileSet, pkg *types.Package, files []*ast.File) *types.Info {
+	t.Helper()
+	info := &types.Info{
+		Defs:       make(map[*ast.Ident       ]types.Object),
+		Uses:       make(map[*ast.Ident       ]types.Object),
+		Types:      make(map[ast.Expr         ]types.TypeAndValue),
+		Instances:  make(map[*ast.Ident       ]types.Instance),
+		Implicits:  make(map[ast.Node         ]types.Object),
+		Selections: make(map[*ast.SelectorExpr]*types.Selection),
+		Scopes:     make(map[ast.Node         ]*types.Scope),
+	}
+	if err := types.NewChecker(&types.Config{
+		Importer: importer.ForCompiler(fset, "source", nil)}, fset, pkg, info).Files(files); err != nil {
+		t.Fatal(err)
+	}
+	return info
 }

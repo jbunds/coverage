@@ -14,10 +14,11 @@ type syntaxClassifier struct {
 	typeInfo     *types.Info           // maps expressions to their types
 	builtinTypes map[string      ]bool // primitives (int, string, bool, etc) + any, error
 	builtinFuncs map[string      ]bool // builtin funcs: len, make, append
-	argPos       map[token.Pos   ]bool // param and recv decl positions
-	funcPos      map[token.Pos   ]bool // func decl, method signature, and call positions
+	importPos    map[token.Pos   ]bool // import path string literal positions
 	typePos      map[token.Pos   ]bool // type definition name positions
+	funcPos      map[token.Pos   ]bool // func decl, method signature, and call positions
 	fieldPos     map[token.Pos   ]bool // struct field decl and key positions
+	argPos       map[token.Pos   ]bool // param and recv decl positions
 	typeExprPos  map[token.Pos   ]bool // type expr positions: params, field types, type assertions
 	activeParams map[types.Object]bool // maps parameter / receiver variable objects
 }
@@ -27,10 +28,11 @@ type syntaxClassifier struct {
 func buildSyntaxClassifier(fileAST *ast.File, typeInfo *types.Info) (c *syntaxClassifier) {
 	c = &syntaxClassifier{
 		typeInfo:     typeInfo,
-		funcPos:      make(map[token.Pos   ]bool),
+		importPos:    make(map[token.Pos   ]bool),
 		typePos:      make(map[token.Pos   ]bool),
-		argPos:       make(map[token.Pos   ]bool),
+		funcPos:      make(map[token.Pos   ]bool),
 		fieldPos:     make(map[token.Pos   ]bool),
+		argPos:       make(map[token.Pos   ]bool),
 		typeExprPos:  make(map[token.Pos   ]bool),
 		activeParams: make(map[types.Object]bool),
 		builtinTypes: map[string]bool{ // primitives + any, error
@@ -54,6 +56,7 @@ func buildSyntaxClassifier(fileAST *ast.File, typeInfo *types.Info) (c *syntaxCl
 
 	ast.Inspect(fileAST, func(n ast.Node) bool {
 		switch x := n.(type) {
+		case *ast.ImportSpec:     c.visitImportSpec(x)
 		case *ast.FuncDecl:       c.visitFuncDecl(x)
 		case *ast.FuncLit:        c.visitFuncLit(x)
 		case *ast.CompositeLit:   c.visitCompositeLit(x)
@@ -127,6 +130,10 @@ func (c *syntaxClassifier) classify(tok token.Token, pos token.Pos, lit string) 
 	}
 
 	return "base"
+}
+
+func (c *syntaxClassifier) visitImportSpec(x *ast.ImportSpec) {
+	c.importPos[x.Path.Pos()] = true
 }
 
 func (c *syntaxClassifier) visitFuncDecl(x *ast.FuncDecl) {

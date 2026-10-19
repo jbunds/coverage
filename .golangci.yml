@@ -100,6 +100,8 @@ linters:
             - flag
             - fmt
             - go/ast
+            - go/importer
+            - go/parser
             - go/token
             - go/types
             - io

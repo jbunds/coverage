@@ -31,19 +31,21 @@ type annotatedLine struct {
 	isFuncEnd bool   // true on the last line of a function
 }
 
-// pendingToken is a source fragment buffered between coverage class boundaries.
-type pendingToken struct {
+// srcSpan is a contiguous range of source bytes with its syntax class.
+//
+// It is emitted immediately or buffered in pendingSpans between coverage boundaries.
+type srcSpan struct {
 	fragment []byte
 	absStart int
-	synClass string // per-token
+	synClass string
 }
 
 // annotateSource scans src and returns one annotatedLine per source line.
 func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *types.Info, blocks []*profileBlock, funcs []funcSpan) []annotatedLine {
 	var (
-		pendingTokens []pendingToken
-		pendingClass  string
-		lastOffset    int
+		lastOffset   int
+		pendingClass string
+		pendingSpans []srcSpan
 	)
 
 	lineOffsets := make([]int, 0, 256)
@@ -56,10 +58,10 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 
 	buf   := new(strings.Builder)
 	flush := func() {
-		for _, pt := range pendingTokens {
-			writeTokenFragment(buf, pt.fragment, pt.absStart, pendingClass, pt.synClass, blocks)
+		for _, ps := range pendingSpans {
+			writeSpan(buf, ps.fragment, ps.absStart, pendingClass, ps.synClass, blocks)
 		}
-		pendingTokens = pendingTokens[:0]
+		pendingSpans = pendingSpans[:0]
 	}
 
 	classifier := buildSyntaxClassifier(fileAST, typeInfo)
@@ -71,7 +73,7 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 		if tok == token.EOF {
 			flush()
 			if lastOffset < len(src) {
-				writeTokenFragment(buf, src[lastOffset:], lastOffset, "", "", blocks)
+				writeSpan(buf, src[lastOffset:], lastOffset, "", "", blocks)
 			}
 			break
 		}
@@ -93,6 +95,18 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 		covClass := coverClass(blocks, startOffset, endOffset)
 		synClass := classifier.classify(tok, pos, lit)
 
+		spans := []srcSpan{{src[startOffset : endOffset], startOffset, synClass}}
+		if tok == token.STRING && classifier.importPos[pos] {
+			if idx := strings.LastIndex(lit, "/"); idx > 0 {
+				midOffset := startOffset + idx
+				spans      = []srcSpan{
+					{src[startOffset   : midOffset + 1], startOffset,   "string"},
+					{src[midOffset + 1 : endOffset - 1], midOffset + 1, "base"  },
+					{src[endOffset - 1 : endOffset    ], endOffset - 1, "string"},
+				}
+			}
+		}
+
 		if covClass != pendingClass {
 			flush()
 			pendingClass = covClass
@@ -100,14 +114,16 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 
 		if pendingClass != "" {
 			if startOffset > lastOffset {
-				pendingTokens = append(pendingTokens, pendingToken{src[lastOffset:startOffset], startOffset, ""})
+				pendingSpans = append(pendingSpans, srcSpan{src[lastOffset : startOffset], lastOffset, ""})
 			}
-			pendingTokens = append(pendingTokens, pendingToken{src[startOffset:endOffset], startOffset, synClass})
+			pendingSpans = append(pendingSpans, spans...)
 		} else {
 			if startOffset > lastOffset {
-				writeTokenFragment(buf, src[lastOffset:startOffset], lastOffset, "", "", blocks)
+				writeSpan(buf, src[lastOffset : startOffset], lastOffset, "", "", blocks)
 			}
-			writeTokenFragment(buf, src[startOffset:endOffset], startOffset, "", synClass, blocks)
+			for _, span := range spans {
+				writeSpan(buf, span.fragment, span.absStart, "", span.synClass, blocks)
+			}
 		}
 
 		lastOffset = endOffset
@@ -126,12 +142,12 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 	return lines
 }
 
-// writeTokenFragment writes a token fragment to buf, wrapping
-// it in a span with coverage and syntax classes if non-empty.
+// writeSpan writes a fragment to buf, wrapping it in a <span>
+// element with coverage and syntax classes if non-empty.
 //
 // single-line fragments (the common case) are emitted directly;
-// multi-line fragments are delegated to writeMultiLineFragment.
-func writeTokenFragment(buf *strings.Builder, fragment []byte, baseFileOffset int, baseCovClass, synClass string, blocks []*profileBlock) {
+// multi-line fragments are delegated to writeMultiLineSpan.
+func writeSpan(buf *strings.Builder, fragment []byte, baseFileOffset int, baseCovClass, synClass string, blocks []*profileBlock) {
 	if bytes.IndexByte(fragment, '\n') < 0 { // fast path for the overwhelming majority of cases
 		covClass := baseCovClass
 		if covClass == "" {
@@ -160,12 +176,12 @@ func writeTokenFragment(buf *strings.Builder, fragment []byte, baseFileOffset in
 		return
 	}
 
-	writeMultiLineFragment(buf, fragment, baseFileOffset, baseCovClass, synClass, blocks) // rare since statements are usually separated by whitespace
+	writeMultiLineSpan(buf, fragment, baseFileOffset, baseCovClass, synClass, blocks) // rare since statements are usually separated by whitespace
 }
 
-// writeMultiLineFragment splits a multi-line fragment across newlines and
+// writeMultiLineSpan splits a multi-line fragment across newlines and
 // resolves absolute sub-line boundaries for coverage classification.
-func writeMultiLineFragment(buf *strings.Builder, fragment []byte, baseFileOffset int, baseCovClass, synClass string, blocks []*profileBlock) {
+func writeMultiLineSpan(buf *strings.Builder, fragment []byte, baseFileOffset int, baseCovClass, synClass string, blocks []*profileBlock) {
 	newline        := []byte("\n")
 	lines          := bytes.SplitAfter(fragment, newline)
 	relativeOffset := 0
