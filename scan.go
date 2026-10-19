@@ -42,6 +42,7 @@ type srcSpan struct {
 
 // annotateSource scans src and returns one annotatedLine per source line.
 func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *types.Info, blocks []*profileBlock, funcs []funcSpan) []annotatedLine {
+	// TODO(jbunds): refactor this function since it's grown to be ~100 lines long
 	var (
 		lastOffset   int
 		pendingClass string
