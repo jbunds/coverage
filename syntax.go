@@ -304,6 +304,8 @@ func (c *syntaxClassifier) registerTypeExpr(expr ast.Expr) {
 		}
 	case *ast.StarExpr:
 		c.registerTypeExpr(t.X)
+	case *ast.ParenExpr:
+		c.registerTypeExpr(t.X)
 	case *ast.ArrayType:
 		c.registerTypeExpr(t.Elt)
 	case *ast.MapType:
@@ -311,6 +313,14 @@ func (c *syntaxClassifier) registerTypeExpr(expr ast.Expr) {
 		c.registerTypeExpr(t.Value)
 	case *ast.ChanType:
 		c.registerTypeExpr(t.Value)
+	case *ast.IndexExpr:
+		c.registerTypeExpr(t.X)
+		c.registerTypeExpr(t.Index)
+	case *ast.IndexListExpr:
+		c.registerTypeExpr(t.X)
+		for _, idx := range t.Indices {
+			c.registerTypeExpr(idx)
+		}
 	case *ast.FuncType:
 		if t.Params != nil {
 			for _, field := range t.Params.List {
