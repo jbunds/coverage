@@ -57,20 +57,20 @@ func buildSyntaxClassifier(fileAST *ast.File, typeInfo *types.Info) (c *syntaxCl
 	ast.Inspect(fileAST, func(n ast.Node) bool {
 		switch x := n.(type) {
 		case *ast.ImportSpec:     c.visitImportSpec(x)
-		case *ast.FuncDecl:       c.visitFuncDecl(x)
-		case *ast.FuncLit:        c.visitFuncLit(x)
-		case *ast.CompositeLit:   c.visitCompositeLit(x)
-		case *ast.TypeAssertExpr: c.registerTypeExpr(x.Type)
+		case *ast.TypeSpec:       c.visitTypeSpec(x)
+		case *ast.InterfaceType:  c.visitInterfaceType(x)
+		case *ast.StructType:     c.visitStructType(x)
 		case *ast.ValueSpec:      c.registerTypeExpr(x.Type)
-		case *ast.IndexExpr:      c.visitIndexExpr(x)
-		case *ast.IndexListExpr:  c.visitIndexListExpr(x)
-		case *ast.ChanType:       c.registerTypeExpr(x.Value)
-		case *ast.CallExpr:       c.visitCallExpr(x)
+		case *ast.FuncDecl:       c.visitFuncDecl(x)
 		case *ast.Ident:          c.visitIdent(x)
 		case *ast.SelectorExpr:   c.visitSelectorExpr(x)
-		case *ast.TypeSpec:       c.visitTypeSpec(x)
-		case *ast.StructType:     c.visitStructType(x)
-		case *ast.InterfaceType:  c.visitInterfaceType(x)
+		case *ast.CallExpr:       c.visitCallExpr(x)
+		case *ast.CompositeLit:   c.visitCompositeLit(x)
+		case *ast.FuncLit:        c.visitFuncLit(x)
+		case *ast.IndexExpr:      c.visitIndexExpr(x)
+		case *ast.IndexListExpr:  c.visitIndexListExpr(x)
+		case *ast.TypeAssertExpr: c.registerTypeExpr(x.Type)
+		case *ast.ChanType:       c.registerTypeExpr(x.Value)
 		}
 		return true
 	})
@@ -210,14 +210,15 @@ func (c *syntaxClassifier) visitCallExpr(x *ast.CallExpr) {
 		}
 	}
 	for _, arg := range x.Args {
-		if c.isTypeArg(arg) {
-			c.registerTypeExpr(arg)
+		if tv, ok := c.typeInfo.Types[arg]; ok {
+			if tv.IsType() {
+				c.registerTypeExpr(arg)
+			}
 		}
 	}
 }
 
 func (c *syntaxClassifier) visitIdent(x *ast.Ident) {
-	if c.typeInfo == nil { return }
 	if obj := c.typeInfo.ObjectOf(x); obj != nil {
 		if c.activeParams[obj] {
 			c.argPos[x.NamePos] = true
@@ -226,7 +227,6 @@ func (c *syntaxClassifier) visitIdent(x *ast.Ident) {
 }
 
 func (c *syntaxClassifier) visitSelectorExpr(x *ast.SelectorExpr) {
-	if c.typeInfo == nil { return }
 	if obj := c.typeInfo.ObjectOf(x.Sel); obj != nil {
 		switch v := obj.(type) {
 		case *types.Func:
@@ -293,7 +293,6 @@ func (c *syntaxClassifier) visitInterfaceType(x *ast.InterfaceType) {
 // registerTypeExpr recursively indexes all type-reference
 // positions within a type expression into typeExprPos.
 func (c *syntaxClassifier) registerTypeExpr(expr ast.Expr) {
-	if expr == nil { return }
 	switch t := expr.(type) {
 	case *ast.Ellipsis:
 		c.registerTypeExpr(t.Elt)
@@ -335,7 +334,6 @@ func (c *syntaxClassifier) registerFieldList(fieldList *ast.FieldList, trackActi
 	if fieldList == nil { return }
 	for _, field := range fieldList.List {
 		for _, name := range field.Names {
-			if name == nil { continue }
 			c.argPos[name.NamePos] = true
 			if trackActive {
 				if obj := c.typeInfo.Defs[name]; obj != nil {
@@ -366,16 +364,6 @@ func (c *syntaxClassifier) isTypeExpr(expr ast.Expr) bool {
 			_, isType := obj.(*types.TypeName)
 			return isType
 		}
-	}
-
-	return false
-}
-
-// isTypeArg determines if an expression represents a type context.
-func (c *syntaxClassifier) isTypeArg(expr ast.Expr) bool {
-	if c.typeInfo == nil { return false }
-	if tv, ok := c.typeInfo.Types[expr]; ok {
-		return tv.IsType()
 	}
 
 	return false

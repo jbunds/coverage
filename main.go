@@ -400,8 +400,8 @@ func (rg *reportGenerator) primeCaches(ctx context.Context, pkgLoader pkgLoader,
 		}
 
 		for _, syntaxFile := range pkg.Syntax {
-			f := pkg.Fset.File(syntaxFile.Pos()) // non-nil: coverage profile indicates compilation, which implies FileSet registration
-			rg.globalTypes[f.Name()] = pkg.TypesInfo
+			f := pkg.Fset.File(syntaxFile.Pos())     // non-nil: coverage profile indicates compilation, which implies FileSet registration
+			rg.globalTypes[f.Name()] = pkg.TypesInfo // non-nil: go/packages populates TypesInfo when Mode includes NeedTypesInfo and len(Syntax) > 0
 			rg.globalASTs[ f.Name()] = syntaxFile
 			astsProg.Report(1, f.Name())
 		}
