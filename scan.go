@@ -127,6 +127,7 @@ func writeGroup(w *spanWriter, spans []srcSpan, covClass string, startOffset, en
 	w.lastOffset = endOffset
 }
 
+// flushSpans writes all pending spans to buf and resets the pendingSpans slice.
 func flushSpans(w *spanWriter) {
 	for _, ps := range w.pendingSpans {
 		writeSpan(w.buf, ps.fragment, ps.absStart, w.pendingClass, ps.synClass, w.blocks)
@@ -141,33 +142,9 @@ func flushSpans(w *spanWriter) {
 // multi-line fragments are delegated to writeMultiLineSpan.
 func writeSpan(buf *strings.Builder, fragment []byte, baseFileOffset int, baseCovClass, synClass string, blocks []*profileBlock) {
 	if bytes.IndexByte(fragment, '\n') < 0 { // fast path for the overwhelming majority of cases
-		covClass := baseCovClass
-		if covClass == "" {
-			covClass = coverClass(blocks, baseFileOffset, baseFileOffset + len(fragment))
-		}
-
-		classStr := ""
-		switch {
-		case covClass != "" && synClass != "":
-			classStr = covClass + " " + synClass
-		case covClass != "":
-			classStr = covClass
-		case synClass != "":
-			classStr = synClass
-		}
-
-		if classStr != "" {
-			buf.WriteString(`<span class="`)
-			buf.WriteString(classStr)
-			buf.WriteString(`">`)
-		}
-		writeEscaped(buf, fragment)
-		if classStr != "" {
-			buf.WriteString("</span>")
-		}
+		emitSpan(buf, fragment, baseFileOffset, baseCovClass, synClass, blocks)
 		return
 	}
-
 	writeMultiLineSpan(buf, fragment, baseFileOffset, baseCovClass, synClass, blocks) // rare since statements are usually separated by whitespace
 }
 
@@ -177,38 +154,52 @@ func writeMultiLineSpan(buf *strings.Builder, fragment []byte, baseFileOffset in
 	newline        := []byte("\n")
 	lines          := bytes.SplitAfter(fragment, newline)
 	relativeOffset := 0
+
 	for _, line := range lines {
 		if len(line) == 0 { continue }
 		hasNewline := bytes.HasSuffix(line, newline)
 		content    := line
-		if hasNewline { content = line[:len(line) - 1] }
-		if len(content) > 0 {
-			covClass := baseCovClass
-			if covClass == "" {
-				absStart := baseFileOffset + relativeOffset
-				covClass  = coverClass(blocks, absStart, absStart + len(content))
-			}
-			classStr := ""
-			switch {
-			case covClass != "" && synClass != "":
-				classStr = covClass + " " + synClass
-			case covClass != "":
-				classStr = covClass
-			case synClass != "":
-				classStr = synClass
-			}
-			if classStr != "" {
-				buf.WriteString(`<span class="`)
-				buf.WriteString(classStr)
-				buf.WriteString(`">`)
-			}
-			writeEscaped(buf, content)
-			if classStr != "" {
-				buf.WriteString("</span>")
-			}
+		if hasNewline {
+			content = line[:len(line) - 1]
 		}
-		if hasNewline { buf.WriteByte('\n') }
+		if len(content) > 0 {
+			emitSpan(buf, content, baseFileOffset + relativeOffset, baseCovClass, synClass, blocks)
+		}
+		if hasNewline {
+			buf.WriteByte('\n')
+		}
 		relativeOffset += len(line)
+	}
+}
+
+// emitSpan writes fragment to buf, wrapping it in a <span> element with
+// the resolved coverage and syntax classes if non-empty.
+func emitSpan(buf *strings.Builder, fragment []byte, absStart int, baseCovClass, synClass string, blocks []*profileBlock) {
+	covClass := baseCovClass
+	if covClass == "" {
+		covClass = coverClass(blocks, absStart, absStart+len(fragment))
+	}
+
+	classStr := ""
+	switch {
+	case covClass != "" && synClass != "":
+		classStr = covClass + " " + synClass
+	case covClass != "":
+		classStr = covClass
+	case synClass != "":
+		classStr = synClass
+	}
+
+	if classStr != "" {
+		buf.WriteString(`<span class="`)
+		buf.WriteString(classStr)
+		buf.WriteString(`">`)
+	}
+
+	writeEscaped(buf, fragment)
+
+	if classStr != "" {
+		buf.WriteString("</span>")
 	}
 }
 
@@ -224,6 +215,18 @@ func writeEscaped(buf *strings.Builder, s []byte) {
 	buf.Write(s)
 }
 
+// computeLineOffsets returns the byte offset of each line start in src.
+func computeLineOffsets(src []byte) (offsets []int) {
+	offsets = make([]int, 0, 256)
+	offsets = append(offsets, 0)
+	for i, ch := range src {
+		if ch == '\n' {
+			offsets = append(offsets, i + 1)
+		}
+	}
+	return
+}
+
 // computeBlockOffsets converts cover.ProfileBlock line/column positions to byte offsets.
 //
 // The first block on a given line starts at the line's beginning rather than at its
@@ -232,22 +235,23 @@ func computeBlockOffsets(file *token.File, blocks []cover.ProfileBlock) (out []*
 	lineStarted := make(map[int]bool)
 	out          = make([]*profileBlock, 0, len(blocks))
 
-	for _, b := range blocks {
+	for _, block := range blocks {
 		startOffset := 0
-		if !lineStarted[b.StartLine] {
-			startOffset = file.Offset(file.LineStart(b.StartLine))
-			lineStarted[b.StartLine] = true
+		if !lineStarted[block.StartLine] {
+			startOffset = file.Offset(file.LineStart(block.StartLine))
+			lineStarted[block.StartLine] = true
 		} else {
-			startOffset = file.Offset(file.LineStart(b.StartLine)) + (b.StartCol - 1)
+			startOffset = file.Offset(file.LineStart(block.StartLine)) + (block.StartCol - 1)
 		}
 
-		endOffset := file.Offset(file.LineStart(b.EndLine)) + (b.EndCol - 1)
+		endOffset := file.Offset(file.LineStart(block.EndLine)) + (block.EndCol - 1)
 		out        = append(out, &profileBlock{
 			startOffset: startOffset,
 			endOffset:   endOffset,
-			count:       b.Count,
+			count:       block.Count,
 		})
 	}
+
 	return
 }
 
@@ -264,19 +268,8 @@ func computeFuncSpans(f *ast.File, file *token.File) (out []funcSpan) {
 		})
 		return true
 	})
-	return
-}
 
-// computeLineOffsets returns the byte offset of each line start in src.
-func computeLineOffsets(src []byte) []int {
-	offsets := make([]int, 0, 256)
-	offsets  = append(offsets, 0)
-	for i, ch := range src {
-		if ch == '\n' {
-			offsets = append(offsets, i + 1)
-		}
-	}
-	return offsets
+	return
 }
 
 // coverClass performs an O(log n) lookup over the sorted blocks
@@ -301,9 +294,9 @@ func coverClass(blocks []*profileBlock, start, end int) string {
 
 // finalizeLines splits the rendered buffer into per-line entries
 // and attaches function-span metadata.
-func finalizeLines(raw string, lineOffsets []int, funcSpans []funcSpan) []annotatedLine {
+func finalizeLines(raw string, lineOffsets []int, funcSpans []funcSpan) (lines []annotatedLine) {
 	annotated := strings.Split(strings.TrimRight(raw, "\n"), "\n")
-	lines     := make([]annotatedLine, len(annotated))
+	lines      = make([]annotatedLine, len(annotated))
 
 	for i, text := range annotated {
 		lines[i].text      = text
@@ -311,7 +304,7 @@ func finalizeLines(raw string, lineOffsets []int, funcSpans []funcSpan) []annota
 		lines[i].isFuncEnd = lines[i].funcIdx   >= 0 &&
 		                     lineOffsets[i + 1] >= funcSpans[lines[i].funcIdx].endOffset
 	}
-	return lines
+	return
 }
 
 // splitImportSpans splits an import path string literal into prefix,
@@ -321,7 +314,7 @@ func splitImportSpans(src []byte, startOffset, endOffset int, lit string) []srcS
 		midOffset := startOffset + idx
 		return []srcSpan{
 			{src[startOffset   : midOffset + 1], startOffset,   "string"},
-			{src[midOffset + 1 : endOffset - 1], midOffset + 1, "base"},
+			{src[midOffset + 1 : endOffset - 1], midOffset + 1, "base"  },
 			{src[endOffset - 1 : endOffset    ], endOffset - 1, "string"},
 		}
 	}
