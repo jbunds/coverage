@@ -75,9 +75,10 @@
 │   └── validate.js
 ├── tree.go
 ├── tree_test.go
+├── tree_sitter_oracle_test.go
 ├── trie.go
 ├── ui.go
 └── ui_test.go
 
-11 directories, 68 files
+11 directories, 69 files
 ```
