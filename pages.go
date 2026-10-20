@@ -179,10 +179,8 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 	fileAST := rg.globalASTs[srcFile]
 	file    := rg.globalFset.File(fileAST.Pos())
 
-	if err := renderCovHTML(ctx, ew, annotateSource(fileAST, file, src,
-		rg.globalTypes[srcFile],
-		computeBlockOffsets(file, unit.profile.Blocks),
-		computeFuncSpans(fileAST, file))); err != nil {
+	if err := renderCovHTML(ctx, ew, annotateSource(
+		fileAST, file, src, rg.globalTypes[srcFile], unit.profile)); err != nil {
 		return fmt.Errorf("cannot annotate source file %q: %v", srcFile, err)
 	}
 

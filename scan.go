@@ -13,22 +13,17 @@ import (
 	"golang.org/x/tools/cover"
 )
 
-// profileBlock maps a coverage profile range to its absolute byte offsets in the source file.
+// profileBlock maps a coverage profile range to
+// its absolute byte offsets in the source file.
 type profileBlock struct {
 	startOffset, endOffset, count int
 }
 
-// funcSpan identifies a top-level function in a source file by name and byte offsets.
+// funcSpan identifies a top-level function in
+// a source file by name and byte offsets.
 type funcSpan struct {
 	name                   string
 	startOffset, endOffset int
-}
-
-// annotatedLine is a coverage-annotated single line of source code with func metadata.
-type annotatedLine struct {
-	text      string // annotated HTML for this line (spans, etc)
-	funcIdx   int    // index into funcs, or -1 if not in a function
-	isFuncEnd bool   // true on the last line of a function
 }
 
 // srcSpan is a contiguous range of source bytes with its syntax class.
@@ -40,41 +35,46 @@ type srcSpan struct {
 	synClass string
 }
 
+// spanWriter accumulates buffered spans between coverage-class boundaries.
+type spanWriter struct {
+	buf          *strings.Builder
+	src          []byte
+	blocks       []*profileBlock
+	pendingClass string
+	pendingSpans []srcSpan
+	lastOffset   int
+}
+
+// annotatedLine is a coverage-annotated single
+// line of source code with func metadata.
+type annotatedLine struct {
+	text      string // annotated HTML for this line (spans, etc)
+	funcIdx   int    // index into funcs, or -1 if not in a function
+	isFuncEnd bool   // true on the last line of a function
+}
+
 // annotateSource scans src and returns one annotatedLine per source line.
-func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *types.Info, blocks []*profileBlock, funcs []funcSpan) []annotatedLine {
-	// TODO(jbunds): refactor this function since it's grown to be ~100 lines long
-	var (
-		lastOffset   int
-		pendingClass string
-		pendingSpans []srcSpan
-	)
+func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *types.Info, profile *cover.Profile) []annotatedLine {
+	lineOffsets := computeLineOffsets(src)
+	blocks      := computeBlockOffsets(file, profile.Blocks)
+	funcSpans   := computeFuncSpans(fileAST, file)
+	classifier  := buildSyntaxClassifier(fileAST, typeInfo)
 
-	lineOffsets := make([]int, 0, 256)
-	lineOffsets  = append(lineOffsets, 0)
-	for i, ch := range src {
-		if ch == '\n' {
-			lineOffsets = append(lineOffsets, i + 1)
-		}
+	w := &spanWriter{
+		buf:    new(strings.Builder),
+		src:    src,
+		blocks: blocks,
 	}
 
-	buf   := new(strings.Builder)
-	flush := func() {
-		for _, ps := range pendingSpans {
-			writeSpan(buf, ps.fragment, ps.absStart, pendingClass, ps.synClass, blocks)
-		}
-		pendingSpans = pendingSpans[:0]
-	}
-
-	classifier := buildSyntaxClassifier(fileAST, typeInfo)
-	scnr       := new(scanner.Scanner)
+	scnr := new(scanner.Scanner)
 	scnr.Init(file, src, nil, scanner.ScanComments)
 
 	for {
 		pos, tok, lit := scnr.Scan()
 		if tok == token.EOF {
-			flush()
-			if lastOffset < len(src) {
-				writeSpan(buf, src[lastOffset:], lastOffset, "", "", blocks)
+			flushSpans(w)
+			if w.lastOffset < len(src) {
+				writeSpan(w.buf, w.src[w.lastOffset:], w.lastOffset, "", "", w.blocks)
 			}
 			break
 		}
@@ -88,59 +88,50 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 			endOffset = startOffset + len(tok.String())
 		}
 
-		if lit       == ""          &&
-		   endOffset == startOffset {
-			continue
-		}
-
 		covClass := coverClass(blocks, startOffset, endOffset)
 		synClass := classifier.classify(tok, pos, lit)
 
 		spans := []srcSpan{{src[startOffset : endOffset], startOffset, synClass}}
 		if tok == token.STRING && classifier.importPos[pos] {
-			if idx := strings.LastIndex(lit, "/"); idx > 0 {
-				midOffset := startOffset + idx
-				spans      = []srcSpan{
-					{src[startOffset   : midOffset + 1], startOffset,   "string"},
-					{src[midOffset + 1 : endOffset - 1], midOffset + 1, "base"  },
-					{src[endOffset - 1 : endOffset    ], endOffset - 1, "string"},
-				}
+			if sub := splitImportSpans(src, startOffset, endOffset, lit); sub != nil {
+				spans = sub
 			}
 		}
 
-		if covClass != pendingClass {
-			flush()
-			pendingClass = covClass
-		}
-
-		if pendingClass != "" {
-			if startOffset > lastOffset {
-				pendingSpans = append(pendingSpans, srcSpan{src[lastOffset : startOffset], lastOffset, ""})
-			}
-			pendingSpans = append(pendingSpans, spans...)
-		} else {
-			if startOffset > lastOffset {
-				writeSpan(buf, src[lastOffset : startOffset], lastOffset, "", "", blocks)
-			}
-			for _, span := range spans {
-				writeSpan(buf, span.fragment, span.absStart, "", span.synClass, blocks)
-			}
-		}
-
-		lastOffset = endOffset
+		writeGroup(w, spans, covClass, startOffset, endOffset)
 	}
 
-	annotated := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
-	lines     := make([]annotatedLine, len(annotated))
+	return finalizeLines(w.buf.String(), lineOffsets, funcSpans)
+}
 
-	for i, text := range annotated {
-		lines[i].text      = text
-		lines[i].funcIdx   = funcIndexForOffset(funcs, lineOffsets[i])
-		lines[i].isFuncEnd = lines[i].funcIdx   >= 0 &&
-		                     lineOffsets[i + 1] >= funcs[lines[i].funcIdx].endOffset
+// writeGroup appends spans to the writer, writing uncovered spans immediately,
+// and buffering spans in covered regions (flushed at the next class boundary).
+func writeGroup(w *spanWriter, spans []srcSpan, covClass string, startOffset, endOffset int) {
+	if covClass != w.pendingClass {
+		flushSpans(w)
+		w.pendingClass = covClass
 	}
+	if w.pendingClass != "" {
+		if startOffset > w.lastOffset {
+			w.pendingSpans = append(w.pendingSpans, srcSpan{w.src[w.lastOffset : startOffset], w.lastOffset, ""})
+		}
+		w.pendingSpans = append(w.pendingSpans, spans...)
+	} else {
+		if startOffset > w.lastOffset {
+			writeSpan(w.buf, w.src[w.lastOffset : startOffset], w.lastOffset, "", "", w.blocks)
+		}
+		for _, s := range spans {
+			writeSpan(w.buf, s.fragment, s.absStart, "", s.synClass, w.blocks)
+		}
+	}
+	w.lastOffset = endOffset
+}
 
-	return lines
+func flushSpans(w *spanWriter) {
+	for _, ps := range w.pendingSpans {
+		writeSpan(w.buf, ps.fragment, ps.absStart, w.pendingClass, ps.synClass, w.blocks)
+	}
+	w.pendingSpans = w.pendingSpans[:0]
 }
 
 // writeSpan writes a fragment to buf, wrapping it in a <span>
@@ -221,25 +212,6 @@ func writeMultiLineSpan(buf *strings.Builder, fragment []byte, baseFileOffset in
 	}
 }
 
-// coverClass performs an O(log n) lookup over the sorted blocks slice to determine the
-// coverage state ("hit", "miss", or "") of a specified byte offset range [start, end].
-//
-// precondition: blocks must be sorted in ascending order by endOffset.
-func coverClass(blocks []*profileBlock, start, end int) string {
-	idx := sort.Search(len(blocks), func(i int) bool {
-		return blocks[i].endOffset >= end
-	})
-	if idx   <  len(blocks)             &&
-	   start >= blocks[idx].startOffset &&
-	   end   <= blocks[idx].endOffset   {
-		if blocks[idx].count > 0 {
-			return "hit"
-		}
-		return "miss"
-	}
-	return ""
-}
-
 // writeEscaped writes s to buf, HTML-escaping if s contains escapable chars.
 func writeEscaped(buf *strings.Builder, s []byte) {
 	for i := range len(s) {
@@ -295,9 +267,70 @@ func computeFuncSpans(f *ast.File, file *token.File) (out []funcSpan) {
 	return
 }
 
+// computeLineOffsets returns the byte offset of each line start in src.
+func computeLineOffsets(src []byte) []int {
+	offsets := make([]int, 0, 256)
+	offsets  = append(offsets, 0)
+	for i, ch := range src {
+		if ch == '\n' {
+			offsets = append(offsets, i + 1)
+		}
+	}
+	return offsets
+}
+
+// coverClass performs an O(log n) lookup over the sorted blocks
+// slice to determine the coverage state ("hit", "miss", or "")
+// of a specified byte offset range [start, end].
+//
+// precondition: blocks must be sorted in ascending order by endOffset.
+func coverClass(blocks []*profileBlock, start, end int) string {
+	idx := sort.Search(len(blocks), func(i int) bool {
+		return blocks[i].endOffset >= end
+	})
+	if idx   <  len(blocks)             &&
+	   start >= blocks[idx].startOffset &&
+	   end   <= blocks[idx].endOffset   {
+		if blocks[idx].count > 0 {
+			return "hit"
+		}
+		return "miss"
+	}
+	return ""
+}
+
+// finalizeLines splits the rendered buffer into per-line entries
+// and attaches function-span metadata.
+func finalizeLines(raw string, lineOffsets []int, funcSpans []funcSpan) []annotatedLine {
+	annotated := strings.Split(strings.TrimRight(raw, "\n"), "\n")
+	lines     := make([]annotatedLine, len(annotated))
+
+	for i, text := range annotated {
+		lines[i].text      = text
+		lines[i].funcIdx   = funcIndexForOffset(funcSpans, lineOffsets[i])
+		lines[i].isFuncEnd = lines[i].funcIdx   >= 0 &&
+		                     lineOffsets[i + 1] >= funcSpans[lines[i].funcIdx].endOffset
+	}
+	return lines
+}
+
+// splitImportSpans splits an import path string literal into prefix,
+// base (filename), and suffix sub-spans for syntax highlighting.
+func splitImportSpans(src []byte, startOffset, endOffset int, lit string) []srcSpan {
+	if idx := strings.LastIndex(lit, "/"); idx > 0 {
+		midOffset := startOffset + idx
+		return []srcSpan{
+			{src[startOffset   : midOffset + 1], startOffset,   "string"},
+			{src[midOffset + 1 : endOffset - 1], midOffset + 1, "base"},
+			{src[endOffset - 1 : endOffset    ], endOffset - 1, "string"},
+		}
+	}
+	return nil
+}
+
 // funcIndexForOffset returns the index of the funcSpan containing offset, or -1 if none.
-func funcIndexForOffset(funcs []funcSpan, offset int) int {
-	for i, f := range funcs {
+func funcIndexForOffset(funcSpans []funcSpan, offset int) int {
+	for i, f := range funcSpans {
 		if offset >= f.startOffset &&
 		   offset <  f.endOffset   {
 			return i
@@ -305,14 +338,3 @@ func funcIndexForOffset(funcs []funcSpan, offset int) int {
 	}
 	return -1
 }
-
-// O(log n) implementation of funcIndexForOffset; above is O(n)
-// func funcIndexForOffset(funcs []funcSpan, offset int) int {
-//	i := sort.Search(len(funcs), func(j int) bool { // find the last func with startOffset <= offset
-//		return funcs[j].startOffset > offset
-//	}) - 1                                          // subtract 1 to get that last func
-//	if i >= 0 && offset < funcs[i].endOffset {      // verify offset actually falls within that function's span
-//		return i
-//	}
-//	return -1
-//}
