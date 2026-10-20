@@ -321,6 +321,18 @@ func (c *syntaxClassifier) registerTypeExpr(expr ast.Expr) {
 		for _, idx := range t.Indices {
 			c.registerTypeExpr(idx)
 		}
+	case *ast.InterfaceType:
+		if t.Methods != nil {
+			for _, field := range t.Methods.List {
+				c.registerTypeExpr(field.Type)
+			}
+		}
+	case *ast.StructType:
+		if t.Fields != nil {
+			for _, field := range t.Fields.List {
+				c.registerTypeExpr(field.Type)
+			}
+		}
 	case *ast.FuncType:
 		if t.Params != nil {
 			for _, field := range t.Params.List {
