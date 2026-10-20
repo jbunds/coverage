@@ -22,13 +22,13 @@
   --syn-comment: #928374; /* gray         */
 }
 
-.base     { color: var(--text-color ) }
-.kw       { color: var(--syn-kw     ) }
-.oper     { color: var(--syn-oper   ) }
-.call     { color: var(--syn-call   ) }
-.type     { color: var(--syn-type   ) }
-.field    { color: var(--syn-field  ) }
-.arg      { color: var(--syn-arg    ) }
-.string   { color: var(--syn-string ) }
-.number   { color: var(--syn-number ) }
+.base     { color: var(--text-color) }
+.kw       { color: var(--syn-kw    ) }
+.oper     { color: var(--syn-oper  ) }
+.call     { color: var(--syn-call  ) }
+.type     { color: var(--syn-type  ) }
+.field    { color: var(--syn-field ) }
+.arg      { color: var(--syn-arg   ) }
+.string   { color: var(--syn-string) }
+.number   { color: var(--syn-number) }
 .comment  { font-style: italic; color: var(--syn-comment) }
