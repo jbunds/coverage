@@ -72,7 +72,7 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 	for {
 		pos, tok, lit := scnr.Scan()
 		if tok == token.EOF {
-			flushSpans(w)
+			w.flushSpans()
 			if w.lastOffset < len(src) {
 				writeSpan(w.buf, w.src[w.lastOffset:], w.lastOffset, "", "", w.blocks)
 			}
@@ -98,7 +98,7 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 			}
 		}
 
-		writeGroup(w, spans, covClass, startOffset, endOffset)
+		w.writeGroup(spans, covClass, startOffset, endOffset)
 	}
 
 	return finalizeLines(w.buf.String(), lineOffsets, funcSpans)
@@ -106,9 +106,9 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 
 // writeGroup appends spans to the writer, writing uncovered spans immediately,
 // and buffering spans in covered regions (flushed at the next class boundary).
-func writeGroup(w *spanWriter, spans []srcSpan, covClass string, startOffset, endOffset int) {
+func (w *spanWriter) writeGroup(spans []srcSpan, covClass string, startOffset, endOffset int) {
 	if covClass != w.pendingClass {
-		flushSpans(w)
+		w.flushSpans()
 		w.pendingClass = covClass
 	}
 	if w.pendingClass != "" {
@@ -128,9 +128,9 @@ func writeGroup(w *spanWriter, spans []srcSpan, covClass string, startOffset, en
 }
 
 // flushSpans writes all pending spans to buf and resets the pendingSpans slice.
-func flushSpans(w *spanWriter) {
-	for _, ps := range w.pendingSpans {
-		writeSpan(w.buf, ps.fragment, ps.absStart, w.pendingClass, ps.synClass, w.blocks)
+func (w *spanWriter) flushSpans() {
+	for _, s := range w.pendingSpans {
+		writeSpan(w.buf, s.fragment, s.absStart, w.pendingClass, s.synClass, w.blocks)
 	}
 	w.pendingSpans = w.pendingSpans[:0]
 }
@@ -177,7 +177,7 @@ func writeMultiLineSpan(buf *strings.Builder, fragment []byte, baseFileOffset in
 func emitSpan(buf *strings.Builder, fragment []byte, absStart int, baseCovClass, synClass string, blocks []*profileBlock) {
 	covClass := baseCovClass
 	if covClass == "" {
-		covClass = coverClass(blocks, absStart, absStart+len(fragment))
+		covClass = coverClass(blocks, absStart, absStart + len(fragment))
 	}
 
 	classStr := ""
