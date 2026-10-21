@@ -81,6 +81,7 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 
 		startOffset := file.Offset(pos)
 		endOffset   := startOffset + len(lit)
+
 		if lit == "" { // handle explicit and virtual punctuation tokens
 			if tok == token.SEMICOLON && (startOffset >= len(src) || src[startOffset] != ';') {
 				continue // virtual semicolon: zero source bytes
@@ -90,11 +91,11 @@ func annotateSource(fileAST *ast.File, file *token.File, src []byte, typeInfo *t
 
 		covClass := coverClass(blocks, startOffset, endOffset)
 		synClass := classifier.classify(tok, pos, lit)
+		spans    := []srcSpan{{src[startOffset : endOffset], startOffset, synClass}}
 
-		spans := []srcSpan{{src[startOffset : endOffset], startOffset, synClass}}
 		if tok == token.STRING && classifier.importPos[pos] {
-			if sub := splitImportSpans(src, startOffset, endOffset, lit); sub != nil {
-				spans = sub
+			if importSpans := splitImportSpans(src, startOffset, endOffset, lit); importSpans != nil {
+				spans = importSpans
 			}
 		}
 
@@ -311,10 +312,10 @@ func finalizeLines(raw string, lineOffsets []int, funcSpans []funcSpan) (lines [
 // base (filename), and suffix sub-spans for syntax highlighting.
 func splitImportSpans(src []byte, startOffset, endOffset int, lit string) []srcSpan {
 	if idx := strings.LastIndex(lit, "/"); idx > 0 {
-		midOffset := startOffset + idx
+		lastSlash := startOffset + idx
 		return []srcSpan{
-			{src[startOffset   : midOffset + 1], startOffset,   "string"},
-			{src[midOffset + 1 : endOffset - 1], midOffset + 1, "base"  },
+			{src[startOffset   : lastSlash + 1], startOffset,   "string"},
+			{src[lastSlash + 1 : endOffset - 1], lastSlash + 1, "base"  },
 			{src[endOffset - 1 : endOffset    ], endOffset - 1, "string"},
 		}
 	}
