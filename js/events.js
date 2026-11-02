@@ -24,6 +24,10 @@ document.getElementById('theme').addEventListener('click', () => {
   applyTheme(document.documentElement.getAttribute('theme') === 'dark' ? 'light' : 'dark');
 });
 
+document.getElementById('tree-btn').addEventListener('click', () => {
+  document.body.classList.toggle('hidden');
+});
+
 const syncExpandButtonText = () => {
   document.getElementById('expand').textContent = document.querySelector('.tree input[type="checkbox"]:checked') ? 'collapse' : 'expand';
 };

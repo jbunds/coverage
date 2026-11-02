@@ -1,3 +1,11 @@
+#tree {
+  grid-row:    2;
+  grid-column: 1;
+}
+
+body.hidden #tree,
+body.hidden #footer { display: none }
+
 .tree,
 .tree ul,
 .tree li {

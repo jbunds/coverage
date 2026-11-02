@@ -4,6 +4,7 @@
 //
 // The header portion of the index HTML file will also render three buttons when served via HTTP and JavaScript is enabled:
 //
+//   "tree"                   - toggles showing or hiding the source tree pane
 //   "expand" (or "collapse") - toggles opening (or closing) all subdirectories of the source tree
 //   "lines"                  - toggles showing or hiding a column of line numbers along the left side of the source code
 //   "funcs"                  - toggles showing or hiding the bodies of all top-level functions and methods in the source code
