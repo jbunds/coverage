@@ -43,6 +43,12 @@ func main() {
 			fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
 			return nil
 		}
+		src, err := os.ReadFile(path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "read error: %v\n", err)
+			return nil
+		}
+		lines := strings.Split(string(src), "\n")
 		for _, decl := range f.Decls {
 			fn, ok := decl.(*ast.FuncDecl); if !ok { continue }
 			kind   := "func"
@@ -60,7 +66,7 @@ func main() {
 			}
 			startLine := fset.Position(fn.Pos()).Line
 			endLine   := fset.Position(fn.End()).Line
-			loc       := endLine - startLine + 1
+			loc       := countLines(lines, startLine, endLine)
 			function  := &function{
 				name:      name,
 				filename:  path,
@@ -73,10 +79,16 @@ func main() {
 		return nil
 	})
 
-	slices.SortFunc(funcs, func(a, b *function) int { return cmp.Compare(b.loc, a.loc)})
+	longest := longestName(funcs)
+
+	slices.SortFunc(funcs, func(a, b *function) int { return cmp.Compare(b.loc, a.loc) })
 
 	for _, fn := range funcs {
-		fmt.Printf(fmt.Sprintf("%%-%ds  ", longestName(funcs)) + "%-6s %4d lines  %s:%d\n", fn.name, fn.kind, fn.loc, fn.filename, fn.startLine)
+		lineOrLines := "lines"
+		if fn.loc < 2 {
+			lineOrLines = "line "
+		}
+		fmt.Printf(fmt.Sprintf("%%-%ds  ", longest) + "%-6s %4d %s  %s:%d\n", fn.name, fn.kind, fn.loc, lineOrLines, fn.filename, fn.startLine)
 	}
 }
 
@@ -88,4 +100,16 @@ func longestName(funcs []*function) int {
 		}
 	}
 	return longest
+}
+
+func countLines(lines []string, start, end int) int {
+	n := 0
+	for i := start - 1; i < end && i < len(lines); i++ {
+		t := strings.TrimSpace(lines[i])
+		if t == "" || strings.HasPrefix(t, "//") {
+			continue
+		}
+		n++
+	}
+	return n
 }
