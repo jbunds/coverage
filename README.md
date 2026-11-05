@@ -41,8 +41,9 @@ The program then renders an `index.html` file to the specified path which provid
 
 The rendered HTML files can be viewed in a browser, either directly via the `file://` scheme, or via an HTTP server using the `http://` scheme.
 
-When served via HTTP and JavaScript is enabled, buttons are available to:
+When served via HTTP to a browser with JavaScript enabled, buttons are available to:
 
+- ![tree](doc/tree.svg)     &nbsp;toggle between showing or hiding the source tree pane
 - ![expand](doc/expand.svg) &nbsp;toggle between a fully-collapsed and fully-expanded source tree
 - ![lines](doc/lines.svg)   &nbsp;toggle between showing or hiding a column of line numbers along the left side of the source code
 - ![funcs](doc/funcs.svg)   &nbsp;toggle between showing or hiding the bodies of all top-level functions and methods in the source code
