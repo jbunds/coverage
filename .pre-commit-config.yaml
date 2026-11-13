@@ -13,11 +13,11 @@ repos:
       - id:    action-validator
         files: '(?:^action\.ya?ml$|^\.github/(?:workflows|actions)/.*\.ya?ml$)'
   - repo: https://github.com/biomejs/pre-commit
-    rev:  v2.6.6
+    rev:  v2.6.7
     hooks:
       - id:                      biome-ci
         files:                   '\.(?:css|js)$'
-        additional_dependencies: ['@biomejs/biome@2.6.6']
+        additional_dependencies: ['@biomejs/biome@2.6.7']
         args:                    [--error-on-warnings]
   - repo: https://github.com/golangci/golangci-lint   # https://github.com/golangci/golangci-lint/blob/main/.pre-commit-hooks.yaml
     rev:  v2.15.0
