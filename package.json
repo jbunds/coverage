@@ -11,8 +11,8 @@
     "puppeteer": "25.17.0"
   },
   "devDependencies": {
-    "@action-validator/cli": "0.9.0",
-    "@action-validator/core": "0.9.0",
+    "@action-validator/cli": "0.6.0",
+    "@action-validator/core": "0.6.0",
     "@biomejs/biome": "2.6.7"
   }
 }
