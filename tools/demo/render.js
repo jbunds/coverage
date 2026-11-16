@@ -14,17 +14,15 @@ const OUTPUT = 'demo.webm'
 const browser = await launchChrome(URL)
 const [page]  = await browser.pages()
 
-// there is apparently no trivial way to constrain GhostCursor's random
-// movements to ensure the cursor always remains within the viewport
-// page.setViewport({ width: VIEWPORT.width, height: VIEWPORT.height })
-
 await installMousePointer(page)
 
 const cursor = new GhostCursor(page, {
   defaultOptions: {
-    moveDelay:          1000,  // one-second delay after moving the mouse
-    overshootThreshold: 10000, // distance between current location and destination which triggers overshoot to occur
-    paddingPercentage:  100,   // move the mouse pointer to the center of the element
+    move: {
+      moveDelay:          1000,  // one-second delay after moving the mouse
+      overshootThreshold: 10000, // distance between current location and destination which triggers overshoot to occur
+      paddingPercentage:  100,   // move the mouse pointer to the center of the element
+    },
   },
   start: {
     x: VIEWPORT.width  / 2,
@@ -34,107 +32,33 @@ const cursor = new GhostCursor(page, {
 
 await page.waitForNetworkIdle()
 
-const treeFrame = await (await page.waitForSelector('iframe#tree')).contentFrame()
+const treeDiv = await page.waitForSelector('#tree')
 
 await registerListeners(page)
 
 const recorder = await page.screencast({ path: OUTPUT })
 
-// GhostCursor can't click on invisible elements like checkboxes,
-// so click on the visible labels applied to those checkboxes
+const k8sIOLabel  = await treeDiv.waitForSelector('::-p-text(k8s.io)') // k8s.io subdir checkbox label
+await cursor.click(k8sIOLabel, { hesitate: 200, moveSpeed: 25, waitForClick: 100 })
 
-// the following implementation minimizes GhostCursor's randomized cursor overshoots
-// and deviations relative to the centers of the elements interacted with
-//
-// to that end, all recorded interactions follow the same basic formula:
-//
-//   1. use Puppeteer's Frame.waitForSelector method to get an ElementHandle
-//
-//   2. use JavaScript's native scrollIntoView method to scroll the element
-//      into the center of its parent frame
-//
-//   3. use the getAbsoluteCoords helper function to determine the post-scroll
-//      absolute coordinates of the the element
-//
-//   4. use GhostCursor's moveTo method to move the cursor to the element
-//
-//   5. pause for one second to allow viewers of the demo to follow the interaction
-//
-//   6. use Puppeteer's Mouse.click method to click the element, with a 100ms
-//      delay between mousedown and mouseup events
-//
-// the 100ms delay between "mousedown" and "mouseup" events is necessary to capture
-// at least one frame of the mouse pointer changing color when clicking an element
+const k8sLabel = await treeDiv.waitForSelector('::-p-text(kubernetes)') // k8s.io/kubernetes subdir checkbox label
+await cursor.click(k8sLabel, { hesitate: 50, moveSpeed: 40, waitForClick: 100 })
 
-// click the "k8s.io" subdir checkbox label
-const k8sIOLabel  = await treeFrame.waitForSelector('label[for="tree-item-1"]')
-const k8sIOCoords = await getAbsoluteCoords(treeFrame, k8sIOLabel)
-await cursor.moveTo(k8sIOCoords) // move the cursor to the "k8s.io" subdir label, but don't immediately click it
-await setTimeout(400)            // 0.4s pause before the next cursor action
+const pkgLabel = await treeDiv.waitForSelector('::-p-text(pkg)') // k8s.io/kubernetes/pkg subdir checkbox label
+await cursor.click(pkgLabel, { hesitate: 250, moveSpeed: 40, waitForClick: 100 })
 
-// click the "kubernetes" subdir checkbox label
-const k8sLabel = await treeFrame.waitForSelector('label[for="tree-item-390"]')
-await treeFrame.evaluate((el) => {
-  el.scrollIntoView({
-    behavior: 'smooth', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#behavior
-    block:    'center', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#block
-    inline:   'center'  // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#inline
-  })
-}, k8sLabel)
+await setTimeout(200)
+const kubeletLabel = await treeDiv.waitForSelector( // k8s.io/kubernetes/pkg/kubelet subdir checkbox label
+  'li:has(> ul > li > div.tree-node > span.src > a[href="k8s.io/kubernetes/pkg/kubelet/kubelet_network.go.html"]) > div.tree-node > label'
+)
+await kubeletLabel.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }))
+await setTimeout(200)
+await cursor.click(kubeletLabel, { hesitate: 200, moveSpeed: 40, waitForClick: 100 })
 await setTimeout(800)
-const k8sCoords = await getAbsoluteCoords(treeFrame, k8sLabel)
-await cursor.moveTo(k8sCoords)                                   // mouse the cursor to the "kubernetes" label, but don't immediately click it
-await setTimeout(600)                                            // 0.6s pause before clicking
-await page.mouse.click(k8sCoords.x, k8sCoords.y, { delay: 100 }) // click on the middle of the label, with a 100ms delay between mousedown and mouseup events
-await setTimeout(500)
 
-// click the "pkg" subdir checkbox label
-const pkgLabel = await treeFrame.waitForSelector('label[for="tree-item-783"]')
-await treeFrame.evaluate((el) => {
-  el.scrollIntoView({
-    behavior: 'smooth', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#behavior
-    block:    'center', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#block
-    inline:   'center'  // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#inline
-  })
-}, pkgLabel)
-await setTimeout(800)
-const pkgCoords = await getAbsoluteCoords(treeFrame, pkgLabel)
-await cursor.moveTo(pkgCoords)                                   // move the cursor to the "pkg" subdir label, but don't immediately click it
-await setTimeout(600)                                            // 0.6s pause before clicking
-await page.mouse.click(pkgCoords.x, pkgCoords.y, { delay: 100 }) // click on the middle of the label, with a 100ms delay between mousedown and mouseup events
-await setTimeout(500)
-
-// click the "kubelet" subdir checkbox label
-const kubeletLabel = await treeFrame.waitForSelector('label[for="tree-item-1173"]')
-await treeFrame.evaluate((el) => {
-  el.scrollIntoView({
-    behavior: 'smooth', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#behavior
-    block:    'center', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#block
-    inline:   'center'  // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#inline
-  })
-}, kubeletLabel)
-await setTimeout(800)                                                    // 0.8s pause to wait for scroll to finish, before moving the cursor to the label
-const kubeletCoords = await getAbsoluteCoords(treeFrame, kubeletLabel)   // get the post-scroll coordinates of the label
-await cursor.moveTo(kubeletCoords)                                       // move the cursor to the label, but don't immediately click it
-await setTimeout(600)                                                    // 0.6s pause before clicking the label
-await page.mouse.click(kubeletCoords.x, kubeletCoords.y, { delay: 100 }) // click the label with a 100ms delay between mousedown and mouseup events
-await setTimeout(500)
-
-// click the "kubelet_network.go" link
-const goSrcLink = await treeFrame.waitForSelector('a[href="k8s.io/kubernetes/pkg/kubelet/kubelet_network.go.html"]')
-await treeFrame.evaluate((el) => {
-  el.scrollIntoView({
-    behavior: 'smooth', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#behavior
-    block:    'center', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#block
-    inline:   'center', // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#inline
-  })
-}, goSrcLink)
-await setTimeout(800)                                                        // 0.8s pause to wait for scrol to finish, before moving the cursor to the link
-const goSrcLinkCoords = await getAbsoluteCoords(treeFrame, goSrcLink)        // get the post-scroll coordinates of the link
-await cursor.moveTo(goSrcLinkCoords)                                         // move the cursor to the link, but don't immediately click it
-await setTimeout(600)                                                        // 0.6s pause before clicking the link
-await page.mouse.click(goSrcLinkCoords.x, goSrcLinkCoords.y, { delay: 100 }) // click the link with a 100ms delay between mousedown and mouseup events
-await setTimeout(500)
+const goSrcLink = await treeDiv.waitForSelector('a[href="k8s.io/kubernetes/pkg/kubelet/kubelet_network.go.html"]') // kubelet_network.go link
+await goSrcLink.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }))
+await cursor.click(goSrcLink, { hesitate: 400, moveSpeed: 40, waitForClick: 100 })
 
 // move the cursor into the "code" iframe and scroll down to its lower boundary
 const codeFrameHandle = await page.waitForSelector('iframe#code')
@@ -150,38 +74,46 @@ await codeFrame.evaluate(() => {                             // add mousemove li
 await cursor.move(codeFrameHandle)                  // move the cursor somewhere within the "code" frame
 await cursor.scrollTo('bottom', { scrollSpeed: 8 }) // slowly scroll to the bottom of the "code" frame
 
-// click the "theme" button
-const indexBodyHandle   = await page.waitForSelector('body#index')
-await cursor.move(indexBodyHandle)                                                 // move the cursor somewhere within the main frame
-const themeButton       = await page.waitForSelector('#theme')
-const themeButtonCoords = await getAbsoluteCoords(page.mainFrame(), themeButton)   // get the coordinates of the "theme" button
-await cursor.moveTo(themeButtonCoords)                                             // move the cursor to the "theme" button
-await setTimeout(800)                                                              // 0.8s pause before clicking the button
-await page.mouse.click(themeButtonCoords.x, themeButtonCoords.y, { delay: 100 })   // click the button with a 100ms delay between mousedown and mouseup events
+const themeButton        = await page.waitForSelector('#theme')
+const themeButtonCoords  = await getAbsoluteCoords(page.mainFrame(), themeButton)
 
-// click the "expand" button
 const expandButton       = await page.waitForSelector('#expand')
 const expandButtonCoords = await getAbsoluteCoords(page.mainFrame(), expandButton)
-await cursor.moveTo(expandButtonCoords)                                            // move the cursor to the "expand" button
-await setTimeout(800)                                                              // 0.8s pause before clicking the button
-await page.mouse.click(expandButtonCoords.x, expandButtonCoords.y, { delay: 100 }) // click the button with a 100ms delay between mousedown and mouseup events
 
-// click the "theme" button again
-await cursor.moveTo(themeButtonCoords)                                             // move the cursor to the "theme" button
-await setTimeout(800)                                                              // 0.8s pause before clicking the button
-await page.mouse.click(themeButtonCoords.x, themeButtonCoords.y, { delay: 100 })   // click the button with a 100ms delay between mousedown and mouseup events
+const funcsButton        = await page.waitForSelector('#funcs')
+const funcsButtonCoords  = await getAbsoluteCoords(page.mainFrame(), funcsButton)
 
-// click the "expand" button again
-await cursor.moveTo(expandButtonCoords)                                            // move the cursor to the "expand" button again
-await setTimeout(800)                                                              // 0.8s pause before clicking the button again
-await page.mouse.click(expandButtonCoords.x, expandButtonCoords.y, { delay: 100 }) // click the button with a 100ms delay between mousedown and mouseup events
+// the 100ms delay between mousedown and mouseup events ensures that at least one frame
+// of the mouse pointer changing color when clicking an element will be captured
 
-// click the "expand" button yet again
-await setTimeout(1500)                                                             // 1.5s pause before clicking the "expand" button yet again
-await page.mouse.click(expandButtonCoords.x, expandButtonCoords.y, { delay: 100 }) // click the button with a 100ms delay between mousedown and mouseup events
+await cursor.moveTo(themeButtonCoords, { moveSpeed: 40 }) // "theme" button
+await setTimeout(800)
+await page.mouse.click(themeButtonCoords.x, themeButtonCoords.y, { delay: 100 })
 
-// give the audience a moment to inspect the expanded tree
-await setTimeout(1000)
+await setTimeout(800)
+await cursor.moveTo(expandButtonCoords, { moveSpeed: 40 }) // "expand" button
+await setTimeout(800)
+await page.mouse.click(expandButtonCoords.x, expandButtonCoords.y, { delay: 100 })
+
+await setTimeout(800)
+await cursor.moveTo(themeButtonCoords, { moveSpeed: 40 }) // "theme" button (again)
+await setTimeout(800)
+await page.mouse.click(themeButtonCoords.x, themeButtonCoords.y, { delay: 100 })
+
+await cursor.moveTo(funcsButtonCoords, { moveSpeed: 40 }) // "funcs" button
+await setTimeout(800)
+await page.mouse.click(funcsButtonCoords.x, funcsButtonCoords.y, { delay: 100 })
+await setTimeout(600)
+await cursor.moveTo({ x: funcsButtonCoords.x - 10, y: funcsButtonCoords.y + 10 }, { moveSpeed: 100 }) // small movement between clicks
+await cursor.moveTo(funcsButtonCoords, { moveSpeed: 100 })
+await setTimeout(1200)
+await page.mouse.click(funcsButtonCoords.x, funcsButtonCoords.y, { delay: 100 })
+
+await cursor.moveTo(expandButtonCoords, { moveSpeed: 40 }) // "expand" button
+await setTimeout(800)
+await page.mouse.click(expandButtonCoords.x, expandButtonCoords.y, { delay: 100 })
+
+await setTimeout(800) // give the audience a moment to inspect the expanded tree
 
 await recorder.stop()
 await browser.close()
