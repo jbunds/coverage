@@ -55,7 +55,7 @@ See also [![DeepWiki](doc/deepwiki.svg)](https://deepwiki.com/jbunds/coverage) a
 
 #### User Interface
 
-[demo.webm](https://github.com/user-attachments/assets/62cf5ff0-831b-4ffc-9f45-de95c15426ef)
+[demo.mp4](https://github.com/user-attachments/assets/9ab4ce86-b685-44b0-a88b-a329938c5cac)
 
 **light** theme:
 
