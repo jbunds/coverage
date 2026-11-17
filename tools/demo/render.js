@@ -5,7 +5,7 @@ import {
   VIEWPORT,
   launchChrome,
   installMousePointer,
-  getAbsoluteCoords,
+  getCenter,
   registerListeners,
 } from './helpers.js'
 
@@ -47,14 +47,11 @@ await cursor.click(k8sLabel, { moveSpeed: 40, waitForClick: 100 })
 const pkgLabel = await treeDiv.waitForSelector('::-p-text(pkg)') // k8s.io/kubernetes/pkg subdir checkbox label
 await cursor.click(pkgLabel, { moveSpeed: 40, waitForClick: 100 })
 
-const kubeletLabel = await treeDiv.waitForSelector( // k8s.io/kubernetes/pkg/kubelet subdir checkbox label
-  'li:has(> ul > li > div.tree-node > span.src > a[href="k8s.io/kubernetes/pkg/kubelet/kubelet_network.go.html"]) > div.tree-node > label'
-)
-await setTimeout(300)
+const goSrcLink    = await treeDiv.waitForSelector('a[href="k8s.io/kubernetes/pkg/kubelet/kubelet_network.go.html"]') // kubelet_network.go link
+const kubeletLabel = await goSrcLink.evaluateHandle(el => el.closest('ul').closest('li').querySelector(':scope > div.tree-node > label'))
 await kubeletLabel.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }))
 await cursor.click(kubeletLabel, { hesitate: 500, moveSpeed: 40, waitForClick: 100 })
 
-const goSrcLink = await treeDiv.waitForSelector('a[href="k8s.io/kubernetes/pkg/kubelet/kubelet_network.go.html"]') // kubelet_network.go link
 await goSrcLink.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }))
 await cursor.click(goSrcLink, { moveSpeed: 40, waitForClick: 100 })
 
@@ -69,23 +66,21 @@ await codeFrame.evaluate(() => {                             // add mousemove li
     window.parent.mouseY = e.clientY + rect.top
   })
 })
-await cursor.move(codeFrameHandle)               // move the cursor somewhere within the #code frame
+await cursor.move(codeFrameHandle)               // move the cursor to the middle of the #code frame
 await codeFrame.evaluate(() => window.scrollTo({ // slowly scroll to the bottom of the #code frame
   behavior: 'smooth',
   top:      document.documentElement.scrollHeight
 }))
 
 const themeButton        = await page.waitForSelector('#theme')
-const themeButtonCoords  = await getAbsoluteCoords(page.mainFrame(), themeButton)
-
 const expandButton       = await page.waitForSelector('#expand')
-const expandButtonCoords = await getAbsoluteCoords(page.mainFrame(), expandButton)
-
 const funcsButton        = await page.waitForSelector('#funcs')
-const funcsButtonCoords  = await getAbsoluteCoords(page.mainFrame(), funcsButton)
-
 const treeButton         = await page.waitForSelector('#tree-btn')
-const treeButtonCoords   = await getAbsoluteCoords(page.mainFrame(), treeButton)
+
+const themeButtonCoords  = await getCenter(themeButton)
+const expandButtonCoords = await getCenter(expandButton)
+const funcsButtonCoords  = await getCenter(funcsButton)
+const treeButtonCoords   = await getCenter(treeButton)
 
 // the 100ms delay between mousedown and mouseup events ensures that at least one frame
 // of the mouse pointer changing color when clicking an element will be captured
@@ -108,7 +103,9 @@ await cursor.moveTo(funcsButtonCoords, { moveSpeed: 40 }) // "funcs" button
 await setTimeout(400)
 await page.mouse.click(funcsButtonCoords.x, funcsButtonCoords.y, { delay: 100 })
 await setTimeout(400)
-await cursor.moveTo({ x: funcsButtonCoords.x - 10, y: funcsButtonCoords.y - 8 }, { moveSpeed: 100 }) // small movement between clicks
+await cursor.moveTo({ // small mouse pointer movement between clicks
+  x: funcsButtonCoords.x - 10,
+  y: funcsButtonCoords.y -  4 }, { moveSpeed: 100 })
 await cursor.moveTo(funcsButtonCoords, { moveSpeed: 100 })
 await setTimeout(600)
 await page.mouse.click(funcsButtonCoords.x, funcsButtonCoords.y, { delay: 100 })

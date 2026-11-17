@@ -88,22 +88,13 @@ export async function registerListeners (page) {
   }
 }
 
-// get the absolute coordinates (relative to the viewport) of a given element
-export async function getAbsoluteCoords (frame, element) {
-  return await frame.evaluate((el) => {
+// get the absolute coordinates (relative to the viewport) of the center of a given element
+export async function getCenter(element) {
+  return element.evaluate(el => {
     const rect = el.getBoundingClientRect()
-    let x = rect.left + rect.width  / 2
-    let y = rect.top  + rect.height / 2
-    let win = window
-    while (win !== window.top) { // walk up through the iframes to the top-level window
-      const frameElement = win.frameElement
-      if (frameElement) {
-        const frameRect = frameElement.getBoundingClientRect()
-        x += frameRect.left
-        y += frameRect.top
-      }
-      win = win.parent
+    return {
+      x: rect.left + rect.width  / 2,
+      y: rect.top  + rect.height / 2
     }
-    return { x, y }
-  }, element)
+  })
 }
