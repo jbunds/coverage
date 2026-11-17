@@ -1,4 +1,5 @@
-import puppeteer from 'puppeteer'
+import { setTimeout } from 'node:timers/promises'
+import   puppeteer    from 'puppeteer'
 
 export const URL      = 'http://127.0.0.1:8000'
 export const VIEWPORT = {
@@ -88,13 +89,28 @@ export async function registerListeners (page) {
   }
 }
 
-// get the absolute coordinates (relative to the viewport) of the center of a given element
-export async function getCenter(element) {
-  return element.evaluate(el => {
-    const rect = el.getBoundingClientRect()
-    return {
-      x: rect.left + rect.width  / 2,
-      y: rect.top  + rect.height / 2
-    }
-  })
+// moves the cursor to a point 8px left and 8px up from the center of the specified
+// element to compensate for the custom pointer's anchor offset, and then clicks it
+//
+//   @param {GhostCursor}            cursor
+//   @param {string | ElementHandle} selector
+//   @param {ClickOptions}           [options]
+//   @param {{ jitter?: boolean }}   [behavior]
+export async function clickOffset(cursor, selector, options, { jitter = false, pauseBefore = 0 } = {}) {
+  if (pauseBefore > 0) { await setTimeout(pauseBefore) }
+
+  const element = await cursor.getElement(selector)
+  const box     = await element.boundingBox()
+
+  const cx = box.x + box.width  / 2 - 8 // the 8px offset appears (to me) to be more centered
+  const cy = box.y + box.height / 2 - 8
+
+  if (jitter) { // drift slightly off-target, then back
+    await cursor.moveTo({ x: cx - 10, y: cy - 2 }, { moveDelay: 0, moveSpeed: 100 })
+    await cursor.moveTo({ x: cx,      y: cy     }, {               moveSpeed: 100, ...options })
+  } else {
+    await cursor.moveTo({ x: cx,      y: cy     }, options)
+  }
+
+  await cursor.click(undefined, options)
 }

@@ -7,7 +7,7 @@ import {
   VIEWPORT,
   launchChrome,
   installMousePointer,
-  getCenter,
+  clickOffset,
   registerListeners,
 } from './helpers.js'
 
@@ -19,14 +19,22 @@ const [page]  = await browser.pages()
 
 await installMousePointer(page)
 
+const scrollOptions = {
+  behavior: 'smooth',
+  block:    'center',
+  inline:   'center',
+}
+
 const moveOptions = {
-  moveDelay:           1000, // one-second delay after moving the mouse
-  moveSpeed:             40, // constant speed across all mouse pointer (cursor) movements
-  overshootThreshold: 10000, // distance between current location and destination which triggers overshoot to occur
-  paddingPercentage:    100, // move the mouse pointer to the center of the element
-  randomizeMoveDelay: false, // use moveDelay instead of a random 0..moveDelay duration
-  scrollDelay:          300, // pause for 300ms after scrolling before performing the next interaction
-  scrollSpeed:           30, // smooth scroll speed (0 == slow, 100 == instant)
+  moveDelay:            500, // 500ms delay after moving the mouse pointer;                                          default: 0 for move, 2000 for click
+  moveSpeed:             40, // constant speed across all mouse pointer (cursor) movements;                          default: random
+  overshootThreshold: 10000, // distance between current location and destination which triggers overshoot to occur; default: 500
+  paddingPercentage:    100, // move the mouse pointer to the center of the element;                                 default: 0
+  randomizeMoveDelay: false, // use moveDelay instead of a random 0..moveDelay duration;                             default: true
+  scrollDelay:          300, // pause for 300ms after scrolling before performing the next interaction;              default: 200
+  scrollSpeed:           30, // smooth scroll speed (0 == slow, 100 == instant);                                     default: 100
+  waitForClick:         100, // delay between mousedown and mouseup to ensure that at least one frame of
+                             // the mouse pointer changing color when clicking an element will be captured;          default: 0
 }
 
 const cursor = new GhostCursor(page, {
@@ -47,39 +55,38 @@ const cursor = new GhostCursor(page, {
 
 await page.waitForNetworkIdle()
 
-const treeDiv = await page.waitForSelector('#tree')
+const treeDiv  = await page.waitForSelector('#tree')
+const recorder = await page.screencast({ path: RAW_OUTPUT })
 
 await registerListeners(page)
 
-const recorder = await page.screencast({ path: RAW_OUTPUT })
-
 await setTimeout(600)
 
-const k8sIOLabel  = await treeDiv.waitForSelector('::-p-text(k8s.io)') // k8s.io subdir checkbox label
-await cursor.click(k8sIOLabel, { hesitate: 400, waitForClick: 100 })
+const k8sIOLabel = await treeDiv.waitForSelector('::-p-text(k8s.io)'    ) // k8s.io                subdir checkbox label
+const k8sLabel   = await treeDiv.waitForSelector('::-p-text(kubernetes)') // k8s.io/kubernetes     subdir checkbox label
+const pkgLabel   = await treeDiv.waitForSelector('::-p-text(pkg)'       ) // k8s.io/kubernetes/pkg subdir checkbox label
 
-const k8sLabel = await treeDiv.waitForSelector('::-p-text(kubernetes)') // k8s.io/kubernetes subdir checkbox label
-await cursor.click(k8sLabel, { hesitate: 200, waitForClick: 100 })
-
-const pkgLabel = await treeDiv.waitForSelector('::-p-text(pkg)') // k8s.io/kubernetes/pkg subdir checkbox label
-await cursor.click(pkgLabel, { hesitate: 200, waitForClick: 100 })
+await clickOffset(cursor, k8sIOLabel, { hesitate: 400 })
+await clickOffset(cursor, k8sLabel,   { hesitate: 200 })
+await clickOffset(cursor, pkgLabel,   { hesitate: 200 })
 
 await setTimeout(400)
 
 const goSrcLink    = await treeDiv.waitForSelector('a[href="k8s.io/kubernetes/pkg/kubelet/kubelet_network.go.html"]') // kubelet_network.go link
 const kubeletLabel = await goSrcLink.evaluateHandle(el => el.closest('ul').closest('li').querySelector(':scope > div.tree-node > label'))
-await kubeletLabel.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }))
-await cursor.click(kubeletLabel, { hesitate: 500, waitForClick: 100 })
+
+await kubeletLabel.evaluate((el, opts) => el.scrollIntoView(opts), scrollOptions)
+await clickOffset(cursor, kubeletLabel, { hesitate: 500 })
 
 await setTimeout(400)
 
-await goSrcLink.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }))
-await cursor.click(goSrcLink, { hesitate: 400, waitForClick: 100 })
+await goSrcLink.evaluate((el, opts) => el.scrollIntoView(opts), scrollOptions)
+await clickOffset(cursor, goSrcLink, { hesitate: 400 })
 
-// move the cursor into the #code iframe and scroll down to its lower boundary
+// move the mouse pointer into the #code iframe and scroll down to its lower boundary
 const codeFrameHandle = await page.waitForSelector('iframe#code')
 const codeFrame       = await codeFrameHandle.contentFrame()
-await codeFrame.waitForSelector('body')                      // wait for quiescence; alternatively, could "await page.waitForNetworkIdle()", etc
+await codeFrame.waitForSelector('body')                      // wait for quiescence (alternatively, could "await page.waitForNetworkIdle()", etc)
 await codeFrame.evaluate(() => {                             // add mousemove listener to #code iframe
   window.addEventListener('mousemove', (e) => {              // register a listener for mousemove events within the #code iframe
     const rect = window.frameElement.getBoundingClientRect() // offset coordinates by the iframe's position on the main page
@@ -87,68 +94,32 @@ await codeFrame.evaluate(() => {                             // add mousemove li
     window.parent.mouseY = e.clientY + rect.top
   })
 })
-await cursor.move(codeFrameHandle)               // move the cursor to the middle of the #code frame
-await codeFrame.evaluate(() => window.scrollTo({ // slowly scroll to the bottom of the #code frame
+await cursor.move(codeFrameHandle)               // move the mouse pointer to the middle of the #code frame
+await codeFrame.evaluate(() => window.scrollTo({ // scroll to the bottom of the #code frame
   behavior: 'smooth',
   top:      document.documentElement.scrollHeight
 }))
 
-const themeButton  = await page.waitForSelector('#theme')
-const expandButton = await page.waitForSelector('#expand')
-const funcsButton  = await page.waitForSelector('#funcs')
+const themeButton  = await page.waitForSelector('#theme'   )
+const expandButton = await page.waitForSelector('#expand'  )
+const funcsButton  = await page.waitForSelector('#funcs'   )
 const treeButton   = await page.waitForSelector('#tree-btn')
-const linesButton  = await page.waitForSelector('#lines')
+const linesButton  = await page.waitForSelector('#lines'   )
 
-const themeButtonCoords  = await getCenter(themeButton)
-const expandButtonCoords = await getCenter(expandButton)
-const funcsButtonCoords  = await getCenter(funcsButton)
-const treeButtonCoords   = await getCenter(treeButton)
-const linesButtonCoords  = await getCenter(linesButton)
-
-// the 100ms delay between mousedown and mouseup events ensures that at least one frame
-// of the mouse pointer changing color when clicking an element will be captured
-
-await setTimeout(400)
-await cursor.moveTo(themeButtonCoords) // "theme" button
-await page.mouse.click(themeButtonCoords.x, themeButtonCoords.y, { delay: 100 })
-
-await setTimeout(400)
-await cursor.moveTo(expandButtonCoords) // "expand" button
-await page.mouse.click(expandButtonCoords.x, expandButtonCoords.y, { delay: 100 })
-
-await setTimeout(400)
-await cursor.moveTo(themeButtonCoords) // "theme" button (again)
-await page.mouse.click(themeButtonCoords.x, themeButtonCoords.y, { delay: 100 })
-
-await setTimeout(400)
-await cursor.moveTo(funcsButtonCoords) // "funcs" button
-await page.mouse.click(funcsButtonCoords.x, funcsButtonCoords.y, { delay: 100 })
-await cursor.moveTo({ // small mouse pointer movement between clicks
-  x: funcsButtonCoords.x - 10,
-  y: funcsButtonCoords.y -  4 }, { moveDelay: 0, moveSpeed: 100 })
-await cursor.moveTo(funcsButtonCoords, { moveSpeed: 100 })
-await page.mouse.click(funcsButtonCoords.x, funcsButtonCoords.y, { delay: 100 })
-
-await setTimeout(400)
-await cursor.moveTo(expandButtonCoords) // "collapse" ("expand") button
-await page.mouse.click(expandButtonCoords.x, expandButtonCoords.y, { delay: 100 })
-
-await setTimeout(400)
-await cursor.moveTo(treeButtonCoords) // "tree" button
-await page.mouse.click(treeButtonCoords.x, treeButtonCoords.y, { delay: 100 })
-
-await setTimeout(400)
-await cursor.moveTo(linesButtonCoords) // "lines" button
-await page.mouse.click(linesButtonCoords.x, linesButtonCoords.y, { delay: 100 })
-await cursor.moveTo({ // small mouse pointer movement between clicks
-  x: linesButtonCoords.x + 8,
-  y: linesButtonCoords.y + 4 }, { moveDelay: 0, moveSpeed: 100})
-await cursor.moveTo(linesButtonCoords, { moveSpeed: 100 })
-await page.mouse.click(linesButtonCoords.x, linesButtonCoords.y, { delay: 100 })
+await clickOffset(cursor, themeButton,  undefined,          {               pauseBefore: 250 })
+await clickOffset(cursor, expandButton, undefined,          {               pauseBefore: 250 })
+await clickOffset(cursor, themeButton,  undefined,          {               pauseBefore: 250 })
+await clickOffset(cursor, funcsButton,  undefined,          {               pauseBefore: 250 })
+await clickOffset(cursor, funcsButton,  { moveDelay: 100 }, { jitter: true, pauseBefore: 200 })
+await clickOffset(cursor, expandButton, undefined,          {               pauseBefore: 250 })
+await clickOffset(cursor, treeButton,   undefined,          {               pauseBefore: 250 })
+await clickOffset(cursor, linesButton,  undefined,          {               pauseBefore: 250 })
+await clickOffset(cursor, linesButton,  { moveDelay: 100 }, { jitter: true, pauseBefore: 200 })
 
 await setTimeout(1000) // give the audience a moment to inspect the final frame
 await recorder.stop()
-await setTimeout(5000) // give Puppeteer's internal ffmpeg process time to flush and close demo.webm
+
+await setTimeout(3000) // give Puppeteer's internal ffmpeg process 3s to flush and close demo.webm
 await browser.close()
 
 execFileSync('ffmpeg', [
