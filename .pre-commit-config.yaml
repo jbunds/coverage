@@ -19,7 +19,15 @@ repos:
         files:                   '\.(?:css|js|ts)$'
         additional_dependencies: ['@biomejs/biome@2.6.8']
         args:                    [--error-on-warnings]
-  - repo: https://github.com/golangci/golangci-lint   # https://github.com/golangci/golangci-lint/blob/main/.pre-commit-hooks.yaml
+  - repo: local
+    hooks:
+      - id:             typecheck
+        name:           typecheck
+        entry:          npx tsc
+        files:          \.ts$
+        language:       system
+        pass_filenames: false
+  - repo: https://github.com/golangci/golangci-lint # https://github.com/golangci/golangci-lint/blob/main/.pre-commit-hooks.yaml
     rev:  v2.15.0
     hooks:
       - id:             golangci-lint

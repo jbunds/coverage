@@ -16,7 +16,9 @@
       "**/*.ts"
     ]
   },
-  "formatter": { "enabled"  : false },
+  "formatter": {
+    "enabled": false
+  },
   "linter": {
     "enabled": true,
     "rules": {
