@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "types": ["node"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["tools/**/*.ts"]
+}
