@@ -9,6 +9,6 @@
 dir=$(dirname "${BASH_SOURCE[0]}")
 
 for i in {1..20}; do
-  node "$dir/render.js"
+  node "$dir/render.ts"
   mv demo.mp4 demo_$(printf '%02d' $i).mp4
 done
