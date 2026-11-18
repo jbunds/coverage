@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# this script runs the render.js script 20 times to create 20 numbered demo MP4
+# this script runs the render.ts script 20 times to create 20 numbered demo MP4
 # files as candidates for a good demo recording, because even after constraining
 # mouse-pointer overshoot and non-centered clicks on HTML elements, GhostCursor
 # will still sometimes move the mouse pointer outside of the browser's viewport,
