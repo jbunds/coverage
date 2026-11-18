@@ -92,10 +92,12 @@ export async function registerListeners (page) {
 // moves the cursor to a point 8px left and 8px up from the center of the specified
 // element to compensate for the custom pointer's anchor offset, and then clicks it
 //
-//   @param {GhostCursor}            cursor
-//   @param {string | ElementHandle} selector
-//   @param {ClickOptions}           [options]
-//   @param {{ jitter?: boolean }}   [behavior]
+//   @param {GhostCursor}                                cursor
+//   @param {string | ElementHandle}                     selector
+//   @param {ClickOptions}                               [options]
+//   @param {{ jitter?: boolean, pauseBefore?: number }} [behavior]
+//     - jitter:      drifts slightly off-target before the click operation
+//     - pauseBefore: milliseconds to wait before the click operation
 export async function clickOffset(cursor, selector, options, { jitter = false, pauseBefore = 0 } = {}) {
   if (pauseBefore > 0) { await setTimeout(pauseBefore) }
 
