@@ -6,9 +6,9 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/jbunds/progress v1.0.18
 	github.com/odvcencio/gotreesitter v0.57.0
-	golang.org/x/mod v0.42.0
+	golang.org/x/mod v0.43.0
 	golang.org/x/sync v0.25.0
-	golang.org/x/term v0.47.0
+	golang.org/x/term v0.48.0
 	golang.org/x/tools v0.52.0
 )
 
@@ -17,5 +17,5 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/mattn/go-runewidth v0.0.30 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/sys v0.50.0 // indirect
 )
