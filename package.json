@@ -2,8 +2,8 @@
   "name": "coverage",
   "type": "module",
   "scripts": {
-    "validate-action": "bun validate.js",
-    "lint": "biome ci validate.js demo/",
+    "validate-action": "action-validator action.yml .github/actions/*/action.yml .github/workflows/*.yml",
+    "lint": "biome ci demo/",
     "typecheck": "tsc"
   },
   "dependencies": {
@@ -12,9 +12,6 @@
     "puppeteer": "^25.17.0"
   },
   "devDependencies": {
-    "@action-validator/cli": "^0.6.0",
-    "@action-validator/core": "^0.6.0",
-    "@biomejs/biome": "^2.6.9",
     "@types/node": "^26.6.10",
     "typescript": "^7.0.2"
   }
