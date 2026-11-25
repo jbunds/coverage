@@ -7,6 +7,7 @@ import {
   VIEWPORT,
   launchChrome,
   installMousePointer,
+  findLabel,
   clickOffset,
   registerListeners,
 } from './helpers.ts'
@@ -62,9 +63,9 @@ await registerListeners(page)
 
 await setTimeout(600)
 
-const k8sIOLabel = (await treeDiv.waitForSelector('::-p-text(k8s.io)'    ))! // k8s.io                subdir checkbox label
-const k8sLabel   = (await treeDiv.waitForSelector('::-p-text(kubernetes)'))! // k8s.io/kubernetes     subdir checkbox label
-const pkgLabel   = (await treeDiv.waitForSelector('::-p-text(pkg)'       ))! // k8s.io/kubernetes/pkg subdir checkbox label
+const k8sIOLabel = (await findLabel(treeDiv, 'k8s.io'    ))! // k8s.io                subdir checkbox label
+const k8sLabel   = (await findLabel(treeDiv, 'kubernetes'))! // k8s.io/kubernetes     subdir checkbox label
+const pkgLabel   = (await findLabel(treeDiv, 'pkg'       ))! // k8s.io/kubernetes/pkg subdir checkbox label
 
 await clickOffset(cursor, k8sIOLabel, { hesitate: 400 })
 await clickOffset(cursor, k8sLabel,   { hesitate: 200 })

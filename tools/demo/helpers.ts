@@ -24,7 +24,7 @@ export const VIEWPORT: Viewport = {
   width:          1280,
 }
 
-// launch Chrome with flags enabling all required permissions (possibly overscoped; see TODO below)
+// launch Chrome with all required permissions enabled (see TODO)
 export async function launchChrome(url: string = URL): Promise<Browser> {
   const options: LaunchOptions = {
     // TODO(jbunds): determine which specific flags are actually required,
@@ -104,18 +104,16 @@ export async function registerListeners(page: Page): Promise<void> {
   }
 }
 
-// moves the cursor to a point 8px left and 8px up from the center of the specified
-// element to compensate for the custom pointer's anchor offset, and then clicks it
+// move the cursor 8px left and up from the element's center (to compensate for the pointer's anchor offset), then click
 export async function clickOffset(
   cursor:   GhostCursor,
-  selector: string | ElementHandle,
+  selector: ElementHandle,
   options?: ClickOptions,
   { jitter = false, pauseBefore = 0 }: { jitter?: boolean; pauseBefore?: number } = {},
 ): Promise<void> {
   if (pauseBefore > 0) { await setTimeout(pauseBefore) }
 
-  const element =  await cursor.getElement(selector)
-  const box     = (await element.boundingBox())!
+  const box = (await selector.boundingBox())!
 
   const cx = box.x + box.width  / 2 - 8 // the 8px offset appears (to me) to be more centered
   const cy = box.y + box.height / 2 - 8
@@ -129,3 +127,10 @@ export async function clickOffset(
 
   await cursor.click(undefined, options)
 }
+
+// find a label in the tree whose trimmed text exactly matches `text`
+export const findLabel = (tree: ElementHandle, text: string): Promise<ElementHandle> =>
+  tree.evaluateHandle(
+    (root, txt) => [...root.querySelectorAll('.tree-node > label')].find(label => label.textContent?.trim() === txt),
+    text
+  ) as Promise<ElementHandle>
