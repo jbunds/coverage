@@ -2,7 +2,7 @@
   "name": "coverage",
   "type": "module",
   "scripts": {
-    "validate-action": "node validate.js",
+    "validate-action": "bun validate.js",
     "lint": "biome ci validate.js demo/",
     "typecheck": "tsc"
   },
@@ -14,8 +14,8 @@
   "devDependencies": {
     "@action-validator/cli": "^0.6.0",
     "@action-validator/core": "^0.6.0",
-    "@biomejs/biome": "^2.6.8",
-    "@types/node": "^26.6.6",
+    "@biomejs/biome": "^2.6.9",
+    "@types/node": "^26.6.10",
     "typescript": "^7.0.2"
   }
 }

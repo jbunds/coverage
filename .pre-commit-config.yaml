@@ -12,18 +12,20 @@ repos:
     hooks:
       - id:    action-validator
         files: '(?:^action\.ya?ml$|^\.github/(?:workflows|actions)/.*\.ya?ml$)'
-  - repo: https://github.com/biomejs/pre-commit
-    rev:  v2.6.8
+  - repo: local
     hooks:
       - id:                      biome-ci
+        name:                    biome ci
+        entry:                   biome ci
         files:                   '\.(?:css|js|ts)$'
-        additional_dependencies: ['@biomejs/biome@2.6.8']
+        language:                system
+        pass_filenames:          false
         args:                    [--error-on-warnings]
   - repo: local
     hooks:
       - id:             typecheck
         name:           typecheck
-        entry:          npx tsc
+        entry:          bun x tsc
         files:          \.ts$
         language:       system
         pass_filenames: false

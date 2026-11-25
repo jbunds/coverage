@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "module": "nodenext",
+    "module": "preserve",
+    "moduleResolution": "bundler",
     "types": ["node"],
     "noEmit": true,
     "allowImportingTsExtensions": true
