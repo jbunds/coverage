@@ -6,6 +6,7 @@
 ├── assets.go
 ├── assets_test.go
 ├── biome.json
+├── bun.lock
 ├── css
 │   ├── modules.css
 │   ├── style.css
@@ -18,7 +19,8 @@
 │   ├── funcs.svg
 │   ├── lines.svg
 │   ├── structure.md
-│   └── theme.svg
+│   ├── theme.svg
+│   └── tree.svg
 ├── flags.go
 ├── flags_test.go
 ├── go.mod
@@ -44,6 +46,7 @@
 ├── scan.go
 ├── screenshots
 │   ├── dark_theme.jpg
+│   ├── demo.mp4
 │   └── light_theme.jpg
 ├── sort.go
 ├── sort_test.go
@@ -65,20 +68,20 @@
 │   ├── demo
 │   │   ├── bunch.sh
 │   │   ├── demo.sh
-│   │   ├── helpers.js
-│   │   └── render.js
+│   │   ├── helpers.ts
+│   │   └── render.ts
 │   ├── loctrace
 │   │   └── loctrace.go
 │   ├── newrel.sh
 │   ├── tests.sh
-│   ├── untree.sh
-│   └── validate.js
+│   └── untree.sh
 ├── tree.go
 ├── tree_test.go
 ├── tree_sitter_oracle_test.go
 ├── trie.go
+├── tsconfig.json
 ├── ui.go
 └── ui_test.go
 
-11 directories, 69 files
+11 directories, 72 files
 ```
