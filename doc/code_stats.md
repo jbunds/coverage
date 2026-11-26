@@ -9,7 +9,7 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Tue Nov  3 11:10:33 CET 2026
+Thu Nov 26 12:19:21 CET 2026
 ```
 
 ```
