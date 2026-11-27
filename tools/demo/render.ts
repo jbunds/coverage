@@ -3,7 +3,6 @@ import { execFileSync } from 'node:child_process'
 import { setTimeout   } from 'node:timers/promises'
 import { GhostCursor  } from 'ghost-cursor'
 import {
-  URL,
   VIEWPORT,
   launchChrome,
   installMousePointer,
@@ -15,9 +14,10 @@ import {
 const RAW_OUTPUT = 'demo.webm'
 const OUTPUT     = 'demo.mp4'
 
-const browser = await launchChrome(URL)
+const browser = await launchChrome()
 const [page]  = await browser.pages()
 
+await page.waitForNavigation({ waitUntil: 'domcontentloaded' })
 await installMousePointer(page)
 
 const scrollOptions = {

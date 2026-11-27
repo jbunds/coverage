@@ -16,7 +16,7 @@ declare global {
   }
 }
 
-export const URL: string = 'http://127.0.0.1:8000'
+export const PAGE_URL: string = 'http://127.0.0.1:8000'
 
 export const VIEWPORT: Viewport = {
   deviceScaleFactor: 1,
@@ -24,20 +24,17 @@ export const VIEWPORT: Viewport = {
   width:          1280,
 }
 
-// launch Chrome with all required permissions enabled (see TODO)
-export async function launchChrome(url: string = URL): Promise<Browser> {
+// launch Chrome with a fixed window size, defaulting to PAGE_URL
+export async function launchChrome(url: string = PAGE_URL): Promise<Browser> {
   const options: LaunchOptions = {
-    // TODO(jbunds): determine which specific flags are actually required,
-    //               and remove those that are not strictly required
     args: [
       `--window-size=${VIEWPORT.width},${VIEWPORT.height}`,
-      '--disable-web-security',
-      '--disable-blink-features=AutomationControlled',
       url,
     ],
-    channel:         'chrome',
-    defaultViewport: null,
-    headless:        false,
+    channel:           'chrome',
+    defaultViewport:   null,
+    headless:          false,
+    ignoreDefaultArgs: ['--enable-automation'], // suppresses the "Chrome is being controlled by automated test software" infobar
   }
   return puppeteer.launch(options)
 }
@@ -45,15 +42,20 @@ export async function launchChrome(url: string = URL): Promise<Browser> {
 // install a custom mouse pointer (analogous to GhostCursor's installMouseHelper)
 export async function installMousePointer(page: Page): Promise<void> {
   await page.evaluate((initialX: number, initialY: number) => {
-    const cursor = document.createElement('div')
-    cursor.id = 'custom-pointer'
+    const cursor     = document.createElement('div')
+    cursor.id        = 'custom-pointer'
     cursor.innerHTML = `<svg width="32" height="32" viewBox="0 0 32 32">
 <path d="M10 7v11.188l2.53-2.442 2.901 5.254 1.765-.941-2.775-5.202h3.604L10 7z" fill="black" stroke="white" stroke-width="1.5"/>
 </svg>`
-    Object.assign(cursor.style, {
-      height: '32px', left:      '0',              pointerEvents: 'none', position: 'fixed',
-      top:    '0',    transform: 'translate(0,0)', width:         '32px', zIndex:   '1000',
-    })
+    const cs         = cursor.style
+    cs.position      = 'fixed'
+    cs.top           = '0'
+    cs.left          = '0'
+    cs.width         = '32px'
+    cs.height        = '32px'
+    cs.pointerEvents = 'none'
+    cs.zIndex        = '1000'
+    cs.transform     = 'translate(0,0)'
     document.documentElement.appendChild(cursor)
 
     const path = cursor.querySelector('path')!
@@ -129,8 +131,10 @@ export async function clickOffset(
 }
 
 // find a label in the tree whose trimmed text exactly matches `text`
-export const findLabel = (tree: ElementHandle, text: string): Promise<ElementHandle> =>
-  tree.evaluateHandle(
-    (root, txt) => [...root.querySelectorAll('.tree-node > label')].find(label => label.textContent?.trim() === txt),
-    text
+export async function findLabel(tree: ElementHandle, text: string): Promise<ElementHandle> {
+  return tree.evaluateHandle(
+    (root, txt) => [...root.querySelectorAll('.tree-node > label')].find(
+      label => label.textContent?.trim() === txt
+    ), text
   ) as Promise<ElementHandle>
+}
