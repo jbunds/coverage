@@ -53,7 +53,7 @@ func permittedClasses(capture string) []string {
 	case "keyword":
 		return []string{"kw"}
 	case "property":
-		return []string{"base", "field", "call"}
+		return []string{"base", "field", "call", "type"} // qualified type conversions (pkg.Type(x)) are syntactically identical to calls
 	case "type":
 		return []string{"type"}
 	case "operator":

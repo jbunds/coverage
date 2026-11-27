@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"html"
 	"io"
 	"io/fs"
 	"math"
@@ -224,9 +225,9 @@ func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (
 	sb.Grow(st.indent * 2 + 128) // rough pre-allocation to avoid reallocations; should cover most cases
 	sb.WriteString(strings.Repeat("  ", st.indent))
 	sb.WriteString(`<li><div class="tree-node"><span class="src"><a href="`)
-	sb.WriteString(filepath.Join(st.parentPath, st.entry.Name()))
+	sb.WriteString(html.EscapeString(filepath.Join(st.parentPath, st.entry.Name())))
 	sb.WriteString(`">`)
-	sb.WriteString(srcBasename)
+	sb.WriteString(html.EscapeString(srcBasename))
 	sb.WriteString(`</a></span> <span class="cov">`)
 	sb.WriteString(percent)
 	sb.WriteString("</span></div></li>\n")
@@ -246,6 +247,8 @@ func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (
 // tree-node, with its name and aggregated coverge percentage.
 func (hb *htmlBuilder) renderSubDirHTML(res *entryResult) {
 	indent  := strings.Repeat("  ", hb.indent)
+	itemID  := html.EscapeString(hb.itemID)
+	subDir  := html.EscapeString(hb.subDir)
 	percent := formatCov(res.covered, res.total)
 
 	var sb strings.Builder
@@ -254,15 +257,15 @@ func (hb *htmlBuilder) renderSubDirHTML(res *entryResult) {
 	sb.WriteString("<li>\n")
 	sb.WriteString(indent)
 	sb.WriteString(`  <input type="checkbox" id="`)
-	sb.WriteString(hb.itemID)
+	sb.WriteString(itemID)
 	sb.WriteString("\"/>\n")
 	sb.WriteString(indent)
 	sb.WriteString("  <div class=\"tree-node\">\n")
 	sb.WriteString(indent)
 	sb.WriteString(`    <label for="`)
-	sb.WriteString(hb.itemID)
+	sb.WriteString(itemID)
 	sb.WriteString(`"><span class="icon"></span>`)
-	sb.WriteString(hb.subDir)
+	sb.WriteString(subDir)
 	sb.WriteString("</label>\n")
 	sb.WriteString(indent)
 	sb.WriteString(`    <span class="cov">`)

@@ -262,6 +262,45 @@ func TestWriteIndexHTMLFile(t *testing.T) {
 			`tree HTML`,
 			`</div>`}, "\n"),
 	}, {
+		name:          "escapes HTML in single go.mod file",
+		embeddedFiles: fstest.MapFS{"html/index.html": &fstest.MapFile{
+			Data: []byte(strings.Join([]string{
+				"<title>{{ .Title }}</title>",
+				"{{ .HeaderHTML }}",
+				"{{ .TreeHTML }}"}, "\n"),
+			),
+		}},
+		modPaths: []string{`github.com/foo/<bar>&"baz"`},
+		repoURLs: []string{`https://github.com/foo/bar?a=1&b="2"`},
+		treeHTML: "<ul></ul>",
+		want: strings.Join([]string{
+			`<title>Go test coverage // github.com/foo/&lt;bar&gt;&amp;&#34;baz&#34;</title>`,
+			`<code><a target="_blank" href="https://github.com/foo/bar?a=1&amp;b=&#34;2&#34;">github.com/foo/&lt;bar&gt;&amp;&#34;baz&#34;</a></code>`,
+			`<ul></ul>`}, "\n",
+		),
+	}, {
+		name:          "escapes HTML in multiple go.mod files",
+		embeddedFiles: fstest.MapFS{"html/index.html": &fstest.MapFile{
+			Data: []byte(strings.Join([]string{
+				`<title>{{ .Title }}</title>`,
+				"{{ .HeaderHTML }}",
+				"{{ .TreeHTML }}",
+			}, "\n")),
+		}},
+		modPaths: []string{`github.com/foo/<bar>`, `github.com/baz/"boo"&qux`},
+		treeHTML: "<ul></ul>",
+		want: strings.Join([]string{
+			`<title>Go test coverage</title>`,
+			`  <div class="dropdown-wrapper">`,
+			`    <input type="checkbox" id="modules-menu"/>`,
+			`    <label for="modules-menu" class="dropdown-toggle">modules</label>`,
+			`    <div class="dropdown-menu">`,
+			`      <span data-for="module-github-com-foo-&lt;bar&gt;" class="dropdown-link">github.com/foo/&lt;bar&gt;</span>`,
+			`      <span data-for="module-github-com-baz-&#34;boo&#34;&amp;qux" class="dropdown-link">github.com/baz/&#34;boo&#34;&amp;qux</span>`,
+			`    </div>`,
+			`  </div>`,
+			`<ul></ul>`}, "\n"),
+	}, {
 		name:          "template.ParseFS fails because index file does not exist",
 		modPaths:      []string{"github.com/foo/bar", "github.com/baz/boo"},
 		embeddedFiles: fstest.MapFS{},
@@ -342,6 +381,40 @@ func TestWriteTemplateFile(t *testing.T) {
 				t.Errorf("writeTemplateFile(%q) mismatch (-want +got):\n%s", tt.name, diff)
 			}
 		})
+	}
+}
+
+func TestWritePreambleAndPostamble(t *testing.T) {
+	t.Parallel()
+	sb := new(strings.Builder)
+	ew := newErrorWriter(sb)
+	rg := &reportGenerator{
+		iconFilename:      "favicon.ico",
+		styleCSSFilename:  "style.css",
+		syntaxCSSFilename: "syntax.css",
+	}
+	rg.writePreamble(ew, `../"evil"/`, `pkg/<script>&"x".go`)
+	writePostamble(ew, `../"evil"/child.js`)
+	if err := ew.err(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := strings.Join([]string{
+		`<!DOCTYPE html>`,
+		`<html lang="en">`,
+		`<head>`,
+		`<meta charset="utf-8">`,
+		`<link rel="icon"       href="../&#34;evil&#34;/favicon.ico" type="image/vnd.microsoft.icon">`,
+		`<link rel="stylesheet" href="../&#34;evil&#34;/style.css">`,
+		`<link rel="stylesheet" href="../&#34;evil&#34;/syntax.css">`,
+		`<title>pkg/&lt;script&gt;&amp;&#34;x&#34;.go</title>`,
+		`</head>`,
+		`<body id="code" class="line-numbers">`,
+		`<script src="../&#34;evil&#34;/child.js"></script>`,
+		`</body>`,
+		`</html>`,
+	}, "\n")
+	if diff := cmp.Diff(want, sb.String()); diff != "" {
+		t.Errorf("writePreamble/writePostamble mismatch (-want +got):\n%s", diff)
 	}
 }
 

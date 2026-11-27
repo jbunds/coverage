@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html"
+	"html/template"
 	"io"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
-	"text/template"
 
 	"github.com/jbunds/progress"
 	"golang.org/x/sync/errgroup"
@@ -265,16 +266,16 @@ func (rg *reportGenerator) writePreamble(ew stickyWriter, relPath, srcPath strin
 	ew.write("<head>\n")
 	ew.write("<meta charset=\"utf-8\">\n")
 	ew.write(`<link rel="icon"       href="`)
-	ew.write(relPath + rg.iconFilename)
+	ew.write(html.EscapeString(relPath + rg.iconFilename))
 	ew.write("\" type=\"image/vnd.microsoft.icon\">\n")
 	ew.write(`<link rel="stylesheet" href="`)
-	ew.write(relPath + rg.styleCSSFilename)
+	ew.write(html.EscapeString(relPath + rg.styleCSSFilename))
 	ew.write("\">\n")
 	ew.write(`<link rel="stylesheet" href="`)
-	ew.write(relPath + rg.syntaxCSSFilename)
+	ew.write(html.EscapeString(relPath + rg.syntaxCSSFilename))
 	ew.write("\">\n")
 	ew.write("<title>")
-	ew.write(srcPath)
+	ew.write(html.EscapeString(srcPath))
 	ew.write("</title>\n")
 	ew.write("</head>\n")
 	ew.write("<body id=\"code\" class=\"line-numbers\">\n")
@@ -284,7 +285,7 @@ func (rg *reportGenerator) writePreamble(ew stickyWriter, relPath, srcPath strin
 // HTML content common to every Go source HTML file.
 func writePostamble(ew stickyWriter, childJSPath string) {
 	ew.write(`<script src="`)
-	ew.write(childJSPath) // DOM-dependent
+	ew.write(html.EscapeString(childJSPath)) // DOM-dependent
 	ew.write("\"></script>\n")
 	ew.write("</body>\n")
 	ew.write("</html>")
@@ -303,9 +304,9 @@ func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
 		sb.WriteString("    <div class=\"dropdown-menu\">\n")
 		for _, mod := range rg.modPaths {
 			sb.WriteString(`      <span data-for="module-`)
-			sb.WriteString(normalizeModID(mod))
+			sb.WriteString(html.EscapeString(normalizeModID(mod)))
 			sb.WriteString(`" class="dropdown-link">`)
-			sb.WriteString(mod)
+			sb.WriteString(html.EscapeString(mod))
 			sb.WriteString("</span>\n")
 		}
 		sb.WriteString("    </div>\n")
@@ -313,20 +314,20 @@ func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
 	} else {
 		title += " // " + rg.modPaths[0]
 		sb.WriteString(`<code><a target="_blank" href="`)
-		sb.WriteString(rg.repoURLs[0])
+		sb.WriteString(html.EscapeString(rg.repoURLs[0]))
 		sb.WriteString(`">`)
-		sb.WriteString(rg.modPaths[0])
+		sb.WriteString(html.EscapeString(rg.modPaths[0]))
 		sb.WriteString(`</a></code>`)
 	}
 
 	data := struct{
 		Title      string
-		HeaderHTML string
-		TreeHTML   string
+		HeaderHTML template.HTML
+		TreeHTML   template.HTML
 	}{
 		Title:      title,
-		HeaderHTML: sb.String(),
-		TreeHTML:   treeHTML,
+		HeaderHTML: template.HTML(sb.String()), // #nosec G203 - all interpolated values are escaped above
+		TreeHTML:   template.HTML(treeHTML),    // #nosec G203 - tree HTML fragments are escaped during tree/trie rendering
 	}
 
 	return rg.writeTemplateFile("html/index.html", data)

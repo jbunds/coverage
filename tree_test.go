@@ -19,6 +19,7 @@ func TestBuildTree(t *testing.T) {
 	tests := []struct{
 		name         string
 		fsys         fs.FS
+		modPaths     []string
 		cov          map[string]coverage
 		readDirFails bool
 		want         string
@@ -85,6 +86,53 @@ func TestBuildTree(t *testing.T) {
 			`  </li>`,
 			`</ul>`}, "\n"),
 	}, {
+		name: "escapes HTML in module, directory, and file names",
+		fsys: fstest.MapFS{
+			`some/path/github.com/user/<proj>&"1"/<dir>/a&"b".go.html`: &fstest.MapFile{},
+		},
+		modPaths: []string{`github.com/user/<proj>&"1"`},
+		cov: map[string]coverage{
+			`github.com/user/<proj>&"1"/<dir>/a&"b".go`: {covered: 1, total: 2},
+		},
+		want: strings.Join([]string{
+			`<ul class="tree">`,
+			`  <li id="tree-item-2">`,
+			`    <input type="checkbox" id="module-tree-item-2"/>`,
+			`    <div class="tree-node">`,
+			`      <label for="module-tree-item-2"><span class="icon"></span>github.com</label>`,
+			`    </div>`,
+			`    <ul>`,
+			`      <li id="tree-item-3">`,
+			`        <input type="checkbox" id="module-tree-item-3"/>`,
+			`        <div class="tree-node">`,
+			`          <label for="module-tree-item-3"><span class="icon"></span>user</label>`,
+			`        </div>`,
+			`        <ul>`,
+			`          <li id="github-com-user-&lt;proj&gt;&amp;&#34;1&#34;">`,
+			`            <input type="checkbox" id="module-github-com-user-&lt;proj&gt;&amp;&#34;1&#34;"/>`,
+			`            <div class="tree-node">`,
+			`              <label for="module-github-com-user-&lt;proj&gt;&amp;&#34;1&#34;"><span class="icon"></span>&lt;proj&gt;&amp;&#34;1&#34;</label>`,
+			`              <span class="cov">50.0%</span>`,
+			`            </div>`,
+			`            <ul>`,
+			`              <li>`,
+			`                <input type="checkbox" id="tree-item-1"/>`,
+			`                <div class="tree-node">`,
+			`                  <label for="tree-item-1"><span class="icon"></span>&lt;dir&gt;</label>`,
+			`                  <span class="cov">50.0%</span>`,
+			`                </div>`,
+			`                <ul>`,
+			`                  <li><div class="tree-node"><span class="src"><a href="github.com/user/&lt;proj&gt;&amp;&#34;1&#34;/&lt;dir&gt;/a&amp;&#34;b&#34;.go.html">a&amp;&#34;b&#34;.go</a></span> <span class="cov">50.0%</span></div></li>`,
+			`                </ul>`,
+			`              </li>`,
+			`            </ul>`,
+			`          </li>`,
+			`        </ul>`,
+			`      </li>`,
+			`    </ul>`,
+			`  </li>`,
+			`</ul>`}, "\n"),
+	}, {
 		name:         "ReadDir fails",
 		fsys:         fstest.MapFS{},
 		readDirFails: true,
@@ -97,9 +145,13 @@ func TestBuildTree(t *testing.T) {
 				FS:           tt.fsys,
 				readDirFails: tt.readDirFails,
 			}
+			modPaths := tt.modPaths
+			if modPaths == nil {
+				modPaths = []string{"github.com/user/project"}
+			}
 			tb := &treeBuilder{
 				fsys:     mfs,
-				modPaths: []string{"github.com/user/project"},
+				modPaths: modPaths,
 				outRoot:  &mockRoot{name: "some/path"},
 				covState: &coverageState{cov: tt.cov},
 			}

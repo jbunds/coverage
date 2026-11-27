@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html"
 	"maps"
 	"slices"
 	"strconv"
@@ -49,7 +50,7 @@ func (tn *trieNode) assemble(sb *strings.Builder, depth int, counter *atomic.Uin
 
 	var itemID string
 	if tn.isModRoot {
-		itemID = normalizeModID(tn.modPath)
+		itemID = html.EscapeString(normalizeModID(tn.modPath))
 	} else {
 		itemID = "tree-item-" + strconv.FormatUint(counter.Add(1), 10)
 	}
@@ -68,7 +69,7 @@ func (tn *trieNode) assemble(sb *strings.Builder, depth int, counter *atomic.Uin
 	sb.WriteString(`    <label for="module-`)
 	sb.WriteString(itemID)
 	sb.WriteString(`"><span class="icon"></span>`)
-	sb.WriteString(tn.segment)
+	sb.WriteString(html.EscapeString(tn.segment))
 	sb.WriteString("</label>\n")
 
 	if tn.html != "" { // ignore namespace segments preceeding the module root

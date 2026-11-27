@@ -61,6 +61,8 @@ linters:
             - go/scanner
             - go/token
             - go/types
+            - html
+            - html/template
             - io
             - maps
             - math
