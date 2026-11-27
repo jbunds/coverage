@@ -9,11 +9,11 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Thu Nov 26 12:19:21 CET 2026
+Fri Nov 27 12:01:48 CET 2026
 ```
 
 ```
-$ scc --exclude-dir .git,testdata --include-ext go,html,css,js,sh,yml,yaml --dryness --by-file --wide
+$ scc --exclude-dir .git,testdata --include-ext go,html,css,js,sh,ts,yml,yaml --dryness --by-file --wide
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Language                    Files        Lines     Blanks   Comments         Code Complexity Complexity/Lines
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -34,8 +34,8 @@ mocks_test.go                              207         37          5          16
 tree_sitter_oracle_test.go                 196         25         29          142         56            39.44
 ui.go                                      176         26          9          141         35            24.82
 trie.go                                    134         22         13           99         18            18.18
-tools/loctrace/loctrace.go                 115         10          3          102         24            23.53
 sort.go                                    115         17         17           81         17            20.99
+tools/loctrace/loctrace.go                 115         10          3          102         24            23.53
 flags.go                                   111         13          2           96         11            11.46
 sort_test.go                               111          5          0          106         11            10.38
 interfaces.go                               96         21          9           66          2             3.03
@@ -89,14 +89,20 @@ JavaScript                      2           90         16          0           7
 js/events.js                                77         15          0           62         15            24.19
 js/child.js                                 13          1          0           12         10            83.33
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                          48        6,206        666        342        5,198        730            14.04
+TypeScript                      2          280         40         11          229         14             6.11
+(ULOC)                                     222
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Unique Lines of Code (ULOC)              3,713
-DRYness %                                 0.60
+tools/demo/render.ts                       144         24          4          116          0             0.00
+tools/demo/helpers.ts                      136         16          7          113         14            12.39
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $152,499
-Estimated Schedule Effort (organic) 6.73 months
-Estimated People Required (organic) 2.01
-Processed 195,002 bytes, 0.195 megabytes (SI)
+Total                          50        6,486        706        353        5,427        744            13.71
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Unique Lines of Code (ULOC)              3,931
+DRYness %                                 0.61
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Estimated Cost to Develop (organic) $159,561
+Estimated Schedule Effort (organic) 6.85 months
+Estimated People Required (organic) 2.07
+Processed 207,727 bytes, 0.208 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```
