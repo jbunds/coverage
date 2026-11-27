@@ -7,6 +7,7 @@ import (
 	"html"
 	"html/template"
 	"io"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -164,8 +165,8 @@ func (rg *reportGenerator) processUnit(ctx context.Context, prog *progress.Progr
 	fileStatements, fileCovered := countStatements(unit.profile.Blocks)
 	prog.AddTotal(uint64(fileStatements))
 
-	pkgPath  := filepath.Dir( unit.profile.FileName)
-	fileName := filepath.Base(unit.profile.FileName)
+	pkgPath  := path.Dir( unit.profile.FileName)
+	fileName := path.Base(unit.profile.FileName)
 	srcFile  := filepath.Join(rg.pkgDirCache[pkgPath], fileName)
 
 	src, err := rg.fsys.ReadFile(srcFile)
@@ -335,7 +336,7 @@ func (rg *reportGenerator) writeIndexHTMLFile(treeHTML string) error {
 
 // writeTemplateFile writes the specified template file.
 func (rg *reportGenerator) writeTemplateFile(file string, data any) error {
-	outFile := filepath.Join(rg.outRoot.Name(), filepath.Base(file))
+	outFile := filepath.Join(rg.outRoot.Name(), path.Base(file))
 	t, err  := template.ParseFS(rg.embeddedFiles, file)
 	if                            err != nil { return fmt.Errorf("cannot parse %q: %w",     file, err) }
 	f, err := rg.fsys.Create(outFile)

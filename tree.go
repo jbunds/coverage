@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"math"
+	"path"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -138,7 +139,7 @@ func (tb *treeBuilder) processEntry(ctx context.Context, st *scanState) (*entryR
 	}
 
 	srcBasename := strings.TrimSuffix(st.entry.Name(), ".html")
-	pkgPath     := filepath.Join(st.parentPath, srcBasename)
+	pkgPath     := path.Join(st.parentPath, srcBasename)
 
 	if isDir {
 		return tb.processDir(ctx, st, pkgPath, srcBasename)
@@ -225,7 +226,7 @@ func (tb *treeBuilder) processFile(st *scanState, pkgPath, srcBasename string) (
 	sb.Grow(st.indent * 2 + 128) // rough pre-allocation to avoid reallocations; should cover most cases
 	sb.WriteString(strings.Repeat("  ", st.indent))
 	sb.WriteString(`<li><div class="tree-node"><span class="src"><a href="`)
-	sb.WriteString(html.EscapeString(filepath.Join(st.parentPath, st.entry.Name())))
+	sb.WriteString(html.EscapeString(path.Join(st.parentPath, st.entry.Name())))
 	sb.WriteString(`">`)
 	sb.WriteString(html.EscapeString(srcBasename))
 	sb.WriteString(`</a></span> <span class="cov">`)
