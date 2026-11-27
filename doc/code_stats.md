@@ -9,7 +9,7 @@ see also [COCOMO][cocomo] on Wikpedia
 
 ```
 $ date
-Fri Nov 27 12:01:48 CET 2026
+Fri Nov 27 13:41:09 CET 2026
 ```
 
 ```
@@ -34,10 +34,10 @@ mocks_test.go                              207         37          5          16
 tree_sitter_oracle_test.go                 196         25         29          142         56            39.44
 ui.go                                      176         26          9          141         35            24.82
 trie.go                                    134         22         13           99         18            18.18
-sort.go                                    115         17         17           81         17            20.99
 tools/loctrace/loctrace.go                 115         10          3          102         24            23.53
-flags.go                                   111         13          2           96         11            11.46
+sort.go                                    115         17         17           81         17            20.99
 sort_test.go                               111          5          0          106         11            10.38
+flags.go                                   111         13          2           96         11            11.46
 interfaces.go                               96         21          9           66          2             3.03
 assets_test.go                              75          3          0           72          5             6.94
 integration_test.go                         63         14          1           48         18            37.50
@@ -89,20 +89,20 @@ JavaScript                      2           90         16          0           7
 js/events.js                                77         15          0           62         15            24.19
 js/child.js                                 13          1          0           12         10            83.33
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-TypeScript                      2          280         40         11          229         14             6.11
-(ULOC)                                     222
+TypeScript                      2          284         40          9          235         14             5.96
+(ULOC)                                     226
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 tools/demo/render.ts                       144         24          4          116          0             0.00
-tools/demo/helpers.ts                      136         16          7          113         14            12.39
+tools/demo/helpers.ts                      140         16          5          119         14            11.76
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Total                          50        6,486        706        353        5,427        744            13.71
+Total                          50        6,490        706        351        5,433        744            13.69
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Unique Lines of Code (ULOC)              3,931
+Unique Lines of Code (ULOC)              3,935
 DRYness %                                 0.61
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $159,561
+Estimated Cost to Develop (organic) $159,747
 Estimated Schedule Effort (organic) 6.85 months
 Estimated People Required (organic) 2.07
-Processed 207,727 bytes, 0.208 megabytes (SI)
+Processed 207,784 bytes, 0.208 megabytes (SI)
 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ```
