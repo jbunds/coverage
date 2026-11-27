@@ -4,7 +4,7 @@
   "scripts": {
     "validate-action": "action-validator --verbose action.yml .github/actions/*/action.yml .github/workflows/*.yml",
     "lint": "biome ci demo/",
-    "typecheck": "tsc"
+    "typecheck": "bun check"
   },
   "dependencies": {
     "@puppeteer/replay": "^4.0.2",
@@ -12,7 +12,6 @@
     "puppeteer": "^25.17.0"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.5",
-    "typescript": "^7.0.2"
+    "@types/bun": "^1.4.5"
   }
 }

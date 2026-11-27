@@ -25,7 +25,7 @@ repos:
     hooks:
       - id:             typecheck
         name:           typecheck
-        entry:          bun x tsc
+        entry:          bun check --no-script
         files:          \.ts$
         language:       system
         pass_filenames: false
